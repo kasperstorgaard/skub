@@ -48,14 +48,15 @@ styling changes and forces good accessibility hygiene.
 Never mock API calls, services, or the database. Instead: **seed real data**
 before the test suite runs, and **tear it down** after. For this app that means
 writing solutions to KV via a seed script, running tests against that state,
-then deleting the seeded records. Tests that rely on mocked state only prove
-the mock works.
+then deleting the seeded records. Tests that rely on mocked state only prove the
+mock works.
 
 ### Data seeding
 
-Use a dedicated `deno task seed-e2e` script that writes known test data (e.g.
-a fixed `tracking_id` cookie + pre-posted solutions for specific puzzle slugs)
-to KV before the seeded suite runs. Teardown is a matching `deno task
+Use a dedicated `deno task seed-e2e` script that writes known test data (e.g. a
+fixed `tracking_id` cookie + pre-posted solutions for specific puzzle slugs) to
+KV before the seeded suite runs. Teardown is a matching
+`deno task
 teardown-e2e`. Both must be idempotent.
 
 ### Structure
