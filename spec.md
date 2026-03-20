@@ -100,3 +100,7 @@ Shown only when `hasSolution && !savedName && !isPreview && dialog !== "celebrat
 - Streak counter, countdown timer, solves empty state (separate specs)
 - CelebrationDialog animation / confetti
 - Dynamic OG image for solved state
+
+## Known follow-ups
+
+- **Solves page rewrite** — currently hard to find your own solve in the list after being redirected there from SolutionDialog. Should highlight the user's row, scroll to it, or surface it prominently.

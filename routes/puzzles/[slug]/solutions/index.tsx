@@ -125,6 +125,11 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           Tabs rendered as nav links at the top of Main, active tab highlighted.
         */
         }
+        {/*
+          TODO: solutions page rewrite — currently hard to find your own solve
+          in the list. Should highlight the user's row, scroll to it, or surface
+          it separately. Consider as a follow-up to the celebration flow.
+        */}
         <div className="mt-fl-2">
           {visibleGroups.length === 0
             ? (
