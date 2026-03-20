@@ -64,4 +64,4 @@ teardown-e2e`. Both must be idempotent.
 - One `*_test.ts` file per page or flow
 - Shared browser/cookie setup in `e2e/_setup.ts`
 - `BASE_URL` env var (default: `http://localhost:5173`) for local vs CI/deploy
-- Two tasks: `test-e2e` (base, no data deps) and `test-e2e-seeded` (requires seed)
+- One task: `test-e2e` — always runs seed before suite, teardown after
