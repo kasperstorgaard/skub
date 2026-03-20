@@ -49,10 +49,11 @@ export function AutoPostSolution({ href, puzzle, savedName }: Props) {
 
     const form = new FormData();
     form.set("name", savedName);
-    form.set("moves", JSON.stringify(state.moves));
+    form.set("moves", JSON.stringify(moves));
 
     fetch(`/puzzles/${puzzle.value.slug}`, {
       method: "POST",
+      redirect: "follow",
       body: form,
     }).then((response) => {
       celebratedRef.current = true;

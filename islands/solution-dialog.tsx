@@ -49,14 +49,14 @@ export function SolutionDialog(
           Nice solve!
         </h2>
 
-        <p>Pick a name to join the leaderboard.</p>
+        <p>Pick a name and see how your solve compares.</p>
       </div>
 
       {!isPreview && (
         <form
           id="solution"
           className="flex flex-col gap-fl-2"
-          action={puzzle.value.slug}
+          action={`/puzzles/${puzzle.value.slug}`}
           method="post"
           onSubmit={() => setIsSubmitting(true)}
         >

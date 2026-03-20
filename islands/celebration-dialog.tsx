@@ -60,13 +60,21 @@ export function CelebrationDialog({ href, puzzle, stats }: Props) {
       stats,
     });
 
-    if ("share" in navigator) {
-      // Pass url separately — apps append it themselves
-      await globalThis.navigator.share({ text, url });
-    } else {
-      await globalThis.navigator.clipboard.writeText(`${text}\n${url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    try {
+      if ("share" in navigator) {
+        // Pass url separately — apps append it themselves
+        await globalThis.navigator.share({ text, url });
+      } else {
+        await globalThis.navigator.clipboard.writeText(`${text}\n${url}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (err) {
+      // AbortError = user cancelled share sheet — ignore
+      if (err instanceof Error && err.name !== "AbortError") {
+        // Clipboard / share failed; fall back silently
+        console.error("Share failed:", err);
+      }
     }
   }, [puzzle.value, moves.length, stats]);
 
@@ -77,7 +85,7 @@ export function CelebrationDialog({ href, puzzle, stats }: Props) {
           Solved in <span className="text-ui-2">{moves.length}</span> moves
         </h2>
 
-        <div className="flex flex-col gap-1 text-text-2">
+        <div className="flex flex-col gap-1 text-3 text-text-2">
           {isFirstOptimal && <p>You found the first perfect solve!</p>}
 
           {!isFirstOptimal && isOptimal && totalSolutions >= 10 && (
@@ -91,7 +99,9 @@ export function CelebrationDialog({ href, puzzle, stats }: Props) {
           {!isOptimal && totalSolutions >= 10 && <p>Top {percentileRounded}%
           </p>}
 
-          <p>See how you compare, or share your solve.</p>
+          <p>
+            See how you compare, or share your solve.
+          </p>
         </div>
       </div>
 
@@ -101,7 +111,7 @@ export function CelebrationDialog({ href, puzzle, stats }: Props) {
             href={`/puzzles/${puzzle.value.slug}/solutions`}
             className="btn flex-1 justify-center"
             data-primary
-            autofocus
+            autoFocus
           >
             <Icon icon={Ranking} /> See solves
           </a>
@@ -125,7 +135,7 @@ export function CelebrationDialog({ href, puzzle, stats }: Props) {
           </button>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center mt-1">
           <a href={getResetHref(href.value)} className="text-text-2 text-1">
             Start over
           </a>
