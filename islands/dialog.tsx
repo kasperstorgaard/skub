@@ -23,7 +23,7 @@ export function Dialog({ open, className, children, ...rest }: Props) {
       data-modal
       open
       className={clsx(
-        "m-auto rounded-cond-2 max-w-lg shadow-4 z-5 min-w-92 lg:min-w-100",
+        "m-auto rounded-cond-2 max-sm:max-w-[90vw] max-w-lg shadow-4 z-5 min-w-92 lg:min-w-100",
         className,
       )}
       {...rest}

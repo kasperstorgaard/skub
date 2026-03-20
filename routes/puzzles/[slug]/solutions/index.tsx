@@ -109,7 +109,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             </h1>
 
             <p className="text-text-3 ml-1">
-              solutions
+              solves
             </p>
           </div>
 
@@ -125,12 +125,19 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           Tabs rendered as nav links at the top of Main, active tab highlighted.
         */
         }
+        {
+          /*
+          TODO: solutions page rewrite — currently hard to find your own solve
+          in the list. Should highlight the user's row, scroll to it, or surface
+          it separately. Consider as a follow-up to the celebration flow.
+        */
+        }
         <div className="mt-fl-2">
           {visibleGroups.length === 0
             ? (
               // TODO: improve empty state — currently too sparse with Remix isolated in corner
               <p className="text-3 text-text-2">
-                No solutions posted yet.
+                No solves posted yet.
               </p>
             )
             : (
@@ -196,7 +203,7 @@ function SolutionRow(
       return `+ you and ${others - 1} ${others - 1 === 1 ? "other" : "others"}`;
     }
 
-    if (others === 0) return "unique solution";
+    if (others === 0) return "unique solve";
 
     return `+ ${others} ${others === 1 ? "other" : "others"}`;
   }, [isFound, others]);

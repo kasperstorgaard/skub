@@ -8,6 +8,7 @@
     min-height: 44px;
     padding-inline: var(--size-3);
     padding-block: var(--size-1);
+    line-height: var(--leading-snug);
 
     white-space: nowrap;
     font-size: var(--font-size-2);
