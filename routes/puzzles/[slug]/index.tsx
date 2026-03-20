@@ -13,10 +13,11 @@ import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
-import { PuzzleStats } from "#/game/types.ts";
-import { Move, Puzzle } from "#/game/types.ts";
+import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
+import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
+import { CelebrationDialog } from "#/islands/celebration-dialog.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
@@ -70,7 +71,69 @@ export const handler = define.handlers<PageData>({
     if (moves.length > 0) {
       try {
         // validate moves
-        resolveMoves(puzzle.board, moves);
+        const board = resolveMoves(puzzle.board, moves);
+
+        // Auto-post for named users: if solution is valid, user has a name,
+        // and we haven't already redirected to celebrate
+        const dialog = ctx.url.searchParams.get("dialog");
+        if (
+          isValidSolution(board) && savedName && dialog !== "celebrate"
+        ) {
+          // Check for existing solution to avoid duplicates
+          const existing = ctx.state.userId
+            ? await getCanonicalUserSolution(ctx.state.userId, slug, moves)
+            : null;
+
+          if (!existing) {
+            await addSolution({
+              puzzleSlug: slug,
+              name: savedName,
+              moves,
+              userId: ctx.state.userId,
+            });
+
+            posthog?.capture({
+              distinctId: ctx.state.trackingId,
+              event: "puzzle_solved",
+              properties: {
+                $current_url: ctx.url.href,
+                $process_person_profile:
+                  ctx.state.cookieChoice === "accepted",
+
+                puzzle_slug: slug,
+                puzzle_difficulty: puzzle.difficulty,
+                puzzle_min_moves: puzzle.minMoves,
+                game_moves: moves.length,
+              },
+            });
+
+            // Complete onboarding on a good solve
+            if (
+              moves.length <= puzzle.minMoves * 1.33 &&
+              ctx.state.user.onboarding !== "done"
+            ) {
+              await setUser(ctx.state.userId, { onboarding: "done" });
+
+              posthog?.capture({
+                distinctId: ctx.state.trackingId,
+                event: "onboarding_completed",
+                properties: {
+                  $current_url: ctx.url.href,
+                  $process_person_profile:
+                    ctx.state.cookieChoice === "accepted",
+                  puzzle_slug: slug,
+                  game_moves: moves.length,
+                  puzzle_min_moves: puzzle.minMoves,
+                },
+              });
+            }
+          }
+
+          // Redirect to celebrate — this also prevents re-posting on refresh
+          const redirectUrl = new URL(ctx.url);
+          redirectUrl.searchParams.set("dialog", "celebrate");
+          return Response.redirect(redirectUrl, 303);
+        }
       } catch {
         // clear moves with error if invalid
         const url = new URL(`/puzzles/${slug}`, ctx.url);
@@ -99,6 +162,7 @@ export const handler = define.handlers<PageData>({
 
     const form = await req.formData();
     const name = form.get("name")?.toString();
+    const fromSolutionDialog = form.get("source") === "solution-dialog";
 
     const puzzle = await getPuzzle(slug);
     if (!puzzle) {
@@ -122,13 +186,18 @@ export const handler = define.handlers<PageData>({
       : null;
 
     if (existingSolution) {
-      const url = new URL(referer ?? "", req.url);
-      url.pathname = `puzzles/${slug}`;
-      url.searchParams.set("error", "duplicate");
+      const location = fromSolutionDialog
+        ? `/puzzles/${slug}/solutions`
+        : (() => {
+          const url = new URL(referer ?? "", req.url);
+          url.pathname = `/puzzles/${slug}`;
+          url.searchParams.set("dialog", "celebrate");
+          return url.href;
+        })();
 
       return new Response(null, {
         status: 303,
-        headers: { Location: url.href },
+        headers: { Location: location },
       });
     }
 
@@ -153,10 +222,16 @@ export const handler = define.handlers<PageData>({
       },
     });
 
-    const url = new URL(req.url);
-    url.pathname = `/puzzles/${slug}/solutions`;
+    const redirectHref = fromSolutionDialog
+      ? `/puzzles/${slug}/solutions`
+      : (() => {
+        const url = new URL(referer ?? "", req.url);
+        url.pathname = `/puzzles/${slug}`;
+        url.searchParams.set("dialog", "celebrate");
+        return url.href;
+      })();
 
-    const responseHeaders = new Headers({ Location: url.href });
+    const responseHeaders = new Headers({ Location: redirectHref });
 
     // Complete onboarding on a good solve
     if (
@@ -243,10 +318,23 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         isPreview={isPreview}
-        onboarding={props.state.user.onboarding}
-        stats={props.data.puzzleStats}
         savedName={props.data.savedName}
       />
+
+      <CelebrationDialog
+        href={href}
+        puzzle={puzzle}
+        stats={props.data.puzzleStats}
+      />
+
+      {/* Client-side auto-post for named users */}
+      {props.data.savedName && !isPreview && (
+        <AutoPostSolution
+          href={href}
+          puzzle={puzzle}
+          savedName={props.data.savedName}
+        />
+      )}
     </>
   );
 });

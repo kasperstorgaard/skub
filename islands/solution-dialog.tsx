@@ -2,10 +2,9 @@ import { type Signal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { useMemo, useState } from "preact/hooks";
 
-import { Icon, Info, Spinner } from "#/components/icons.tsx";
+import { Icon, Spinner } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getSolutionPercentile } from "#/game/stats.ts";
-import { Move, Onboarding, Puzzle, PuzzleStats } from "#/game/types.ts";
+import { Puzzle } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 
@@ -13,21 +12,15 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   isPreview?: boolean;
-  onboarding?: Onboarding;
-  stats: PuzzleStats;
   savedName?: string | null;
 };
 
 export function SolutionDialog(
-  { href, puzzle, isPreview, onboarding, stats, savedName }: Props,
+  { href, puzzle, isPreview, savedName }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
-  const error = useMemo(
-    () => new URL(href.value).searchParams.get("error"),
-    [href.value],
-  );
 
   const moves = useMemo(
     () => state.moves.slice(0, state.cursor ?? state.moves.length),
@@ -41,51 +34,25 @@ export function SolutionDialog(
 
   const hasSolution = useMemo(() => isValidSolution(board), [board]);
 
-  const minMoves = puzzle.value.minMoves;
-  const isGraduating = useMemo(
-    () =>
-      onboarding !== "done" &&
-      moves.length <= minMoves * 1.33,
-    [onboarding, minMoves, moves.length],
+  const dialog = useMemo(
+    () => new URL(href.value).searchParams.get("dialog"),
+    [href.value],
   );
 
+  const isOpen = hasSolution && !savedName && !isPreview &&
+    dialog !== "celebrate";
+
   return (
-    <Dialog open={hasSolution}>
+    <Dialog open={isOpen}>
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h2 className="text-fl-2 font-semibold text-text-1">
-          Solved in <span className="text-ui-2">{moves.length}</span> moves
+          Nice solve!
         </h2>
 
-        {isGraduating &&
-          (
-            <p>
-              Well done - you're good at this!
-            </p>
-          )}
-
-        {!error && !isPreview && !isGraduating && stats && (
-          <StatsMessage
-            stats={stats}
-            moves={moves}
-            minMoves={minMoves}
-          />
-        )}
+        <p>Pick a name to join the leaderboard.</p>
       </div>
 
-      {!isPreview && error === "duplicate" && (
-        <div className="flex gap-fl-1 items-center">
-          <Icon icon={Info} className="text-fl-1" />
-          <p className="text-text-2 leading-tight">
-            You've already posted this solution -
-            <br />
-            <a href={`/puzzles/${puzzle.value.slug}/solutions`}>
-              view all solutions
-            </a>.
-          </p>
-        </div>
-      )}
-
-      {!isPreview && !error && (
+      {!isPreview && (
         <form
           id="solution"
           className="flex flex-col gap-fl-2"
@@ -94,7 +61,7 @@ export function SolutionDialog(
           onSubmit={() => setIsSubmitting(true)}
         >
           <label className="flex flex-col gap-1">
-            <span className="text-text-2 text-1">Name</span>
+            <span className="text-text-2 text-1">Username</span>
 
             <input
               name="name"
@@ -111,6 +78,7 @@ export function SolutionDialog(
             name="moves"
             value={JSON.stringify(state.moves)}
           />
+          <input type="hidden" name="source" value="solution-dialog" />
         </form>
       )}
 
@@ -145,7 +113,7 @@ export function SolutionDialog(
           </form>
         </div>
 
-        {!isPreview && !error && (
+        {!isPreview && (
           <button
             form="solution"
             className="btn"
@@ -154,45 +122,10 @@ export function SolutionDialog(
           >
             {isSubmitting
               ? <Icon icon={Spinner} className="animate-spin" />
-              : "Post solution"}
+              : "Post your solve"}
           </button>
         )}
       </div>
     </Dialog>
   );
-}
-
-function StatsMessage(
-  { stats, moves, minMoves }: {
-    stats: PuzzleStats;
-    moves: Move[];
-    minMoves: number;
-  },
-) {
-  const { solutionsHistogram, totalSolutions } = stats;
-  const isOptimal = moves.length === minMoves;
-
-  // Stat 1: first to find the optimal solution
-  if (isOptimal && !solutionsHistogram[moves.length]) {
-    return <p>You found the first perfect solution, well done!</p>;
-  }
-
-  // Stat 2: top 40% by move count — only meaningful with enough data
-  const percentile = totalSolutions >= 10
-    ? getSolutionPercentile(stats, moves.length)
-    : 0;
-  if (percentile >= 60) {
-    const rounded = Math.round(percentile / 5) * 5;
-    return <p>Sharp! You used fewer moves than {rounded}% of players.</p>;
-  }
-
-  // Fallback: neutral total count
-  if (totalSolutions > 0) {
-    const others = totalSolutions === 1
-      ? "1 other user"
-      : `${totalSolutions} other users`;
-    return <p>Good solve - join {others}, post yours.</p>;
-  }
-
-  return <p>Be the first to post a solution.</p>;
 }

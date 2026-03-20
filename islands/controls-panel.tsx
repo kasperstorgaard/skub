@@ -9,7 +9,7 @@ import {
   Download,
   Icon,
   Printer,
-  Trophy,
+  Ranking,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { Onboarding, Puzzle } from "#/game/types.ts";
@@ -202,7 +202,7 @@ export function ControlsPanel(
                 href={`/puzzles/${puzzle.value.slug}/solutions`}
                 className="btn"
               >
-                <Icon icon={Trophy} /> Solutions
+                <Icon icon={Ranking} /> See solves
               </a>
             )}
 

@@ -163,6 +163,7 @@ export function getResetHref(href: string) {
   url.searchParams.delete("cursor");
   url.searchParams.delete("moves");
   url.searchParams.delete("hint");
+  url.searchParams.delete("dialog");
 
   return url.href;
 }

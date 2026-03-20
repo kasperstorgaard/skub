@@ -109,7 +109,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             </h1>
 
             <p className="text-text-3 ml-1">
-              solutions
+              solves
             </p>
           </div>
 
@@ -130,7 +130,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             ? (
               // TODO: improve empty state — currently too sparse with Remix isolated in corner
               <p className="text-3 text-text-2">
-                No solutions posted yet.
+                No solves posted yet.
               </p>
             )
             : (
@@ -196,7 +196,7 @@ function SolutionRow(
       return `+ you and ${others - 1} ${others - 1 === 1 ? "other" : "others"}`;
     }
 
-    if (others === 0) return "unique solution";
+    if (others === 0) return "unique solve";
 
     return `+ ${others} ${others === 1 ? "other" : "others"}`;
   }, [isFound, others]);

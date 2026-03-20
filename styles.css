@@ -96,6 +96,8 @@
 @import "tailwindcss/theme" layer(theme);
 @import "tailwindcss/utilities" layer(utilities);
 
+@custom-variant js (&:where([data-js] *));
+
 /* Tailwind v4 theme configuration */
 @theme {
   /* Colors - Open Props integration */
