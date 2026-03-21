@@ -39,6 +39,11 @@
   "exclude": [
     "**/_fresh/*"
   ],
+  "test": {
+    "exclude": [
+      "e2e/"
+    ]
+  },
   "imports": {
     "#/": "./",
     "@annervisser/slug": "jsr:@annervisser/slug@^1.2.1",
