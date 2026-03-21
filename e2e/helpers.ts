@@ -24,13 +24,17 @@ export async function clearTestUser(userId: string) {
 
   // Collect user-scoped solutions before deleting, so we can clean global indexes too
   const solutions: Solution[] = [];
-  const byUserIter = kv.list<Solution>({ prefix: ["solutions_by_user", userId] });
+  const byUserIter = kv.list<Solution>({
+    prefix: ["solutions_by_user", userId],
+  });
   for await (const entry of byUserIter) {
     solutions.push(entry.value);
     await kv.delete(entry.key);
   }
 
-  const byUserPuzzleIter = kv.list({ prefix: ["solutions_by_user_puzzle", userId] });
+  const byUserPuzzleIter = kv.list({
+    prefix: ["solutions_by_user_puzzle", userId],
+  });
   for await (const entry of byUserPuzzleIter) await kv.delete(entry.key);
 
   // Delete user record

@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 
-import { BASE_URL } from "../helpers.ts";
 import { PuzzlePage } from "./puzzle-page.ts";
+import { BASE_URL } from "#/e2e/helpers.ts";
 
 export class TutorialPage {
   constructor(private page: Page) {}

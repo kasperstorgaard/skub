@@ -1,9 +1,9 @@
 import type { Page } from "playwright";
 
-import { BASE_URL } from "../helpers.ts";
 import { ArchivesPage } from "./archives-page.ts";
 import { PuzzlePage } from "./puzzle-page.ts";
 import { TutorialPage } from "./tutorial-page.ts";
+import { BASE_URL } from "#/e2e/helpers.ts";
 
 type GotoOptions = {
   waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
@@ -23,7 +23,8 @@ export class HomePage {
   }
 
   async clickDailyPuzzleLink() {
-    await this.page.getByRole("link").filter({ hasText: /daily puzzle/i }).click();
+    await this.page.getByRole("link").filter({ hasText: /daily puzzle/i })
+      .click();
     return new PuzzlePage(this.page);
   }
 

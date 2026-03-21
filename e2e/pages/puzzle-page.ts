@@ -1,8 +1,7 @@
-// deno-lint-ignore-file skub-imports/use-hash-alias
 import type { Page } from "playwright";
 
-import { BASE_URL } from "../helpers.ts";
 import { SolutionsPage } from "./solutions-page.ts";
+import { BASE_URL } from "#/e2e/helpers.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { solveSync } from "#/game/solver.ts";
 import { encodeState } from "#/game/url.ts";
