@@ -6,7 +6,6 @@ import { SolutionsPage } from "./solutions-page.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { solveSync } from "#/game/solver.ts";
 import { encodeState } from "#/game/url.ts";
-import { expect } from "../base.ts";
 
 const SLUG_MATCHER = /\/puzzles\/([^/]+)(\/|$)/i;
 
@@ -62,9 +61,8 @@ export class PuzzlePage {
 
       await this.page.getByRole("link", { name: fromLabel }).focus();
 
-      // Make sure the guide is visible, showing where the user can move
-      await expect(this.page.getByRole("link", { name: toLabel }))
-        .toBeVisible();
+      // Wait for the guide to appear before pressing the arrow key
+      await this.page.getByRole("link", { name: toLabel }).waitFor();
 
       const key = to.x > from.x
         ? "ArrowRight"
