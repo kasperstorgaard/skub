@@ -335,6 +335,7 @@ function MoveGuide({ move, href, isHint }: MoveGuideProps) {
           "--x": target.x,
           "--y": target.y,
         }}
+        aria-label={`move to ${target.x},${target.y}`}
         tabIndex={-1}
         data-router="push"
       />
@@ -354,7 +355,7 @@ type BoardPieceProps = {
 };
 
 function BoardPiece(
-  { x, y, id, href, type, isReadonly, onFocus }: BoardPieceProps,
+  { x, y, id, href, type, isReadonly, isActive, onFocus }: BoardPieceProps,
 ) {
   return (
     <a
@@ -378,7 +379,9 @@ function BoardPiece(
       )}
       tabIndex={isReadonly ? -1 : 0}
       onFocus={onFocus}
+      aria-label={`${type} at ${x},${y}`}
       data-router={isReadonly ? undefined : "replace"}
+      aria-current={isActive ? true : undefined}
     >
       <div
         className={clsx(

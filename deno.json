@@ -6,12 +6,12 @@
     "archive-spec": "deno run -A ./scripts/archive-spec.ts",
     "build": "vite build",
     "dev": "vite",
+    "e2e": "deno test -A --no-check e2e/",
     "preview": "deno serve -A _fresh/server.js",
     "screenshots": "deno run -A ./scripts/screenshots.ts",
     "tunnel": "deno run --tunnel --allow-env main.ts",
     "update-icons": "deno run -A ./scripts/update-icons.ts",
-    "update-puzzles": "deno run -A ./scripts/update-puzzles.ts",
-    "screenshots": "deno run -A ./scripts/screenshots.ts"
+    "update-puzzles": "deno run -A ./scripts/update-puzzles.ts"
   },
   "lint": {
     "plugins": ["./plugins/lint-imports.ts"],
@@ -39,6 +39,11 @@
   "exclude": [
     "**/_fresh/*"
   ],
+  "test": {
+    "exclude": [
+      "e2e/"
+    ]
+  },
   "imports": {
     "#/": "./",
     "@annervisser/slug": "jsr:@annervisser/slug@^1.2.1",
@@ -62,7 +67,6 @@
     "fresh": "jsr:@fresh/core@^2.2.0",
     "idb-keyval": "npm:idb-keyval@6.2.1",
     "open-props": "npm:open-props@^1.7.23",
-    "playwright": "npm:playwright@^1.58.2",
     "posthog-js": "npm:posthog-js@^1.341.0",
     "posthog-node": "npm:posthog-node@^5.24.9",
     "preact": "npm:preact@^10.27.2",
@@ -72,7 +76,8 @@
     "vite": "npm:vite@^7.3.1",
     "jose": "npm:jose@^5",
     "zingtouch": "npm:zingtouch@^1.0.6",
-    "playwright": "npm:playwright@^1"
+    "playwright": "npm:playwright@^1",
+    "playwright/test": "npm:playwright@^1/test"
   },
   "compilerOptions": {
     "jsx": "react-jsx",
