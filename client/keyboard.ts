@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 
 import type { Direction } from "#/game/types.ts";
 
@@ -10,28 +10,31 @@ type UseArrowKeysOptions = {
 export function useArrowKeys(
   { isEnabled, onArrowKey }: UseArrowKeysOptions,
 ) {
+  const onArrowKeyRef = useRef(onArrowKey);
+  onArrowKeyRef.current = onArrowKey;
+
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       switch (event.key) {
         case "ArrowUp":
-          return onArrowKey("up");
+          return onArrowKeyRef.current("up");
         case "ArrowRight":
-          return onArrowKey("right");
+          return onArrowKeyRef.current("right");
         case "ArrowDown":
-          return onArrowKey("down");
+          return onArrowKeyRef.current("down");
         case "ArrowLeft":
-          return onArrowKey("left");
+          return onArrowKeyRef.current("left");
       }
     };
 
     if (isEnabled) {
-      self.addEventListener("keyup", handler);
+      globalThis.document.addEventListener("keyup", handler);
     }
 
     return () => {
-      self.removeEventListener("keyup", handler);
+      globalThis.document.removeEventListener("keyup", handler);
     };
-  }, [isEnabled, onArrowKey]);
+  }, [isEnabled]);
 }
 
 type useGameShortcutsOptions = {
@@ -76,10 +79,10 @@ export function useGameShortcuts(
       }
     };
 
-    self.addEventListener("keyup", handler);
+    globalThis.document.addEventListener("keyup", handler);
 
     return () => {
-      self.removeEventListener("keyup", handler);
+      globalThis.document.removeEventListener("keyup", handler);
     };
   }, [onSubmit, onUndo, onRedo, onReset]);
 }

@@ -1,5 +1,4 @@
 import type { RefObject } from "preact";
-import { useCallback } from "preact/hooks";
 
 import { useArrowKeys } from "#/client/keyboard.ts";
 import { useSwipe } from "#/client/touch.ts";
@@ -28,16 +27,13 @@ export function useMoves(
   boardRef: RefObject<HTMLElement>,
   { pieces, active, onMove, isEnabled }: UseMoveOptions,
 ): void {
-  const onArrowKey = useCallback(
-    (direction: Direction) => {
-      if (!active) return;
+  const onArrowKey = (direction: Direction) => {
+    if (!active) return;
 
-      const boardWidth = boardRef.current?.getBoundingClientRect().width ?? 0;
-      const cellSize = boardWidth / 8;
-      onMove(active, { direction, cellSize, velocity: DEFAULT_VELOCITY });
-    },
-    [active, onMove, boardRef],
-  );
+    const boardWidth = boardRef.current?.getBoundingClientRect().width ?? 0;
+    const cellSize = boardWidth / 8;
+    onMove(active, { direction, cellSize, velocity: DEFAULT_VELOCITY });
+  };
 
   useArrowKeys({ onArrowKey, isEnabled });
 
