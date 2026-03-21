@@ -23,8 +23,8 @@ Single deep equality, one scenario per test.
 
 ## Test file conventions
 
-*_test.ts naming, co-location with the module under test, all taken from
-Deno.test() patterns
+`*_test.ts` naming, co-location with the module under test, all taken from
+`Deno.test()` patterns.
 
 ## E2E testing
 
@@ -33,36 +33,49 @@ Deno.test() patterns
 Prefer **golden path** tests over smoke tests. A golden path test follows a
 realistic user flow end-to-end (e.g. load the puzzle page, make moves, see the
 celebration dialog). A smoke test just checks that a page loads — useful as a
-baseline, but not the goal. One smoke test per page is fine; the real value is
-in the flows.
+baseline, but not the goal.
+
+Name golden path test files `*-flow_test.ts` (e.g. `new-user-flow_test.ts`).
+Smoke and integration tests for the same feature area can share a single
+`*_test.ts` file (e.g. `profile_test.ts`).
+
+Each test should have **at most one `goto`**. A golden path starts from the home
+page and navigates naturally. An integration test targets a specific page
+directly. A smoke test is even shorter. More than one explicit navigation is a
+sign the test is doing too much or skipping natural entry points.
 
 ### Selectors
 
 Always find elements by **real visible text**, not CSS selectors, test IDs, or
 class names. If an element has no visible text (icon buttons, etc.), add an
-`aria-label` to the component and select by that. This keeps tests resilient to
-styling changes and forces good accessibility hygiene.
+`aria-label` to the component. This forces good accessibility hygiene in the app
+code itself.
 
 ### No mocking
 
-Never mock API calls, services, or the database. Instead: **seed real data**
-before the test suite runs, and **tear it down** after. For this app that means
-writing solutions to KV via a seed script, running tests against that state,
-then deleting the seeded records. Tests that rely on mocked state only prove the
-mock works.
+Never mock API calls, services, or the database. Tests run against a real local
+server with a real KV store.
 
-### Data seeding
+### Shared state & aggregates
 
-Use a dedicated `deno task seed-e2e` script that writes known test data (e.g. a
-fixed `tracking_id` cookie + pre-posted solutions for specific puzzle slugs) to
-KV before the seeded suite runs. Teardown is a matching
-`deno task
-teardown-e2e`. Both must be idempotent.
+Tests share a KV store, so aggregates (solution groups, stats) accumulate across
+runs. Never assert on **absolute** aggregate values — use **delta assertions**:
+snapshot the value before the action, assert it changed by exactly the expected
+amount. This is robust regardless of what prior test runs or dev activity left
+behind.
 
-### Structure
+User-owned data (solutions, profile) is isolated per-test via automatic
+cookie-based teardown — no manual cleanup needed.
 
-- `e2e/` directory at the project root
-- One `*_test.ts` file per page or flow
-- Shared browser/cookie setup in `e2e/_setup.ts`
-- `BASE_URL` env var (default: `http://localhost:5173`) for local vs CI/deploy
-- One task: `test-e2e` — always runs seed before suite, teardown after
+### Page objects
+
+Page objects are thin query wrappers only. No assertions inside them. When
+adding locators that could match multiple elements (e.g. a link that appears
+both inside and outside a dialog), scope the locator to the nearest unique
+parent to avoid strict mode violations.
+
+### Accessibility as a test constraint
+
+When a test can't find an element because it has no text or label, the fix
+belongs in the **app** (add `aria-label`), not in the test (don't fall back to
+CSS or test IDs). The test suite is a forcing function for accessibility.
