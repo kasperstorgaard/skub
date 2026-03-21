@@ -51,8 +51,9 @@ export class PuzzlePage {
     const puzzle = await getPuzzle(this.currentSlug);
     if (!puzzle) throw new Error(`Puzzle not found: ${this.currentSlug}`);
 
-    // Wait for the dom to be fully loaded, as this relies on even listeners to attach
-    await this.page.waitForEvent("domcontentloaded");
+    // Wait for the dom to be fully loaded, as this relies on event listeners to attach.
+    // Use waitForLoadState (idempotent) rather than waitForEvent (fires once, already gone if page loaded before this call).
+    await this.page.waitForLoadState("domcontentloaded");
 
     // Loop over moves, focus the piece, then use arrow keys to move
     for (const [from, to] of solveSync(puzzle)) {

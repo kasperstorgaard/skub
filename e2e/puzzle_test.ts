@@ -49,6 +49,18 @@ Deno.test("a returning player sees the celebration dialog when submitting a dupl
 
 // -- Completing a puzzle as a new player ---
 
+Deno.test("a new player who solves a puzzle using the keyboard is prompted to save their solve", async () => {
+  const { page, teardown } = await setup();
+  try {
+    const puzzlePage = await new PuzzlePage(page).goto("karla");
+    await puzzlePage.solveByKeyboard();
+
+    await expect(puzzlePage.solutionDialog.heading).toBeVisible();
+  } finally {
+    await teardown();
+  }
+});
+
 Deno.test("a new player who completes a puzzle is prompted to save their solve", async () => {
   const { page, teardown } = await setup();
   try {

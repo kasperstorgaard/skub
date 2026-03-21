@@ -28,19 +28,16 @@ Deno.test("a new user discovers the tutorial, plays their first puzzle, and subm
   }
 });
 
-Deno.test("a new user solves a puzzle using only the keyboard and submits their name", async () => {
-  const { page, teardown } = await setup();
-
+Deno.test("without JavaScript — a new user solves a puzzle and submits their name", async () => {
+  const { page, teardown } = await setup({ javaScriptEnabled: false });
   try {
-    const homePage = await new HomePage(page).goto();
-    const puzzlePage = await homePage.clickDailyPuzzleLink();
-
-    await expect(puzzlePage.heading).toBeVisible();
-    await puzzlePage.solveByKeyboard();
+    const home = await new HomePage(page).goto();
+    const puzzlePage = await home.clickDailyPuzzleLink();
+    await puzzlePage.solveByClicking();
 
     await expect(puzzlePage.solutionDialog.heading).toBeVisible();
-    const solutionsPage = await puzzlePage.solutionDialog.submitName("e2elba");
-    await expect(solutionsPage.solveByName("e2elba")).toBeVisible();
+    const solutions = await puzzlePage.solutionDialog.submitName("e2enora");
+    await expect(solutions.solveByName("e2enora")).toBeVisible();
   } finally {
     await teardown();
   }
