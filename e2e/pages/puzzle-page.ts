@@ -52,33 +52,17 @@ export class PuzzlePage {
     const puzzle = await getPuzzle(this.currentSlug);
     if (!puzzle) throw new Error(`Puzzle not found: ${this.currentSlug}`);
 
+    // Wait for the dom to be fully loaded, as this relies on even listeners to attach
+    await this.page.waitForEvent("domcontentloaded");
+
+    // Loop over moves, focus the piece, then use arrow keys to move
     for (const [from, to] of solveSync(puzzle)) {
       const fromLabel = `at ${from.x},${from.y}`;
-      const target = this.page.getByRole("link", { name: fromLabel });
-
-      // Wait for the piece to be present — previous move may still be resolving.
-      await target.waitFor();
-
-      let tabCount = 0;
-      while (tabCount++ < 30) {
-        await this.page.keyboard.press("Tab");
-
-        const label = await this.page.evaluate(
-          `document.activeElement?.getAttribute('aria-label') ?? ''`,
-        ) as string;
-        if (label.includes(fromLabel)) break;
-      }
-
-      await expect(target).toBeFocused();
-
-      // TODO: locally, focusing a piece re-renders with the guide via onFocus —
-      // investigate why Enter is needed here but not in manual testing.
-      await this.page.keyboard.press("Enter");
-
-      // Need to wait for loaded, or the arrow key later will be fired into the void
-      await this.page.waitForLoadState("domcontentloaded");
-
       const toLabel = `move to ${to.x},${to.y}`;
+
+      await this.page.getByRole("link", { name: fromLabel }).focus();
+
+      // Make sure the guide is visible, showing where the user can move
       await expect(this.page.getByRole("link", { name: toLabel }))
         .toBeVisible();
 
@@ -90,6 +74,7 @@ export class PuzzlePage {
         ? "ArrowDown"
         : "ArrowUp";
 
+      // Move the piece in the right direction with arrow keys
       await this.page.keyboard.press(key);
     }
 

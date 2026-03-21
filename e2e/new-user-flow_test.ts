@@ -39,8 +39,8 @@ Deno.test("a new user solves a puzzle using only the keyboard and submits their 
     await puzzlePage.solveByKeyboard();
 
     await expect(puzzlePage.solutionDialog.heading).toBeVisible();
-    const solutions = await puzzlePage.solutionDialog.submitName("e2elba");
-    await expect(solutions.solveByName("e2elba")).toBeVisible();
+    const solutionsPage = await puzzlePage.solutionDialog.submitName("e2elba");
+    await expect(solutionsPage.solveByName("e2elba")).toBeVisible();
   } finally {
     await teardown();
   }
