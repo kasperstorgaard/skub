@@ -14,7 +14,9 @@ export type Fixtures = {
 };
 
 export async function setup(opts?: ContextOptions): Promise<Fixtures> {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    args: ["--disable-dev-shm-usage"],
+  });
   const context = await browser.newContext({
     javaScriptEnabled: opts?.javaScriptEnabled ?? true,
   });
