@@ -18,7 +18,7 @@ e2e/                             shared infra + cross-cutting flows
 routes/
   _e2e/
     home-page.ts                 (moved from e2e/pages/)
-    home_test.ts                 (NEW — 6 tests)
+    home_test.ts                 (NEW — 6 integration tests: click + URL assertion)
 
   profile/
     _e2e/
@@ -26,7 +26,7 @@ routes/
 
   contribute/
     _e2e/
-      contribute_test.ts         (NEW — smoke test)
+      contribute_test.ts         (NEW — heading + link navigation)
 
   puzzles/
     _e2e/
@@ -36,6 +36,10 @@ routes/
       _e2e/
         tutorial-page.ts         (moved from e2e/pages/)
         tutorial_test.ts         (NEW — dialog step-through)
+
+    new/
+      _e2e/
+        editor_test.ts           (NEW — heading, name editing, guide link)
 
     [slug]/
       _e2e/
@@ -48,7 +52,7 @@ routes/
         [solutionId]/
           _e2e/
             solution-page.ts     (NEW — replay page POM)
-            solution_test.ts     (NEW — heading, solved-by, replay animation)
+            solution_test.ts     (NEW — heading, solved-by, replay animation + keyframes)
 ```
 
 ## Seed API — split into REST endpoints
@@ -84,11 +88,19 @@ blocks on `skub.app` hostname, blocks when env var is unset.
 Co-located tests assert only on their own page's content. Navigation to other
 pages is verified via URL pattern, not by inspecting the destination POM.
 
+## Test philosophy
+
+- One smoke test per file (heading visible)
+- Remaining tests are integration: click an element, assert URL or state change
+- Headings matched against meaningful values (puzzle name, page title) where possible
+- Replay animation test verifies both inline style and `@keyframes` existence
+
 ## Other changes
 
 - `deno.json` e2e task: `deno test -A --no-check --env e2e/ routes/`
 - `scripts/select-e2e-tests.ts`: walk both `e2e/` and `routes/**/_e2e/`
 - `plugins/lint-imports.ts`: TODO comment for `_e2e/` exemption
+- CI: removed concurrency group (Deno Deploy payload lacks `git.ref`), removed debug payload step
 
 ## Verification
 
