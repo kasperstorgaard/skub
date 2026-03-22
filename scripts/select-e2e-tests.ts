@@ -70,12 +70,13 @@ const response = await client.messages.create({
       schema: {
         type: "object",
         properties: {
+          reasoning: { type: "string" },
           files: {
             type: "array",
             items: { type: "string" },
           },
         },
-        required: ["files"],
+        required: ["reasoning", "files"],
         additionalProperties: false,
       },
     },
@@ -101,10 +102,12 @@ Return an empty array if no e2e tests are needed.`,
 const block = response.content[0];
 if (block.type !== "text") Deno.exit(0);
 
-log(`Claude response: ${block.text}`);
+const { reasoning, files } = JSON.parse(block.text) as {
+  reasoning: string;
+  files: string[];
+};
 
-const { files } = JSON.parse(block.text) as { files: string[] };
-
+log(`reasoning: ${reasoning}`);
 log(`selected files: ${files.join(", ") || "(none)"}`);
 
 if (files.length > 0) {
