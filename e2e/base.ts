@@ -14,7 +14,9 @@ export type Fixtures = {
 };
 
 export async function setup(opts?: ContextOptions): Promise<Fixtures> {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    args: ["--disable-dev-shm-usage"],
+  });
   const context = await browser.newContext({
     javaScriptEnabled: opts?.javaScriptEnabled ?? true,
   });
@@ -40,4 +42,9 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   };
 }
 
-export { expect } from "playwright/test";
+import { expect as baseExpect } from "playwright/test";
+
+// Remote previews are slower — give assertions more headroom than the 5s default.
+export const expect = Deno.env.get("BASE_URL")?.startsWith("https://")
+  ? baseExpect.configure({ timeout: 15_000 })
+  : baseExpect;

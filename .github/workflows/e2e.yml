@@ -5,6 +5,10 @@ on:
     # Fired by Deno Deploy when a preview build is routed and ready
     types: [deno_deploy.build.routed]
 
+concurrency:
+  group: e2e-${{ github.event.client_payload.revision.git.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -15,6 +19,9 @@ jobs:
       DEPLOY_SHA: ${{ github.event.client_payload.revision.git.sha }}
 
     steps:
+      - name: Debug payload
+        run: echo '${{ toJson(github.event.client_payload.revision) }}'
+
       - name: Post pending status
         run: |
           curl -s -X POST \

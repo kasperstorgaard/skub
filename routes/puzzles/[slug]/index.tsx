@@ -1,3 +1,4 @@
+// Puzzle route — renders the board and handles solution submission
 import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";

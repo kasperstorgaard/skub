@@ -40,34 +40,37 @@ async function readTestFiles(): Promise<string> {
   return sections.join("\n\n");
 }
 
+const log = (...args: unknown[]) =>
+  console.error("[select-e2e-tests]", ...args);
+
 const [diff, testFiles] = await Promise.all([getDiff(), readTestFiles()]);
 
-if (!diff) {
-  Deno.exit(0);
-}
+if (!diff) Deno.exit(0);
 
 const client = new Anthropic();
 
 const prDescription = Deno.env.get("PR_DESCRIPTION")?.trim() ?? "";
+
 const prSection = prDescription
   ? `Here is the PR description for this deployment:\n\n${prDescription}\n\n`
   : "";
 
 const response = await client.messages.create({
   model: "claude-opus-4-6",
-  max_tokens: 256,
+  max_tokens: 1024,
   output_config: {
     format: {
       type: "json_schema",
       schema: {
         type: "object",
         properties: {
+          reasoning: { type: "string" },
           files: {
             type: "array",
             items: { type: "string" },
           },
         },
-        required: ["files"],
+        required: ["reasoning", "files"],
         additionalProperties: false,
       },
     },
@@ -93,7 +96,13 @@ Return an empty array if no e2e tests are needed.`,
 const block = response.content[0];
 if (block.type !== "text") Deno.exit(0);
 
-const { files } = JSON.parse(block.text) as { files: string[] };
+const { reasoning, files } = JSON.parse(block.text) as {
+  reasoning: string;
+  files: string[];
+};
+
+log(`reasoning: ${reasoning}`);
+log(`selected files: ${files.join(", ") || "(none)"}`);
 
 if (files.length > 0) {
   console.log(files.join(" "));
