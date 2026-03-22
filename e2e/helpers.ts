@@ -1,67 +1,35 @@
 import type { BrowserContext } from "playwright";
 
-import type { Solution } from "#/db/types.ts";
-import { getCanonicalMoveKey } from "#/game/strings.ts";
-
 export const BASE_URL = Deno.env.get("BASE_URL") ?? "http://localhost:5173";
 
+const E2E_SECRET = Deno.env.get("E2E_SECRET");
+
 /**
- * Seeds a named user directly into KV (bypasses the HTTP layer).
- * Uses the same key schema as db/user.ts: ["user", userId].
+ * Seeds a named user via the app's seed route, so it lands in the same KV
+ * instance the app reads from.
  */
 export async function seedNamedUser(userId: string, name: string) {
-  const kv = await Deno.openKv();
-  await kv.set(["user", userId], { name, onboarding: "done" });
-  await kv.close();
+  const res = await fetch(`${BASE_URL}/api/e2e/seed`, {
+    method: "POST",
+    headers: seedHeaders(),
+    body: JSON.stringify({ userId, name }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Seed failed: ${res.status} ${text}`);
 }
 
 /**
- * Deletes all KV entries for the given test user: user record, all solution
- * indexes (user-scoped and global). Idempotent.
+ * Deletes all KV entries for the given test user via the app's seed route.
+ * Idempotent.
  */
 export async function clearTestUser(userId: string) {
-  const kv = await Deno.openKv();
-
-  // Collect user-scoped solutions before deleting, so we can clean global indexes too
-  const solutions: Solution[] = [];
-  const byUserIter = kv.list<Solution>({
-    prefix: ["solutions_by_user", userId],
+  const res = await fetch(`${BASE_URL}/api/e2e/seed`, {
+    method: "DELETE",
+    headers: seedHeaders(),
+    body: JSON.stringify({ userId }),
   });
-  for await (const entry of byUserIter) {
-    solutions.push(entry.value);
-    await kv.delete(entry.key);
-  }
-
-  const byUserPuzzleIter = kv.list({
-    prefix: ["solutions_by_user_puzzle", userId],
-  });
-  for await (const entry of byUserPuzzleIter) await kv.delete(entry.key);
-
-  // Delete user record
-  const userIter = kv.list({ prefix: ["user", userId] });
-  for await (const entry of userIter) await kv.delete(entry.key);
-
-  // Delete global solution indexes for this user's solutions
-  for (const solution of solutions) {
-    await kv.delete(["solutions_by_puzzle", solution.puzzleSlug, solution.id]);
-    const canonicalKey = getCanonicalMoveKey(solution.moves);
-    await kv.delete([
-      "solutions_by_puzzle_canonical",
-      solution.puzzleSlug,
-      canonicalKey,
-      solution.id,
-    ]);
-    // Delete the canonical group aggregate so stale firstSolution data doesn't
-    // persist across test runs and cause name-lookup failures on the solutions page.
-    await kv.delete([
-      "solution_groups_by_puzzle",
-      solution.puzzleSlug,
-      solution.moves.length,
-      canonicalKey,
-    ]);
-  }
-
-  await kv.close();
+  const text = await res.text();
+  if (!res.ok) throw new Error(`Teardown failed: ${res.status} ${text}`);
 }
 
 /**
@@ -69,11 +37,25 @@ export async function clearTestUser(userId: string) {
  * can look up the seeded user record.
  */
 export async function addUserCookie(context: BrowserContext, userId: string) {
-  await context.addCookies([{
-    name: "user_id",
-    value: userId,
-    domain: "localhost",
-    path: "/",
-    httpOnly: true,
-  }]);
+  await context.addCookies([
+    {
+      name: "user_id",
+      value: userId,
+      url: BASE_URL,
+      httpOnly: true,
+    },
+    // Suppress the cookie consent banner for test users
+    {
+      name: "tracking_id",
+      value: "declined",
+      url: BASE_URL,
+    },
+  ]);
+}
+
+function seedHeaders() {
+  return {
+    "content-type": "application/json",
+    "x-e2e-secret": E2E_SECRET ?? "",
+  };
 }
