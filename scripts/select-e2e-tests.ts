@@ -40,15 +40,23 @@ async function readTestFiles(): Promise<string> {
   return sections.join("\n\n");
 }
 
+const log = (...args: unknown[]) => console.error("[select-e2e-tests]", ...args);
+
 const [diff, testFiles] = await Promise.all([getDiff(), readTestFiles()]);
 
+log(`diff length: ${diff.length} chars`);
+log(`diff preview:\n${diff.slice(0, 500)}`);
+
 if (!diff) {
+  log("no diff, skipping");
   Deno.exit(0);
 }
 
 const client = new Anthropic();
 
 const prDescription = Deno.env.get("PR_DESCRIPTION")?.trim() ?? "";
+log(`PR description: ${prDescription ? prDescription.slice(0, 200) : "(none)"}`);
+
 const prSection = prDescription
   ? `Here is the PR description for this deployment:\n\n${prDescription}\n\n`
   : "";
@@ -93,7 +101,11 @@ Return an empty array if no e2e tests are needed.`,
 const block = response.content[0];
 if (block.type !== "text") Deno.exit(0);
 
+log(`Claude response: ${block.text}`);
+
 const { files } = JSON.parse(block.text) as { files: string[] };
+
+log(`selected files: ${files.join(", ") || "(none)"}`);
 
 if (files.length > 0) {
   console.log(files.join(" "));
