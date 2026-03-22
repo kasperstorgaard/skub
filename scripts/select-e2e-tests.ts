@@ -7,7 +7,8 @@
  * Prints nothing (exit 0) if no tests are needed — the caller should skip.
  *
  * Usage: deno run -A scripts/select-e2e-tests.ts
- * Env:   DEPLOY_SHA  — git SHA from the Deno Deploy dispatch payload
+ * Env:   DEPLOY_SHA      — git SHA from the Deno Deploy dispatch payload
+ *        PR_DESCRIPTION  — PR body from GitHub API (optional, improves selection)
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -39,19 +40,7 @@ async function readTestFiles(): Promise<string> {
   return sections.join("\n\n");
 }
 
-async function readSpec(): Promise<string | null> {
-  try {
-    return await Deno.readTextFile("spec.md");
-  } catch {
-    return null;
-  }
-}
-
-const [diff, testFiles, spec] = await Promise.all([
-  getDiff(),
-  readTestFiles(),
-  readSpec(),
-]);
+const [diff, testFiles] = await Promise.all([getDiff(), readTestFiles()]);
 
 if (!diff) {
   Deno.exit(0);
@@ -59,8 +48,9 @@ if (!diff) {
 
 const client = new Anthropic();
 
-const specSection = spec
-  ? `Here is the spec describing what this PR intends to build:\n\n${spec}\n\n`
+const prDescription = Deno.env.get("PR_DESCRIPTION")?.trim() ?? "";
+const prSection = prDescription
+  ? `Here is the PR description for this deployment:\n\n${prDescription}\n\n`
   : "";
 
 const response = await client.messages.create({
@@ -85,7 +75,7 @@ const response = await client.messages.create({
   messages: [
     {
       role: "user",
-      content: `${specSection}Here is the git diff for this deployment:
+      content: `${prSection}Here is the git diff for this deployment:
 
 ${diff}
 
@@ -94,8 +84,8 @@ Here are the e2e test files and their full contents:
 ${testFiles}
 
 Return the test files that should run given what changed.
-Return an empty array if no e2e tests are needed — for example if only CSS,
-static assets, puzzle data files, or documentation changed.`,
+If the PR description mentions specific tests or flows to verify, prioritise those.
+Return an empty array if no e2e tests are needed.`,
     },
   ],
 });

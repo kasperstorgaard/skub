@@ -20,7 +20,6 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   });
 
   const page = await context.newPage();
-  page.setDefaultTimeout(5_000);
 
   return {
     page,
