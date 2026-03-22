@@ -68,20 +68,17 @@ const response = await client.messages.create({
   max_tokens: 256,
   output_config: {
     format: {
-      type: "json",
-      json_schema: {
-        name: "test_selection",
-        schema: {
-          type: "object",
-          properties: {
-            files: {
-              type: "array",
-              items: { type: "string" },
-            },
+      type: "json_schema",
+      schema: {
+        type: "object",
+        properties: {
+          files: {
+            type: "array",
+            items: { type: "string" },
           },
-          required: ["files"],
-          additionalProperties: false,
         },
+        required: ["files"],
+        additionalProperties: false,
       },
     },
   },
