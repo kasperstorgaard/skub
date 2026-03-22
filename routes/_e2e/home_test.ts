@@ -24,13 +24,14 @@ Deno.test("home — profile link navigates to profile page", async () => {
   }
 });
 
-Deno.test("home — daily puzzle card is visible", async () => {
+Deno.test("home — daily puzzle link navigates to a puzzle", async () => {
   const { page, asUser, teardown } = await setup();
   try {
     await asUser({ name: "e2emma" });
     const home = await new HomePage(page).goto();
 
-    await expect(home.dailyPuzzleLink).toBeVisible();
+    await home.dailyPuzzleLink.click();
+    await expect(page).toHaveURL(/\/puzzles\//);
   } finally {
     await teardown();
   }
@@ -49,25 +50,26 @@ Deno.test("home — archives link navigates to puzzles page", async () => {
   }
 });
 
-Deno.test("home — random puzzle card is visible for returning user", async () => {
+Deno.test("home — random puzzle link navigates to a puzzle", async () => {
   const { page, asUser, teardown } = await setup();
   try {
     await asUser({ name: "e2emma" });
     const home = await new HomePage(page).goto();
 
-    await expect(home.randomPuzzleLink).toBeVisible();
+    await home.randomPuzzleLink.click();
+    await expect(page).toHaveURL(/\/puzzles\//);
   } finally {
     await teardown();
   }
 });
 
-Deno.test("home — tutorial link is shown for new user", async () => {
+Deno.test("home — tutorial link navigates to tutorial for new user", async () => {
   const { page, teardown } = await setup();
   try {
-    // No asUser() — fresh visitor gets onboarding: "new"
     const home = await new HomePage(page).goto();
 
-    await expect(home.newHereLink).toBeVisible();
+    await home.newHereLink.click();
+    await expect(page).toHaveURL(/\/puzzles\/tutorial/);
   } finally {
     await teardown();
   }

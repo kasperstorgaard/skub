@@ -1,6 +1,7 @@
 import type { Page } from "playwright";
 
-import { PuzzlePage } from "./puzzle-page.ts";
+// deno-lint-ignore skub-imports/use-hash-alias
+import { PuzzlePage } from "../../[slug]/_e2e/puzzle-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
 
 export class TutorialPage {

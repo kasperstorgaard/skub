@@ -7,7 +7,7 @@ const puzzle = await getPuzzle("karla");
 if (!puzzle) throw new Error("Puzzle not found: karla");
 const moves = solveSync(puzzle);
 
-Deno.test("solution page — shows the puzzle heading", async () => {
+Deno.test("solution page — shows the puzzle name in the heading", async () => {
   const { page, asUser, addSolution, teardown } = await setup();
   try {
     await asUser({ name: "e2esme" });
@@ -16,7 +16,7 @@ Deno.test("solution page — shows the puzzle heading", async () => {
       "karla",
       solution.id,
     );
-    await expect(solutionPage.heading).toBeVisible();
+    await expect(solutionPage.heading).toHaveText(/Karla/);
   } finally {
     await teardown();
   }
@@ -46,7 +46,9 @@ Deno.test("solution page — plays the replay animation", async () => {
       "karla",
       solution.id,
     );
-    await expect(solutionPage.replayKeyframes).toBeAttached();
+    // Board island hydrates in replay mode, injecting @keyframes and applying them to pieces
+    await expect(solutionPage.replayAnimation).toBeAttached({ timeout: 10_000 });
+    expect(await solutionPage.hasReplayKeyframes()).toBe(true);
   } finally {
     await teardown();
   }
