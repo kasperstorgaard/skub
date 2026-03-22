@@ -40,7 +40,8 @@ async function readTestFiles(): Promise<string> {
   return sections.join("\n\n");
 }
 
-const log = (...args: unknown[]) => console.error("[select-e2e-tests]", ...args);
+const log = (...args: unknown[]) =>
+  console.error("[select-e2e-tests]", ...args);
 
 const [diff, testFiles] = await Promise.all([getDiff(), readTestFiles()]);
 
@@ -55,7 +56,9 @@ if (!diff) {
 const client = new Anthropic();
 
 const prDescription = Deno.env.get("PR_DESCRIPTION")?.trim() ?? "";
-log(`PR description: ${prDescription ? prDescription.slice(0, 200) : "(none)"}`);
+log(
+  `PR description: ${prDescription ? prDescription.slice(0, 200) : "(none)"}`,
+);
 
 const prSection = prDescription
   ? `Here is the PR description for this deployment:\n\n${prDescription}\n\n`
