@@ -4,13 +4,6 @@ export const BASE_URL = Deno.env.get("BASE_URL") ?? "http://localhost:5173";
 
 const E2E_SECRET = Deno.env.get("E2E_SECRET");
 
-function seedHeaders() {
-  return {
-    "content-type": "application/json",
-    "x-e2e-secret": E2E_SECRET ?? "",
-  };
-}
-
 /**
  * Seeds a named user via the app's seed route, so it lands in the same KV
  * instance the app reads from.
@@ -58,4 +51,11 @@ export async function addUserCookie(context: BrowserContext, userId: string) {
       url: BASE_URL,
     },
   ]);
+}
+
+function seedHeaders() {
+  return {
+    "content-type": "application/json",
+    "x-e2e-secret": E2E_SECRET ?? "",
+  };
 }
