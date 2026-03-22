@@ -5,6 +5,10 @@ on:
     # Fired by Deno Deploy when a preview build is routed and ready
     types: [deno_deploy.build.routed]
 
+concurrency:
+  group: e2e-${{ github.event.client_payload.revision.preview_url }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
