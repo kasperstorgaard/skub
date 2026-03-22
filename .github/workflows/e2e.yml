@@ -33,6 +33,7 @@ jobs:
 
       - name: Run e2e tests
         if: steps.select.outputs.files != ''
-        run: deno test -A --no-check ${{ steps.select.outputs.files }}
+        run: deno test -A --no-check $TEST_FILES
         env:
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
+          TEST_FILES: ${{ steps.select.outputs.files }}
