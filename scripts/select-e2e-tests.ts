@@ -66,7 +66,7 @@ const prSection = prDescription
 
 const response = await client.messages.create({
   model: "claude-opus-4-6",
-  max_tokens: 256,
+  max_tokens: 1024,
   output_config: {
     format: {
       type: "json_schema",
