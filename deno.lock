@@ -42,6 +42,7 @@
     "jsr:@std/uuid@^1.0.9": "1.1.0",
     "jsr:@std/yaml@^1.0.11": "1.0.11",
     "jsr:@std/yaml@^1.0.5": "1.0.11",
+    "npm:@anthropic-ai/sdk@0.80": "0.80.0",
     "npm:@babel/core@^7.28.0": "7.29.0",
     "npm:@babel/preset-react@^7.27.1": "7.28.5_@babel+core@7.29.0",
     "npm:@mjackson/node-fetch-server@0.7": "0.7.0",
@@ -242,6 +243,13 @@
     }
   },
   "npm": {
+    "@anthropic-ai/sdk@0.80.0": {
+      "integrity": "sha512-WeXLn7zNVk3yjeshn+xZHvld6AoFUOR3Sep6pSoHho5YbSi6HwcirqgPA5ccFuW8QTVJAAU7N8uQQC6Wa9TG+g==",
+      "dependencies": [
+        "json-schema-to-ts"
+      ],
+      "bin": true
+    },
     "@babel/code-frame@7.29.0": {
       "integrity": "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==",
       "dependencies": [
@@ -395,6 +403,9 @@
         "@babel/plugin-transform-react-jsx-development",
         "@babel/plugin-transform-react-pure-annotations"
       ]
+    },
+    "@babel/runtime@7.29.2": {
+      "integrity": "sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g=="
     },
     "@babel/template@7.28.6": {
       "integrity": "sha512-YA6Ma2KsCdGb+WC6UpBVFJGXL58MDA6oyONbjyF/+5sBgxY/dwkhLogbMT2GXXyU84/IhRw/2D1Os1B/giz+BQ==",
@@ -1514,6 +1525,13 @@
       "integrity": "sha512-/sM3dO2FOzXjKQhJuo0Q173wf2KOo8t4I8vHy6lF9poUp7bKT0/NHE8fPX23PwfhnykfqnC2xRxOnVw5XuGIaA==",
       "bin": true
     },
+    "json-schema-to-ts@3.1.1": {
+      "integrity": "sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==",
+      "dependencies": [
+        "@babel/runtime",
+        "ts-algebra"
+      ]
+    },
     "json5@2.2.3": {
       "integrity": "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==",
       "bin": true
@@ -1772,6 +1790,9 @@
         "picomatch@4.0.3"
       ]
     },
+    "ts-algebra@2.0.0": {
+      "integrity": "sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw=="
+    },
     "tslib@2.8.1": {
       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
     },
@@ -1837,6 +1858,7 @@
       "jsr:@std/text@^1.0.17",
       "jsr:@std/ulid@1",
       "jsr:@std/yaml@^1.0.11",
+      "npm:@anthropic-ai/sdk@0.80",
       "npm:@opentelemetry/api@1",
       "npm:@phosphor-icons/core@^2.1.1",
       "npm:@preact/signals@^2.5.0",

@@ -49,6 +49,7 @@
   },
   "imports": {
     "#/": "./",
+    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@^0.80",
     "@annervisser/slug": "jsr:@annervisser/slug@^1.2.1",
     "@opentelemetry/api": "npm:@opentelemetry/api@^1",
     "@deno/esbuild-plugin": "jsr:@deno/esbuild-plugin@^1.2.1",
