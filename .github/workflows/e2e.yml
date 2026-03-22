@@ -1,4 +1,5 @@
 name: E2E tests (Deno Deploy preview)
+run-name: "E2E — ${{ github.event.client_payload.revision.preview_url }}"
 
 on:
   repository_dispatch:
