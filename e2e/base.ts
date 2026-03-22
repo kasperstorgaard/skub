@@ -42,9 +42,4 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   };
 }
 
-import { expect as baseExpect } from "playwright/test";
-
-// Remote previews are slower — give assertions more headroom than the 5s default.
-export const expect = Deno.env.get("BASE_URL")?.startsWith("https://")
-  ? baseExpect.configure({ timeout: 15_000 })
-  : baseExpect;
+export { expect } from "playwright/test";
