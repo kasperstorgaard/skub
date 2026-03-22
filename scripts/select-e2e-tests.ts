@@ -45,20 +45,11 @@ const log = (...args: unknown[]) =>
 
 const [diff, testFiles] = await Promise.all([getDiff(), readTestFiles()]);
 
-log(`diff length: ${diff.length} chars`);
-log(`diff preview:\n${diff.slice(0, 500)}`);
-
-if (!diff) {
-  log("no diff, skipping");
-  Deno.exit(0);
-}
+if (!diff) Deno.exit(0);
 
 const client = new Anthropic();
 
 const prDescription = Deno.env.get("PR_DESCRIPTION")?.trim() ?? "";
-log(
-  `PR description: ${prDescription ? prDescription.slice(0, 200) : "(none)"}`,
-);
 
 const prSection = prDescription
   ? `Here is the PR description for this deployment:\n\n${prDescription}\n\n`
