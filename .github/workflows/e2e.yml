@@ -6,7 +6,7 @@ on:
     types: [deno_deploy.build.routed]
 
 concurrency:
-  group: e2e-${{ github.event.client_payload.revision.preview_url }}
+  group: e2e-${{ github.event.client_payload.revision.git.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,6 +19,9 @@ jobs:
       DEPLOY_SHA: ${{ github.event.client_payload.revision.git.sha }}
 
     steps:
+      - name: Debug payload
+        run: echo '${{ toJson(github.event.client_payload.revision) }}'
+
       - name: Post pending status
         run: |
           curl -s -X POST \
