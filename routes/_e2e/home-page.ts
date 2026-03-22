@@ -48,6 +48,11 @@ export class HomePage {
     return new PuzzlePage(this.page);
   }
 
+  async clickWarmUpPuzzle() {
+    await this.page.getByRole("link", { name: /warm-up puzzle/i }).click();
+    return new PuzzlePage(this.page);
+  }
+
   async clickArchivesLink() {
     await this.page.getByRole("link", { name: /archives/i }).click();
     return new ArchivesPage(this.page);
