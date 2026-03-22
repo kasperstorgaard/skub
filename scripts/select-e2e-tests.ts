@@ -84,8 +84,7 @@ Here are the e2e test files and their full contents:
 ${testFiles}
 
 Return the test files that should run given what changed.
-Return an empty array if no e2e tests are needed — for example if only CSS,
-static assets, puzzle data files, or documentation changed.`,
+Return an empty array if no e2e tests are needed.`,
     },
   ],
 });
