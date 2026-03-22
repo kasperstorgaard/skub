@@ -1,0 +1,39 @@
+name: E2E tests
+
+on:
+  repository_dispatch:
+    types: [deno_deploy.build.routed]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ github.event.client_payload.revision.preview_url }}
+      DEPLOY_SHA: ${{ github.event.client_payload.revision.git.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: denoland/setup-deno@v2
+
+      - name: Select tests
+        id: select
+        continue-on-error: true
+        run: |
+          FILES=$(deno run -A scripts/select-e2e-tests.ts)
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Install Playwright
+        if: steps.select.outputs.files != ''
+        run: npx playwright install chromium --with-deps
+
+      - name: Run e2e tests
+        if: steps.select.outputs.files != ''
+        run: deno test -A --no-check $TEST_FILES
+        env:
+          E2E_SECRET: ${{ secrets.E2E_SECRET }}
+          TEST_FILES: ${{ steps.select.outputs.files }}
