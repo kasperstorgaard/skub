@@ -2,6 +2,7 @@ name: E2E tests
 
 on:
   repository_dispatch:
+    # Fired by Deno Deploy when a preview build is routed and ready
     types: [deno_deploy.build.routed]
 
 jobs:
@@ -29,6 +30,17 @@ jobs:
 
       - uses: denoland/setup-deno@v2
 
+      - name: Fetch PR description
+        id: pr
+        run: |
+          BODY=$(gh api repos/${{ github.repository }}/commits/$DEPLOY_SHA/pulls \
+            --jq '.[0].body // ""')
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Select tests
         id: select
         continue-on-error: true
@@ -37,6 +49,7 @@ jobs:
           echo "files=$FILES" >> $GITHUB_OUTPUT
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_DESCRIPTION: ${{ steps.pr.outputs.body }}
 
       - name: Install Playwright
         if: steps.select.outputs.files != ''
