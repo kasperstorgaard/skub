@@ -1,6 +1,7 @@
+// deno-lint-ignore-file skub-imports/use-hash-alias
 import type { Page } from "playwright";
 
-import { PuzzlePage } from "#/[slug]/_e2e/puzzle-page.ts";
+import { PuzzlePage } from "../../[slug]/_e2e/puzzle-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
 
 export class TutorialPage {
