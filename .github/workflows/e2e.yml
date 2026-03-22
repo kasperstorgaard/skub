@@ -7,6 +7,8 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    permissions:
+      statuses: write
     env:
       BASE_URL: ${{ github.event.client_payload.revision.preview_url }}
       DEPLOY_SHA: ${{ github.event.client_payload.revision.git.sha }}
