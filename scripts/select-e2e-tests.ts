@@ -27,9 +27,21 @@ async function getDiff(): Promise<string> {
 }
 
 async function readTestFiles(): Promise<string> {
-  const paths = Array.from(Deno.readDirSync("e2e"))
-    .filter((e) => e.isFile && e.name.endsWith("_test.ts"))
-    .map((e) => `e2e/${e.name}`);
+  const paths: string[] = [];
+  for await (
+    const entry of Deno.walk(".", {
+      exts: ["ts"],
+      skip: [/_fresh/, /node_modules/],
+    })
+  ) {
+    if (!entry.name.endsWith("_test.ts")) continue;
+    if (
+      entry.path.startsWith("e2e/") ||
+      entry.path.includes("/_e2e/")
+    ) {
+      paths.push(entry.path);
+    }
+  }
 
   const sections = await Promise.all(
     paths.map(async (path) => {

@@ -6,6 +6,9 @@ export default {
     /**
      * All cross-folder project imports must use the #/ alias.
      * Same-folder relative imports (e.g. ./board.ts) are allowed.
+     *
+     * TODO: skip this rule for _e2e/ files — POM-to-POM imports use relative
+     * paths to keep the e2e import graph readable.
      */
     "use-hash-alias": {
       create(context) {

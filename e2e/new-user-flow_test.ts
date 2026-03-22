@@ -1,5 +1,6 @@
+// deno-lint-ignore skub-imports/use-hash-alias
+import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
-import { HomePage } from "#/e2e/pages/home-page.ts";
 
 Deno.test("a new user discovers the tutorial, plays their first puzzle, and submits their name", async () => {
   const { page, teardown } = await setup();

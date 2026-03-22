@@ -1,6 +1,7 @@
+// deno-lint-ignore-file skub-imports/use-hash-alias
 import type { Page } from "playwright";
 
-import { SolutionsPage } from "./solutions-page.ts";
+import { SolutionsPage } from "../solutions/_e2e/solutions-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { solveSync } from "#/game/solver.ts";
@@ -17,6 +18,38 @@ export class PuzzlePage {
 
   get currentSlug() {
     return (new URL(this.page.url()).pathname.match(SLUG_MATCHER) ?? [])[1];
+  }
+
+  get heading() {
+    return this.page.getByRole("heading", { level: 1 });
+  }
+
+  // Shown after a guest solves a puzzle
+  get solutionDialog() {
+    const page = this.page;
+    return {
+      heading: page.getByRole("heading", { name: /Nice solve!/i }),
+      usernameInput: page.getByRole("textbox", { name: /username/i }),
+      submitName: async (name: string) => {
+        await page.getByRole("textbox", { name: /username/i }).fill(name);
+        await page.getByRole("button", { name: /Post your solve/i }).click();
+        return new SolutionsPage(page);
+      },
+    };
+  }
+
+  // Shown after a signed-in player solves a puzzle
+  get celebrationDialog() {
+    const page = this.page;
+    const dialog = page.getByRole("dialog");
+    return {
+      heading: dialog.getByRole("heading", { name: /Solved in/i }),
+      seeSolvesLink: dialog.getByRole("link", { name: /See solves/i }),
+      clickSeeSolves: async () => {
+        await dialog.getByRole("link", { name: /See solves/i }).click();
+        return new SolutionsPage(page);
+      },
+    };
   }
 
   async goto(slug: string, opts?: GotoOptions) {
@@ -77,41 +110,5 @@ export class PuzzlePage {
     }
 
     return this;
-  }
-
-  get heading() {
-    return this.page.getByRole("heading", { level: 1 });
-  }
-
-  get solvedByText() {
-    return this.page.getByText("solved by");
-  }
-
-  // Shown after a guest solves a puzzle
-  get solutionDialog() {
-    const page = this.page;
-    return {
-      heading: page.getByRole("heading", { name: /Nice solve!/i }),
-      usernameInput: page.getByRole("textbox", { name: /username/i }),
-      submitName: async (name: string) => {
-        await page.getByRole("textbox", { name: /username/i }).fill(name);
-        await page.getByRole("button", { name: /Post your solve/i }).click();
-        return new SolutionsPage(page);
-      },
-    };
-  }
-
-  // Shown after a signed-in player solves a puzzle
-  get celebrationDialog() {
-    const page = this.page;
-    const dialog = page.getByRole("dialog");
-    return {
-      heading: dialog.getByRole("heading", { name: /Solved in/i }),
-      seeSolvesLink: dialog.getByRole("link", { name: /See solves/i }),
-      clickSeeSolves: async () => {
-        await dialog.getByRole("link", { name: /See solves/i }).click();
-        return new SolutionsPage(page);
-      },
-    };
   }
 }

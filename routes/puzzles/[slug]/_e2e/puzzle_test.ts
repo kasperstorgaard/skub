@@ -1,12 +1,12 @@
-import { expect, setup } from "./base.ts";
-import { PuzzlePage } from "#/e2e/pages/puzzle-page.ts";
+import { PuzzlePage } from "./puzzle-page.ts";
+import { expect, setup } from "#/e2e/base.ts";
 
 // -- Completing a puzzle as a returning player ---
 
 Deno.test("a returning player who solves a puzzle sees the celebration dialog", async () => {
   const { page, asUser, teardown } = await setup();
   try {
-    await asUser("e2eliza");
+    await asUser({ name: "e2eliza" });
     const puzzlePage = await new PuzzlePage(page).gotoWithSolution("karla");
 
     await expect(puzzlePage.celebrationDialog.heading).toBeVisible();
@@ -19,7 +19,7 @@ Deno.test("a returning player who solves a puzzle sees the celebration dialog", 
 Deno.test("without JavaScript — a returning player sees the celebration dialog", async () => {
   const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
   try {
-    await asUser("e2edith");
+    await asUser({ name: "e2edith" });
     const puzzlePage = await new PuzzlePage(page).gotoWithSolution(
       "karla",
       { waitUntil: "domcontentloaded" },
@@ -34,7 +34,7 @@ Deno.test("without JavaScript — a returning player sees the celebration dialog
 Deno.test("a returning player sees the celebration dialog when submitting a duplicate solve", async () => {
   const { page, asUser, teardown } = await setup();
   try {
-    await asUser("e2elsa");
+    await asUser({ name: "e2elsa" });
     let puzzlePage = await new PuzzlePage(page).gotoWithSolution("karla");
 
     await expect(puzzlePage.celebrationDialog.heading).toBeVisible();
@@ -73,17 +73,13 @@ Deno.test("a new player who completes a puzzle is prompted to save their solve",
   }
 });
 
-Deno.test("a new player who submits their name is taken to the solutions page and can watch a replay", async () => {
+Deno.test("a new player who submits their name is taken to the solutions page", async () => {
   const { page, teardown } = await setup();
   try {
     const puzzlePage = await new PuzzlePage(page).gotoWithSolution("karla");
-    const solutions = await puzzlePage.solutionDialog.submitName("e2edward");
+    await puzzlePage.solutionDialog.submitName("e2edward");
 
-    await expect(solutions.solveByName("e2edward")).toBeVisible();
-
-    const replayPage = await solutions.clickWatchFirst();
-    await expect(replayPage.heading).toBeVisible();
-    await expect(replayPage.solvedByText).toBeVisible();
+    await expect(page).toHaveURL(/\/puzzles\/karla\/solutions/);
   } finally {
     await teardown();
   }

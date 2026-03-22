@@ -1,12 +1,13 @@
+// deno-lint-ignore skub-imports/use-hash-alias
+import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
-import { HomePage } from "#/e2e/pages/home-page.ts";
 
 // -- Returning user: homepage → daily puzzle → solve → celebration ---
 
 Deno.test("a returning player opens the daily puzzle from the homepage and solves it", async () => {
   const { page, asUser, teardown } = await setup();
   try {
-    await asUser("e2egg");
+    await asUser({ name: "e2egg" });
     const homePage = await new HomePage(page).goto();
 
     const puzzlePage = await homePage.clickDailyPuzzleLink();
@@ -26,7 +27,7 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
 Deno.test("without js - a returning user plays an archived puzzle and submits their solve", async () => {
   const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
   try {
-    await asUser("e2elf");
+    await asUser({ name: "e2elf" });
 
     const home = await new HomePage(page).goto();
 
