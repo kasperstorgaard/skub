@@ -84,6 +84,7 @@ Here are the e2e test files and their full contents:
 ${testFiles}
 
 Return the test files that should run given what changed.
+If the PR description mentions specific tests or flows to verify, prioritise those.
 Return an empty array if no e2e tests are needed.`,
     },
   ],
