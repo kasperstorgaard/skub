@@ -55,9 +55,11 @@ jobs:
       - name: Post final status
         if: always()
         uses: actions/github-script@v7
+        env:
+          JOB_STATUS: ${{ job.status }}
         with:
           script: |
-            const success = '${{ job.status }}' === 'success';
+            const success = process.env.JOB_STATUS === 'success';
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
