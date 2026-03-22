@@ -20,10 +20,6 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   });
 
   const page = await context.newPage();
-  // Remote CI (Deno Deploy previews) is slow — use a longer timeout than the
-  // Playwright default of 30s only when running locally for faster feedback.
-  const isLocal = !Deno.env.get("BASE_URL")?.startsWith("https://");
-  page.setDefaultTimeout(isLocal ? 5_000 : 15_000);
 
   return {
     page,
