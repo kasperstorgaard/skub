@@ -1,13 +1,14 @@
 import { define } from "#/core.ts";
 import { kv } from "#/db/kv.ts";
-import type { Solution } from "#/db/types.ts";
+import type { Solution, User } from "#/db/types.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 
+const E2E_SECRET = Deno.env.get("E2E_SECRET");
+
 function isAuthorized(req: Request): boolean {
-  const secret = Deno.env.get("E2E_SECRET");
-  if (!secret) return false;
+  if (!E2E_SECRET) return false;
   if (new URL(req.url).hostname === "skub.app") return false;
-  return req.headers.get("x-e2e-secret") === secret;
+  return req.headers.get("x-e2e-secret") === E2E_SECRET;
 }
 
 export const handler = define.handlers({
@@ -28,7 +29,8 @@ export const handler = define.handlers({
       return new Response("Missing userId or name", { status: 400 });
     }
 
-    await kv.set(["user", userId], { name, onboarding: "done" });
+    const user: User = { id: userId, name, onboarding: "done" };
+    await kv.set(["user", userId], user);
 
     return new Response("OK", { status: 200 });
   },
