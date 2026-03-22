@@ -10,14 +10,7 @@
  * Env:   DEPLOY_SHA  — git SHA from the Deno Deploy dispatch payload
  */
 
-import Anthropic from "npm:@anthropic-ai/sdk@^4";
-
-const TEST_FILE_PATHS = [
-  "e2e/new-user-flow_test.ts",
-  "e2e/returning-user-flow_test.ts",
-  "e2e/puzzle_test.ts",
-  "e2e/profile_test.ts",
-];
+import Anthropic from "@anthropic-ai/sdk";
 
 async function getDiff(): Promise<string> {
   const sha = Deno.env.get("DEPLOY_SHA");
@@ -33,8 +26,12 @@ async function getDiff(): Promise<string> {
 }
 
 async function readTestFiles(): Promise<string> {
+  const paths = Array.from(Deno.readDirSync("e2e"))
+    .filter((e) => e.isFile && e.name.endsWith("_test.ts"))
+    .map((e) => `e2e/${e.name}`);
+
   const sections = await Promise.all(
-    TEST_FILE_PATHS.map(async (path) => {
+    paths.map(async (path) => {
       const content = await Deno.readTextFile(path);
       return `=== ${path} ===\n${content}`;
     }),
