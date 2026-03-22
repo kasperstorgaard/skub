@@ -3,12 +3,15 @@ import type { Page } from "playwright";
 
 import {
   addUserCookie,
+  BASE_URL,
   clearTestUser,
   seedSolution,
   seedUser,
   type SeedUserInput,
 } from "./helpers.ts";
 import type { Solution, User } from "#/db/types.ts";
+
+const isRemote = !BASE_URL.includes("localhost");
 
 type ContextOptions = {
   javaScriptEnabled?: boolean;
@@ -36,6 +39,12 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   });
 
   const page = await context.newPage();
+
+  // Deploy previews are slower than localhost — give actions and assertions more room
+  if (isRemote) {
+    page.setDefaultTimeout(15_000);
+    page.setDefaultNavigationTimeout(15_000);
+  }
 
   let currentUser: User | undefined;
 
@@ -65,4 +74,8 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   };
 }
 
-export { expect } from "playwright/test";
+import { expect as baseExpect } from "playwright/test";
+
+export const expect = isRemote
+  ? baseExpect.configure({ timeout: 15_000 })
+  : baseExpect;
