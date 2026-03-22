@@ -47,7 +47,9 @@ Deno.test("solution page — plays the replay animation", async () => {
       solution.id,
     );
     // Board island hydrates in replay mode, injecting @keyframes and applying them to pieces
-    await expect(solutionPage.replayAnimation).toBeAttached({ timeout: 10_000 });
+    await expect(solutionPage.replayAnimation).toBeAttached({
+      timeout: 10_000,
+    });
     expect(await solutionPage.hasReplayKeyframes()).toBe(true);
   } finally {
     await teardown();
