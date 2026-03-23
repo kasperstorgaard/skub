@@ -179,7 +179,7 @@ export default define.page<typeof handler>(function Home(ctx) {
             <StatsSummary stats={userStats} className="lg:w-full" />
           )}
 
-          <div className="flex gap-2 lg:flex-col">
+          <div className="flex gap-2 lg:flex-col lg:mt-auto">
             <a
               href="https://github.com/kasperstorgaard/ricochet"
               className="flex gap-1 text-text-2"
