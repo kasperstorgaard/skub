@@ -37,4 +37,5 @@ jobs:
             -f state=success \
             -f environment_url="$PREVIEW_URL"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # TODO: Replace PAT with a GitHub App token for tighter scoping
+          GH_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
