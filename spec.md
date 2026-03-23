@@ -3,70 +3,93 @@
 ## Goal
 
 Add streak counter and personal stats to Skub. Compute streak on the fly from
-existing data — no new KV writes initially, revisit if performance degrades.
+existing data — no new KV writes.
 
 ## Streak algorithm
 
-Export `getAvailableEntries` from `game/loader.ts` (currently a private
-function).
+`game/streak.ts` — pure computation, no db imports:
 
-New file `game/streak.ts`:
-
-- `getUserStats(userId: string)` — returns
+- `computeUserStats(entries, solutions)` — returns
   `{ currentStreak, bestStreak, totalSolves, optimalSolves }`
 - Streak logic:
-  1. Fetch all available `PuzzleManifestEntry[]` sorted ascending by `number`
-  2. Fetch `listUserSolutions(userId, { limit: 500 })` and build a `Set<string>`
-     of solved slugs
-  3. **Current streak**: walk entries in reverse (descending by `number`); count
-     consecutive hits, stop at first gap
-  4. **Best streak**: walk the full history in ascending order; track running
-     length and record the maximum
-- `optimalSolves`: cross-reference solutions with manifest entries —
-  count solutions where `moves.length === entry.minMoves`
+  1. Takes available `PuzzleManifestEntry[]` sorted ascending by `number`
+  2. Takes user solutions and builds a `Set<string>` of solved slugs
+  3. **Current streak**: walk entries in reverse; count consecutive hits, stop at
+     first gap. Grace period: today's entry is skipped if unsolved.
+  4. **Best streak**: walk the full history ascending; track running length and
+     record the maximum
+- `optimalSolves`: count solutions where `moves.length === entry.minMoves`
+
+I/O wrapper `getUserStats(userId)` lives in `db/stats.ts` — fetches entries and
+solutions, delegates to `computeUserStats`.
+
+## Celebration dialog (`islands/celebration-dialog.tsx`)
+
+Unified `getCelebration()` function with ranked cases:
+
+1. **first-solver** — first person to solve this puzzle
+2. **first-optimal** — first optimal solution
+3. **new-path** — a unique move sequence not seen before
+4. **streak-milestone** — streak hits 5, 10, 25, 50, 100
+5. **streak** — currentStreak > 1
+6. **other-solvers** — default fallback
+
+Returns `{ case, headline, body }`. Single `useMemo` in the component.
 
 ## Surfaces
 
-### 1. Celebration dialog (`islands/celebration-dialog.tsx`)
+### Front page (`routes/index.tsx`)
 
-Streak line below the move-count heading, e.g. "5-day streak". Only render
-when `currentStreak > 1`. Requires passing `userStats` as a prop to the dialog
-(fetched server-side in the puzzle page handler).
+`StatsSummary` component in the side panel. Shows current streak / best streak,
+total solves, and optimal solves with percentage. Only rendered when
+`totalSolves > 0`.
 
-### 2. Front page (`routes/index.tsx`)
+### Profile page (`routes/profile/index.tsx`)
 
-Compact stats display near the puzzle list or header. Exact placement needs
-iteration. Fetch `getUserStats` in the GET handler and include in `PageData`.
+Same `StatsSummary` component below name/theme settings.
 
-### 3. Controls panel (`islands/controls-panel.tsx`)
+## Testing
 
-A "Stats" icon button linking to `/me` — the entry point to the personal stats
-page. No KV call here; controls panel is an island.
+### Unit tests (`game/streak_test.ts`)
 
-### 4. Profile page (`routes/profile.tsx`)
+13 tests for `computeUserStats`: currentStreak (5), bestStreak (3),
+totalSolves (1), optimalSolves (3), full scenario (1).
 
-New stats section below the existing name/theme settings:
-- Current streak + best streak
-- Total solves + optimal solves
-- Optimal rate (percentage)
+### E2E — returning user flow (`e2e/returning-user-flow_test.ts`)
 
-## Data fetching
+Extended: solve daily puzzle, check celebration, solve archive puzzle, assert
+celebration body contains "streak".
 
-- `getUserStats` is server-side only (reads KV + manifest)
-- Fetch in page handlers where needed; pass as typed `PageData`
-- Do NOT fetch in islands — no client-side KV access
-- Where `userId` is already available in `ctx.state.userId`, no extra auth is
-  needed
+### E2E — home stats integration (`routes/_e2e/home_test.ts`)
+
+API-seeded test: seed 2 solutions for the latest available puzzles via
+`addSolution()`, load home page, assert streak=2 and solves=2.
+
+### E2E helpers
+
+`solvePuzzle(slug)` extracted to `e2e/helpers.ts` — loads puzzle and returns
+optimal moves. Used across 3 test files.
+
+## POM updates
+
+- `celebrationDialog.heading` — matches by heading level only (no text matcher)
+- `celebrationDialog.body` — new `<p>` locator for content assertions
+- `solutionDialog.submitName` — button text updated to "Claim your solve"
+- `GotoOptions` type removed from all POMs, replaced with `Parameters<>`
+- `HomePage.stat(label)` — locator for stats `<dd>` by `<dt>` label
 
 ## Files affected
 
-| Surface | Files |
-|---------|-------|
-| Core logic | `game/streak.ts` (new), `game/loader.ts` (export `getAvailableEntries`) |
-| Celebration dialog | `islands/celebration-dialog.tsx`, `routes/puzzles/[slug]/index.tsx` |
-| Front page | `routes/index.tsx` |
-| Controls panel | `islands/controls-panel.tsx` (link to `/profile` only) |
-| Profile page | `routes/profile.tsx` (add stats section) |
+| Area | Files |
+|------|-------|
+| Core logic | `game/streak.ts`, `game/streak_test.ts` |
+| I/O wrapper | `db/stats.ts` |
+| Celebration | `islands/celebration-dialog.tsx` |
+| Front page | `routes/index.tsx`, `components/stats-summary.tsx` |
+| Profile | `routes/profile/index.tsx` |
+| Puzzle route | `routes/puzzles/[slug]/index.tsx` |
+| E2E tests | `e2e/returning-user-flow_test.ts`, `routes/_e2e/home_test.ts` |
+| E2E infra | `e2e/helpers.ts`, `routes/_e2e/home-page.ts`, `routes/puzzles/[slug]/_e2e/puzzle-page.ts`, `routes/puzzles/_e2e/archives-page.ts` |
 
 ## Out of scope
 
