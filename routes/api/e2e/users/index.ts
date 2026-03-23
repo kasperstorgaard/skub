@@ -1,6 +1,6 @@
 import { define } from "#/core.ts";
-import { kv } from "#/db/kv.ts";
 import type { User } from "#/db/types.ts";
+import { setUser } from "#/db/user.ts";
 import { isAuthorized } from "#/routes/api/e2e/_auth.ts";
 
 export const handler = define.handlers({
@@ -9,7 +9,7 @@ export const handler = define.handlers({
       return new Response("Forbidden", { status: 403 });
     }
 
-    let body: Partial<Omit<User, "id">> & { name: string };
+    let body: Partial<User> & { name: string };
     try {
       body = await ctx.req.json();
     } catch {
@@ -21,11 +21,12 @@ export const handler = define.handlers({
     }
 
     const user: User = {
-      onboarding: "done",
       ...body,
-      id: crypto.randomUUID(),
+      onboarding: body.onboarding ?? "done",
+      id: body.id ?? crypto.randomUUID(),
     };
-    await kv.set(["user", user.id], user);
+
+    await setUser(user.id, user);
 
     return Response.json(user);
   },
