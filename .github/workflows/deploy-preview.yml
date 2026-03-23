@@ -26,8 +26,8 @@ jobs:
             --method POST \
             -f ref="$DEPLOY_REF" \
             -f environment=preview \
-            -f auto_merge=false \
-            -f required_contexts='[]' \
+            -F auto_merge=false \
+            -F required_contexts='[]' \
             -f description="$MSG" \
             --jq '.id')
 
