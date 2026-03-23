@@ -39,14 +39,6 @@
   "exclude": [
     "**/_fresh/*"
   ],
-  "test": {
-    "include": [
-      "game/",
-      "lib/",
-      "db/",
-      "plugins/"
-    ]
-  },
   "imports": {
     "#/": "./",
     "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@^0.80",
