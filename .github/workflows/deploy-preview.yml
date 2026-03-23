@@ -22,13 +22,14 @@ jobs:
           MSG=$(gh api repos/${{ github.repository }}/commits/$DEPLOY_SHA \
             --jq '.commit.message | split("\n") | .[0]')
 
-          DEPLOY_ID=$(gh api repos/${{ github.repository }}/deployments \
+          BODY=$(jq -n \
+            --arg ref "$DEPLOY_REF" \
+            --arg desc "$MSG" \
+            '{ref: $ref, environment: "preview", auto_merge: false, required_contexts: [], description: $desc}')
+
+          DEPLOY_ID=$(echo "$BODY" | gh api repos/${{ github.repository }}/deployments \
             --method POST \
-            -f ref="$DEPLOY_REF" \
-            -f environment=preview \
-            -F auto_merge=false \
-            -F required_contexts='[]' \
-            -f description="$MSG" \
+            --input - \
             --jq '.id')
 
           gh api repos/${{ github.repository }}/deployments/$DEPLOY_ID/statuses \
