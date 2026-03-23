@@ -49,7 +49,7 @@ export function SolutionDialog(
           Nice solve!
         </h2>
 
-        <p>Pick a name and see how your solve compares.</p>
+        <p>Pick a name and see how others did it.</p>
       </div>
 
       {!isPreview && (
@@ -122,7 +122,7 @@ export function SolutionDialog(
           >
             {isSubmitting
               ? <Icon icon={Spinner} className="animate-spin" />
-              : "Post your solve"}
+              : "Claim your solve"}
           </button>
         )}
       </div>

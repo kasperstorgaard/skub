@@ -12,24 +12,29 @@ import {
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard } from "#/components/puzzle-card.tsx";
+import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
+import { getUserStats } from "#/db/stats.ts";
 import { getLatestPuzzle, getPuzzle, getRandomPuzzle } from "#/game/loader.ts";
+import type { UserStats } from "#/game/streak.ts";
 import { Puzzle } from "#/game/types.ts";
 
 type PageData = {
   dailyPuzzle: Puzzle;
   randomPuzzle: Puzzle;
   bestMoves: Record<string, number>;
+  userStats: UserStats | null;
 };
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const { user } = ctx.state;
 
-    const [dailyPuzzle, userSolutions] = await Promise.all([
+    const [dailyPuzzle, userSolutions, userStats] = await Promise.all([
       getLatestPuzzle(),
       listUserSolutions(ctx.state.userId, { limit: 500 }),
+      getUserStats(ctx.state.userId),
     ]);
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
@@ -53,14 +58,19 @@ export const handler = define.handlers<PageData>({
 
     const bestMoves = getBestMoves(relevantSolutions);
 
-    return page({ dailyPuzzle, randomPuzzle, bestMoves });
+    return page({
+      dailyPuzzle,
+      randomPuzzle,
+      bestMoves,
+      userStats: userStats.totalSolves > 0 ? userStats : null,
+    });
   },
 });
 
 export default define.page<typeof handler>(function Home(ctx) {
   const url = new URL(ctx.req.url);
 
-  const { dailyPuzzle, randomPuzzle, bestMoves } = ctx.data;
+  const { dailyPuzzle, randomPuzzle, bestMoves, userStats } = ctx.data;
   const { user } = ctx.state;
 
   return (
@@ -161,12 +171,15 @@ export default define.page<typeof handler>(function Home(ctx) {
 
         <div
           className={clsx(
-            "col-[2/3] flex flex-col gap-fl-1 justify-between items-start flex-wrap text-2 text-text-2",
-            "sm:flex-row sm:items-center",
-            "lg:col-auto lg:row-start-3 lg:flex-col lg:self-end lg:items-start",
+            "col-[2/3] flex flex-col gap-fl-3 justify-between items-start text-2 text-text-2",
+            "lg:col-auto lg:row-start-3 lg:justify-between lg:self-stretch",
           )}
         >
-          <div className="flex gap-2 lg:flex-col">
+          {userStats && (
+            <StatsSummary stats={userStats} className="lg:w-full" />
+          )}
+
+          <div className="flex gap-2 lg:flex-col lg:mt-auto">
             <a
               href="https://github.com/kasperstorgaard/ricochet"
               className="flex gap-1 text-text-2"

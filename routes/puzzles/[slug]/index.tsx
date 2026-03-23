@@ -8,12 +8,13 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { define } from "#/core.ts";
 import { addSolution, getCanonicalUserSolution } from "#/db/solutions.ts";
-import { getPuzzleStats } from "#/db/stats.ts";
+import { getPuzzleStats, getUserStats } from "#/db/stats.ts";
 import { getUserPuzzleDraft, setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
+import type { UserStats } from "#/game/streak.ts";
 import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
@@ -32,6 +33,7 @@ type PageData = {
   hintCount: number;
   puzzleStats: PuzzleStats;
   savedName: string | null;
+  userStats: UserStats | null;
 };
 
 export const handler = define.handlers<PageData>({
@@ -55,14 +57,16 @@ export const handler = define.handlers<PageData>({
         hintCount,
         puzzleStats: defaultPuzzleStats,
         savedName,
+        userStats: null,
       });
     }
 
     const { moves } = decodeState(ctx.url);
 
-    const [puzzle, puzzleStats] = await Promise.all([
+    const [puzzle, puzzleStats, userStats] = await Promise.all([
       getPuzzle(slug),
       getPuzzleStats(slug),
+      savedName ? getUserStats(ctx.state.userId) : Promise.resolve(null),
     ]);
 
     if (!puzzle) {
@@ -102,13 +106,15 @@ export const handler = define.handlers<PageData>({
           return Response.redirect(redirectUrl, 303);
         }
 
+        let isNewPath = false;
         if (!existing && savedName) {
-          await addSolution({
+          const result = await addSolution({
             puzzleSlug: slug,
             name: savedName,
             moves,
             userId: ctx.state.userId,
           });
+          isNewPath = result.isNewPath;
 
           posthog?.capture({
             distinctId: ctx.state.trackingId,
@@ -126,6 +132,7 @@ export const handler = define.handlers<PageData>({
 
         const redirectUrl = new URL(ctx.url);
         redirectUrl.searchParams.set("dialog", "celebrate");
+        if (isNewPath) redirectUrl.searchParams.set("new_path", "true");
         return Response.redirect(redirectUrl, 303);
       }
     }
@@ -137,6 +144,7 @@ export const handler = define.handlers<PageData>({
       hintCount,
       puzzleStats: puzzleStats ?? defaultPuzzleStats,
       savedName,
+      userStats,
     });
   },
   async POST(ctx) {
@@ -192,12 +200,18 @@ export const handler = define.handlers<PageData>({
       });
     }
 
-    await addSolution({
+    const { isNewPath } = await addSolution({
       puzzleSlug: slug,
       name,
       moves,
       userId: ctx.state.userId,
     });
+
+    if (isNewPath && !fromSolutionDialog) {
+      const url = new URL(redirectUrl, req.url);
+      url.searchParams.set("new_path", "true");
+      redirectUrl = url.href;
+    }
 
     posthog?.capture({
       distinctId: ctx.state.trackingId,
@@ -307,6 +321,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         stats={props.data.puzzleStats}
+        userStats={props.data.userStats}
       />
 
       {/* Client-side auto-post for named users */}

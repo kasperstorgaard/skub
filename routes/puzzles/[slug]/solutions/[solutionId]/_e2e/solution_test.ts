@@ -1,11 +1,8 @@
 import { SolutionPage } from "./solution-page.ts";
 import { expect, setup } from "#/e2e/base.ts";
-import { getPuzzle } from "#/game/loader.ts";
-import { solveSync } from "#/game/solver.ts";
+import { solvePuzzle } from "#/e2e/helpers.ts";
 
-const puzzle = await getPuzzle("karla");
-if (!puzzle) throw new Error("Puzzle not found: karla");
-const moves = solveSync(puzzle);
+const moves = await solvePuzzle("karla");
 
 Deno.test("solution page — shows the puzzle name in the heading", async () => {
   const { page, asUser, addSolution, teardown } = await setup();

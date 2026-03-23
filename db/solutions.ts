@@ -16,11 +16,29 @@ import { Move } from "#/game/types.ts";
  * Uses an atomic transaction so all entries are written together or not at all.
  * Awaits aggregate updates (stats, canonical group) before returning — errors are logged but not re-thrown.
  */
-export async function addSolution(payload: Omit<Solution, "id">) {
+type AddSolutionResult = {
+  solution: Solution;
+  isNewPath: boolean;
+};
+
+export async function addSolution(
+  payload: Omit<Solution, "id">,
+): Promise<AddSolutionResult> {
   const { puzzleSlug, moves } = payload;
 
   const id = ulid().toLowerCase();
   const solution = { ...payload, id };
+  const canonicalKey = getCanonicalMoveKey(moves);
+
+  // Check if this canonical path already exists
+  const groupKey = [
+    "solution_groups_by_puzzle",
+    puzzleSlug,
+    moves.length,
+    canonicalKey,
+  ];
+  const existingGroup = await kv.get<CanonicalGroup>(groupKey);
+  const isNewPath = existingGroup.value === null;
 
   // simple key by slug for easy direct lookup
   const primaryKey = ["solutions_by_puzzle", puzzleSlug, id];
@@ -29,7 +47,7 @@ export async function addSolution(payload: Omit<Solution, "id">) {
   const byCanonicalKey = [
     "solutions_by_puzzle_canonical",
     puzzleSlug,
-    getCanonicalMoveKey(moves),
+    canonicalKey,
     id,
   ];
 
@@ -41,20 +59,19 @@ export async function addSolution(payload: Omit<Solution, "id">) {
     .set(byCanonicalKey, solution);
 
   // user-scoped keys
-  if (payload.userId) {
-    const byUserKey = ["solutions_by_user", payload.userId, id];
-    const byUserPuzzleKey = [
-      "solutions_by_user_puzzle",
-      payload.userId,
-      puzzleSlug,
-      id,
-    ];
-    atomic
-      .check({ key: byUserKey, versionstamp: null })
-      .check({ key: byUserPuzzleKey, versionstamp: null })
-      .set(byUserKey, solution)
-      .set(byUserPuzzleKey, solution);
-  }
+  const byUserKey = ["solutions_by_user", payload.userId, id];
+  const byUserPuzzleKey = [
+    "solutions_by_user_puzzle",
+    payload.userId,
+    puzzleSlug,
+    id,
+  ];
+
+  atomic
+    .check({ key: byUserKey, versionstamp: null })
+    .check({ key: byUserPuzzleKey, versionstamp: null })
+    .set(byUserKey, solution)
+    .set(byUserPuzzleKey, solution);
 
   await atomic.commit();
 
@@ -70,7 +87,7 @@ export async function addSolution(payload: Omit<Solution, "id">) {
     );
   }
 
-  return solution;
+  return { solution, isNewPath };
 }
 
 /**

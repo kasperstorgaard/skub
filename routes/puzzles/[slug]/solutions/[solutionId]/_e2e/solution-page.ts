@@ -16,6 +16,10 @@ export class SolutionPage {
     return this.page.getByRole("heading", { level: 1 });
   }
 
+  get solvedByText() {
+    return this.page.getByText("solved by");
+  }
+
   get puck() {
     return this.page.locator("a[id=p_1]");
   }
@@ -26,9 +30,5 @@ export class SolutionPage {
 
   get keyframes() {
     return this.page.locator("div[data-e2e=replay-keyframes] style");
-  }
-
-  get solvedByText() {
-    return this.page.getByText("solved by");
   }
 }
