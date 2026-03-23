@@ -72,6 +72,7 @@ export default define.page(
             "grow grid grid-cols-[minmax(var(--size-fluid-3),auto)_1fr_minmax(var(--size-fluid-3),auto)]",
             "sm:grid-cols-[minmax(var(--size-fluid-3),auto)_max-content_minmax(var(--size-fluid-3),auto)]",
             "grid-rows-[auto_auto_1fr_auto] place-items-[flex-end_center] gap-y-fl-3",
+            // 16 rem is the sidebar, 6rem is a min height on the first row
             "lg:grid-cols-[1fr_16rem] lg:grid-rows-[minmax(6rem,auto)_auto_1fr_auto] lg:content-center",
             "print:grid-cols-[1fr_max-content_1fr] print:grid-rows-[auto_1fr] print:gap-0",
           )}
