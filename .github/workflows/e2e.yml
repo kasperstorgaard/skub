@@ -1,73 +1,72 @@
-name: E2E tests (Deno Deploy preview)
+name: e2e tests
+run-name: "e2e — ${{ github.event.deployment.description }}"
 
 on:
-  repository_dispatch:
-    # Fired by Deno Deploy when a preview build is routed and ready
-    # TODO: decouple — have the dispatch just record the preview URL (e.g. as a
-    # deployment), then trigger tests from a pull_request workflow that naturally
-    # skips drafts/closed PRs. Currently we query the PR state inside this
-    # workflow to avoid burning CI minutes on every deploy preview.
-    types: [deno_deploy.build.routed]
+  deployment_status:
 
 concurrency:
-  group: e2e-${{ github.event.client_payload.revision.git.ref }}
+  group: e2e-${{ github.event.deployment.ref }}
   cancel-in-progress: true
 
 jobs:
-  e2e:
+  check-pr:
+    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'preview'
     runs-on: ubuntu-latest
-    permissions:
-      statuses: write
-    env:
-      BASE_URL: ${{ github.event.client_payload.revision.preview_url }}
-      DEPLOY_SHA: ${{ github.event.client_payload.revision.git.sha }}
-
+    outputs:
+      should-run: ${{ steps.pr.outputs.should-run }}
     steps:
-      - name: Debug payload
-        run: echo '${{ toJson(github.event.client_payload.revision) }}'
-
-      - name: Check PR state
-        id: pr-state
+      - name: Check for open, non-draft PR
+        id: pr
         run: |
-          PR_JSON=$(gh api repos/${{ github.repository }}/commits/$DEPLOY_SHA/pulls \
+          PR_JSON=$(gh api repos/${{ github.repository }}/commits/${{ github.event.deployment.sha }}/pulls \
             --jq '.[0] // empty')
           if [ -z "$PR_JSON" ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "No open PR found for this commit"
+            echo "should-run=false" >> $GITHUB_OUTPUT
+            echo "No open PR found"
             exit 0
           fi
           STATE=$(echo "$PR_JSON" | jq -r '.state')
           DRAFT=$(echo "$PR_JSON" | jq -r '.draft')
-          if [ "$STATE" != "open" ] || [ "$DRAFT" = "true" ]; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "Skipping: state=$STATE draft=$DRAFT"
+          if [ "$STATE" = "open" ] && [ "$DRAFT" = "false" ]; then
+            echo "should-run=true" >> $GITHUB_OUTPUT
           else
-            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "should-run=false" >> $GITHUB_OUTPUT
+            echo "Skipping: state=$STATE draft=$DRAFT"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  e2e:
+    needs: [check-pr]
+    if: needs.check-pr.outputs.should-run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    env:
+      BASE_URL: ${{ github.event.deployment_status.environment_url }}
+      DEPLOY_SHA: ${{ github.event.deployment.sha }}
+
+    steps:
       - name: Post pending status
-        if: steps.pr-state.outputs.skip != 'true'
         run: |
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            https://api.github.com/repos/${{ github.repository }}/statuses/$DEPLOY_SHA \
-            -d "{\"state\":\"pending\",\"context\":\"E2E tests\",\"description\":\"Selecting and running tests...\",\"target_url\":\"$BASE_URL\"}"
+          gh api repos/${{ github.repository }}/statuses/$DEPLOY_SHA \
+            --method POST \
+            -f state=pending \
+            -f context="e2e tests" \
+            -f description="Selecting and running tests..." \
+            -f target_url="$BASE_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/checkout@v4
-        if: steps.pr-state.outputs.skip != 'true'
         with:
-          ref: ${{ github.event.client_payload.revision.git.sha }}
+          ref: ${{ github.event.deployment.sha }}
           fetch-depth: 0
 
       - uses: denoland/setup-deno@v2
-        if: steps.pr-state.outputs.skip != 'true'
 
       - name: Fetch PR description
         id: pr
-        if: steps.pr-state.outputs.skip != 'true'
         run: |
           BODY=$(gh api repos/${{ github.repository }}/commits/$DEPLOY_SHA/pulls \
             --jq '.[0].body // ""')
@@ -79,7 +78,6 @@ jobs:
 
       - name: Select tests
         id: select
-        if: steps.pr-state.outputs.skip != 'true'
         continue-on-error: true
         run: |
           FILES=$(deno run -A scripts/select-e2e-tests.ts)
@@ -89,25 +87,28 @@ jobs:
           PR_DESCRIPTION: ${{ steps.pr.outputs.body }}
 
       - name: Install Playwright
-        if: steps.pr-state.outputs.skip != 'true' && steps.select.outputs.files != ''
+        if: steps.select.outputs.files != ''
         run: npx playwright install chromium --with-deps
 
       - name: Run e2e tests
-        if: steps.pr-state.outputs.skip != 'true' && steps.select.outputs.files != ''
+        if: steps.select.outputs.files != ''
         run: deno test -A --no-check $TEST_FILES
         env:
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
           TEST_FILES: ${{ steps.select.outputs.files }}
 
       - name: Post final status
-        if: always() && steps.pr-state.outputs.skip != 'true'
+        if: always()
         env:
           STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
           DESC: ${{ job.status == 'success' && 'All tests passed' || 'Tests failed' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          curl -s -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            https://api.github.com/repos/${{ github.repository }}/statuses/$DEPLOY_SHA \
-            -d "{\"state\":\"$STATE\",\"context\":\"E2E tests\",\"description\":\"$DESC\",\"target_url\":\"$RUN_URL\"}"
+          gh api repos/${{ github.repository }}/statuses/$DEPLOY_SHA \
+            --method POST \
+            -f state="$STATE" \
+            -f context="e2e tests" \
+            -f description="$DESC" \
+            -f target_url="$RUN_URL"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
