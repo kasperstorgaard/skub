@@ -86,6 +86,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PR_DESCRIPTION: ${{ steps.pr.outputs.body }}
 
+      - name: Generate puzzle manifest
+        if: steps.select.outputs.files != ''
+        run: deno run -A scripts/generate-manifest.ts
+
       - name: Install Playwright
         if: steps.select.outputs.files != ''
         run: npx playwright install chromium --with-deps
