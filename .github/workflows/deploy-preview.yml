@@ -23,7 +23,7 @@ jobs:
             --jq '.commit.message | split("\n") | .[0]')
 
           BODY=$(jq -n \
-            --arg ref "$DEPLOY_REF" \
+            --arg ref "${DEPLOY_REF:-$DEPLOY_SHA}" \
             --arg desc "$MSG" \
             '{ref: $ref, environment: "preview", auto_merge: false, required_contexts: [], description: $desc}')
 
