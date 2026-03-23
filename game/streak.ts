@@ -1,5 +1,4 @@
-import { listUserSolutions } from "#/db/solutions.ts";
-import { getAvailableEntries } from "#/game/loader.ts";
+import { Move, PuzzleManifestEntry } from "#/game/types.ts";
 
 // TODO: replace perfect % with a player score (e.g. points per solve,
 // bonus for optimal/streak) and add a global highscore leaderboard.
@@ -15,15 +14,13 @@ export type UserStats = {
 };
 
 /**
- * Computes streak and solve stats for a user from available puzzle entries
- * and their submitted solutions.
+ * Pure computation: derives streak and solve stats from entries and solutions.
+ * Entries must be newest-first.
  */
-export async function getUserStats(userId: string): Promise<UserStats> {
-  const [entries, solutions] = await Promise.all([
-    getAvailableEntries(),
-    listUserSolutions(userId, { limit: 500 }),
-  ]);
-
+export function computeUserStats(
+  entries: Pick<PuzzleManifestEntry, "slug" | "minMoves">[],
+  solutions: { puzzleSlug: string; moves: Move[] }[],
+): UserStats {
   // Build a set of solved slugs for O(1) lookup
   const solvedSlugs = new Set<string>();
   for (const solution of solutions) {

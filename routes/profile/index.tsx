@@ -6,8 +6,9 @@ import { EnvelopeSimple, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { define } from "#/core.ts";
+import { getUserStats } from "#/db/stats.ts";
 import { setUser } from "#/db/user.ts";
-import { getUserStats, UserStats } from "#/game/streak.ts";
+import type { UserStats } from "#/game/streak.ts";
 import { THEMES } from "#/lib/themes.ts";
 
 type PageData = {
@@ -121,8 +122,10 @@ export default define.page<typeof handler>(function ProfilePage(props) {
             <>
               <hr className="m-0 p-0" />
 
-              {/* TODO: make this more interactive — total solves links to
-                  your solve history, streak calendar/heatmap, tap to replay */}
+              {
+                /* TODO: make this more interactive — total solves links to
+                  your solve history, streak calendar/heatmap, tap to replay */
+              }
               <section className="flex flex-col gap-fl-2">
                 <h2 className="text-5">Stats</h2>
 

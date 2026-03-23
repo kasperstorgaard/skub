@@ -15,8 +15,9 @@ import { PuzzleCard } from "#/components/puzzle-card.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
+import { getUserStats } from "#/db/stats.ts";
 import { getLatestPuzzle, getPuzzle, getRandomPuzzle } from "#/game/loader.ts";
-import { getUserStats, UserStats } from "#/game/streak.ts";
+import type { UserStats } from "#/game/streak.ts";
 import { Puzzle } from "#/game/types.ts";
 
 type PageData = {
