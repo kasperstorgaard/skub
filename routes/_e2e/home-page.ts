@@ -50,9 +50,9 @@ export class HomePage {
   }
 
   stat(label: string) {
-    return this.page.locator("div").filter({
-      has: this.page.locator("dt", { hasText: label }),
-    }).locator("dd");
+    return this.page.locator("dt", { hasText: label }).locator("..").locator(
+      "dd",
+    );
   }
 
   async clickArchivesLink() {
