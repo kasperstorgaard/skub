@@ -34,7 +34,7 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
 /**
  * Manifest entries available today: number <= day-of-year, tutorial excluded.
  */
-async function getAvailableEntries() {
+export async function getAvailableEntries() {
   const today = new Date(Date.now());
   const dayOfYear = getDayOfYear(today);
 

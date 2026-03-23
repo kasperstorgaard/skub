@@ -1,4 +1,5 @@
 import clsx from "clsx/lite";
+import { page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
 import { EnvelopeSimple, Icon } from "#/components/icons.tsx";
@@ -6,9 +7,20 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { define } from "#/core.ts";
 import { setUser } from "#/db/user.ts";
+import { getUserStats, UserStats } from "#/game/streak.ts";
 import { THEMES } from "#/lib/themes.ts";
 
-export const handler = define.handlers({
+type PageData = {
+  userStats: UserStats | null;
+};
+
+export const handler = define.handlers<PageData>({
+  async GET(ctx) {
+    const stats = await getUserStats(ctx.state.userId);
+    return page({
+      userStats: stats.totalSolves > 0 ? stats : null,
+    });
+  },
   async POST(ctx) {
     const form = await ctx.req.formData();
 
@@ -28,6 +40,7 @@ export const handler = define.handlers({
 export default define.page<typeof handler>(function ProfilePage(props) {
   const url = new URL(props.req.url);
   const { user } = props.state;
+  const { userStats } = props.data;
 
   const savedName = user?.name ?? null;
   const darkThemes = THEMES.filter((t) => t.mode === "dark");
@@ -54,18 +67,6 @@ export default define.page<typeof handler>(function ProfilePage(props) {
                       Log out
                     </a>
                   </div>
-
-                  {
-                    /*
-                    TODO: personal stats section
-                    - solved / total puzzles (e.g. "12 of 73 solved")
-                    - optimal solves count (trophy icon + count)
-                    - solved puzzles list with best move counts
-                    Data: listUserSolutions already fetched on archive page — same query works here.
-                    Note: these stats are only shown when logged in (email present), which ties
-                    naturally into the "sync your progress" login pitch for anonymous users.
-                  */
-                  }
                 </>
               )
               : (
@@ -115,6 +116,54 @@ export default define.page<typeof handler>(function ProfilePage(props) {
               </div>
             </form>
           </section>
+
+          {userStats && (
+            <>
+              <hr className="m-0 p-0" />
+
+              <section className="flex flex-col gap-fl-2">
+                <h2 className="text-5">Stats</h2>
+
+                <dl className="grid grid-cols-2 gap-x-fl-3 gap-y-fl-2">
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-2 text-text-2">Current streak</dt>
+                    <dd className="text-5 font-semibold text-text-1 m-0">
+                      {userStats.currentStreak}
+                    </dd>
+                  </div>
+
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-2 text-text-2">Best streak</dt>
+                    <dd className="text-5 font-semibold text-text-1 m-0">
+                      {userStats.bestStreak}
+                    </dd>
+                  </div>
+
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-2 text-text-2">Total solves</dt>
+                    <dd className="text-5 font-semibold text-text-1 m-0">
+                      {userStats.totalSolves}
+                    </dd>
+                  </div>
+
+                  <div className="flex flex-col gap-0.5">
+                    <dt className="text-2 text-text-2">Optimal solves</dt>
+                    <dd className="text-5 font-semibold text-text-1 m-0">
+                      {userStats.optimalSolves}
+                      <span className="text-2 text-text-2 font-normal ml-1">
+                        ({userStats.totalSolves > 0
+                          ? Math.round(
+                            (userStats.optimalSolves / userStats.totalSolves) *
+                              100,
+                          )
+                          : 0}%)
+                      </span>
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+            </>
+          )}
 
           <hr className="m-0 p-0" />
 

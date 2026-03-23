@@ -14,6 +14,7 @@ import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
+import { getUserStats, UserStats } from "#/game/streak.ts";
 import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
@@ -32,6 +33,7 @@ type PageData = {
   hintCount: number;
   puzzleStats: PuzzleStats;
   savedName: string | null;
+  userStats: UserStats | null;
 };
 
 export const handler = define.handlers<PageData>({
@@ -55,14 +57,16 @@ export const handler = define.handlers<PageData>({
         hintCount,
         puzzleStats: defaultPuzzleStats,
         savedName,
+        userStats: null,
       });
     }
 
     const { moves } = decodeState(ctx.url);
 
-    const [puzzle, puzzleStats] = await Promise.all([
+    const [puzzle, puzzleStats, userStats] = await Promise.all([
       getPuzzle(slug),
       getPuzzleStats(slug),
+      savedName ? getUserStats(ctx.state.userId) : Promise.resolve(null),
     ]);
 
     if (!puzzle) {
@@ -137,6 +141,7 @@ export const handler = define.handlers<PageData>({
       hintCount,
       puzzleStats: puzzleStats ?? defaultPuzzleStats,
       savedName,
+      userStats,
     });
   },
   async POST(ctx) {
@@ -307,6 +312,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         stats={props.data.puzzleStats}
+        userStats={props.data.userStats}
       />
 
       {/* Client-side auto-post for named users */}

@@ -5,6 +5,7 @@ import { Check, Icon, Ranking, ShareNetwork } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getShareText } from "#/game/share.ts";
 import { getSolutionPercentile } from "#/game/stats.ts";
+import { UserStats } from "#/game/streak.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -13,9 +14,10 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   stats: PuzzleStats;
+  userStats?: UserStats | null;
 };
 
-export function CelebrationDialog({ href, puzzle, stats }: Props) {
+export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
   const [copied, setCopied] = useState(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
@@ -84,6 +86,12 @@ export function CelebrationDialog({ href, puzzle, stats }: Props) {
         <h2 className="text-fl-2 font-semibold text-text-1">
           Solved in <span className="text-ui-2">{moves.length}</span> moves
         </h2>
+
+        {userStats && userStats.currentStreak > 1 && (
+          <p className="text-3 text-text-2">
+            {userStats.currentStreak}-puzzle streak
+          </p>
+        )}
 
         <div className="flex flex-col gap-1 text-3 text-text-2">
           {isFirstOptimal && <p>You found the first perfect solve!</p>}
