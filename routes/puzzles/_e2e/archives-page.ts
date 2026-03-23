@@ -4,10 +4,6 @@ import type { Page } from "playwright";
 import { PuzzlePage } from "../[slug]/_e2e/puzzle-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
 
-type GotoOptions = {
-  waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
-};
-
 export class ArchivesPage {
   constructor(private page: Page) {}
 
@@ -15,7 +11,7 @@ export class ArchivesPage {
     return this.page.getByRole("heading", { name: /Archives/i });
   }
 
-  async goto(pageNum = 1, opts?: GotoOptions) {
+  async goto(pageNum = 1, opts?: Parameters<typeof this.page.goto>[1]) {
     await this.page.goto(`${BASE_URL}/puzzles?page=${pageNum}`, opts);
     return this;
   }

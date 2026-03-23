@@ -6,14 +6,10 @@ import { PuzzlePage } from "../puzzles/[slug]/_e2e/puzzle-page.ts";
 import { TutorialPage } from "../puzzles/tutorial/_e2e/tutorial-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
 
-type GotoOptions = {
-  waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
-};
-
 export class HomePage {
   constructor(private page: Page) {}
 
-  async goto(opts?: GotoOptions) {
+  async goto(opts?: Parameters<typeof this.page.goto>[1]) {
     await this.page.goto(BASE_URL, opts);
     return this;
   }
@@ -51,6 +47,12 @@ export class HomePage {
   async clickWarmUpPuzzle() {
     await this.page.getByRole("link", { name: /warm-up puzzle/i }).click();
     return new PuzzlePage(this.page);
+  }
+
+  stat(label: string) {
+    return this.page.locator("div").filter({
+      has: this.page.locator("dt", { hasText: label }),
+    }).locator("dd");
   }
 
   async clickArchivesLink() {

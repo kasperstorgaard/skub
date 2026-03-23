@@ -1,5 +1,7 @@
 import { HomePage } from "./home-page.ts";
 import { expect, setup } from "#/e2e/base.ts";
+import { solvePuzzle } from "#/e2e/helpers.ts";
+import { getAvailableEntries } from "#/game/loader.ts";
 
 Deno.test("home — share button is visible", async () => {
   const { page, teardown } = await setup();
@@ -70,6 +72,30 @@ Deno.test("home — tutorial link navigates to tutorial for new user", async () 
 
     await home.newHereLink.click();
     await expect(page).toHaveURL(/\/puzzles\/tutorial/);
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("home — stats show streak and solve count after seeding solutions", async () => {
+  const { page, asUser, addSolution, teardown } = await setup();
+  try {
+    const [_, entries] = await Promise.all([
+      asUser({ name: "e2estats" }),
+      getAvailableEntries(),
+    ]);
+
+    for (const entry of entries.slice(0, 2)) {
+      await addSolution({
+        puzzleSlug: entry.slug,
+        moves: await solvePuzzle(entry.slug),
+      });
+    }
+
+    const homePage = await new HomePage(page).goto();
+
+    await expect(homePage.stat("Streak")).toContainText("2");
+    await expect(homePage.stat("Solves")).toContainText("2");
   } finally {
     await teardown();
   }

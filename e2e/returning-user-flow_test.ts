@@ -1,10 +1,11 @@
 // deno-lint-ignore skub-imports/use-hash-alias
 import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
+import { PuzzlePage } from "#/routes/puzzles/[slug]/_e2e/puzzle-page.ts";
 
-// -- Returning user: homepage → daily puzzle → solve → celebration ---
+// -- Returning user: daily puzzle → celebration → archive puzzle → streak ---
 
-Deno.test("a returning player opens the daily puzzle from the homepage and solves it", async () => {
+Deno.test("a returning player solves two puzzles, building a streak", async () => {
   const { page, asUser, teardown } = await setup();
   try {
     await asUser({ name: "e2egg" });
@@ -17,6 +18,13 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
 
     const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
     await expect(solutionsPage.solveByName("e2egg")).toBeVisible();
+
+    const archivePuzzle = await new PuzzlePage(page).gotoWithSolution(
+      "lisbeth",
+    );
+    await expect(archivePuzzle.celebrationDialog.body).toContainText(
+      /streak/i,
+    );
   } finally {
     await teardown();
   }

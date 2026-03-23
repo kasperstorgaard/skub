@@ -1,6 +1,9 @@
 import type { BrowserContext } from "playwright";
 
 import type { Solution, User } from "#/db/types.ts";
+import { getPuzzle } from "#/game/loader.ts";
+import { solveSync } from "#/game/solver.ts";
+import type { Move } from "#/game/types.ts";
 
 export const BASE_URL = Deno.env.get("BASE_URL") ?? "http://localhost:5173";
 
@@ -78,6 +81,16 @@ export async function seedSolution(
     throw new Error(`Seed solution failed: ${res.status} ${text}`);
   }
   return res.json();
+}
+
+/**
+ * Loads a puzzle by slug and returns the optimal solution moves.
+ * Throws if the puzzle doesn't exist.
+ */
+export async function solvePuzzle(slug: string): Promise<Move[]> {
+  const puzzle = await getPuzzle(slug);
+  if (!puzzle) throw new Error(`Puzzle not found: ${slug}`);
+  return solveSync(puzzle);
 }
 
 function seedHeaders() {

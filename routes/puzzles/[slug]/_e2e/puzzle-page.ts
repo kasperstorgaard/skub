@@ -9,10 +9,6 @@ import { encodeState } from "#/game/url.ts";
 
 const SLUG_MATCHER = /\/puzzles\/([^/]+)(\/|$)/i;
 
-type GotoOptions = {
-  waitUntil?: "load" | "domcontentloaded" | "networkidle" | "commit";
-};
-
 export class PuzzlePage {
   constructor(private page: Page) {}
 
@@ -32,7 +28,7 @@ export class PuzzlePage {
       usernameInput: page.getByRole("textbox", { name: /username/i }),
       submitName: async (name: string) => {
         await page.getByRole("textbox", { name: /username/i }).fill(name);
-        await page.getByRole("button", { name: /Post your solve/i }).click();
+        await page.getByRole("button", { name: /Claim your solve/i }).click();
         return new SolutionsPage(page);
       },
     };
@@ -43,7 +39,8 @@ export class PuzzlePage {
     const page = this.page;
     const dialog = page.getByRole("dialog");
     return {
-      heading: dialog.getByRole("heading", { name: /Solved in/i }),
+      heading: dialog.getByRole("heading"),
+      body: dialog.locator("p"),
       seeSolvesLink: dialog.getByRole("link", { name: /See solves/i }),
       clickSeeSolves: async () => {
         await dialog.getByRole("link", { name: /See solves/i }).click();
@@ -52,12 +49,15 @@ export class PuzzlePage {
     };
   }
 
-  async goto(slug: string, opts?: GotoOptions) {
+  async goto(slug: string, opts?: Parameters<typeof this.page.goto>[1]) {
     await this.page.goto(`${BASE_URL}/puzzles/${slug}`, opts);
     return this;
   }
 
-  async gotoWithSolution(slug: string, opts?: GotoOptions) {
+  async gotoWithSolution(
+    slug: string,
+    opts?: Parameters<typeof this.page.goto>[1],
+  ) {
     const puzzle = await getPuzzle(slug);
     if (!puzzle) throw new Error(`Puzzle not found: ${slug}`);
     const param = encodeState({ moves: solveSync(puzzle) });
