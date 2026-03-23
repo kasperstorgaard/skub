@@ -170,9 +170,8 @@ export default define.page<typeof handler>(function Home(ctx) {
 
         <div
           className={clsx(
-            "col-[2/3] flex flex-col gap-fl-1 justify-between items-start flex-wrap text-2 text-text-2",
-            "sm:flex-row sm:items-center",
-            "lg:col-auto lg:row-start-3 lg:flex-col lg:justify-between lg:self-stretch lg:items-start",
+            "col-[2/3] flex flex-col gap-fl-3 justify-between items-start text-2 text-text-2",
+            "lg:col-auto lg:row-start-3 lg:justify-between lg:self-stretch",
           )}
         >
           {userStats && (

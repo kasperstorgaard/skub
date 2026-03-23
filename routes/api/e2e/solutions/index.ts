@@ -22,7 +22,7 @@ export const handler = define.handlers({
       });
     }
 
-    const solution = await addSolution(body);
+    const { solution } = await addSolution(body);
 
     return Response.json(solution);
   },

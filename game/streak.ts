@@ -1,6 +1,9 @@
 import { listUserSolutions } from "#/db/solutions.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
 
+// TODO: replace perfect % with a player score (e.g. points per solve,
+// bonus for optimal/streak) and add a global highscore leaderboard.
+
 /**
  * Aggregate personal stats for a user.
  */
@@ -32,6 +35,8 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 
   // Entries are newest-first. Current streak walks forward from the top;
   // skip today's puzzle if unsolved — the player still has time.
+  // NOTE: solving archived puzzles fills gaps and extends the streak.
+  // This is intentional — it rewards engagement regardless of timing.
   let currentStreak = 0;
   let start = 0;
   if (entries.length > 0 && !solvedSlugs.has(entries[0].slug)) {

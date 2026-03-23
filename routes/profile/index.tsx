@@ -121,6 +121,8 @@ export default define.page<typeof handler>(function ProfilePage(props) {
             <>
               <hr className="m-0 p-0" />
 
+              {/* TODO: make this more interactive — total solves links to
+                  your solve history, streak calendar/heatmap, tap to replay */}
               <section className="flex flex-col gap-fl-2">
                 <h2 className="text-5">Stats</h2>
 
@@ -147,7 +149,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
                   </div>
 
                   <div className="flex flex-col gap-0.5">
-                    <dt className="text-2 text-text-2">Optimal solves</dt>
+                    <dt className="text-2 text-text-2">Perfect solves</dt>
                     <dd className="text-5 font-semibold text-text-1 m-0">
                       {userStats.optimalSolves}
                       <span className="text-2 text-text-2 font-normal ml-1">

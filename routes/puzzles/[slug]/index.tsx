@@ -106,13 +106,15 @@ export const handler = define.handlers<PageData>({
           return Response.redirect(redirectUrl, 303);
         }
 
+        let isNewPath = false;
         if (!existing && savedName) {
-          await addSolution({
+          const result = await addSolution({
             puzzleSlug: slug,
             name: savedName,
             moves,
             userId: ctx.state.userId,
           });
+          isNewPath = result.isNewPath;
 
           posthog?.capture({
             distinctId: ctx.state.trackingId,
@@ -130,6 +132,7 @@ export const handler = define.handlers<PageData>({
 
         const redirectUrl = new URL(ctx.url);
         redirectUrl.searchParams.set("dialog", "celebrate");
+        if (isNewPath) redirectUrl.searchParams.set("new_path", "true");
         return Response.redirect(redirectUrl, 303);
       }
     }
@@ -197,12 +200,18 @@ export const handler = define.handlers<PageData>({
       });
     }
 
-    await addSolution({
+    const { isNewPath } = await addSolution({
       puzzleSlug: slug,
       name,
       moves,
       userId: ctx.state.userId,
     });
+
+    if (isNewPath && !fromSolutionDialog) {
+      const url = new URL(redirectUrl, req.url);
+      url.searchParams.set("new_path", "true");
+      redirectUrl = url.href;
+    }
 
     posthog?.capture({
       distinctId: ctx.state.trackingId,
