@@ -26,10 +26,26 @@ async function getDiff(): Promise<string> {
   return new TextDecoder().decode(result.stdout).trim();
 }
 
+async function collectTestFiles(
+  dir: string,
+  paths: string[],
+): Promise<void> {
+  for await (const entry of Deno.readDir(dir)) {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory) {
+      if (entry.name === "_fresh" || entry.name === "node_modules") continue;
+      await collectTestFiles(path, paths);
+    } else if (entry.name.endsWith("_test.ts")) {
+      if (path.startsWith("./e2e/") || path.includes("/_e2e/")) {
+        paths.push(path);
+      }
+    }
+  }
+}
+
 async function readTestFiles(): Promise<string> {
-  const paths = Array.from(Deno.readDirSync("e2e"))
-    .filter((e) => e.isFile && e.name.endsWith("_test.ts"))
-    .map((e) => `e2e/${e.name}`);
+  const paths: string[] = [];
+  await collectTestFiles(".", paths);
 
   const sections = await Promise.all(
     paths.map(async (path) => {

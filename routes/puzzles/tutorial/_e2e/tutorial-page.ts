@@ -1,6 +1,7 @@
+// deno-lint-ignore-file skub-imports/use-hash-alias
 import type { Page } from "playwright";
 
-import { PuzzlePage } from "./puzzle-page.ts";
+import { HomePage } from "../../../_e2e/home-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
 
 export class TutorialPage {
@@ -39,11 +40,6 @@ export class TutorialPage {
 
   async clickLetsGo() {
     await this.page.getByRole("button", { name: /let's go!/i }).click();
-    return this;
-  }
-
-  async clickWarmUpPuzzle() {
-    await this.page.getByRole("link", { name: /warm-up puzzle/i }).click();
-    return new PuzzlePage(this.page);
+    return new HomePage(this.page);
   }
 }

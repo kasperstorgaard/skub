@@ -415,7 +415,13 @@ function BoardReplayStyles({ puzzle, moves }: BoardReplayProps) {
     stops.push({ id, from: move[0], to: move[1] });
   }
 
-  return <style>{buildReplayKeyframes(stops, moves.length)}</style>;
+  return (
+    <div data-e2e="replay-keyframes">
+      <style>
+        {buildReplayKeyframes(stops, moves.length)}
+      </style>
+    </div>
+  );
 }
 
 function getPieceId(piece: Piece, idx: number) {

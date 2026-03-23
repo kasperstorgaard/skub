@@ -1,57 +1,18 @@
 import { define } from "#/core.ts";
 import { kv } from "#/db/kv.ts";
-import type { Solution, User } from "#/db/types.ts";
+import type { Solution } from "#/db/types.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
-
-const E2E_SECRET = Deno.env.get("E2E_SECRET");
-
-function isAuthorized(req: Request): boolean {
-  if (!E2E_SECRET) return false;
-  if (new URL(req.url).hostname === "skub.app") return false;
-  return req.headers.get("x-e2e-secret") === E2E_SECRET;
-}
+import { isAuthorized } from "#/routes/api/e2e/_auth.ts";
 
 export const handler = define.handlers({
-  async POST(ctx) {
-    if (!isAuthorized(ctx.req)) {
-      return new Response("Forbidden", { status: 403 });
-    }
-
-    let body: { userId: string; name: string };
-    try {
-      body = await ctx.req.json();
-    } catch {
-      return new Response("Invalid JSON", { status: 400 });
-    }
-
-    const { userId, name } = body;
-    if (!userId || !name) {
-      return new Response("Missing userId or name", { status: 400 });
-    }
-
-    const user: User = { id: userId, name, onboarding: "done" };
-    await kv.set(["user", userId], user);
-
-    return new Response("OK", { status: 200 });
-  },
-
   async DELETE(ctx) {
     if (!isAuthorized(ctx.req)) {
       return new Response("Forbidden", { status: 403 });
     }
 
-    let body: { userId: string };
-    try {
-      body = await ctx.req.json();
-    } catch {
-      return new Response("Invalid JSON", { status: 400 });
-    }
+    const { userId } = ctx.params;
 
-    const { userId } = body;
-    if (!userId) {
-      return new Response("Missing userId", { status: 400 });
-    }
-
+    // TODO: extract cascade delete into a db/users.ts deleteUser() function
     // Collect user-scoped solutions before deleting, so we can clean global indexes too
     const solutions: Solution[] = [];
 

@@ -1,32 +1,40 @@
 import type { BrowserContext } from "playwright";
 
+import type { Solution, User } from "#/db/types.ts";
+
 export const BASE_URL = Deno.env.get("BASE_URL") ?? "http://localhost:5173";
 
 const E2E_SECRET = Deno.env.get("E2E_SECRET");
 
+export type SeedUserInput =
+  & { name: string }
+  & Partial<Omit<User, "id" | "name">>;
+
 /**
- * Seeds a named user via the app's seed route, so it lands in the same KV
- * instance the app reads from.
+ * Seeds a user via the e2e users endpoint.
+ * Returns the created User (with server-generated id).
  */
-export async function seedNamedUser(userId: string, name: string) {
-  const res = await fetch(`${BASE_URL}/api/e2e/seed`, {
+export async function seedUser(input: SeedUserInput): Promise<User> {
+  const res = await fetch(`${BASE_URL}/api/e2e/users`, {
     method: "POST",
     headers: seedHeaders(),
-    body: JSON.stringify({ userId, name }),
+    body: JSON.stringify(input),
   });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Seed failed: ${res.status} ${text}`);
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Seed user failed: ${res.status} ${text}`);
+  }
+  return res.json();
 }
 
 /**
- * Deletes all KV entries for the given test user via the app's seed route.
+ * Deletes all KV entries for the given test user (including solutions).
  * Idempotent.
  */
 export async function clearTestUser(userId: string) {
-  const res = await fetch(`${BASE_URL}/api/e2e/seed`, {
+  const res = await fetch(`${BASE_URL}/api/e2e/users/${userId}`, {
     method: "DELETE",
     headers: seedHeaders(),
-    body: JSON.stringify({ userId }),
   });
   const text = await res.text();
   if (!res.ok) throw new Error(`Teardown failed: ${res.status} ${text}`);
@@ -51,6 +59,25 @@ export async function addUserCookie(context: BrowserContext, userId: string) {
       url: BASE_URL,
     },
   ]);
+}
+
+/**
+ * Seeds a solution for an existing user.
+ * Returns the created Solution (with server-generated id).
+ */
+export async function seedSolution(
+  input: Omit<Solution, "id">,
+): Promise<Solution> {
+  const res = await fetch(`${BASE_URL}/api/e2e/solutions`, {
+    method: "POST",
+    headers: seedHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Seed solution failed: ${res.status} ${text}`);
+  }
+  return res.json();
 }
 
 function seedHeaders() {

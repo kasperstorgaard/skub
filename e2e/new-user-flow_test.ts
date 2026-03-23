@@ -1,10 +1,11 @@
+// deno-lint-ignore skub-imports/use-hash-alias
+import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
-import { HomePage } from "#/e2e/pages/home-page.ts";
 
 Deno.test("a new user discovers the tutorial, plays their first puzzle, and submits their name", async () => {
   const { page, teardown } = await setup();
   try {
-    const home = await new HomePage(page).goto();
+    let home = await new HomePage(page).goto();
     const tutorial = await home.clickNewHereLink();
 
     await expect(tutorial.welcomeHeading).toBeVisible();
@@ -15,9 +16,9 @@ Deno.test("a new user discovers the tutorial, plays their first puzzle, and subm
 
     // Wait for the animation to complete
     await expect(tutorial.solutionHeading).toBeVisible({ timeout: 10_000 });
-    await tutorial.clickLetsGo();
+    home = await tutorial.clickLetsGo();
 
-    const puzzlePage = await tutorial.clickWarmUpPuzzle();
+    const puzzlePage = await home.clickWarmUpPuzzle();
     await puzzlePage.solveByClicking();
 
     await expect(puzzlePage.solutionDialog.heading).toBeVisible();

@@ -16,7 +16,7 @@ export type Solution = {
   puzzleSlug: string;
   name: string;
   moves: Move[];
-  userId?: string;
+  userId: string;
 };
 
 // One entry per canonical move group for a puzzle, maintained as best-effort aggregate
