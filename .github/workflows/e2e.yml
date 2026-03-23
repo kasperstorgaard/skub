@@ -99,10 +99,6 @@ jobs:
 
       - name: Post final status
         if: always()
-        env:
-          STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
-          DESC: ${{ job.status == 'success' && 'All tests passed' || 'Tests failed' }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           gh api repos/${{ github.repository }}/statuses/$DEPLOY_SHA \
             --method POST \
@@ -111,4 +107,7 @@ jobs:
             -f description="$DESC" \
             -f target_url="$RUN_URL"
         env:
+          STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
+          DESC: ${{ job.status == 'success' && 'All tests passed' || 'Tests failed' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
