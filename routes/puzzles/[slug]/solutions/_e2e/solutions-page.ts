@@ -13,7 +13,7 @@ export class SolutionsPage {
   }
 
   solveByName(name: string) {
-    return this.page.getByText(name);
+    return this.page.getByRole("link", { name, exact: false });
   }
 
   async clickWatchFirst() {
