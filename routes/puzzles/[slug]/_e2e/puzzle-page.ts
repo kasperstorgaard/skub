@@ -68,6 +68,10 @@ export class PuzzlePage {
   async solveByClicking() {
     const puzzle = await getPuzzle(this.currentSlug);
     if (!puzzle) throw new Error(`Puzzle not found: ${this.currentSlug}`);
+
+    // Wait for the dom to be fully loaded, as this relies on event listeners to attach.
+    await this.page.waitForLoadState("domcontentloaded");
+
     for (const move of solveSync(puzzle)) {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,
