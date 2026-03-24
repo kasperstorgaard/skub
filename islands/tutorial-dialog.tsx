@@ -182,8 +182,8 @@ function TutorialReplayStep({ href }: TutorialStepProps & {
         </p>
 
         <p>
-          Every puzzle has many solutions, each ranked by number of moves.
-          A new puzzle drops every day.
+          Every puzzle has many solutions, each ranked by number of moves. A new
+          puzzle drops every day.
         </p>
       </div>
 
