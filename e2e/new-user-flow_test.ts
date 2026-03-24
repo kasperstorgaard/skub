@@ -12,11 +12,12 @@ Deno.test("a new user discovers the tutorial, plays their first puzzle, and subm
     await tutorial.clickNext();
 
     await expect(tutorial.piecesHeading).toBeVisible();
-    await tutorial.clickShowMe();
+    await tutorial.clickTryIt();
 
-    // Wait for the animation to complete
-    await expect(tutorial.solutionHeading).toBeVisible({ timeout: 10_000 });
-    home = await tutorial.clickLetsGo();
+    await tutorial.solveByClicking();
+
+    await expect(tutorial.solvedHeading).toBeVisible();
+    home = await tutorial.clickImReady();
 
     const puzzlePage = await home.clickWarmUpPuzzle();
     await puzzlePage.solveByClicking();

@@ -10,7 +10,6 @@ import {
   Icon,
   Printer,
   Ranking,
-  UserCircle,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { Onboarding, Puzzle } from "#/game/types.ts";
@@ -213,10 +212,6 @@ export function ControlsPanel(
               Download
             </a>
           )}
-
-          <a href="/profile" className="btn">
-            <Icon icon={UserCircle} /> Profile
-          </a>
         </div>
       </div>
     </Panel>
