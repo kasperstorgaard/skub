@@ -10,7 +10,6 @@ import {
   Icon,
   Printer,
   Ranking,
-  UserCircle,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { Onboarding, Puzzle } from "#/game/types.ts";
