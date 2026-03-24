@@ -1,0 +1,40 @@
+name: archive-spec
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - spec.md
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get branch name from merge commit
+        id: branch
+        run: |
+          BRANCH=$(git log -1 --pretty=%s | grep -oP '(?<=\().*(?=\))' | head -1 || echo "")
+          if [ -z "$BRANCH" ]; then
+            BRANCH="unknown-$(git rev-parse --short HEAD)"
+          fi
+          # Slugify: lowercase, replace non-alphanumeric with dashes, trim
+          SLUG=$(echo "$BRANCH" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g; s/--*/-/g; s/^-//; s/-$//')
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+
+      - name: Archive spec.md
+        run: |
+          mkdir -p specs
+          mv spec.md "specs/${{ steps.branch.outputs.slug }}.md"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add specs/ spec.md
+          git commit -m "Archive spec → specs/${{ steps.branch.outputs.slug }}.md [skip ci]"
+          git push

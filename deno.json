@@ -3,7 +3,6 @@
     "kv"
   ],
   "tasks": {
-    "archive-spec": "deno run -A ./scripts/archive-spec.ts",
     "build": "vite build",
     "dev": "vite",
     "e2e": "deno test -A --no-check --env --trace-leaks e2e/ routes/",
