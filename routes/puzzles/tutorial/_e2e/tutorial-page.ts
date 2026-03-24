@@ -3,6 +3,8 @@ import type { Page } from "playwright";
 
 import { HomePage } from "../../../_e2e/home-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
+import { getPuzzle } from "#/game/loader.ts";
+import { solveSync } from "#/game/solver.ts";
 
 export class TutorialPage {
   constructor(private page: Page) {}
@@ -28,8 +30,17 @@ export class TutorialPage {
     return this.page.getByRole("heading", { name: /finding a solution/i });
   }
 
+  get solvedHeading() {
+    return this.page.getByRole("heading", { name: /you found a solution/i });
+  }
+
   async clickNext() {
     await this.page.getByRole("link", { name: /next/i }).click();
+    return this;
+  }
+
+  async clickTryIt() {
+    await this.page.getByRole("link", { name: /try it/i }).click();
     return this;
   }
 
@@ -38,8 +49,22 @@ export class TutorialPage {
     return this;
   }
 
-  async clickLetsGo() {
-    await this.page.getByRole("button", { name: /let's go!/i }).click();
+  async clickImReady() {
+    await this.page.getByRole("link", { name: /i'm ready/i }).click();
     return new HomePage(this.page);
+  }
+
+  async solveByClicking() {
+    const puzzle = await getPuzzle("tutorial");
+    if (!puzzle) throw new Error("Tutorial puzzle not found");
+    for (const move of solveSync(puzzle)) {
+      await this.page.getByRole("link", {
+        name: `at ${move[0].x},${move[0].y}`,
+      }).click();
+      await this.page.getByRole("link", {
+        name: `move to ${move[1].x},${move[1].y}`,
+      }).click();
+    }
+    return this;
   }
 }

@@ -183,13 +183,7 @@ function TutorialReplayStep({ href }: TutorialStepProps & {
 
         <p>
           Every puzzle has many solutions, each ranked by number of moves.
-        </p>
-
-        <p>
-          You can see the number of moves in the control panel{" "}
-          <span className="max-lg:hidden">on the right</span>
-          <span className="lg:hidden">below</span>, where you can also undo
-          moves, get a hint, or start over.
+          A new puzzle drops every day.
         </p>
       </div>
 
@@ -206,12 +200,12 @@ function TutorialReplayStep({ href }: TutorialStepProps & {
           Previous
         </a>
 
-        <button
-          type="submit"
+        <a
+          href="/"
           className="btn"
         >
-          Let's go!
-        </button>
+          I'm ready
+        </a>
       </form>
     </>
   );
@@ -228,13 +222,7 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
         </h1>
         <p>
           Every puzzle has many solutions, each ranked by number of moves.
-        </p>
-
-        <p>
-          You can see the number of moves in the control panel{" "}
-          <span className="max-lg:hidden">on the right</span>
-          <span className="lg:hidden">below</span>, where you can also undo
-          moves, get a hint, or start over.
+          Today's puzzle is waiting.
         </p>
       </div>
 
@@ -251,12 +239,12 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           Previous
         </a>
 
-        <button
-          type="submit"
+        <a
+          href="/"
           className="btn"
         >
-          Let's go!
-        </button>
+          I'm ready
+        </a>
       </form>
     </>
   );

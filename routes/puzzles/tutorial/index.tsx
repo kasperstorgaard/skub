@@ -9,7 +9,7 @@ import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getPuzzle } from "#/game/loader.ts";
-import { encodeMoves } from "#/game/strings.ts";
+import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
@@ -75,16 +75,16 @@ export const handler = define.handlers<Data>({
       id: "",
       name: "tutorial",
       puzzleSlug: puzzle.slug,
-      moves,
+      moves: decodeMoves(solutionRaw),
       userId: "",
     };
 
     const showMeUrl = new URL(ctx.url);
 
+    showMeUrl.search = "";
     showMeUrl.searchParams.set("mode", "replay");
-    showMeUrl.searchParams.set("moves", encodeMoves(moves));
-    showMeUrl.searchParams.delete("active");
-    showMeUrl.searchParams.delete("cursor");
+    showMeUrl.searchParams.set("moves", solutionRaw);
+    showMeUrl.searchParams.set("dialog", "tutorial");
     showMeUrl.searchParams.set("tutorial_step", "replay");
     showMeUrl.searchParams.set("replay_speed", "1");
 
