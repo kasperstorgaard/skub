@@ -52,7 +52,7 @@ Size doesn't matter — a one-liner on a different topic still belongs elsewhere
 
 When planning work before implementation, write the plan to `spec.md` at the project root and commit it. On every push, CI auto-populates the PR body between `<!-- spec:start -->` / `<!-- spec:end -->` markers with the current spec content.
 
-Before merging, archive the spec with `deno task archive-spec` (moves to `specs/<branch-slug>.md`). The `check-spec` CI job blocks the merge if `spec.md` still exists.
+On merge to main, the `archive-spec` workflow automatically moves `spec.md` to `specs/<branch-slug>.md` — no manual step needed.
 
 Past specs live in `specs/` — excluded from context by default, reference them explicitly if needed.
 
