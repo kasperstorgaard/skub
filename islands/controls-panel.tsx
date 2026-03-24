@@ -213,10 +213,6 @@ export function ControlsPanel(
               Download
             </a>
           )}
-
-          <a href="/profile" className="btn">
-            <Icon icon={UserCircle} /> Profile
-          </a>
         </div>
       </div>
     </Panel>

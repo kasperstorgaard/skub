@@ -1,6 +1,6 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { useEffect, useMemo } from "preact/hooks";
+import { useMemo } from "preact/hooks";
 
 import { Icon, X } from "#/components/icons.tsx";
 import type { Solution } from "#/db/types.ts";
@@ -9,18 +9,26 @@ import { Dialog } from "#/islands/dialog.tsx";
 
 type Props = {
   href: Signal<string>;
-  mode: Signal<"replay" | "readonly">;
   solution: Omit<Solution, "id" | "name">;
-  open?: boolean;
 };
 
-export function TutorialDialog({ open, href, mode, solution }: Props) {
-  const step = useMemo(() => {
-    const url = new URL(href.value);
-    const rawValue = url.searchParams.get("step");
-    const value = rawValue && parseInt(rawValue, 10);
+const TUTORIAL_STEPS = ["welcome", "pieces", "replay", "solved"] as const;
+type TutorialStep = (typeof TUTORIAL_STEPS)[number];
 
-    return !value || isNaN(value) ? 0 : value;
+export function TutorialDialog(
+  { href, solution }: Props,
+) {
+  const dialog = useMemo(
+    () => new URL(href.value).searchParams.get("dialog"),
+    [href.value],
+  );
+
+  const step: TutorialStep = useMemo(() => {
+    const url = new URL(href.value);
+    const rawValue = url.searchParams.get("tutorial_step");
+    return TUTORIAL_STEPS.some((value) => value === rawValue)
+      ? rawValue as TutorialStep
+      : "welcome";
   }, [href.value]);
 
   const replaySpeed = useMemo(
@@ -28,9 +36,7 @@ export function TutorialDialog({ open, href, mode, solution }: Props) {
     [href.value],
   );
 
-  useEffect(() => {
-    mode.value = step === 2 ? "replay" : "readonly";
-  }, [step]);
+  const open = dialog === "tutorial";
 
   return (
     <Dialog
@@ -38,18 +44,21 @@ export function TutorialDialog({ open, href, mode, solution }: Props) {
       className={clsx(
         "[animation-fill-mode:forwards]",
         "backdrop:[animation-delay:inherit] backdrop:[animation-fill-mode:forwards]",
-        step === 2 &&
+        step === "replay" &&
           "opacity-0 animate-fade-in backdrop:opacity-0 backdrop:animate-fade-in",
       )}
       style={{
         animationDelay: `${(1 / replaySpeed) * solution.moves.length}s`,
       }}
     >
-      {step === 0 && <TutorialWelcomeStep href={href.value} open={open} />}
-      {step === 1 && <TutorialPiecesStep href={href.value} />}
-      {step === 2 && (
-        <TutorialSolutionStep href={href.value} solution={solution} />
+      {step === "welcome" && (
+        <TutorialWelcomeStep href={href.value} open={open} />
       )}
+      {step === "pieces" && <TutorialPiecesStep href={href.value} />}
+      {step === "replay" && (
+        <TutorialReplayStep href={href.value} solution={solution} />
+      )}
+      {step === "solved" && <TutorialSolveStep href={href.value} />}
     </Dialog>
   );
 }
@@ -60,7 +69,7 @@ type TutorialStepProps = {
 };
 
 function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
-  const nextStep = useMemo(() => getStepLink(href, 1), [
+  const nextStep = useMemo(() => getStepLink(href, "pieces"), [
     href,
   ]);
 
@@ -108,10 +117,14 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
 }
 
 function TutorialPiecesStep({ href }: TutorialStepProps) {
-  const prevStep = useMemo(() => getStepLink(href, 0), [href]);
-  const nextStep = useMemo(() => getStepLink(href, 2, { replaySpeed: 1 }), [
-    href,
-  ]);
+  const prevStep = useMemo(() => getStepLink(href, "welcome"), [href]);
+
+  const tryItHref = useMemo(() => {
+    const url = new URL(href);
+    url.search = "";
+    url.searchParams.set("mode", "solve");
+    return url.href;
+  }, [href]);
 
   return (
     <>
@@ -139,23 +152,22 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
         </a>
 
         <a
-          href={nextStep}
+          href={tryItHref}
           className="btn"
-          data-router="push"
         >
-          Show me!
+          Try it!
         </a>
       </div>
     </>
   );
 }
 
-function TutorialSolutionStep({ href }: TutorialStepProps & {
+function TutorialReplayStep({ href }: TutorialStepProps & {
   solution: Omit<Solution, "id" | "name">;
 }) {
-  const prevStep = useMemo(() => getStepLink(href, 1), [href]);
+  const prevStep = useMemo(() => getStepLink(href, "pieces"), [href]);
   const reloadStep = useMemo(
-    () => getStepLink(href, 2, { replaySpeed: 0.667 }),
+    () => getStepLink(href, "replay", { mode: "replay", replaySpeed: 0.667 }),
     [href],
   );
 
@@ -166,13 +178,7 @@ function TutorialSolutionStep({ href }: TutorialStepProps & {
           Finding a solution
         </h1>
         <p>
-          That's one way to solve it.{" "}
-          <a
-            href={reloadStep}
-            type="submit"
-          >
-            Show again
-          </a>
+          That's one way to solve it. <a href={reloadStep}>Show again</a>
         </p>
 
         <p>
@@ -211,19 +217,68 @@ function TutorialSolutionStep({ href }: TutorialStepProps & {
   );
 }
 
+function TutorialSolveStep({ href }: TutorialStepProps) {
+  const prevStep = useMemo(() => getStepLink(href, "pieces"), [href]);
+
+  return (
+    <>
+      <div className="flex flex-col gap-fl-2 text-text-2">
+        <h1 className="text-fl-2 leading-tight text-text-1">
+          You found a solution!
+        </h1>
+        <p>
+          Every puzzle has many solutions, each ranked by number of moves.
+        </p>
+
+        <p>
+          You can see the number of moves in the control panel{" "}
+          <span className="max-lg:hidden">on the right</span>
+          <span className="lg:hidden">below</span>, where you can also undo
+          moves, get a hint, or start over.
+        </p>
+      </div>
+
+      <form
+        action={href}
+        method="POST"
+        className="flex w-full gap-fl-1 flex-wrap justify-between"
+      >
+        <a
+          href={prevStep}
+          className="btn"
+          data-router="push"
+        >
+          Previous
+        </a>
+
+        <button
+          type="submit"
+          className="btn"
+        >
+          Let's go!
+        </button>
+      </form>
+    </>
+  );
+}
+
 type GetStepLinkOptions = {
+  mode?: "readonly" | "replay" | "solve";
   replaySpeed?: number;
 };
 
 function getStepLink(
   href: string,
-  step: number,
-  { replaySpeed }: GetStepLinkOptions = {},
+  step: TutorialStep,
+  { mode, replaySpeed }: GetStepLinkOptions = {},
 ) {
   const url = new URL(href);
-  url.searchParams.set("step", step.toString());
+  url.searchParams.set("tutorial_step", step);
 
-  if (replaySpeed) url.searchParams.set("replay_speed", replaySpeed.toString());
+  if (mode) url.searchParams.set("mode", mode);
+  if (replaySpeed) {
+    url.searchParams.set("replay_speed", replaySpeed.toString());
+  }
 
   return url.href;
 }
