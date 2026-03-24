@@ -2,8 +2,10 @@ name: archive-spec
 
 on:
   push:
-    branches: [main]
-    paths: [spec.md]
+    branches:
+      - main
+    paths:
+      - spec.md
 
 jobs:
   archive:
