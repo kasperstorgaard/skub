@@ -14,7 +14,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v2
 
       - name: Get branch name from merge commit
         id: branch
@@ -23,15 +22,19 @@ jobs:
           if [ -z "$BRANCH" ]; then
             BRANCH="unknown-$(git rev-parse --short HEAD)"
           fi
-          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+          # Slugify: lowercase, replace non-alphanumeric with dashes, trim
+          SLUG=$(echo "$BRANCH" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g; s/--*/-/g; s/^-//; s/-$//')
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
 
       - name: Archive spec.md
-        run: deno task archive-spec "${{ steps.branch.outputs.name }}"
+        run: |
+          mkdir -p specs
+          mv spec.md "specs/${{ steps.branch.outputs.slug }}.md"
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add specs/ spec.md
-          git commit -m "Archive spec [skip ci]"
+          git commit -m "Archive spec → specs/${{ steps.branch.outputs.slug }}.md [skip ci]"
           git push
