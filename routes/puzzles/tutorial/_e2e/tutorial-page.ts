@@ -57,6 +57,11 @@ export class TutorialPage {
   async solveByClicking() {
     const puzzle = await getPuzzle("tutorial");
     if (!puzzle) throw new Error("Tutorial puzzle not found");
+
+    // Wait for the DOM to be fully loaded — solve mode is entered client-side
+    // so event listeners may not be attached yet
+    await this.page.waitForLoadState("domcontentloaded");
+
     for (const move of solveSync(puzzle)) {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,

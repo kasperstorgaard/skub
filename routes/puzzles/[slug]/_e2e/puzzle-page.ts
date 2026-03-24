@@ -68,6 +68,9 @@ export class PuzzlePage {
   async solveByClicking() {
     const puzzle = await getPuzzle(this.currentSlug);
     if (!puzzle) throw new Error(`Puzzle not found: ${this.currentSlug}`);
+
+    // TODO: add waitForLoadState("domcontentloaded") like solveByKeyboard —
+    // hasn't been needed yet but could flake if called right after a client-side transition
     for (const move of solveSync(puzzle)) {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,
