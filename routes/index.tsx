@@ -89,8 +89,7 @@ export default define.page<typeof handler>(function Home(ctx) {
           </h1>
 
           <p className="text-text-2">
-            Slide pieces to reach the target. No stops, no turns.<br />Fewest
-            moves wins.
+            Slide the puck to the target.<br />Fewest moves wins.
           </p>
         </div>
 

@@ -35,7 +35,7 @@ export default define.page(
           <meta property="og:title" content="Skub" />
           <meta
             property="og:description"
-            content="Slide pieces to reach the target. No stops, no turns. Fewest moves wins."
+            content="Slide the puck to the target. Fewest moves wins."
           />
           {ogSlug && (
             <meta
