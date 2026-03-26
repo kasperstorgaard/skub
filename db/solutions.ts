@@ -7,7 +7,10 @@ import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { Move } from "#/game/types.ts";
 
 /**
- * Stores a human-submitted solution under two index keys (plus two user-scoped keys when userId is present):
+ * Saves a human-submitted solution, deduplicating by canonical move set per user.
+ * Returns `isNew: false` immediately if this user has already submitted the same path.
+ *
+ * Stores under two index keys (plus two user-scoped keys when userId is present):
  * - by puzzle slug (direct lookup)
  * - by puzzle slug + canonical move key (order-independent, for dedup)
  * - by user (user history)
@@ -16,15 +19,26 @@ import { Move } from "#/game/types.ts";
  * Uses an atomic transaction so all entries are written together or not at all.
  * Awaits aggregate updates (stats, canonical group) before returning — errors are logged but not re-thrown.
  */
-type AddSolutionResult = {
-  solution: Solution;
+type SaveSolutionResult = {
+  isNew: boolean;
   isNewPath: boolean;
+  solution: Solution | null;
 };
 
-export async function addSolution(
+export async function saveSolution(
   payload: Omit<Solution, "id">,
-): Promise<AddSolutionResult> {
+): Promise<SaveSolutionResult> {
   const { puzzleSlug, moves } = payload;
+
+  // User-level dedup: skip if this user already submitted this exact canonical path
+  if (payload.userId) {
+    const userExisting = await getCanonicalUserSolution(
+      payload.userId,
+      puzzleSlug,
+      moves,
+    );
+    if (userExisting) return { isNew: false, isNewPath: false, solution: null };
+  }
 
   const id = ulid().toLowerCase();
   const solution = { ...payload, id };
@@ -87,7 +101,7 @@ export async function addSolution(
     );
   }
 
-  return { solution, isNewPath };
+  return { isNew: true, isNewPath, solution };
 }
 
 /**
@@ -245,7 +259,7 @@ export async function getPuzzleSolution(
  * for a given puzzle. Returns the existing solution or null.
  * Uses a list scan — fine since users post very few solutions per puzzle.
  */
-export async function getCanonicalUserSolution(
+async function getCanonicalUserSolution(
   userId: string,
   puzzleSlug: string,
   moves: Move[],
