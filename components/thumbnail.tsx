@@ -85,19 +85,20 @@ export function Thumbnail({
         />
       </g>
 
-      {/* Walls */}
+      {/* Walls — offset by half the gap so they appear between cells */}
       {board.walls.map((wall: Wall, idx) => {
         const px = cellX(wall.x);
         const py = cellY(wall.y);
+        const half = gap / 2;
 
         if (wall.orientation === "vertical") {
           return (
             <line
               className="svg-wall"
               key={`wall-${idx}`}
-              x1={px}
+              x1={px - half}
               y1={py}
-              x2={px}
+              x2={px - half}
               y2={py + cellSize}
               strokeWidth="3"
               stroke={colors.ui4}
@@ -109,9 +110,9 @@ export function Thumbnail({
               className="svg-wall"
               key={`wall-${idx}`}
               x1={px}
-              y1={py}
+              y1={py - half}
               x2={px + cellSize}
-              y2={py}
+              y2={py - half}
               strokeWidth="3"
               stroke={colors.ui4}
             />
