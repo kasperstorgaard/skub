@@ -339,7 +339,7 @@ function MoveGuide({ move, href, isHint }: MoveGuideProps) {
         }}
         aria-label={`move to ${target.x},${target.y}`}
         tabIndex={-1}
-        data-router="push"
+        data-router="replace"
       />
     </>
   );

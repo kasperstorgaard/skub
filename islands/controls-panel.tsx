@@ -179,7 +179,7 @@ export function ControlsPanel(
             <a
               href={getResetHref(href.value)}
               className="bg-transparent"
-              data-router="push"
+              data-router="replace"
             >
               Start over
             </a>
