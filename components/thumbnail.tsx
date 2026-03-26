@@ -89,16 +89,15 @@ export function Thumbnail({
       {board.walls.map((wall: Wall, idx) => {
         const px = cellX(wall.x);
         const py = cellY(wall.y);
-        const half = gap / 2;
 
         if (wall.orientation === "vertical") {
           return (
             <line
               className="svg-wall"
               key={`wall-${idx}`}
-              x1={px - half}
+              x1={px - gap / 2}
               y1={py}
-              x2={px - half}
+              x2={px - gap / 2}
               y2={py + cellSize}
               strokeWidth="3"
               stroke={colors.ui4}
@@ -110,9 +109,9 @@ export function Thumbnail({
               className="svg-wall"
               key={`wall-${idx}`}
               x1={px}
-              y1={py - half}
+              y1={py - gap / 2}
               x2={px + cellSize}
-              y2={py - half}
+              y2={py - gap / 2}
               strokeWidth="3"
               stroke={colors.ui4}
             />
