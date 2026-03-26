@@ -143,6 +143,12 @@ export default define.page<typeof handler>();
 
 - **Inference first** — don't annotate what the compiler can figure out.
 - **Avoid** `enum` (use string unions), `interface` (use `type`), `!` non-null assertions, `any`.
+- **Function arguments** — max 3, ordered by essentialness. Exceed this only for performance-critical functions where object allocation overhead matters. Use domain-specific names, not generic placeholders:
+  1. **Target** — what the function is *about*. Always required.
+  2. **Subject/source** — what drives the operation. Subject = actor/trigger (computations). Source = data being consumed (transforms).
+  3. **Options** — modifiers that tune behaviour. Optional, but default values are encouraged over requiring callers to pass everything.
+
+  Generic names (`src`, `target`) are reserved for utilities so abstract they have no domain vocabulary. Everywhere else, name from the domain. When an argument doesn't fit neatly, collapse it into `options`.
 
 ## Tests
 
