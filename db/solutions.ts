@@ -19,11 +19,9 @@ import { Move } from "#/game/types.ts";
  * Uses an atomic transaction so all entries are written together or not at all.
  * Awaits aggregate updates (stats, canonical group) before returning — errors are logged but not re-thrown.
  */
-type SaveSolutionResult = {
-  isNew: boolean;
-  isNewPath: boolean;
-  solution: Solution | null;
-};
+type SaveSolutionResult =
+  | { isNew: true; isNewPath: boolean; solution: Solution }
+  | { isNew: false };
 
 export async function saveSolution(
   payload: Omit<Solution, "id">,
@@ -37,7 +35,7 @@ export async function saveSolution(
       puzzleSlug,
       moves,
     );
-    if (userExisting) return { isNew: false, isNewPath: false, solution: null };
+    if (userExisting) return { isNew: false };
   }
 
   const id = ulid().toLowerCase();
