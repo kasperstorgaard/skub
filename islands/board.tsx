@@ -228,7 +228,9 @@ function BoardWall({ x, y, orientation }: Wall) {
       className={clsx(
         "place-self-start col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full",
         "border-ui-4 aspect-square pointer-events-none",
-        orientation === "vertical" ? "border-l-[3px]" : "border-t-[3px]",
+        orientation === "vertical"
+          ? "border-l-[3px] -ml-1"
+          : "border-t-[3px] -mt-1",
       )}
       style={{
         "--x": x,

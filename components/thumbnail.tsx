@@ -85,7 +85,7 @@ export function Thumbnail({
         />
       </g>
 
-      {/* Walls */}
+      {/* Walls — offset by half the gap so they appear between cells */}
       {board.walls.map((wall: Wall, idx) => {
         const px = cellX(wall.x);
         const py = cellY(wall.y);
@@ -95,9 +95,9 @@ export function Thumbnail({
             <line
               className="svg-wall"
               key={`wall-${idx}`}
-              x1={px}
+              x1={px - gap / 2}
               y1={py}
-              x2={px}
+              x2={px - gap / 2}
               y2={py + cellSize}
               strokeWidth="3"
               stroke={colors.ui4}
@@ -109,9 +109,9 @@ export function Thumbnail({
               className="svg-wall"
               key={`wall-${idx}`}
               x1={px}
-              y1={py}
+              y1={py - gap / 2}
               x2={px + cellSize}
-              y2={py}
+              y2={py - gap / 2}
               strokeWidth="3"
               stroke={colors.ui4}
             />
