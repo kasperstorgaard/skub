@@ -1,5 +1,6 @@
+import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
-import { useCallback, useMemo, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { Check, Icon, Ranking, ShareNetwork } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
@@ -8,6 +9,7 @@ import { UserStats } from "#/game/streak.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
+import type { CelebrateStats } from "#/routes/api/celebrate-stats.ts";
 
 type CelebrationCase =
   | "first-solver"
@@ -19,7 +21,6 @@ type CelebrationCase =
 
 type CelebrationContent = {
   case: CelebrationCase;
-  headline: string;
   body: string;
 };
 
@@ -32,6 +33,8 @@ type Props = {
 
 export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
   const [copied, setCopied] = useState(false);
+
+  const liveStats = useSignal<CelebrateStats | null>(null);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -58,10 +61,37 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
     [href.value],
   );
 
+  // Fetch fresh stats once the celebrate dialog is open
+  useEffect(() => {
+    if (dialog !== "celebrate") return;
+
+    fetch(`/api/celebrate-stats?slug=${puzzle.value.slug}`)
+      .then((r) => r.json())
+      .then((data: CelebrateStats) => {
+        liveStats.value = data;
+      })
+      .catch(() => {
+        // Silently fall back to server-rendered props
+      });
+  }, [dialog, puzzle.value.slug]);
+
+  const activePuzzleStats = liveStats.value?.puzzleStats ?? stats;
+  const activeUserStats = liveStats.value?.userStats ?? userStats ?? null;
+  const isLoading = dialog === "celebrate" && liveStats.value === null;
+
+  const isOptimal = moves.length === puzzle.value.minMoves;
+  const headline = isOptimal
+    ? `Perfect — ${moves.length} moves`
+    : `Solved — ${moves.length} moves`;
+
   const celebration = useMemo(
     () =>
-      getCelebration(moves.length, puzzle.value, stats, isNewPath, userStats),
-    [moves.length, puzzle.value, stats, isNewPath, userStats],
+      getCelebration(
+        { moveCount: moves.length, isNewPath },
+        puzzle.value,
+        { puzzle: activePuzzleStats, user: activeUserStats },
+      ),
+    [moves.length, isNewPath, puzzle.value, activePuzzleStats, activeUserStats],
   );
 
   const onShare = useCallback(async () => {
@@ -70,7 +100,7 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
       origin,
       puzzle: puzzle.value,
       moveCount: moves.length,
-      stats,
+      stats: activePuzzleStats,
     });
 
     try {
@@ -86,16 +116,20 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
         console.error("Share failed:", err);
       }
     }
-  }, [puzzle.value, moves.length, stats]);
+  }, [puzzle.value, moves.length, activePuzzleStats]);
 
   return (
     <Dialog open={isOpen}>
       <div className="flex flex-col gap-fl-2">
         <h2 className="text-fl-2 font-semibold text-text-1">
-          {celebration.headline}
+          {headline}
         </h2>
 
-        <p className="text-3 text-text-2">{celebration.body}</p>
+        {isLoading
+          ? (
+            <div className="h-[1lh] w-3/4 rounded-1 bg-ui-1/30 animate-pulse" />
+          )
+          : <p className="text-3 text-text-2">{celebration.body}</p>}
       </div>
 
       <div className="flex flex-col gap-fl-1 items-stretch">
@@ -142,7 +176,7 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
 }
 
 /**
- * Picks the single best celebration to show. Ranked by rarity — first match wins:
+ * Picks the single best celebration body to show. Ranked by rarity — first match wins:
  *
  * 1. First solver ever
  * 2. First perfect solve (on this puzzle)
@@ -151,36 +185,30 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
  * 5. Active streak (> 1)
  * 6. Fallback (player count or generic)
  *
- * Headline: "Perfect — X moves" / "Solved — X moves" unless overridden.
+ * Headline is always derived locally: "Perfect — X moves" / "Solved — X moves".
  */
 function getCelebration(
-  moveCount: number,
+  solve: { moveCount: number; isNewPath: boolean },
   puzzle: Puzzle,
-  stats: PuzzleStats,
-  isNewPath: boolean,
-  userStats?: UserStats | null,
+  stats: { puzzle: PuzzleStats; user: UserStats | null },
 ): CelebrationContent {
-  const { totalSolutions, solutionsHistogram } = stats;
+  const { moveCount, isNewPath } = solve;
+  const { totalSolutions, solutionsHistogram, uniqueSolvers } = stats.puzzle;
+  const { user: userStats } = stats;
   const isOptimal = moveCount === puzzle.minMoves;
-  const headline = isOptimal
-    ? `Perfect — ${moveCount} moves`
-    : `Solved — ${moveCount} moves`;
 
-  // 1. First solver: no solutions existed when the page loaded
-  if (totalSolutions === 0) {
+  // 1. First solver: only this user's solution exists in fresh stats
+  if (totalSolutions <= 1) {
     return {
       case: "first-solver",
-      headline: "First to solve!",
       body: "No one cracked this one before you.",
     };
   }
 
   // 2. First perfect solve: at most one entry in histogram at this count
-  // (the user's own, since stats may refresh after auto-post)
   if (isOptimal && (solutionsHistogram[moveCount] ?? 0) <= 1) {
     return {
       case: "first-optimal",
-      headline,
       body: "You found the first perfect solve!",
     };
   }
@@ -189,7 +217,6 @@ function getCelebration(
   if (isNewPath && puzzle.minMoves && moveCount <= puzzle.minMoves + 2) {
     return {
       case: "new-path",
-      headline,
       body: "Nice thinking — no one found this route before",
     };
   }
@@ -201,7 +228,6 @@ function getCelebration(
     if (isNewBest || isRound) {
       return {
         case: "streak-milestone",
-        headline,
         body: isNewBest
           ? `${userStats.currentStreak}-puzzle streak — new personal best!`
           : `${userStats.currentStreak} puzzles in a row!`,
@@ -213,7 +239,6 @@ function getCelebration(
   if (userStats && userStats.currentStreak > 1) {
     return {
       case: "streak",
-      headline,
       body: `${userStats.currentStreak}-puzzle streak - keep it going :)`,
     };
   }
@@ -221,9 +246,8 @@ function getCelebration(
   // 6. Fallback
   return {
     case: "other-solvers",
-    headline,
-    body: `${stats.uniqueSolvers - 1} ${
-      stats.uniqueSolvers === 2 ? "other player" : "other players"
+    body: `${uniqueSolvers - 1} ${
+      uniqueSolvers === 2 ? "other player" : "other players"
     } solved this`,
   };
 }
