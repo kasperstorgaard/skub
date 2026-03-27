@@ -1,5 +1,5 @@
 import { define } from "#/core.ts";
-import { addSolution } from "#/db/solutions.ts";
+import { saveSolution } from "#/db/solutions.ts";
 import type { Solution } from "#/db/types.ts";
 import { isAuthorized } from "#/routes/api/e2e/_auth.ts";
 
@@ -22,7 +22,11 @@ export const handler = define.handlers({
       });
     }
 
-    const { solution } = await addSolution(body);
+    const { isNew, solution } = await saveSolution(body);
+
+    if (!isNew) {
+      return new Response("Duplicate solution", { status: 409 });
+    }
 
     return Response.json(solution);
   },
