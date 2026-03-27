@@ -1,58 +1,47 @@
-# Extract preview route + simplify puzzle route
+# Simplify puzzle route solve paths
 
 ## Problem
 
-`routes/puzzles/[slug]/index.tsx` had two separate concerns mixed in:
+`routes/puzzles/[slug]/index.tsx` GET handler had unnecessary complexity:
 
-1. **Preview logic** — `slug === "preview"` guards in GET and POST, `isPreview` flags
-   threaded through islands. Builder-only logic leaking into the player route.
-
-2. **Overcomplicated GET handler** — three branching cases including a named-user
-   fast path that duplicated save/track logic from POST, and a stats fetch for the
-   celebrate dialog that was redundant once the island fetches fresh stats itself.
+1. A stats fetch for `dialog=celebrate` that was redundant — JS users get fresh stats
+   via the island fetch, and the no-JS path doesn't land on celebrate.
+2. A named-user fast path in no-JS solve detection that duplicated save/track logic
+   from POST and caused the server and client paths to diverge conceptually.
 
 ## Solution
 
-### 1. Dedicated preview route
+### 1. Remove celebrate stats fetch from GET
 
-Move preview into `routes/puzzles/preview/index.tsx`. Fresh resolves static segments
-before dynamic ones, so no routing config changes needed.
+GET fetched `puzzleStats` and `userStats` when `dialog=celebrate` was in the URL.
+Removed — GET now always returns `defaultPuzzleStats` and `userStats: null`.
 
-- GET: loads draft via `getUserPuzzleDraft`, renders board with no solution submission
-- No POST handler — Fresh returns 405 naturally
+### 2. Unify no-JS solve path via SolutionDialog
 
-The page component is replicated (not abstracted) — preview is a proper subset of the
-full puzzle page, and sharing would couple the routes for no gain.
+GET previously had two no-JS branches: anonymous users went to SolutionDialog, named
+users saved directly and jumped to celebrate. Now GET always redirects to
+`?dialog=solution` on a valid solve. All saving goes through POST.
 
-### 2. Unified no-JS solve path via SolutionDialog
-
-The GET handler previously had two no-JS paths: anonymous users went to SolutionDialog,
-named users saved directly and jumped to celebrate. This duplicated save/track logic
-from POST and made the two paths diverge conceptually.
-
-Now GET always redirects to `?dialog=solution` on a valid solve — regardless of whether
-the user has a name. SolutionDialog handles both cases: anonymous users pick a name,
-named users see pre-filled name and confirm. All saving goes through POST.
+SolutionDialog opens on `dialog=solution` in addition to the existing JS anonymous
+detect. Copy is conditional: named users see "Claim your solve to see how others did
+it.", anonymous users see "Pick a name and see how others did it."
 
 JS named users are unaffected — `AutoPostSolution` posts directly and bypasses the
 dialog entirely.
 
-### 3. Removed celebrate stats fetch from GET
+### 3. `getSolveRedirectUrl` helper
 
-GET was fetching `puzzleStats` and `userStats` when `dialog=celebrate` was in the URL.
-This is now redundant: no-JS users go to the solutions page (not celebrate), and JS
-users get fresh stats via the island fetch. The fetch is removed; GET always returns
-`defaultPuzzleStats` and `userStats: null`.
+Extracted the redirect URL construction from POST into a local helper:
+`getSolveRedirectUrl(ctx, source, options?)`. Takes ctx for slug and referer,
+source as the branching subject, isNewPath as an optional modifier.
 
 ## Behaviour changes
 
-- No-JS named users now see SolutionDialog (pre-filled name) instead of being saved
-  silently and jumping straight to celebrate. One extra click to confirm.
-- `/puzzles/preview` behaviour is identical externally.
+No-JS named users now see SolutionDialog (pre-filled name) instead of being saved
+silently and jumping straight to celebrate. One extra click to confirm.
 
 ## Files
 
-- **new** `routes/puzzles/preview/index.tsx` — preview-only handler + page component
-- **modified** `routes/puzzles/[slug]/index.tsx` — remove preview guards, simplify GET, add `getSolveRedirectUrl` helper
-- **modified** `islands/solution-dialog.tsx` — remove `isPreview`, open on `dialog=solution`, conditional copy for named users
-- **modified** `CLAUDE.md` — note that function argument ordering is exempt for side-effect-only functions
+- **modified** `routes/puzzles/[slug]/index.tsx` — remove celebrate stats fetch, simplify no-JS path, extract `getSolveRedirectUrl`
+- **modified** `islands/solution-dialog.tsx` — open on `dialog=solution`, conditional copy for named vs anonymous users
+- **modified** `CLAUDE.md` — function argument ordering is exempt for side-effect-only functions
