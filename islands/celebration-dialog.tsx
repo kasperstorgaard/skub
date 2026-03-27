@@ -35,6 +35,7 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
   const [copied, setCopied] = useState(false);
 
   const liveStats = useSignal<CelebrateStats | null>(null);
+  const statsFetched = useSignal(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -72,12 +73,15 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
       })
       .catch(() => {
         // Silently fall back to server-rendered props
+      })
+      .finally(() => {
+        statsFetched.value = true;
       });
   }, [dialog, puzzle.value.slug]);
 
   const activePuzzleStats = liveStats.value?.puzzleStats ?? stats;
   const activeUserStats = liveStats.value?.userStats ?? userStats ?? null;
-  const isLoading = dialog === "celebrate" && liveStats.value === null;
+  const isLoading = dialog === "celebrate" && !statsFetched.value;
 
   const isOptimal = moves.length === puzzle.value.minMoves;
   const headline = isOptimal
