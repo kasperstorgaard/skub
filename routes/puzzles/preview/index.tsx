@@ -8,7 +8,6 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft } from "#/db/user.ts";
-import { getHintCount } from "#/game/cookies.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
@@ -19,19 +18,16 @@ import { isDev } from "#/lib/env.ts";
 
 type PageData = {
   puzzle: Puzzle;
-  hintCount: number;
 };
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
-    const hintCount = getHintCount(ctx.req.headers);
-
     const draft = await getUserPuzzleDraft(ctx.state.userId);
     if (!draft) throw new HttpError(500, "No stored puzzle");
 
     const puzzle: Puzzle = { ...draft, slug: "preview", number: 0 };
 
-    return page({ puzzle, hintCount });
+    return page({ puzzle });
   },
   POST() {
     throw new HttpError(500, "Preview puzzle solutions cannot be submitted");
@@ -69,7 +65,6 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
       <ControlsPanel
         puzzle={puzzle}
         href={href}
-        hintCount={props.data.hintCount}
         isDev={isDev}
         isPreview
         onboarding={props.state.user.onboarding}
@@ -89,7 +84,6 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
         {printUrl}
       </a>
 
-      <HintDialog puzzle={puzzle} href={href} />
       <SolveDialog puzzle={puzzle} href={href} />
     </>
   );

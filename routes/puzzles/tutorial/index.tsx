@@ -160,7 +160,7 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
         )}
       </Main>
 
-      <ControlsPanel puzzle={puzzle} href={href} isDev={isDev} hintCount={0} />
+      <ControlsPanel puzzle={puzzle} href={href} isDev={isDev} />
 
       <AutoPostSolution
         href={href}
