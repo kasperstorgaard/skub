@@ -1,88 +1,67 @@
-# Fresh stats in CelebrationDialog
+# Tracking lib
 
 ## Problem
 
-`CelebrationDialog` receives `userStats` and `puzzleStats` as server-rendered
-props fetched at initial page load — before the user has solved the puzzle. On
-the JS path, `AutoPostSolution` posts the solution client-side and updates
-`href` via a signal without reloading the page, so neither stat is ever
-refreshed. This causes stale or wrong celebration messages (wrong streak count,
-missed milestones, incorrect "first solver" detection).
+PostHog events are called directly at 4 call sites across 3 route files. Each call
+repeats the same boilerplate:
+
+- `distinctId: ctx.state.trackingId`
+- `$process_person_profile: ctx.state.cookieChoice === "accepted"`
+- `$current_url: ...`
+
+This is ~5 lines of repetition per event. Adding a new event means getting all three
+fields right. Skipping one is a silent bug.
 
 ## Solution
 
-Progressive enhancement: the server-side (no-JS) path already reloads the
-page, so it just needs the GET handler to fetch stats at the right time. The
-JS path gets a client-side fetch inside `CelebrationDialog`.
+A thin `lib/tracking.ts` module with one typed helper per event. Each helper:
 
-### 1. Headline is always local
+1. Accepts `ctx.state` (the Fresh `State` type) as its first argument so common
+   fields are extracted automatically.
+2. Accepts the event-specific payload as the second argument.
+3. Calls `posthog?.capture(...)` internally — no return value needed.
 
-The headline no longer depends on server data:
+The `_error.tsx` route uses `captureException`, not `capture`, so it stays as-is
+(different API surface, only one call site).
 
-```ts
-const isOptimal = moveCount === puzzle.minMoves;
-const headline = isOptimal ? `Perfect — ${moveCount} moves` : `Solved — ${moveCount} moves`;
-```
-
-`"First to solve!"` becomes a body-only message — the headline stays as
-`Solved — X moves`. This means the headline can always render immediately from
-URL state and the puzzle prop, with no loading state needed.
-
-### 2. GET handler — fetch stats only when needed
-
-Guard both stat fetches behind `dialog=celebrate`:
+## API (proposed function signatures)
 
 ```ts
-const isDialog = ctx.url.searchParams.get("dialog") === "celebrate";
-const [puzzleStats, userStats] = isDialog
-  ? await Promise.all([getPuzzleStats(slug), savedName ? getUserStats(ctx.state.userId) : null])
-  : [defaultPuzzleStats, null];
+// Puzzle solved — 2 call sites in routes/puzzles/[slug]/index.tsx
+trackPuzzleSolved(state: State, puzzle: Puzzle, options: {
+  moves: Move[];
+  url: string;
+}): void
+
+// Onboarding completed — 1 call site in routes/puzzles/[slug]/index.tsx
+// Kept as a helper because it shares puzzle context with trackPuzzleSolved
+// and its payload is identical in shape.
+trackOnboardingCompleted(state: State, puzzle: Puzzle, options: {
+  moves: Move[];
+  url: string;
+}): void
+
+// Hint requested — 1 call site in routes/puzzles/[slug]/(actions)/hint.ts
+trackHintRequested(state: State, puzzle: Puzzle, options: {
+  url: string;
+  cursor: number;
+}): void
+
+// Cookie consent — 1 call site in routes/api/consent.ts
+trackCookieConsent(state: State, options: {
+  decision: "accepted" | "declined";
+  url: string;
+}): void
 ```
 
-- No-JS path: page reloads with `?dialog=celebrate` → stats are fresh
-- JS path (initial load): `dialog` is absent → both fetches skipped, saving DB calls
-
-### 3. `/api/celebrate-stats` endpoint
-
-Single GET endpoint returning `{ puzzleStats: PuzzleStats, userStats: UserStats | null }`.
-One round-trip, one loading state. Returns `null` for `userStats` when
-unauthenticated.
-
-### 4. `CelebrationDialog` — island fetch on celebrate
-
-When `dialog=celebrate` appears in `href`, fetch `/api/celebrate-stats` and
-update a local signal that shadows the props:
-
-```ts
-type LiveStats = { puzzleStats: PuzzleStats; userStats: UserStats | null } | null;
-const liveStats = useSignal<LiveStats>(null);
-
-useEffect(() => {
-  if (dialog !== "celebrate") return;
-  fetch("/api/celebrate-stats")
-    .then((r) => r.json())
-    .then((data) => { liveStats.value = data; });
-}, [dialog]);
-```
-
-Use `liveStats.value?.puzzleStats ?? stats` and `liveStats.value?.userStats ?? userStats`
-when calling `getCelebration`.
-
-### 5. Skeleton while loading
-
-Headline renders immediately (always local). The body line shows a skeleton
-placeholder until `liveStats` resolves.
-
-## Fallback behaviour
-
-| Path | Stats source | Accuracy |
-|---|---|---|
-| No-JS | GET handler props (behind `dialog=celebrate` guard) | Fresh |
-| JS, fetch succeeds | Island fetch | Fresh |
-| JS, fetch fails | Props (stale) | Same as today |
+`trackCookieConsent` gets a special note: at the time the event fires, the cookie
+choice has just been set but `ctx.state.cookieChoice` still reflects the value from
+the incoming request (which is `null` for new visitors). The helper must therefore
+derive `$process_person_profile` from `decision`, not from `state.cookieChoice`.
 
 ## Files
 
-- `routes/puzzles/[slug]/index.tsx` — guard both stat fetches behind `isDialog`
-- `routes/api/celebrate-stats.ts` — new combined endpoint
-- `islands/celebration-dialog.tsx` — simplified headline, local signal, island fetch, body skeleton
+- **new** `lib/tracking.ts` — typed capture helpers
+- **updated** `routes/puzzles/[slug]/index.tsx` — use `trackPuzzleSolved`, `trackOnboardingCompleted`
+- **updated** `routes/puzzles/[slug]/(actions)/hint.ts` — use `trackHintRequested`
+- **updated** `routes/api/consent.ts` — use `trackCookieConsent`

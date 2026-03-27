@@ -6,12 +6,10 @@ import { getHintCount, setHintCount } from "#/game/cookies.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { decodeState } from "#/game/url.ts";
 import { isDev } from "#/lib/env.ts";
-import { posthog } from "#/lib/posthog.ts";
+import { trackHintRequested } from "#/lib/tracking.ts";
 
 export const handler = define.handlers({
   async GET(ctx) {
-    const { cookieChoice, trackingId } = ctx.state;
-
     const slug = ctx.params.slug;
 
     const state = decodeState(ctx.req.url);
@@ -30,18 +28,9 @@ export const handler = define.handlers({
     }
 
     // hint requested is an important metric for engagement and to gauge difficulty
-    posthog?.capture({
-      event: "hint_requested",
-      distinctId: trackingId,
-      properties: {
-        $current_url: ctx.req.url,
-        $process_person_profile: cookieChoice === "accepted",
-
-        puzzle_slug: slug,
-        puzzle_difficulty: puzzle.difficulty,
-        puzzle_min_moves: puzzle.minMoves,
-        game_moves: state.cursor,
-      },
+    trackHintRequested(ctx.state, puzzle, {
+      url: ctx.req.url,
+      cursor: state.cursor,
     });
 
     await incrementHintUsageCount(slug);
