@@ -19,9 +19,11 @@ import { Move } from "#/game/types.ts";
  * Uses an atomic transaction so all entries are written together or not at all.
  * Awaits aggregate updates (stats, canonical group) before returning — errors are logged but not re-thrown.
  */
-type SaveSolutionResult =
-  | { isNew: true; isNewPath: boolean; solution: Solution }
-  | { isNew: false };
+type SaveSolutionResult = {
+  solution: Solution;
+  isNew: boolean;
+  isNewPath: boolean;
+};
 
 export async function saveSolution(
   payload: Omit<Solution, "id">,
@@ -30,12 +32,15 @@ export async function saveSolution(
 
   // User-level dedup: skip if this user already submitted this exact canonical path
   if (payload.userId) {
-    const userExisting = await getCanonicalUserSolution(
+    const existingSolution = await getCanonicalUserSolution(
       payload.userId,
       puzzleSlug,
       moves,
     );
-    if (userExisting) return { isNew: false };
+
+    if (existingSolution) {
+      return { solution: existingSolution, isNew: false, isNewPath: false };
+    }
   }
 
   const id = ulid().toLowerCase();

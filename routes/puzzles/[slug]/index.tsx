@@ -7,7 +7,7 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { define } from "#/core.ts";
-import { addSolution, getCanonicalUserSolution } from "#/db/solutions.ts";
+import { saveSolution } from "#/db/solutions.ts";
 import { getPuzzleStats, getUserStats } from "#/db/stats.ts";
 import { getUserPuzzleDraft, setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
@@ -94,28 +94,21 @@ export const handler = define.handlers<PageData>({
        * This approach is primarily used for server-only solution detection.
        */
       if (isValidSolution(board) && !dialog) {
-        const existing = ctx.state.userId
-          ? await getCanonicalUserSolution(ctx.state.userId, slug, moves)
-          : null;
-
-        // New users without a name get redirected to solution dialog
-        if (!existing && !savedName) {
-          // Anonymous user: redirect to open the solution dialog (also enables no-JS path)
+        // Anonymous user: redirect to solution dialog (name capture + no-JS path)
+        if (!savedName) {
           const redirectUrl = new URL(ctx.url);
           redirectUrl.searchParams.set("dialog", "solution");
           return Response.redirect(redirectUrl, 303);
         }
 
-        let isNewPath = false;
-        if (!existing && savedName) {
-          const result = await addSolution({
-            puzzleSlug: slug,
-            name: savedName,
-            moves,
-            userId: ctx.state.userId,
-          });
-          isNewPath = result.isNewPath;
+        const result = await saveSolution({
+          puzzleSlug: slug,
+          name: savedName,
+          moves,
+          userId: ctx.state.userId,
+        });
 
+        if (result.isNew) {
           posthog?.capture({
             distinctId: ctx.state.trackingId,
             event: "puzzle_solved",
@@ -132,7 +125,9 @@ export const handler = define.handlers<PageData>({
 
         const redirectUrl = new URL(ctx.url);
         redirectUrl.searchParams.set("dialog", "celebrate");
-        if (isNewPath) redirectUrl.searchParams.set("new_path", "true");
+        if (result.isNew && result.isNewPath) {
+          redirectUrl.searchParams.set("new_path", "true");
+        }
         return Response.redirect(redirectUrl, 303);
       }
     }
@@ -188,26 +183,21 @@ export const handler = define.handlers<PageData>({
       redirectUrl = celebrateUrl.href;
     }
 
-    // Check for existing solution, we don't want duplicates
-    const existingSolution = ctx.state.userId
-      ? await getCanonicalUserSolution(ctx.state.userId, slug, moves)
-      : null;
-
-    if (existingSolution) {
-      return new Response(null, {
-        status: 303,
-        headers: { Location: redirectUrl },
-      });
-    }
-
-    const { isNewPath } = await addSolution({
+    const result = await saveSolution({
       puzzleSlug: slug,
       name,
       moves,
       userId: ctx.state.userId,
     });
 
-    if (isNewPath && !fromSolutionDialog) {
+    if (!result.isNew) {
+      return new Response(null, {
+        status: 303,
+        headers: { Location: redirectUrl },
+      });
+    }
+
+    if (result.isNewPath && !fromSolutionDialog) {
       const url = new URL(redirectUrl, req.url);
       url.searchParams.set("new_path", "true");
       redirectUrl = url.href;
