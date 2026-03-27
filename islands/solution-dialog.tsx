@@ -40,7 +40,8 @@ export function SolutionDialog(
 
   // Opens on the JS path (anonymous user solves in browser) or the no-JS path
   // (server detects solve and redirects here with dialog=solution).
-  const isOpen = dialog === "solution" || (hasSolution && !savedName && dialog !== "celebrate");
+  const isOpen = dialog === "solution" ||
+    (hasSolution && !savedName && dialog !== "celebrate");
 
   return (
     <Dialog open={isOpen}>
@@ -49,7 +50,11 @@ export function SolutionDialog(
           Nice solve!
         </h2>
 
-        <p>{savedName ? "Claim your solve to see how others did it." : "Pick a name and see how others did it."}</p>
+        <p>
+          {savedName
+            ? "Claim your solve to see how others did it."
+            : "Pick a name and see how others did it."}
+        </p>
       </div>
 
       <form
