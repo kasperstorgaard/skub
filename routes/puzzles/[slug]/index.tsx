@@ -26,7 +26,7 @@ import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
-import { posthog } from "#/lib/posthog.ts";
+import { trackOnboardingCompleted, trackPuzzleSolved } from "#/lib/tracking.ts";
 
 type PageData = {
   puzzle: Puzzle;
@@ -123,17 +123,9 @@ export const handler = define.handlers<PageData>({
         });
 
         if (isNew) {
-          posthog?.capture({
-            distinctId: ctx.state.trackingId,
-            event: "puzzle_solved",
-            properties: {
-              $current_url: ctx.url.href,
-              $process_person_profile: ctx.state.cookieChoice === "accepted",
-              puzzle_slug: slug,
-              puzzle_difficulty: puzzle.difficulty,
-              puzzle_min_moves: puzzle.minMoves,
-              game_moves: moves.length,
-            },
+          trackPuzzleSolved(ctx.state, puzzle, {
+            moves,
+            url: ctx.url.href,
           });
         }
 
@@ -218,18 +210,9 @@ export const handler = define.handlers<PageData>({
       redirectUrl = url.href;
     }
 
-    posthog?.capture({
-      distinctId: ctx.state.trackingId,
-      event: "puzzle_solved",
-      properties: {
-        $current_url: referer,
-        $process_person_profile: ctx.state.cookieChoice === "accepted",
-
-        puzzle_slug: slug,
-        puzzle_difficulty: puzzle.difficulty,
-        puzzle_min_moves: puzzle.minMoves,
-        game_moves: moves?.length,
-      },
+    trackPuzzleSolved(ctx.state, puzzle, {
+      moves,
+      url: referer ?? "",
     });
 
     const responseHeaders = new Headers({ Location: redirectUrl });
@@ -241,16 +224,9 @@ export const handler = define.handlers<PageData>({
     ) {
       await setUser(ctx.state.userId, { onboarding: "done" });
 
-      posthog?.capture({
-        distinctId: ctx.state.trackingId,
-        event: "onboarding_completed",
-        properties: {
-          $current_url: referer,
-          $process_person_profile: ctx.state.cookieChoice === "accepted",
-          puzzle_slug: slug,
-          game_moves: moves.length,
-          puzzle_min_moves: puzzle.minMoves,
-        },
+      trackOnboardingCompleted(ctx.state, puzzle, {
+        moves,
+        url: referer ?? "",
       });
     }
 

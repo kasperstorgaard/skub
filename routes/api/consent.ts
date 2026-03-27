@@ -1,6 +1,6 @@
 import { define } from "#/core.ts";
 import { generateTrackingId, setTrackingCookie } from "#/game/cookies.ts";
-import { posthog } from "#/lib/posthog.ts";
+import { trackCookieConsent } from "#/lib/tracking.ts";
 
 /**
  * Handles cookie consent form submissions from the CookieBanner.
@@ -28,15 +28,9 @@ export const handler = define.handlers({
     ctx.state.trackingId = trackingId;
     setTrackingCookie(headers, isAllowed ? trackingId : "declined");
 
-    posthog?.capture({
-      event: "cookie_consent",
-      distinctId: trackingId,
-      properties: {
-        $current_url: referer,
-        $process_person_profile: isAllowed,
-
-        decision: isAllowed ? "accepted" : "declined",
-      },
+    trackCookieConsent(ctx.state, {
+      decision: isAllowed ? "accepted" : "declined",
+      url: referer,
     });
 
     return new Response("", {
