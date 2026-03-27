@@ -39,9 +39,11 @@ Deno.test("without js - a returning user plays an archived puzzle and submits th
     const puzzlePage = await archivesPage.clickPuzzleAt(3);
     await puzzlePage.solveByClicking();
 
-    await expect(puzzlePage.celebrationDialog.heading).toBeVisible();
+    // No-JS named users go through SolutionDialog (pre-filled name) rather than
+    // jumping straight to celebrate — one extra confirm click.
+    await expect(puzzlePage.solutionDialog.heading).toBeVisible();
 
-    const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
+    const solutionsPage = await puzzlePage.solutionDialog.submitName("e2elf");
     await expect(solutionsPage.solveByName("e2elf")).toBeVisible();
   } finally {
     await teardown();
