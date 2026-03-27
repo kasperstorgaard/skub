@@ -12,7 +12,6 @@ import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
-import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 
