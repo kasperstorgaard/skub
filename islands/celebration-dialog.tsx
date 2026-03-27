@@ -126,9 +126,7 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
         </h2>
 
         {isLoading
-          ? (
-            <div className="h-[1lh] w-3/4 rounded-1 bg-ui-1/30 animate-pulse" />
-          )
+          ? <div className="h-[1lh] w-3/4 rounded-1 bg-ui-1/30 animate-pulse" />
           : <p className="text-3 text-text-2">{celebration.body}</p>}
       </div>
 
