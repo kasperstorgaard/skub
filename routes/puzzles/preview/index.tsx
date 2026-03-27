@@ -14,27 +14,24 @@ import Board from "#/islands/board.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
-import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 
 type PageData = {
   puzzle: Puzzle;
   hintCount: number;
-  savedName: string | null;
 };
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const hintCount = getHintCount(ctx.req.headers);
-    const savedName = ctx.state.user?.name ?? null;
 
     const draft = await getUserPuzzleDraft(ctx.state.userId);
     if (!draft) throw new HttpError(500, "No stored puzzle");
 
     const puzzle: Puzzle = { ...draft, slug: "preview", number: 0 };
 
-    return page({ puzzle, hintCount, savedName });
+    return page({ puzzle, hintCount });
   },
   POST() {
     throw new HttpError(500, "Preview puzzle solutions cannot be submitted");
@@ -94,13 +91,6 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
 
       <HintDialog puzzle={puzzle} href={href} />
       <SolveDialog puzzle={puzzle} href={href} />
-
-      <SolutionDialog
-        href={href}
-        puzzle={puzzle}
-        isPreview
-        savedName={props.data.savedName}
-      />
     </>
   );
 });

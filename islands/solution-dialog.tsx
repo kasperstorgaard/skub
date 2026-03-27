@@ -11,12 +11,11 @@ import { Dialog } from "#/islands/dialog.tsx";
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  isPreview?: boolean;
   savedName?: string | null;
 };
 
 export function SolutionDialog(
-  { href, puzzle, isPreview, savedName }: Props,
+  { href, puzzle, savedName }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -39,8 +38,7 @@ export function SolutionDialog(
     [href.value],
   );
 
-  const isOpen = hasSolution && !savedName && !isPreview &&
-    dialog !== "celebrate";
+  const isOpen = hasSolution && !savedName && dialog !== "celebrate";
 
   return (
     <Dialog open={isOpen}>
@@ -52,8 +50,7 @@ export function SolutionDialog(
         <p>Pick a name and see how others did it.</p>
       </div>
 
-      {!isPreview && (
-        <form
+      <form
           id="solution"
           className="flex flex-col gap-fl-2"
           action={`/puzzles/${puzzle.value.slug}`}
@@ -80,13 +77,6 @@ export function SolutionDialog(
           />
           <input type="hidden" name="source" value="solution-dialog" />
         </form>
-      )}
-
-      {isPreview && (
-        <p className="text-text-2">
-          <em>Solutions cannot be submitted for previews</em>
-        </p>
-      )}
 
       <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">
         <div
@@ -113,18 +103,16 @@ export function SolutionDialog(
           </form>
         </div>
 
-        {!isPreview && (
-          <button
-            form="solution"
-            className="btn"
-            type="submit"
-            disabled={!hasSolution || isSubmitting}
-          >
-            {isSubmitting
-              ? <Icon icon={Spinner} className="animate-spin" />
-              : "Claim your solve"}
-          </button>
-        )}
+        <button
+          form="solution"
+          className="btn"
+          type="submit"
+          disabled={!hasSolution || isSubmitting}
+        >
+          {isSubmitting
+            ? <Icon icon={Spinner} className="animate-spin" />
+            : "Claim your solve"}
+        </button>
       </div>
     </Dialog>
   );
