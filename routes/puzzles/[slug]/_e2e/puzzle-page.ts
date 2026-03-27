@@ -5,7 +5,7 @@ import { SolutionsPage } from "../solutions/_e2e/solutions-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { solveSync } from "#/game/solver.ts";
-import { encodeState } from "#/game/url.ts";
+import type { Move } from "#/game/types.ts";
 
 const SLUG_MATCHER = /\/puzzles\/([^/]+)(\/|$)/i;
 
@@ -54,25 +54,11 @@ export class PuzzlePage {
     return this;
   }
 
-  async gotoWithSolution(
-    slug: string,
-    opts?: Parameters<typeof this.page.goto>[1],
-  ) {
-    const puzzle = await getPuzzle(slug);
-    if (!puzzle) throw new Error(`Puzzle not found: ${slug}`);
-    const param = encodeState({ moves: solveSync(puzzle) });
-    await this.page.goto(`${BASE_URL}/puzzles/${slug}?${param}`, opts);
-    return this;
-  }
-
-  async solveByClicking() {
-    const puzzle = await getPuzzle(this.currentSlug);
-    if (!puzzle) throw new Error(`Puzzle not found: ${this.currentSlug}`);
-
+  async solveByClicking(moves: Move[]) {
     // Wait for the dom to be fully loaded, as this relies on event listeners to attach.
     await this.page.waitForLoadState("domcontentloaded");
 
-    for (const move of solveSync(puzzle)) {
+    for (const move of moves) {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,
       }).click();

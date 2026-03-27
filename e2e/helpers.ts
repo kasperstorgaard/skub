@@ -87,6 +87,7 @@ export async function seedSolution(
  * Loads a puzzle by slug and returns the optimal solution moves.
  * Throws if the puzzle doesn't exist.
  */
+// TODO: rename to getPuzzleSolution
 export async function solvePuzzle(slug: string): Promise<Move[]> {
   const puzzle = await getPuzzle(slug);
   if (!puzzle) throw new Error(`Puzzle not found: ${slug}`);

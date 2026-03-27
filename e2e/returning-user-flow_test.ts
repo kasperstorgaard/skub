@@ -1,6 +1,7 @@
 // deno-lint-ignore skub-imports/use-hash-alias
 import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
+import { solvePuzzle } from "./helpers.ts";
 
 // -- Returning user: homepage → daily puzzle → solve → celebration ---
 
@@ -11,7 +12,8 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
     const homePage = await new HomePage(page).goto();
 
     const puzzlePage = await homePage.clickDailyPuzzleLink();
-    await puzzlePage.solveByClicking();
+    const moves = await solvePuzzle(puzzlePage.currentSlug);
+    await puzzlePage.solveByClicking(moves);
 
     await expect(puzzlePage.celebrationDialog.heading).toBeVisible();
 
@@ -37,7 +39,8 @@ Deno.test("without js - a returning user plays an archived puzzle and submits th
     archivesPage = await archivesPage.clickNextPage();
 
     const puzzlePage = await archivesPage.clickPuzzleAt(3);
-    await puzzlePage.solveByClicking();
+    const moves = await solvePuzzle(puzzlePage.currentSlug);
+    await puzzlePage.solveByClicking(moves);
 
     // No-JS named users go through SolutionDialog (pre-filled name) rather than
     // jumping straight to celebrate — one extra confirm click.
