@@ -19,7 +19,7 @@ The new route:
 - GET: loads the user's puzzle draft via `getUserPuzzleDraft`, sets `slug = "preview"`
   and `number = 0` on the result, and renders the board page with no solution submission.
   Returns 500 if no draft exists.
-- POST: returns 500 immediately ("Preview puzzle solutions cannot be submitted").
+- No POST handler — Fresh returns 405 naturally.
 
 The page component is replicated (not abstracted) because the preview page renders a
 proper subset of the full puzzle page — same visual structure, same islands — and

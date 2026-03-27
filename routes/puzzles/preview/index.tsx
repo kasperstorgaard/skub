@@ -29,9 +29,6 @@ export const handler = define.handlers<PageData>({
 
     return page({ puzzle });
   },
-  POST() {
-    throw new HttpError(500, "Preview puzzle solutions cannot be submitted");
-  },
 });
 
 export default define.page<typeof handler>(function PreviewPuzzle(props) {
@@ -45,7 +42,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
   return (
     <>
       <Main>
-        <Header url={url} back={{ href: "/" }} share />
+        <Header url={url} back={{ href: "/" }} />
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
           <h1 className="text-6 text-brand leading-tight">
