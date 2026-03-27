@@ -26,10 +26,7 @@ import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
-import {
-  trackOnboardingCompleted,
-  trackPuzzleSolved,
-} from "#/lib/tracking.ts";
+import { trackOnboardingCompleted, trackPuzzleSolved } from "#/lib/tracking.ts";
 
 type PageData = {
   puzzle: Puzzle;

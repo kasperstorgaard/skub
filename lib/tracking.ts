@@ -55,7 +55,7 @@ export function trackOnboardingCompleted(
 export function trackHintRequested(
   state: State,
   puzzle: Puzzle,
-  options: { url: string; cursor: number },
+  options: { url: string; cursor?: number },
 ): void {
   posthog?.capture({
     distinctId: state.trackingId,
