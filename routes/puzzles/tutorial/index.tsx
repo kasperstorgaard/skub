@@ -95,7 +95,6 @@ export const handler = define.handlers<Data>({
     });
   },
   async POST(ctx) {
-    console.log("post", ctx);
     const form = await ctx.req.formData();
     const rawMoves = form.get("moves")?.toString() ?? "";
     const moves = JSON.parse(rawMoves) as Move[];

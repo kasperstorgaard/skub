@@ -44,6 +44,7 @@ export const handler = define.handlers<PageData>({
 
     const savedName = ctx.state.user?.name ?? null;
 
+    // Case 0: preview for editor
     if (slug === "preview") {
       const puzzle = await getUserPuzzleDraft(ctx.state.userId);
 
@@ -61,22 +62,35 @@ export const handler = define.handlers<PageData>({
       });
     }
 
-    const { moves } = decodeState(ctx.url);
-
-    const [puzzle, puzzleStats, userStats] = await Promise.all([
-      getPuzzle(slug),
-      getPuzzleStats(slug),
-      savedName ? getUserStats(ctx.state.userId) : Promise.resolve(null),
-    ]);
+    const puzzle = await getPuzzle(slug);
 
     if (!puzzle) {
       throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
     }
 
-    // If the user is navigating here with server side or direct link, see if this is a valid solution
-    if (moves.length > 0) {
+    // Case 1: celebrate dialog — fetch fresh stats and render
+    if (ctx.url.searchParams.get("dialog") === "celebrate") {
+      const [puzzleStats, userStats] = await Promise.all([
+        getPuzzleStats(slug),
+        savedName ? getUserStats(ctx.state.userId) : Promise.resolve(null),
+      ]);
+
+      return page({
+        puzzle,
+        hintCount,
+        puzzleStats: puzzleStats ?? defaultPuzzleStats,
+        savedName,
+        userStats,
+      });
+    }
+
+    // Case 2: moves in URL — no-JS solve detection, redirect to celebrate
+    // Guard: skip if a dialog is already set (prevents re-processing on reload)
+    const { moves } = decodeState(ctx.url);
+    const existingDialog = ctx.url.searchParams.get("dialog");
+
+    if (moves.length > 0 && !existingDialog) {
       let board: Puzzle["board"];
-      const dialog = ctx.url.searchParams.get("dialog");
 
       try {
         board = resolveMoves(puzzle.board, moves);
@@ -93,7 +107,7 @@ export const handler = define.handlers<PageData>({
        *
        * This approach is primarily used for server-only solution detection.
        */
-      if (isValidSolution(board) && !dialog) {
+      if (isValidSolution(board)) {
         // Anonymous user: redirect to solution dialog (name capture + no-JS path)
         if (!savedName) {
           const redirectUrl = new URL(ctx.url);
@@ -125,21 +139,22 @@ export const handler = define.handlers<PageData>({
 
         const redirectUrl = new URL(ctx.url);
         redirectUrl.searchParams.set("dialog", "celebrate");
+
         if (isNew && isNewPath) {
           redirectUrl.searchParams.set("new_path", "true");
         }
+
         return Response.redirect(redirectUrl, 303);
       }
     }
 
-    // Stats are fetched at page load, so a user who takes a long time to solve
-    // will see slightly stale numbers in the dialog. Acceptable — this is cosmetic.
+    // Case 3: regular puzzle load
     return page({
       puzzle,
       hintCount,
-      puzzleStats: puzzleStats ?? defaultPuzzleStats,
+      puzzleStats: defaultPuzzleStats,
       savedName,
-      userStats,
+      userStats: null,
     });
   },
   async POST(ctx) {
