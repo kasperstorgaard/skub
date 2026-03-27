@@ -51,32 +51,32 @@ export function SolutionDialog(
       </div>
 
       <form
-          id="solution"
-          className="flex flex-col gap-fl-2"
-          action={`/puzzles/${puzzle.value.slug}`}
-          method="post"
-          onSubmit={() => setIsSubmitting(true)}
-        >
-          <label className="flex flex-col gap-1">
-            <span className="text-text-2 text-1">Username</span>
-
-            <input
-              name="name"
-              autocomplete="name"
-              placeholder="fx. Jungleboi87"
-              value={savedName ?? undefined}
-              required
-              className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
-            />
-          </label>
+        id="solution"
+        className="flex flex-col gap-fl-2"
+        action={`/puzzles/${puzzle.value.slug}`}
+        method="post"
+        onSubmit={() => setIsSubmitting(true)}
+      >
+        <label className="flex flex-col gap-1">
+          <span className="text-text-2 text-1">Username</span>
 
           <input
-            type="hidden"
-            name="moves"
-            value={JSON.stringify(state.moves)}
+            name="name"
+            autocomplete="name"
+            placeholder="fx. Jungleboi87"
+            value={savedName ?? undefined}
+            required
+            className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
           />
-          <input type="hidden" name="source" value="solution-dialog" />
-        </form>
+        </label>
+
+        <input
+          type="hidden"
+          name="moves"
+          value={JSON.stringify(state.moves)}
+        />
+        <input type="hidden" name="source" value="solution-dialog" />
+      </form>
 
       <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">
         <div
