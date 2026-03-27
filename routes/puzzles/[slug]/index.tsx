@@ -8,7 +8,6 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { define } from "#/core.ts";
 import { saveSolution } from "#/db/solutions.ts";
-import { getPuzzleStats, getUserStats } from "#/db/stats.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
@@ -39,9 +38,6 @@ type PageData = {
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const { slug } = ctx.params;
-
-    const hintCount = getHintCount(ctx.req.headers);
-
     const savedName = ctx.state.user?.name ?? null;
 
     const puzzle = await getPuzzle(slug);
@@ -50,79 +46,29 @@ export const handler = define.handlers<PageData>({
       throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
     }
 
-    // Case 1: celebrate dialog — fetch fresh stats and render
-    if (ctx.url.searchParams.get("dialog") === "celebrate") {
-      const [puzzleStats, userStats] = await Promise.all([
-        getPuzzleStats(slug),
-        savedName ? getUserStats(ctx.state.userId) : Promise.resolve(null),
-      ]);
+    const hintCount = getHintCount(ctx.req.headers);
 
-      return page({
-        puzzle,
-        hintCount,
-        puzzleStats: puzzleStats ?? defaultPuzzleStats,
-        savedName,
-        userStats,
-      });
-    }
-
-    // Case 2: moves in URL — no-JS solve detection, redirect to celebrate
-    // Guard: skip if a dialog is already set (prevents re-processing on reload)
+    // No-JS solve detection: moves are encoded in the URL on each navigation.
+    // JS users go via AutoPostSolution → POST instead. The dialog guard prevents
+    // re-processing when the page reloads after a redirect.
     const { moves } = decodeState(ctx.url);
-    const existingDialog = ctx.url.searchParams.get("dialog");
-
-    if (moves.length > 0 && !existingDialog) {
+    if (moves.length > 0 && !ctx.url.searchParams.get("dialog")) {
       let board: Puzzle["board"];
-
       try {
         board = resolveMoves(puzzle.board, moves);
       } catch {
-        // Invalid moves — clear them
         const url = new URL(`/puzzles/${slug}`, ctx.url);
         url.searchParams.set("error", "invalid move");
         return Response.redirect(url, 303);
       }
 
-      /**
-       * Named user with a valid solve: post solution and redirect to the
-       * celebration dialog. The dialog=celebrate guard prevents re-posting on refresh.
-       *
-       * This approach is primarily used for server-only solution detection.
-       */
       if (isValidSolution(board)) {
-        // Anonymous user: redirect to solution dialog (name capture + no-JS path)
-        if (!savedName) {
-          const redirectUrl = new URL(ctx.url);
-          redirectUrl.searchParams.set("dialog", "solution");
-          return Response.redirect(redirectUrl, 303);
-        }
-
-        const { isNew, isNewPath } = await saveSolution({
-          puzzleSlug: slug,
-          name: savedName,
-          moves,
-          userId: ctx.state.userId,
-        });
-
-        if (isNew) {
-          trackPuzzleSolved(ctx.state, puzzle, {
-            moves,
-            url: ctx.url.href,
-          });
-        }
-
         const redirectUrl = new URL(ctx.url);
-        redirectUrl.searchParams.set("dialog", "celebrate");
-
-        if (isNew && isNewPath) {
-          redirectUrl.searchParams.set("new_path", "true");
-        }
-
+        redirectUrl.searchParams.set("dialog", "solution");
         return Response.redirect(redirectUrl, 303);
       }
     }
 
-    // Case 3: regular puzzle load
     return page({
       puzzle,
       hintCount,
@@ -134,11 +80,11 @@ export const handler = define.handlers<PageData>({
   async POST(ctx) {
     const req = ctx.req;
     const { slug } = ctx.params;
-    const referer = ctx.req.headers.get("referer");
+    const referer = ctx.req.headers.get("referer") ?? "";
 
     const form = await req.formData();
     const name = form.get("name")?.toString();
-    const fromSolutionDialog = form.get("source") === "solution-dialog";
+    const source = form.get("source")?.toString();
 
     const puzzle = await getPuzzle(slug);
     if (!puzzle) {
@@ -156,18 +102,6 @@ export const handler = define.handlers<PageData>({
 
     await setUser(ctx.state.userId, { name });
 
-    // SolutionDialog posts (new players) go to the solves page;
-    // auto-posts from named users go to the celebrate dialog.
-    let redirectUrl: string;
-    if (fromSolutionDialog) {
-      redirectUrl = `/puzzles/${slug}/solutions`;
-    } else {
-      const celebrateUrl = new URL(referer ?? "", req.url);
-      celebrateUrl.pathname = `/puzzles/${slug}`;
-      celebrateUrl.searchParams.set("dialog", "celebrate");
-      redirectUrl = celebrateUrl.href;
-    }
-
     const { isNew, isNewPath } = await saveSolution({
       puzzleSlug: slug,
       name,
@@ -175,25 +109,11 @@ export const handler = define.handlers<PageData>({
       userId: ctx.state.userId,
     });
 
-    if (!isNew) {
-      return new Response(null, {
-        status: 303,
-        headers: { Location: redirectUrl },
-      });
-    }
+    const redirectUrl = getSolveRedirectUrl(ctx, source, { isNewPath });
 
-    if (isNewPath && !fromSolutionDialog) {
-      const url = new URL(redirectUrl, req.url);
-      url.searchParams.set("new_path", "true");
-      redirectUrl = url.href;
-    }
+    if (!isNew) return Response.redirect(redirectUrl, 303);
 
-    trackPuzzleSolved(ctx.state, puzzle, {
-      moves,
-      url: referer ?? "",
-    });
-
-    const responseHeaders = new Headers({ Location: redirectUrl });
+    trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
     // Complete onboarding on a good solve
     if (
@@ -202,13 +122,10 @@ export const handler = define.handlers<PageData>({
     ) {
       await setUser(ctx.state.userId, { onboarding: "done" });
 
-      trackOnboardingCompleted(ctx.state, puzzle, {
-        moves,
-        url: referer ?? "",
-      });
+      trackOnboardingCompleted(ctx.state, puzzle, { moves, url: referer });
     }
 
-    return new Response(null, { status: 303, headers: responseHeaders });
+    return Response.redirect(redirectUrl, 303);
   },
 });
 
@@ -289,3 +206,23 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
     </>
   );
 });
+
+function getSolveRedirectUrl(
+  ctx: { req: Request; params: Record<string, string> },
+  source: string | undefined,
+  options?: { isNewPath?: boolean },
+): URL {
+  const { slug } = ctx.params;
+  const url = new URL(ctx.req.headers.get("referer") ?? "", ctx.req.url);
+
+  if (source === "solution-dialog") {
+    url.pathname = `/puzzles/${slug}/solutions`;
+    return url;
+  }
+
+  url.pathname = `/puzzles/${slug}`;
+  url.searchParams.set("dialog", "celebrate");
+  if (options?.isNewPath) url.searchParams.set("new_path", "true");
+
+  return url;
+}

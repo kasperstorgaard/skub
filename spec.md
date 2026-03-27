@@ -1,41 +1,58 @@
-# Extract preview puzzle into its own route
+# Extract preview route + simplify puzzle route
 
 ## Problem
 
-`routes/puzzles/[slug]/index.tsx` contains two separate concerns — serving a regular
-puzzle and serving a draft preview. The preview case is guarded by `slug === "preview"`
-checks in both the GET and POST handlers, and the page component uses `isPreview` to
-toggle behaviour. This leaks builder-only logic into the puzzle player route and makes
-the `[slug]` handler harder to read.
+`routes/puzzles/[slug]/index.tsx` had two separate concerns mixed in:
+
+1. **Preview logic** — `slug === "preview"` guards in GET and POST, `isPreview` flags
+   threaded through islands. Builder-only logic leaking into the player route.
+
+2. **Overcomplicated GET handler** — three branching cases including a named-user
+   fast path that duplicated save/track logic from POST, and a stats fetch for the
+   celebrate dialog that was redundant once the island fetches fresh stats itself.
 
 ## Solution
 
-Move the preview concern into a dedicated static route at
-`routes/puzzles/preview/index.tsx`. Fresh resolves static segments before dynamic ones,
-so `/puzzles/preview` will be handled by the new file without any changes to routing
-configuration.
+### 1. Dedicated preview route
 
-The new route:
-- GET: loads the user's puzzle draft via `getUserPuzzleDraft`, sets `slug = "preview"`
-  and `number = 0` on the result, and renders the board page with no solution submission.
-  Returns 500 if no draft exists.
-- No POST handler — Fresh returns 405 naturally.
+Move preview into `routes/puzzles/preview/index.tsx`. Fresh resolves static segments
+before dynamic ones, so no routing config changes needed.
 
-The page component is replicated (not abstracted) because the preview page renders a
-proper subset of the full puzzle page — same visual structure, same islands — and
-sharing a component would couple the two routes for no real gain at this codebase size.
+- GET: loads draft via `getUserPuzzleDraft`, renders board with no solution submission
+- No POST handler — Fresh returns 405 naturally
 
-`routes/puzzles/[slug]/index.tsx` is cleaned up: both `slug === "preview"` guards are
-removed. `isPreview` is removed from `SolutionDialog` entirely (the preview route no
-longer renders it).
+The page component is replicated (not abstracted) — preview is a proper subset of the
+full puzzle page, and sharing would couple the routes for no gain.
+
+### 2. Unified no-JS solve path via SolutionDialog
+
+The GET handler previously had two no-JS paths: anonymous users went to SolutionDialog,
+named users saved directly and jumped to celebrate. This duplicated save/track logic
+from POST and made the two paths diverge conceptually.
+
+Now GET always redirects to `?dialog=solution` on a valid solve — regardless of whether
+the user has a name. SolutionDialog handles both cases: anonymous users pick a name,
+named users see pre-filled name and confirm. All saving goes through POST.
+
+JS named users are unaffected — `AutoPostSolution` posts directly and bypasses the
+dialog entirely.
+
+### 3. Removed celebrate stats fetch from GET
+
+GET was fetching `puzzleStats` and `userStats` when `dialog=celebrate` was in the URL.
+This is now redundant: no-JS users go to the solutions page (not celebrate), and JS
+users get fresh stats via the island fetch. The fetch is removed; GET always returns
+`defaultPuzzleStats` and `userStats: null`.
 
 ## Behaviour changes
 
-None visible to users. `/puzzles/preview` behaviour is identical — Fresh resolves static
-segments before dynamic ones, so the new route takes over transparently.
+- No-JS named users now see SolutionDialog (pre-filled name) instead of being saved
+  silently and jumping straight to celebrate. One extra click to confirm.
+- `/puzzles/preview` behaviour is identical externally.
 
 ## Files
 
-- **new** `routes/puzzles/preview/index.tsx` — preview-only handler + page component (no SolutionDialog, no CelebrationDialog, no AutoPostSolution)
-- **modified** `routes/puzzles/[slug]/index.tsx` — remove `preview` special cases
-- **modified** `islands/solution-dialog.tsx` — remove `isPreview` prop entirely
+- **new** `routes/puzzles/preview/index.tsx` — preview-only handler + page component
+- **modified** `routes/puzzles/[slug]/index.tsx` — remove preview guards, simplify GET, add `getSolveRedirectUrl` helper
+- **modified** `islands/solution-dialog.tsx` — remove `isPreview`, open on `dialog=solution`, conditional copy for named users
+- **modified** `CLAUDE.md` — note that function argument ordering is exempt for side-effect-only functions
