@@ -6,15 +6,17 @@ Previously, solution saving required two separate calls: `getCanonicalUserSoluti
 
 ## Solution
 
-Merged into a single `saveSolution` function that handles deduplication internally and returns a discriminated union:
+Merged into a single `saveSolution` function that handles deduplication internally and returns a flat result object:
 
 ```ts
-type SaveSolutionResult =
-  | { isNew: true; isNewPath: boolean; solution: Solution }
-  | { isNew: false };
+type SaveSolutionResult = {
+  solution: Solution;
+  isNew: boolean;
+  isNewPath: boolean;
+};
 ```
 
-Call sites check `result.isNew` to branch on first-time vs duplicate. TypeScript's narrowing ensures `result.isNewPath` and `result.solution` are only accessible when `result.isNew === true`.
+On duplicate, returns the existing solution with `isNew: false, isNewPath: false`. Call sites check `result.isNew` to branch on first-time vs duplicate.
 
 ## Changes
 
