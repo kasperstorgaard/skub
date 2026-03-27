@@ -27,7 +27,7 @@ type ControlsPanelProps = {
   puzzle: Signal<Puzzle>;
   href: Signal<string>;
   isDev: boolean;
-  hintCount: number;
+  hintCount?: number;
   isPreview?: boolean;
   onboarding?: Onboarding;
   className?: string;
@@ -39,7 +39,7 @@ export function ControlsPanel(
 ) {
   const hintLimit = 1;
   const hintDisabled = !isDev && !isPreview && onboarding === "done" &&
-    hintCount >= hintLimit;
+    (hintCount ?? 0) >= hintLimit;
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
