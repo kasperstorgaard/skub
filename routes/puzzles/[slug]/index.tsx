@@ -9,7 +9,7 @@ import { PrintPanel } from "#/components/print-panel.tsx";
 import { define } from "#/core.ts";
 import { saveSolution } from "#/db/solutions.ts";
 import { getPuzzleStats, getUserStats } from "#/db/stats.ts";
-import { getUserPuzzleDraft, setUser } from "#/db/user.ts";
+import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { getPuzzle } from "#/game/loader.ts";
@@ -43,24 +43,6 @@ export const handler = define.handlers<PageData>({
     const hintCount = getHintCount(ctx.req.headers);
 
     const savedName = ctx.state.user?.name ?? null;
-
-    // Case 0: preview for editor
-    if (slug === "preview") {
-      const puzzle = await getUserPuzzleDraft(ctx.state.userId);
-
-      if (!puzzle) throw new HttpError(500, "No stored puzzle");
-
-      puzzle.slug = "preview";
-      puzzle.number = 0;
-
-      return page({
-        puzzle,
-        hintCount,
-        puzzleStats: defaultPuzzleStats,
-        savedName,
-        userStats: null,
-      });
-    }
 
     const puzzle = await getPuzzle(slug);
 
@@ -154,10 +136,6 @@ export const handler = define.handlers<PageData>({
     const { slug } = ctx.params;
     const referer = ctx.req.headers.get("referer");
 
-    if (slug === "preview") {
-      throw new HttpError(500, "Preview puzzle solutions cannot be submitted");
-    }
-
     const form = await req.formData();
     const name = form.get("name")?.toString();
     const fromSolutionDialog = form.get("source") === "solution-dialog";
@@ -235,13 +213,10 @@ export const handler = define.handlers<PageData>({
 });
 
 export default define.page<typeof handler>(function PuzzleDetails(props) {
-  const { slug } = props.params;
-
   const href = useSignal(props.url.href);
   const puzzle = useSignal(props.data.puzzle);
   const mode = useSignal<"solve">("solve");
   const printUrl = props.url.hostname + props.url.pathname;
-  const isPreview = slug === "preview";
 
   const url = new URL(props.req.url);
 
@@ -270,7 +245,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         hintCount={props.data.hintCount}
         isDev={isDev}
-        isPreview={isPreview}
         onboarding={props.state.user.onboarding}
         className="print:hidden"
       />
@@ -294,7 +268,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
       <SolutionDialog
         href={href}
         puzzle={puzzle}
-        isPreview={isPreview}
         savedName={props.data.savedName}
       />
 
@@ -306,7 +279,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
       />
 
       {/* Client-side auto-post for named users */}
-      {props.data.savedName && !isPreview && (
+      {props.data.savedName && (
         <AutoPostSolution
           href={href}
           puzzle={puzzle}

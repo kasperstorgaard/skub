@@ -1,67 +1,41 @@
-# Tracking lib
+# Extract preview puzzle into its own route
 
 ## Problem
 
-PostHog events are called directly at 4 call sites across 3 route files. Each call
-repeats the same boilerplate:
-
-- `distinctId: ctx.state.trackingId`
-- `$process_person_profile: ctx.state.cookieChoice === "accepted"`
-- `$current_url: ...`
-
-This is ~5 lines of repetition per event. Adding a new event means getting all three
-fields right. Skipping one is a silent bug.
+`routes/puzzles/[slug]/index.tsx` contains two separate concerns — serving a regular
+puzzle and serving a draft preview. The preview case is guarded by `slug === "preview"`
+checks in both the GET and POST handlers, and the page component uses `isPreview` to
+toggle behaviour. This leaks builder-only logic into the puzzle player route and makes
+the `[slug]` handler harder to read.
 
 ## Solution
 
-A thin `lib/tracking.ts` module with one typed helper per event. Each helper:
+Move the preview concern into a dedicated static route at
+`routes/puzzles/preview/index.tsx`. Fresh resolves static segments before dynamic ones,
+so `/puzzles/preview` will be handled by the new file without any changes to routing
+configuration.
 
-1. Accepts `ctx.state` (the Fresh `State` type) as its first argument so common
-   fields are extracted automatically.
-2. Accepts the event-specific payload as the second argument.
-3. Calls `posthog?.capture(...)` internally — no return value needed.
+The new route:
+- GET: loads the user's puzzle draft via `getUserPuzzleDraft`, sets `slug = "preview"`
+  and `number = 0` on the result, and renders the board page with no solution submission.
+  Returns 500 if no draft exists.
+- POST: returns 500 immediately ("Preview puzzle solutions cannot be submitted").
 
-The `_error.tsx` route uses `captureException`, not `capture`, so it stays as-is
-(different API surface, only one call site).
+The page component is replicated (not abstracted) because the preview page renders a
+proper subset of the full puzzle page — same visual structure, same islands — and
+sharing a component would couple the two routes for no real gain at this codebase size.
 
-## API (proposed function signatures)
+`routes/puzzles/[slug]/index.tsx` is cleaned up: both `slug === "preview"` guards are
+removed. `isPreview` is removed from `SolutionDialog` entirely (the preview route no
+longer renders it).
 
-```ts
-// Puzzle solved — 2 call sites in routes/puzzles/[slug]/index.tsx
-trackPuzzleSolved(state: State, puzzle: Puzzle, options: {
-  moves: Move[];
-  url: string;
-}): void
+## Behaviour changes
 
-// Onboarding completed — 1 call site in routes/puzzles/[slug]/index.tsx
-// Kept as a helper because it shares puzzle context with trackPuzzleSolved
-// and its payload is identical in shape.
-trackOnboardingCompleted(state: State, puzzle: Puzzle, options: {
-  moves: Move[];
-  url: string;
-}): void
-
-// Hint requested — 1 call site in routes/puzzles/[slug]/(actions)/hint.ts
-trackHintRequested(state: State, puzzle: Puzzle, options: {
-  url: string;
-  cursor: number;
-}): void
-
-// Cookie consent — 1 call site in routes/api/consent.ts
-trackCookieConsent(state: State, options: {
-  decision: "accepted" | "declined";
-  url: string;
-}): void
-```
-
-`trackCookieConsent` gets a special note: at the time the event fires, the cookie
-choice has just been set but `ctx.state.cookieChoice` still reflects the value from
-the incoming request (which is `null` for new visitors). The helper must therefore
-derive `$process_person_profile` from `decision`, not from `state.cookieChoice`.
+None visible to users. `/puzzles/preview` behaviour is identical — Fresh resolves static
+segments before dynamic ones, so the new route takes over transparently.
 
 ## Files
 
-- **new** `lib/tracking.ts` — typed capture helpers
-- **updated** `routes/puzzles/[slug]/index.tsx` — use `trackPuzzleSolved`, `trackOnboardingCompleted`
-- **updated** `routes/puzzles/[slug]/(actions)/hint.ts` — use `trackHintRequested`
-- **updated** `routes/api/consent.ts` — use `trackCookieConsent`
+- **new** `routes/puzzles/preview/index.tsx` — preview-only handler + page component (no SolutionDialog, no CelebrationDialog, no AutoPostSolution)
+- **modified** `routes/puzzles/[slug]/index.tsx` — remove `preview` special cases
+- **modified** `islands/solution-dialog.tsx` — remove `isPreview` prop entirely
