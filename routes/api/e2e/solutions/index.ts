@@ -22,12 +22,12 @@ export const handler = define.handlers({
       });
     }
 
-    const result = await saveSolution(body);
+    const { isNew, solution } = await saveSolution(body);
 
-    if (!result.isNew) {
+    if (!isNew) {
       return new Response("Duplicate solution", { status: 409 });
     }
 
-    return Response.json(result.solution);
+    return Response.json(solution);
   },
 });
