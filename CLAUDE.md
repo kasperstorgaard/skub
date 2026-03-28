@@ -150,6 +150,8 @@ export default define.page<typeof handler>();
 
   Generic names (`src`, `target`) are reserved for utilities so abstract they have no domain vocabulary. Everywhere else, name from the domain. When an argument doesn't fit neatly, collapse it into `options`.
 
+  This ordering applies to functions with meaningful return values or domain computations. Side-effect-only functions (analytics calls, fire-and-forget mutations) are exempt — there is no target being transformed, so natural readability takes precedence.
+
 ## Tests
 
 Invoke `/architecture` for testing decisions. Philosophy: test game logic exhaustively with realistic scenarios, skip client-side hooks and third-party wrappers. `*_test.ts` suffix, co-located with the module under test, one scenario per `Deno.test()`.

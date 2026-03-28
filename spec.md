@@ -1,41 +1,64 @@
-# Extract preview puzzle into its own route
+# Simplify puzzle route solve paths
 
 ## Problem
 
-`routes/puzzles/[slug]/index.tsx` contains two separate concerns — serving a regular
-puzzle and serving a draft preview. The preview case is guarded by `slug === "preview"`
-checks in both the GET and POST handlers, and the page component uses `isPreview` to
-toggle behaviour. This leaks builder-only logic into the puzzle player route and makes
-the `[slug]` handler harder to read.
+`routes/puzzles/[slug]/index.tsx` GET handler had unnecessary complexity:
+
+1. A stats fetch for `dialog=celebrate` that was redundant — JS users get fresh stats
+   via the island fetch, and the no-JS path doesn't land on celebrate.
+2. A named-user fast path in no-JS solve detection that duplicated save/track logic
+   from POST and caused the server and client paths to diverge conceptually.
+
+E2e tests used `gotoWithSolution` — a helper that encoded moves directly into the URL
+and navigated there. No real page in the app produces such a URL, so this bypassed the
+actual board interaction.
 
 ## Solution
 
-Move the preview concern into a dedicated static route at
-`routes/puzzles/preview/index.tsx`. Fresh resolves static segments before dynamic ones,
-so `/puzzles/preview` will be handled by the new file without any changes to routing
-configuration.
+### 1. Remove celebrate stats fetch from GET
 
-The new route:
-- GET: loads the user's puzzle draft via `getUserPuzzleDraft`, sets `slug = "preview"`
-  and `number = 0` on the result, and renders the board page with no solution submission.
-  Returns 500 if no draft exists.
-- No POST handler — Fresh returns 405 naturally.
+GET fetched `puzzleStats` and `userStats` when `dialog=celebrate` was in the URL.
+Removed — GET now always returns `defaultPuzzleStats` and `userStats: null`.
 
-The page component is replicated (not abstracted) because the preview page renders a
-proper subset of the full puzzle page — same visual structure, same islands — and
-sharing a component would couple the two routes for no real gain at this codebase size.
+### 2. Unify no-JS solve path via SolutionDialog
 
-`routes/puzzles/[slug]/index.tsx` is cleaned up: both `slug === "preview"` guards are
-removed. `isPreview` is removed from `SolutionDialog` entirely (the preview route no
-longer renders it).
+GET previously had two no-JS branches: anonymous users went to SolutionDialog, named
+users saved directly and jumped to celebrate. Now GET always redirects to
+`?dialog=solution` on a valid solve. All saving goes through POST.
+
+SolutionDialog opens on `dialog=solution` in addition to the existing JS anonymous
+detect. Copy is conditional: named users see "Claim your solve to see how others did
+it.", anonymous users see "Pick a name and see how others did it."
+
+JS named users are unaffected — `AutoPostSolution` posts directly and bypasses the
+dialog entirely.
+
+### 3. `getSolveRedirectUrl` helper
+
+Extracted the redirect URL construction from POST into a local helper:
+`getSolveRedirectUrl(ctx, source, options?)`. Takes ctx for slug and referer,
+source as the branching subject, isNewPath as an optional modifier.
+
+### 4. Remove `gotoWithSolution`, require moves in `solveByClicking`
+
+`gotoWithSolution` removed from `PuzzlePage`. `solveByClicking` now requires
+`moves: Move[]` passed in from outside — callers use `solvePuzzle(slug)` from helpers
+to get the solution first, then replay it through the board UI.
+
+This aligns tests with the integration test principle: exercise components on the page
+directly, don't skip page interactions via synthetic URL state.
 
 ## Behaviour changes
 
-None visible to users. `/puzzles/preview` behaviour is identical — Fresh resolves static
-segments before dynamic ones, so the new route takes over transparently.
+No-JS named users now see SolutionDialog (pre-filled name) instead of being saved
+silently and jumping straight to celebrate. One extra click to confirm.
 
 ## Files
 
-- **new** `routes/puzzles/preview/index.tsx` — preview-only handler + page component (no SolutionDialog, no CelebrationDialog, no AutoPostSolution)
-- **modified** `routes/puzzles/[slug]/index.tsx` — remove `preview` special cases
-- **modified** `islands/solution-dialog.tsx` — remove `isPreview` prop entirely
+- **modified** `routes/puzzles/[slug]/index.tsx` — remove celebrate stats fetch, simplify no-JS path, extract `getSolveRedirectUrl`
+- **modified** `islands/solution-dialog.tsx` — open on `dialog=solution`, conditional copy for named vs anonymous users
+- **modified** `CLAUDE.md` — function argument ordering is exempt for side-effect-only functions
+- **modified** `routes/puzzles/[slug]/_e2e/puzzle-page.ts` — remove `gotoWithSolution`, `solveByClicking` now requires `moves`
+- **modified** `routes/puzzles/[slug]/_e2e/puzzle_test.ts` — all tests use `goto` + `solveByClicking(moves)`
+- **modified** `e2e/new-user-flow_test.ts` — `solveByClicking` updated with moves
+- **modified** `e2e/returning-user-flow_test.ts` — `solveByClicking` updated with moves; no-JS named user now expects SolutionDialog

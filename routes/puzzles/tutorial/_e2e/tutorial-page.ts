@@ -54,6 +54,7 @@ export class TutorialPage {
     return new HomePage(this.page);
   }
 
+  // TODO: pass in solution, don't solve on the inside
   async solveByClicking() {
     const puzzle = await getPuzzle("tutorial");
     if (!puzzle) throw new Error("Tutorial puzzle not found");
