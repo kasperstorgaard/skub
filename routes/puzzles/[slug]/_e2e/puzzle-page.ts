@@ -3,8 +3,6 @@ import type { Page } from "playwright";
 
 import { SolutionsPage } from "../solutions/_e2e/solutions-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
-import { getPuzzle } from "#/game/loader.ts";
-import { solveSync } from "#/game/solver.ts";
 import type { Move } from "#/game/types.ts";
 
 const SLUG_MATCHER = /\/puzzles\/([^/]+)(\/|$)/i;
@@ -69,16 +67,13 @@ export class PuzzlePage {
     return this;
   }
 
-  async solveByKeyboard() {
-    const puzzle = await getPuzzle(this.currentSlug);
-    if (!puzzle) throw new Error(`Puzzle not found: ${this.currentSlug}`);
-
+  async solveByKeyboard(moves: Move[]) {
     // Wait for the dom to be fully loaded, as this relies on event listeners to attach.
     // Use waitForLoadState (idempotent) rather than waitForEvent (fires once, already gone if page loaded before this call).
     await this.page.waitForLoadState("domcontentloaded");
 
     // Loop over moves, focus the piece, then use arrow keys to move
-    for (const [from, to] of solveSync(puzzle)) {
+    for (const [from, to] of moves) {
       const fromLabel = `at ${from.x},${from.y}`;
       const toLabel = `move to ${to.x},${to.y}`;
 
