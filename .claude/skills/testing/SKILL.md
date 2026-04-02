@@ -83,12 +83,12 @@ CSS or test IDs). The test suite is a forcing function for accessibility.
 ### Integration test contract
 
 **Starting state**: only what another page could realistically produce — a link,
-cookie, or KV write. Server-side seeding (`addSolution`, `seedUser`) is fine;
-it mirrors what the app's own handlers write. URL params no other page would
-link to are not valid starting states, even if the app generates them internally.
+cookie, or KV write. Server-side seeding (`addSolution`, `seedUser`) is fine; it
+mirrors what the app's own handlers write. URL params no other page would link
+to are not valid starting states, even if the app generates them internally.
 
-**End state**: a UI assertion, optionally plus a URL / cookie / KV assertion
-the next page will pick up.
+**End state**: a UI assertion, optionally plus a URL / cookie / KV assertion the
+next page will pick up.
 
 **Flow tests** (`e2e/`) cover critical multi-page journeys. Only write one when
 the value is in the chain, not a single page. Page object methods must not
