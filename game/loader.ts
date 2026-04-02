@@ -46,6 +46,20 @@ export async function getAvailableEntries() {
 }
 
 /**
+ * Manifest entries available after today: number > day-of-year, tutorial excluded.
+ */
+export async function getFutureEntries() {
+  const today = new Date(Date.now());
+  const dayOfYear = getDayOfYear(today);
+
+  const manifest = await getPuzzleManifest();
+
+  return manifest
+    .filter((entry) => entry.number > dayOfYear)
+    .filter((entry) => entry.slug !== "tutorial");
+}
+
+/**
  * Loads a puzzle from a markdown file by slug.
  */
 export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
@@ -63,6 +77,7 @@ type ListOptions = Pick<PaginationState, "page" | "itemsPerPage"> & {
   sortBy: "createdAt" | "difficulty" | "number";
   sortOrder: "ascending" | "descending";
   excludeSlugs?: string[];
+  isFuture?: boolean;
 };
 
 /**
@@ -77,7 +92,9 @@ export async function listPuzzles(
     excludeSlugs: ["tutorial"],
   },
 ): Promise<PaginatedData<Puzzle>> {
-  let entries = await getAvailableEntries();
+  let entries = options.isFuture
+    ? await getFutureEntries()
+    : await getAvailableEntries();
 
   entries = entries.filter((entry) =>
     !options.excludeSlugs?.includes(entry.slug)

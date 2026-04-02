@@ -16,6 +16,7 @@ import {
 } from "#/game/loader.ts";
 import { Difficulty, PaginatedData, Puzzle } from "#/game/types.ts";
 import { getPage } from "#/game/url.ts";
+import { isDev } from "#/lib/env.ts";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -28,6 +29,7 @@ export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const currentPage = getPage(ctx.url) ?? 1;
 
+    const isFuture = isDev && ctx.url.searchParams.get("future") === "true";
     const dailyPuzzle = await getLatestPuzzle();
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
@@ -40,6 +42,7 @@ export const handler = define.handlers<PageData>({
           page: currentPage,
           excludeSlugs: ["tutorial", dailyPuzzle.slug],
           itemsPerPage: ITEMS_PER_PAGE,
+          isFuture,
         }),
         listUserSolutions(ctx.state.userId, { limit: 500 }),
         getDifficultyBreakdown(),

@@ -28,6 +28,12 @@ const puzzles = await Promise.all(
   }),
 );
 
+let nextNumber = 0;
+for (const { puzzle } of puzzles) {
+  if (puzzle.number > nextNumber) nextNumber = puzzle.number;
+}
+nextNumber++;
+
 const toSolve = updateAll
   ? puzzles
   : puzzles.filter(({ puzzle }) => !puzzle.minMoves);
@@ -46,7 +52,12 @@ let failed = 0;
 for (const { path, name, puzzle } of toSolve) {
   try {
     const moves = solveSync(puzzle.board);
-    const markdown = formatPuzzle({ ...puzzle, minMoves: moves.length });
+    const markdown = formatPuzzle({
+      ...puzzle,
+      minMoves: moves.length,
+      number: puzzle.number != null ? puzzle.number : nextNumber++,
+    });
+
     await Deno.writeTextFile(path, markdown);
     console.log(`  ${name}:${moves.length} moves`);
     updated++;
