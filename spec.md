@@ -8,9 +8,12 @@ from outside. Two things remained:
 
 1. `TutorialPage.solveByClicking()` still fetches the puzzle and solves
    internally — same anti-pattern, with a `// TODO` comment.
-2. No tests exist for the archives page (`/puzzles`) despite it having a POM.
-3. The testing skill lacked a clear, general statement of the integration test
+2. `PuzzlePage.solveByKeyboard()` had the same anti-pattern.
+3. No tests exist for the archives page (`/puzzles`) despite it having a POM.
+4. The testing skill lacked a clear, general statement of the integration test
    contract.
+5. All puzzle integration tests used the same slug ("karla"), risking false
+   positives from shared board state.
 
 ## Solution
 
@@ -28,7 +31,8 @@ generates them internally.
 or KV state the next page will pick up.
 
 Page object methods must not encapsulate solving logic — moves come from the
-caller via `solvePuzzle(slug)`, POMs are thin wrappers.
+caller via `solvePuzzle(slug)`, POMs are thin wrappers. This applies to all
+solve methods: `solveByClicking(moves)` and `solveByKeyboard(moves)`.
 
 Flow tests (`e2e/`) cover valuable multi-page journeys where a breakage is a
 critical user-facing error. Integration tests (`routes/*/_e2e/`) cover individual
@@ -43,7 +47,21 @@ Update callers:
 - `routes/puzzles/tutorial/_e2e/tutorial_test.ts` — add `solvePuzzle("tutorial")`, pass moves
 - `e2e/new-user-flow_test.ts` — add `solvePuzzle("tutorial")`, pass moves
 
-### 3. Archives page tests
+### 3. Spread puzzle integration tests across multiple slugs
+
+Each test in `puzzle_test.ts` now uses a distinct puzzle slug and a distinct
+e2e user, so no two tests share board state or KV user data:
+
+| Test | Puzzle | User |
+|------|--------|------|
+| returning player sees celebration dialog | karla | e2eliza |
+| no-JS returning player submits solve | heino | e2edna |
+| returning player submits duplicate solve | laerke | e2ebbe |
+| new player solves by keyboard | jurgen | — |
+| new player is prompted to save | alice | — |
+| new player submits name → solutions page | brian | e2eleanor |
+
+### 4. Archives page tests
 
 New file: `routes/puzzles/_e2e/archives_test.ts`
 
@@ -56,6 +74,8 @@ Three tests:
 
 - **modified** `.claude/skills/testing/SKILL.md` — add integration test contract section
 - **modified** `routes/puzzles/tutorial/_e2e/tutorial-page.ts` — `solveByClicking(moves: Move[])`, remove internal solve logic
+- **modified** `routes/puzzles/[slug]/_e2e/puzzle-page.ts` — `solveByKeyboard(moves: Move[])`, remove internal `getPuzzle`/`solveSync`
+- **modified** `routes/puzzles/[slug]/_e2e/puzzle_test.ts` — `solveByKeyboard` gets moves from caller; tests spread across karla/heino/laerke/jurgen/alice/brian with unique e2e users
 - **modified** `routes/puzzles/tutorial/_e2e/tutorial_test.ts` — add `solvePuzzle` calls, pass moves
 - **modified** `e2e/new-user-flow_test.ts` — add `solvePuzzle("tutorial")`, pass moves
 - **new** `routes/puzzles/_e2e/archives_test.ts` — 3 basic archives page tests
