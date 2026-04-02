@@ -1,64 +1,81 @@
-# Simplify puzzle route solve paths
+# E2E test cleanup
 
 ## Problem
 
-`routes/puzzles/[slug]/index.tsx` GET handler had unnecessary complexity:
+The last PR established the rule: tests must not bypass board interaction via
+synthetic URL state. It fixed `PuzzlePage.solveByClicking()` to require `moves`
+from outside. Two things remained:
 
-1. A stats fetch for `dialog=celebrate` that was redundant — JS users get fresh stats
-   via the island fetch, and the no-JS path doesn't land on celebrate.
-2. A named-user fast path in no-JS solve detection that duplicated save/track logic
-   from POST and caused the server and client paths to diverge conceptually.
-
-E2e tests used `gotoWithSolution` — a helper that encoded moves directly into the URL
-and navigated there. No real page in the app produces such a URL, so this bypassed the
-actual board interaction.
+1. `TutorialPage.solveByClicking()` still fetches the puzzle and solves
+   internally — same anti-pattern, with a `// TODO` comment.
+2. `PuzzlePage.solveByKeyboard()` had the same anti-pattern.
+3. No tests exist for the archives page (`/puzzles`) despite it having a POM.
+4. The testing skill lacked a clear, general statement of the integration test
+   contract.
+5. All puzzle integration tests used the same slug ("karla"), risking false
+   positives from shared board state.
 
 ## Solution
 
-### 1. Remove celebrate stats fetch from GET
+### 1. Integration test contract (testing skill)
 
-GET fetched `puzzleStats` and `userStats` when `dialog=celebrate` was in the URL.
-Removed — GET now always returns `defaultPuzzleStats` and `userStats: null`.
+Formalise the contract in `.claude/skills/testing/SKILL.md`:
 
-### 2. Unify no-JS solve path via SolutionDialog
+**Starting state**: must be one that _another page_ in the app could realistically
+produce via a link, cookie, or KV write. Server-side seeding (`addSolution`,
+`seedUser`) is fine — it mirrors what the app's own handlers write. URL params
+that no other page would link to are not valid starting states, even if the app
+generates them internally.
 
-GET previously had two no-JS branches: anonymous users went to SolutionDialog, named
-users saved directly and jumped to celebrate. Now GET always redirects to
-`?dialog=solution` on a valid solve. All saving goes through POST.
+**End state**: a UI assertion, plus an optional assertion about the URL, cookie,
+or KV state the next page will pick up.
 
-SolutionDialog opens on `dialog=solution` in addition to the existing JS anonymous
-detect. Copy is conditional: named users see "Claim your solve to see how others did
-it.", anonymous users see "Pick a name and see how others did it."
+Page object methods must not encapsulate solving logic — moves come from the
+caller via `solvePuzzle(slug)`, POMs are thin wrappers. This applies to all
+solve methods: `solveByClicking(moves)` and `solveByKeyboard(moves)`.
 
-JS named users are unaffected — `AutoPostSolution` posts directly and bypasses the
-dialog entirely.
+Flow tests (`e2e/`) cover valuable multi-page journeys where a breakage is a
+critical user-facing error. Integration tests (`routes/*/_e2e/`) cover individual
+page behaviour.
 
-### 3. `getSolveRedirectUrl` helper
+### 2. Fix `TutorialPage.solveByClicking()`
 
-Extracted the redirect URL construction from POST into a local helper:
-`getSolveRedirectUrl(ctx, source, options?)`. Takes ctx for slug and referer,
-source as the branching subject, isNewPath as an optional modifier.
+Change signature to `solveByClicking(moves: Move[])`. Remove the internal
+`getPuzzle` / `solveSync` call. Remove unused imports.
 
-### 4. Remove `gotoWithSolution`, require moves in `solveByClicking`
+Update callers:
+- `routes/puzzles/tutorial/_e2e/tutorial_test.ts` — add `solvePuzzle("tutorial")`, pass moves
+- `e2e/new-user-flow_test.ts` — add `solvePuzzle("tutorial")`, pass moves
 
-`gotoWithSolution` removed from `PuzzlePage`. `solveByClicking` now requires
-`moves: Move[]` passed in from outside — callers use `solvePuzzle(slug)` from helpers
-to get the solution first, then replay it through the board UI.
+### 3. Spread puzzle integration tests across multiple slugs
 
-This aligns tests with the integration test principle: exercise components on the page
-directly, don't skip page interactions via synthetic URL state.
+Each test in `puzzle_test.ts` now uses a distinct puzzle slug and a distinct
+e2e user, so no two tests share board state or KV user data:
 
-## Behaviour changes
+| Test | Puzzle | User |
+|------|--------|------|
+| returning player sees celebration dialog | karla | e2eliza |
+| no-JS returning player submits solve | heino | e2edna |
+| returning player submits duplicate solve | laerke | e2ebbe |
+| new player solves by keyboard | jurgen | — |
+| new player is prompted to save | alice | — |
+| new player submits name → solutions page | brian | e2eleanor |
 
-No-JS named users now see SolutionDialog (pre-filled name) instead of being saved
-silently and jumping straight to celebrate. One extra click to confirm.
+### 4. Archives page tests
+
+New file: `routes/puzzles/_e2e/archives_test.ts`
+
+Three tests:
+1. renders the heading
+2. navigates to the next page
+3. puzzle card links to a puzzle page
 
 ## Files
 
-- **modified** `routes/puzzles/[slug]/index.tsx` — remove celebrate stats fetch, simplify no-JS path, extract `getSolveRedirectUrl`
-- **modified** `islands/solution-dialog.tsx` — open on `dialog=solution`, conditional copy for named vs anonymous users
-- **modified** `CLAUDE.md` — function argument ordering is exempt for side-effect-only functions
-- **modified** `routes/puzzles/[slug]/_e2e/puzzle-page.ts` — remove `gotoWithSolution`, `solveByClicking` now requires `moves`
-- **modified** `routes/puzzles/[slug]/_e2e/puzzle_test.ts` — all tests use `goto` + `solveByClicking(moves)`
-- **modified** `e2e/new-user-flow_test.ts` — `solveByClicking` updated with moves
-- **modified** `e2e/returning-user-flow_test.ts` — `solveByClicking` updated with moves; no-JS named user now expects SolutionDialog
+- **modified** `.claude/skills/testing/SKILL.md` — add integration test contract section
+- **modified** `routes/puzzles/tutorial/_e2e/tutorial-page.ts` — `solveByClicking(moves: Move[])`, remove internal solve logic
+- **modified** `routes/puzzles/[slug]/_e2e/puzzle-page.ts` — `solveByKeyboard(moves: Move[])`, remove internal `getPuzzle`/`solveSync`
+- **modified** `routes/puzzles/[slug]/_e2e/puzzle_test.ts` — `solveByKeyboard` gets moves from caller; tests spread across karla/heino/laerke/jurgen/alice/brian with unique e2e users
+- **modified** `routes/puzzles/tutorial/_e2e/tutorial_test.ts` — add `solvePuzzle` calls, pass moves
+- **modified** `e2e/new-user-flow_test.ts` — add `solvePuzzle("tutorial")`, pass moves
+- **new** `routes/puzzles/_e2e/archives_test.ts` — 3 basic archives page tests

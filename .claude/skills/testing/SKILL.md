@@ -79,3 +79,17 @@ parent to avoid strict mode violations.
 When a test can't find an element because it has no text or label, the fix
 belongs in the **app** (add `aria-label`), not in the test (don't fall back to
 CSS or test IDs). The test suite is a forcing function for accessibility.
+
+### Integration test contract
+
+**Starting state**: only what another page could realistically produce — a link,
+cookie, or KV write. Server-side seeding (`addSolution`, `seedUser`) is fine; it
+mirrors what the app's own handlers write. URL params no other page would link
+to are not valid starting states, even if the app generates them internally.
+
+**End state**: a UI assertion, optionally plus a URL / cookie / KV assertion the
+next page will pick up.
+
+**Flow tests** (`e2e/`) cover critical multi-page journeys. Only write one when
+the value is in the chain, not a single page. Page object methods must not
+encapsulate game-solving logic — moves come from the caller.

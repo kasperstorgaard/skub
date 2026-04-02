@@ -3,8 +3,7 @@ import type { Page } from "playwright";
 
 import { HomePage } from "../../../_e2e/home-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
-import { getPuzzle } from "#/game/loader.ts";
-import { solveSync } from "#/game/solver.ts";
+import type { Move } from "#/game/types.ts";
 
 export class TutorialPage {
   constructor(private page: Page) {}
@@ -54,16 +53,12 @@ export class TutorialPage {
     return new HomePage(this.page);
   }
 
-  // TODO: pass in solution, don't solve on the inside
-  async solveByClicking() {
-    const puzzle = await getPuzzle("tutorial");
-    if (!puzzle) throw new Error("Tutorial puzzle not found");
-
+  async solveByClicking(moves: Move[]) {
     // Wait for the DOM to be fully loaded — solve mode is entered client-side
     // so event listeners may not be attached yet
     await this.page.waitForLoadState("domcontentloaded");
 
-    for (const move of solveSync(puzzle)) {
+    for (const move of moves) {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,
       }).click();

@@ -1,5 +1,6 @@
 import { TutorialPage } from "./tutorial-page.ts";
 import { expect, setup } from "#/e2e/base.ts";
+import { solvePuzzle } from "#/e2e/helpers.ts";
 
 Deno.test("tutorial — solves the puzzle by making moves", async () => {
   const { page, teardown } = await setup();
@@ -12,7 +13,8 @@ Deno.test("tutorial — solves the puzzle by making moves", async () => {
     await expect(tutorial.piecesHeading).toBeVisible();
     await tutorial.clickTryIt();
 
-    await tutorial.solveByClicking();
+    const moves = await solvePuzzle("tutorial");
+    await tutorial.solveByClicking(moves);
 
     await expect(tutorial.solvedHeading).toBeVisible();
     await tutorial.clickImReady();

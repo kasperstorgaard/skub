@@ -15,7 +15,8 @@ Deno.test("a new user discovers the tutorial, plays their first puzzle, and subm
     await expect(tutorial.piecesHeading).toBeVisible();
     await tutorial.clickTryIt();
 
-    await tutorial.solveByClicking();
+    const tutorialMoves = await solvePuzzle("tutorial");
+    await tutorial.solveByClicking(tutorialMoves);
 
     await expect(tutorial.solvedHeading).toBeVisible();
     home = await tutorial.clickImReady();
