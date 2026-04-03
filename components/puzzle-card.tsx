@@ -50,8 +50,7 @@ export function PuzzleCard({
         class={clsx(
           "relative flex border-2 border-link rounded-1",
           "group-hover:filter-[lighten(1.3)] transition-colors",
-          !isOptimal && "group-visited:link-border-dim",
-          isOptimal && "border-ui-2",
+          !isSolved && "group-visited:link-border-dim",
         )}
       >
         <Thumbnail
@@ -72,20 +71,28 @@ export function PuzzleCard({
         {isSolved && (
           <div
             class={clsx(
-              "absolute top-0 right-0 p-fl-1",
-              isOptimal ? "text-ui-2" : "text-brand",
+              "absolute top-0 right-0 p-2 py-2.5",
+              "grid grid-flow-col gap-1 place-content-center",
             )}
           >
             <span
               class={clsx(
-                "flex items-center gap-0.5 px-1 py-px rounded-1 bg-surface-1 border border-current/60",
-                "whitespace-nowrap leading-tight text-1",
+                "flex items-center justify-center gap-1 p-0.5 border-1 rounded-2 aspect-square",
+                "text-surface-1 leading-tight text-3 text-center",
+                isOptimal ? "bg-ui-2 border-ui-2" : "bg-ui-1 border-ui-1",
               )}
             >
               <Icon
                 icon={isOptimal ? Trophy : Check}
                 aria-label={isOptimal ? "Perfect" : "Solved"}
               />
+            </span>
+            <span
+              class={clsx(
+                "flex items-center justify-center gap-1 p-0.5 border-text-1 border-1 rounded-2 aspect-square",
+                "tracking-wide leading-tight text-3 font-medium bg-text-1 text-surface-1",
+              )}
+            >
               {bestMoves}
             </span>
           </div>

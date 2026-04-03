@@ -786,7 +786,7 @@
    */
   border-color: color-mix(
     in srgb,
-    var(--color-link) 40%,
+    var(--color-link) 60%,
     var(--color-surface-1)
   );
 }
