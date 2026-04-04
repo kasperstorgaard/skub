@@ -19,6 +19,8 @@ import { getUserStats } from "#/db/stats.ts";
 import { getLatestPuzzle, getPuzzle, getRandomPuzzle } from "#/game/loader.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { Puzzle } from "#/game/types.ts";
+import { withSpan } from "#/lib/tracing.ts";
+import { trace } from "@opentelemetry/api";
 
 type PageData = {
   dailyPuzzle: Puzzle;
@@ -31,32 +33,38 @@ export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const { user } = ctx.state;
 
-    const [dailyPuzzle, userSolutions, userStats] = await Promise.all([
-      getLatestPuzzle(),
-      listUserSolutions(ctx.state.userId, { limit: 500 }),
-      getUserStats(ctx.state.userId),
-    ]);
+    const [dailyPuzzle, solutions] = await withSpan(
+      "home.fetch",
+      () =>
+        Promise.all([
+          getLatestPuzzle(),
+          listUserSolutions(ctx.state.userId, { limit: "max" }),
+        ]),
+    );
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    let randomPuzzle: Puzzle | null;
-    if (user.onboarding === "started") {
-      randomPuzzle = await getPuzzle("karla");
-    } else {
-      randomPuzzle = await getRandomPuzzle({
-        excludeSlugs: [dailyPuzzle.slug],
-      });
-    }
+    const activeSpan = trace.getActiveSpan();
+    activeSpan?.setAttribute("user.onboarding", user.onboarding ?? "none");
+
+    const randomPuzzle: Puzzle | null = await withSpan(
+      "home.random_puzzle",
+      () => {
+        if (user.onboarding === "started") return getPuzzle("karla");
+        return getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
+      },
+    );
 
     if (!randomPuzzle) throw new HttpError(500, "Unable to get random puzzle");
 
-    // TODO: add direct db filtering for this
-    const relevantSolutions = userSolutions.filter((solution) =>
-      solution.puzzleSlug === dailyPuzzle.slug ||
-      solution.puzzleSlug === randomPuzzle.slug
-    );
+    const userStats = await getUserStats(ctx.state.userId, solutions);
 
-    const bestMoves = getBestMoves(relevantSolutions);
+    const bestMoves = getBestMoves(
+      solutions.filter((solution) =>
+        solution.puzzleSlug === dailyPuzzle.slug ||
+        solution.puzzleSlug === randomPuzzle.slug
+      ),
+    );
 
     return page({
       dailyPuzzle,
