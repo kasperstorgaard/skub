@@ -1,4 +1,5 @@
 // Puzzle route — renders the board and handles solution submission
+import { trace } from "@opentelemetry/api";
 import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
@@ -25,6 +26,7 @@ import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
+import { withSpan } from "#/lib/tracing.ts";
 import { trackOnboardingCompleted, trackPuzzleSolved } from "#/lib/tracking.ts";
 
 type PageData = {
@@ -100,14 +102,24 @@ export const handler = define.handlers<PageData>({
       throw new HttpError(400, "Solution is not valid");
     }
 
-    await setUser(ctx.state.userId, { name });
+    const activeSpan = trace.getActiveSpan();
+    activeSpan?.setAttribute("solution.source", source ?? "unknown");
+    activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const { isNew, isNewPath } = await saveSolution({
-      puzzleSlug: slug,
-      name,
-      moves,
-      userId: ctx.state.userId,
-    });
+    const [{ isNew, isNewPath }] = await Promise.all([
+      withSpan("puzzle.save_solution", async (span) => {
+        const result = await saveSolution({
+          puzzleSlug: slug,
+          name,
+          moves,
+          userId: ctx.state.userId,
+        });
+        span.setAttribute("solution.is_new", result.isNew);
+        span.setAttribute("solution.is_new_path", result.isNewPath);
+        return result;
+      }),
+      withSpan("puzzle.set_user", () => setUser(ctx.state.userId, { name })),
+    ]);
 
     const redirectUrl = getSolveRedirectUrl(ctx, source, { isNewPath });
 
