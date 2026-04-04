@@ -35,13 +35,16 @@ export const handler = define.handlers<PageData>({
 
     const [dailyPuzzle, solutions] = await Promise.all([
       withSpan("home.daily", () => getLatestPuzzle()),
-      withSpan("home.solutions", (span) =>
-        listUserSolutions(ctx.state.userId, { limit: "max" }).then(
-          (result) => {
-            span.setAttribute("solutions.count", result.length);
-            return result;
-          },
-        )),
+      withSpan(
+        "home.solutions",
+        (span) =>
+          listUserSolutions(ctx.state.userId, { limit: "max" }).then(
+            (result) => {
+              span.setAttribute("solutions.count", result.length);
+              return result;
+            },
+          ),
+      ),
     ]);
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");

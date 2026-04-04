@@ -15,9 +15,12 @@ Format: `namespace.operation` — both parts `snake_case`, dot-separated.
 
 - Namespace matches the route or layer: `home`, `puzzle`, `archives`, `db`
 - Operation names the resource or action — omit the verb when it's implied (e.g.
-  `home.solutions` not `home.fetch_solutions`, `home.daily` not `home.fetch_daily`)
-- Use a verb when the action itself matters: `puzzle.save_solution`, `puzzle.set_user`
-- Examples: `home.daily`, `home.solutions`, `puzzle.save_solution`, `db.solutions.list_user`
+  `home.solutions` not `home.fetch_solutions`, `home.daily` not
+  `home.fetch_daily`)
+- Use a verb when the action itself matters: `puzzle.save_solution`,
+  `puzzle.set_user`
+- Examples: `home.daily`, `home.solutions`, `puzzle.save_solution`,
+  `db.solutions.list_user`
 
 ## Attribute keys
 
