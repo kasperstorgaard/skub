@@ -32,5 +32,6 @@ No camelCase, no hyphens, no bare keys without a namespace. Values must be
 
 - Add at the route layer first; only go deeper into `db/` if a route-level span
   shows a bottleneck
-- Child spans for timed sub-operations; active span attributes for request context
+- Child spans for timed sub-operations; active span attributes for request
+  context
 - Skip attributes that are already visible in the URL or request headers

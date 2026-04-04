@@ -1,4 +1,10 @@
-import { context, type Span, SpanStatusCode, propagation, trace } from "@opentelemetry/api";
+import {
+  context,
+  propagation,
+  type Span,
+  SpanStatusCode,
+  trace,
+} from "@opentelemetry/api";
 
 const tracer = trace.getTracer("skub");
 
