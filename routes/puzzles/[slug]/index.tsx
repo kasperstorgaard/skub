@@ -118,7 +118,7 @@ export const handler = define.handlers<PageData>({
         span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
       }),
-      withSpan("puzzle.set_user", () => setUser(ctx.state.userId, { name })),
+      setUser(ctx.state.userId, { name }),
     ]);
 
     const redirectUrl = getSolveRedirectUrl(ctx, source, { isNewPath });

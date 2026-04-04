@@ -1,5 +1,3 @@
-import { trace } from "@opentelemetry/api";
-
 import { define } from "#/core.ts";
 import { getPuzzleStats, getUserStats } from "#/db/stats.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
@@ -27,11 +25,6 @@ export const handler = define.handlers({
     }
 
     const savedName = ctx.state.user?.name ?? null;
-
-    const activeSpan = trace.getActiveSpan();
-
-    activeSpan?.setAttribute("puzzle.slug", slug);
-    activeSpan?.setAttribute("user.has_name", savedName != null);
 
     const [puzzleStats, userStats] = await Promise.all([
       getPuzzleStats(slug),

@@ -1,4 +1,3 @@
-import { trace } from "@opentelemetry/api";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
@@ -34,7 +33,7 @@ export const handler = define.handlers<PageData>({
     const { user } = ctx.state;
 
     const [dailyPuzzle, solutions] = await Promise.all([
-      withSpan("home.daily", () => getLatestPuzzle()),
+      getLatestPuzzle(),
       withSpan(
         "home.solutions",
         (span) =>
@@ -49,16 +48,9 @@ export const handler = define.handlers<PageData>({
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    const activeSpan = trace.getActiveSpan();
-    activeSpan?.setAttribute("user.onboarding", user.onboarding ?? "none");
-
-    const randomPuzzle: Puzzle | null = await withSpan(
-      "home.random_puzzle",
-      () => {
-        if (user.onboarding === "started") return getPuzzle("karla");
-        return getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
-      },
-    );
+    const randomPuzzle: Puzzle | null = user.onboarding === "started"
+      ? await getPuzzle("karla")
+      : await getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
 
     if (!randomPuzzle) throw new HttpError(500, "Unable to get random puzzle");
 

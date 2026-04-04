@@ -38,13 +38,13 @@ export function getTraceparent(): string | undefined
 ### 2. Home page instrumentation (`routes/index.tsx`)
 
 Fetch solutions once and share between `getUserStats` and `getBestMoves` to
-avoid a double KV scan. Wrap the parallel fetch and the sequential step as
-sibling child spans:
+avoid a double KV scan. Instrument the scan as a single child span:
 
-- `home.fetch` — wraps `Promise.all([getLatestPuzzle, listUserSolutions])`
+- `home.solutions` — wraps `listUserSolutions`
   - attribute: `solutions.count` — number of solutions returned (key signal for scan cost)
-- `home.random_puzzle` — wraps the `getPuzzle`/`getRandomPuzzle` call
-  - attribute: `user.onboarding` — which branch was taken
+
+`getLatestPuzzle` and `getRandomPuzzle` are unspanned — confirmed fast in
+initial investigation.
 
 ### 3. Puzzle POST instrumentation (`routes/puzzles/[slug]/index.tsx`)
 
@@ -53,14 +53,13 @@ Add attributes to the active span for request-level context:
 - `solution.moves` — move count
 
 Parallelize `setUser` and `saveSolution` (were sequential, no dependency).
-Wrap both as child spans:
-- `puzzle.set_user` — wraps `setUser(...)`
+Wrap `saveSolution` as a child span — `setUser` is unspanned, not on critical path:
 - `puzzle.save_solution` — wraps `saveSolution(...)`
   - attributes: `solution.is_new`, `solution.is_new_path`
 
-If `puzzle.save_solution` shows as the bottleneck in traces, a follow-up adds
-internal spans inside `saveSolution` itself. Out of scope for now to avoid
-coupling OTEL into `db/`.
+Initial trace shows `puzzle.save_solution` at ~523ms. Follow-up should add
+internal spans inside `saveSolution` to find which KV step dominates (dedup
+scan, atomic commit, aggregate updates). Out of scope for now.
 
 ### 4. W3C trace context propagation
 
@@ -82,6 +81,6 @@ starts each handler span as a child of the page span, linking all three requests
 - **new** `client/trace-context.ts` — `addTraceParentHeader` for client-side fetches
 - **modified** `routes/_app.tsx` — injects `<meta name="traceparent">` in `<head>`
 - **modified** `routes/index.tsx` — `home.fetch` + `home.random_puzzle` child spans, shared solutions list
-- **modified** `routes/puzzles/[slug]/index.tsx` — active span attributes + parallelized `setUser`/`saveSolution` + child spans
+- **modified** `routes/puzzles/[slug]/index.tsx` — active span attributes + parallelized `setUser`/`saveSolution` + `puzzle.save_solution` child span
 - **modified** `islands/auto-post-solution.tsx` — passes `traceparent` header on POST
 - **modified** `islands/celebration-dialog.tsx` — passes `traceparent` header on celebrate-stats fetch
