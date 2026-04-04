@@ -41,6 +41,12 @@ export function AutoPostSolution({ href, puzzle, savedName }: Props) {
 
   const isEnabled = hasSolution && !!savedName && !dialog;
 
+  // TODO: expose a "submitting" state from the moment hasSolution becomes true
+  // until href updates to ?dialog=celebrate, so the board or controls can show
+  // a transition (e.g. disabled controls, subtle spinner) during the POST round trip
+  // and the celebrate-stats fetch. Currently there is a silent gap between the last
+  // move and the dialog appearing.
+
   useEffect(() => {
     if (!isEnabled) return;
     if (postingRef.current || celebratedRef.current) return;
