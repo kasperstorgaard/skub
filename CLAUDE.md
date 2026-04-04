@@ -2,6 +2,10 @@
 
 A sliding-piece puzzle game (Ricochet Robots-inspired) built with Deno + Fresh 2 + Preact.
 
+> **Keep this file light.** Detailed conventions belong in `.claude/skills/` as
+> named skill files. This file should contain only what can't live in a skill:
+> commands, project layout, core types, and brief skill triggers.
+
 ## Commands
 
 ```bash
@@ -35,6 +39,9 @@ Invoke the relevant skill automatically when the task matches — no need to wai
 
 - **`/testing`**
   TRIGGER when: writing, reviewing, or deciding what to test.
+
+- **`/observability`**
+  TRIGGER when: adding OTEL spans or attributes, naming spans, or deciding what to instrument.
 
 
 ## Branches & PRs
@@ -159,6 +166,7 @@ Invoke `/architecture` for testing decisions. Philosophy: test game logic exhaus
 ## Analytics
 
 Invoke `/product` for tracking decisions. Events are server-side only (posthog-node), camel_case naming (`puzzle_solved`), 1–3 meaningful events per feature — no generic clicks, no page-load events (use pageviews instead).
+
 
 ## Environment & Deployment
 

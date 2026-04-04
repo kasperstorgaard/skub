@@ -1,81 +1,86 @@
-# E2E test cleanup
+# OTEL instrumentation for home page and puzzle submit
 
 ## Problem
 
-The last PR established the rule: tests must not bypass board interaction via
-synthetic URL state. It fixed `PuzzlePage.solveByClicking()` to require `moves`
-from outside. Two things remained:
+Two paths have suspected perf issues with no timing visibility:
 
-1. `TutorialPage.solveByClicking()` still fetches the puzzle and solves
-   internally — same anti-pattern, with a `// TODO` comment.
-2. `PuzzlePage.solveByKeyboard()` had the same anti-pattern.
-3. No tests exist for the archives page (`/puzzles`) despite it having a POM.
-4. The testing skill lacked a clear, general statement of the integration test
-   contract.
-5. All puzzle integration tests used the same slug ("karla"), risking false
-   positives from shared board state.
+**Home page GET** — three operations run in parallel, then `getRandomPuzzle`
+runs sequentially after. `listUserSolutions(limit: 500)` is a full KV scan that
+could dominate. Can't tell from a single request span which step is slow.
+
+**Puzzle POST** — `setUser` and `saveSolution` run sequentially despite being
+independent. `saveSolution` itself has 3+ sequential KV round trips:
+`getCanonicalUserSolution` (list scan up to 100 entries), `kv.get(groupKey)`,
+`atomic.commit()`, then `updatePuzzleStats` + `updateCanonicalGroup` in parallel.
+No visibility into where time goes.
+
+**Auto-solve chain** — client-side solve triggers three server requests
+(POST puzzle → GET puzzle page → GET celebrate-stats) that appear as unlinked
+traces with no way to correlate them.
 
 ## Solution
 
-### 1. Integration test contract (testing skill)
+### 1. `lib/tracing.ts` — span helpers
 
-Formalise the contract in `.claude/skills/testing/SKILL.md`:
+`withSpan(name, fn)` — creates a child span under the active context, runs
+`fn(span)` so the caller can set attributes, ends the span on completion,
+records exceptions on error.
 
-**Starting state**: must be one that _another page_ in the app could realistically
-produce via a link, cookie, or KV write. Server-side seeding (`addSolution`,
-`seedUser`) is fine — it mirrors what the app's own handlers write. URL params
-that no other page would link to are not valid starting states, even if the app
-generates them internally.
+`getTraceparent()` — injects the active span context into a W3C carrier and
+returns the `traceparent` header value. Used server-side to embed the trace
+context into rendered HTML.
 
-**End state**: a UI assertion, plus an optional assertion about the URL, cookie,
-or KV state the next page will pick up.
+```ts
+export function withSpan<T>(name: string, fn: (span: Span) => Promise<T> | T): Promise<T>
+export function getTraceparent(): string | undefined
+```
 
-Page object methods must not encapsulate solving logic — moves come from the
-caller via `solvePuzzle(slug)`, POMs are thin wrappers. This applies to all
-solve methods: `solveByClicking(moves)` and `solveByKeyboard(moves)`.
+### 2. Home page instrumentation (`routes/index.tsx`)
 
-Flow tests (`e2e/`) cover valuable multi-page journeys where a breakage is a
-critical user-facing error. Integration tests (`routes/*/_e2e/`) cover individual
-page behaviour.
+Fetch solutions once and share between `getUserStats` and `getBestMoves` to
+avoid a double KV scan. Instrument the scan as a single child span:
 
-### 2. Fix `TutorialPage.solveByClicking()`
+- `home.solutions` — wraps `listUserSolutions`
+  - attribute: `solutions.count` — number of solutions returned (key signal for scan cost)
 
-Change signature to `solveByClicking(moves: Move[])`. Remove the internal
-`getPuzzle` / `solveSync` call. Remove unused imports.
+`getLatestPuzzle` and `getRandomPuzzle` are unspanned — confirmed fast in
+initial investigation.
 
-Update callers:
-- `routes/puzzles/tutorial/_e2e/tutorial_test.ts` — add `solvePuzzle("tutorial")`, pass moves
-- `e2e/new-user-flow_test.ts` — add `solvePuzzle("tutorial")`, pass moves
+### 3. Puzzle POST instrumentation (`routes/puzzles/[slug]/index.tsx`)
 
-### 3. Spread puzzle integration tests across multiple slugs
+Add attributes to the active span for request-level context:
+- `solution.source` — `"auto"` vs `"manual"` (from form field)
+- `solution.moves` — move count
 
-Each test in `puzzle_test.ts` now uses a distinct puzzle slug and a distinct
-e2e user, so no two tests share board state or KV user data:
+Parallelize `setUser` and `saveSolution` (were sequential, no dependency).
+Wrap `saveSolution` as a child span — `setUser` is unspanned, not on critical path:
+- `puzzle.save_solution` — wraps `saveSolution(...)`
+  - attributes: `solution.is_new`, `solution.is_new_path`
 
-| Test | Puzzle | User |
-|------|--------|------|
-| returning player sees celebration dialog | karla | e2eliza |
-| no-JS returning player submits solve | heino | e2edna |
-| returning player submits duplicate solve | laerke | e2ebbe |
-| new player solves by keyboard | jurgen | — |
-| new player is prompted to save | alice | — |
-| new player submits name → solutions page | brian | e2eleanor |
+Initial trace shows `puzzle.save_solution` at ~523ms. Follow-up should add
+internal spans inside `saveSolution` to find which KV step dominates (dedup
+scan, atomic commit, aggregate updates). Out of scope for now.
 
-### 4. Archives page tests
+### 4. W3C trace context propagation
 
-New file: `routes/puzzles/_e2e/archives_test.ts`
+Links the three-request auto-solve chain into a single connected trace:
 
-Three tests:
-1. renders the heading
-2. navigates to the next page
-3. puzzle card links to a puzzle page
+1. `routes/_app.tsx` — injects `<meta name="traceparent" content="...">` into
+   every server-rendered page `<head>` via `getTraceparent()`
+2. `client/tracing.ts` — `addTraceParentHeader(headers)` reads the meta tag and
+   sets the `traceparent` header on outgoing fetches
+3. `islands/auto-post-solution.tsx` — passes the header on the solution POST
+4. `islands/celebration-dialog.tsx` — passes the header on the celebrate-stats fetch
+
+Deno Deploy's auto-instrumentation reads the incoming `traceparent` header and
+starts each handler span as a child of the page span, linking all three requests.
 
 ## Files
 
-- **modified** `.claude/skills/testing/SKILL.md` — add integration test contract section
-- **modified** `routes/puzzles/tutorial/_e2e/tutorial-page.ts` — `solveByClicking(moves: Move[])`, remove internal solve logic
-- **modified** `routes/puzzles/[slug]/_e2e/puzzle-page.ts` — `solveByKeyboard(moves: Move[])`, remove internal `getPuzzle`/`solveSync`
-- **modified** `routes/puzzles/[slug]/_e2e/puzzle_test.ts` — `solveByKeyboard` gets moves from caller; tests spread across karla/heino/laerke/jurgen/alice/brian with unique e2e users
-- **modified** `routes/puzzles/tutorial/_e2e/tutorial_test.ts` — add `solvePuzzle` calls, pass moves
-- **modified** `e2e/new-user-flow_test.ts` — add `solvePuzzle("tutorial")`, pass moves
-- **new** `routes/puzzles/_e2e/archives_test.ts` — 3 basic archives page tests
+- **new** `lib/tracing.ts` — `withSpan` + `getTraceparent`, module-level tracer
+- **new** `client/trace-context.ts` — `addTraceParentHeader` for client-side fetches
+- **modified** `routes/_app.tsx` — injects `<meta name="traceparent">` in `<head>`
+- **modified** `routes/index.tsx` — `home.fetch` + `home.random_puzzle` child spans, shared solutions list
+- **modified** `routes/puzzles/[slug]/index.tsx` — active span attributes + parallelized `setUser`/`saveSolution` + `puzzle.save_solution` child span
+- **modified** `islands/auto-post-solution.tsx` — passes `traceparent` header on POST
+- **modified** `islands/celebration-dialog.tsx` — passes `traceparent` header on celebrate-stats fetch

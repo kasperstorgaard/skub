@@ -1,6 +1,6 @@
 import { kv } from "#/db/kv.ts";
 import { listUserSolutions } from "#/db/solutions.ts";
-import { PuzzleStats } from "#/db/types.ts";
+import { PuzzleStats, Solution } from "#/db/types.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
 import { computeUserStats, UserStats } from "#/game/streak.ts";
 
@@ -75,13 +75,18 @@ export async function updatePuzzleStats(
 /**
  * Fetches data and computes streak/solve stats for a user.
  */
-export async function getUserStats(userId: string): Promise<UserStats> {
-  const [entries, solutions] = await Promise.all([
+export async function getUserStats(
+  userId: string,
+  solutions?: Solution[],
+): Promise<UserStats> {
+  const [entries, resolvedSolutions] = await Promise.all([
     getAvailableEntries(),
-    listUserSolutions(userId, { limit: 500 }),
+    solutions
+      ? Promise.resolve(solutions)
+      : listUserSolutions(userId, { limit: "max" }),
   ]);
 
-  return computeUserStats(entries, solutions);
+  return computeUserStats(entries, resolvedSolutions);
 }
 
 export async function incrementHintUsageCount(

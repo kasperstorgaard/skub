@@ -1,6 +1,7 @@
 import { type Signal } from "@preact/signals";
 import { useEffect, useMemo, useRef } from "preact/hooks";
 
+import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
@@ -41,6 +42,12 @@ export function AutoPostSolution({ href, puzzle, savedName }: Props) {
 
   const isEnabled = hasSolution && !!savedName && !dialog;
 
+  // TODO: expose a "submitting" state from the moment hasSolution becomes true
+  // until href updates to ?dialog=celebrate, so the board or controls can show
+  // a transition (e.g. disabled controls, subtle spinner) during the POST round trip
+  // and the celebrate-stats fetch. Currently there is a silent gap between the last
+  // move and the dialog appearing.
+
   useEffect(() => {
     if (!isEnabled) return;
     if (postingRef.current || celebratedRef.current) return;
@@ -51,9 +58,12 @@ export function AutoPostSolution({ href, puzzle, savedName }: Props) {
     form.set("name", savedName);
     form.set("moves", JSON.stringify(moves));
 
+    const headers = addTraceParentHeader(new Headers());
+
     fetch(`/puzzles/${puzzle.value.slug}`, {
       method: "POST",
       redirect: "follow",
+      headers,
       body: form,
     }).then((response) => {
       celebratedRef.current = true;

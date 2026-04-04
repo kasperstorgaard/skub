@@ -188,14 +188,17 @@ async function updateCanonicalGroup(
  */
 export async function listUserSolutions(
   userId: string,
-  options: { limit: number } & Omit<Deno.KvListOptions, "limit">,
+  options:
+    & { limit: number | "max"; slugs?: string[] }
+    & Omit<Deno.KvListOptions, "limit">,
 ) {
   const solutions: Solution[] = [];
   if (!options.limit) throw new Error("Must provide a limit");
+  const limit = options.limit === "max" ? 10_000 : options.limit;
 
   const iter = kv.list<Solution>(
     { prefix: ["solutions_by_user", userId] },
-    options,
+    { ...options, limit },
   );
 
   for await (const res of iter) solutions.push(res.value);

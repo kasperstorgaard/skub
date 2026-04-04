@@ -44,7 +44,7 @@ export const handler = define.handlers<PageData>({
           itemsPerPage: ITEMS_PER_PAGE,
           isFuture,
         }),
-        listUserSolutions(ctx.state.userId, { limit: 500 }),
+        listUserSolutions(ctx.state.userId, { limit: "max" }),
         getDifficultyBreakdown(),
       ]);
 
