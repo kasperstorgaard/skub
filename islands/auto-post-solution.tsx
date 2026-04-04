@@ -1,7 +1,7 @@
 import { type Signal } from "@preact/signals";
 import { useEffect, useMemo, useRef } from "preact/hooks";
 
-import { addTraceParentHeader } from "#/client/tracing.ts";
+import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";

@@ -2,7 +2,7 @@ import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
-import { addTraceParentHeader } from "#/client/tracing.ts";
+import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { Check, Icon, Ranking, ShareNetwork } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getShareText } from "#/game/share.ts";

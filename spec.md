@@ -79,7 +79,7 @@ starts each handler span as a child of the page span, linking all three requests
 ## Files
 
 - **new** `lib/tracing.ts` — `withSpan` + `getTraceparent`, module-level tracer
-- **new** `client/tracing.ts` — `addTraceParentHeader` for client-side fetches
+- **new** `client/trace-context.ts` — `addTraceParentHeader` for client-side fetches
 - **modified** `routes/_app.tsx` — injects `<meta name="traceparent">` in `<head>`
 - **modified** `routes/index.tsx` — `home.fetch` + `home.random_puzzle` child spans, shared solutions list
 - **modified** `routes/puzzles/[slug]/index.tsx` — active span attributes + parallelized `setUser`/`saveSolution` + child spans
