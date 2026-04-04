@@ -1,3 +1,4 @@
+import { trace } from "@opentelemetry/api";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
@@ -20,7 +21,6 @@ import { getLatestPuzzle, getPuzzle, getRandomPuzzle } from "#/game/loader.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { Puzzle } from "#/game/types.ts";
 import { withSpan } from "#/lib/tracing.ts";
-import { trace } from "@opentelemetry/api";
 
 type PageData = {
   dailyPuzzle: Puzzle;
