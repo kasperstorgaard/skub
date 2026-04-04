@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
+import { addTraceParentHeader } from "#/client/tracing.ts";
 import { Check, Icon, Ranking, ShareNetwork } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getShareText } from "#/game/share.ts";
@@ -66,7 +67,9 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
   useEffect(() => {
     if (dialog !== "celebrate") return;
 
-    fetch(`/api/celebrate-stats?slug=${puzzle.value.slug}`)
+    const headers = addTraceParentHeader(new Headers());
+
+    fetch(`/api/celebrate-stats?slug=${puzzle.value.slug}`, { headers })
       .then((r) => r.json())
       .then((data: CelebrateStats) => {
         liveStats.value = data;
