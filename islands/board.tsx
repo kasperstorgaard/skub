@@ -109,7 +109,7 @@ export default function Board(
         });
       }
 
-      updateLocation(updatedHref);
+      updateLocation(updatedHref, { replace: true });
     },
     [state, href.value, mode.value],
   );
