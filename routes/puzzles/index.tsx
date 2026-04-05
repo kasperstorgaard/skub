@@ -78,7 +78,7 @@ export default define.page<typeof handler>(
 
           <h1 className="text-brand text-6">Archives</h1>
 
-          <section className="grid gap-fl-4 content-start">
+          <section f-client-nav className="grid gap-fl-4 content-start">
             <ul
               className={clsx(
                 "p-0 grid grid-cols-[repeat(2,1fr)] gap-fl-3 gap-y-fl-2 content-start",

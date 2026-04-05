@@ -1,4 +1,5 @@
 import { clsx } from "clsx/lite";
+import { Partial } from "fresh/runtime";
 
 import { define } from "#/core.ts";
 import { CookieBanner } from "#/islands/cookie-banner.tsx";
@@ -83,7 +84,9 @@ export default define.page(
             "print:grid-cols-[1fr_max-content_1fr] print:grid-rows-[auto_1fr] print:gap-0",
           )}
         >
-          <Component />
+          <Partial name="body">
+            <Component />
+          </Partial>
           {!isTutorial && (
             <CookieBanner
               open={!state.cookieChoice}

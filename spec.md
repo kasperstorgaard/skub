@@ -1,86 +1,48 @@
-# OTEL instrumentation for home page and puzzle submit
+# Fresh Partials for archive pagination and header navigation
 
 ## Problem
 
-Two paths have suspected perf issues with no timing visibility:
-
-**Home page GET** — three operations run in parallel, then `getRandomPuzzle`
-runs sequentially after. `listUserSolutions(limit: 500)` is a full KV scan that
-could dominate. Can't tell from a single request span which step is slow.
-
-**Puzzle POST** — `setUser` and `saveSolution` run sequentially despite being
-independent. `saveSolution` itself has 3+ sequential KV round trips:
-`getCanonicalUserSolution` (list scan up to 100 entries), `kv.get(groupKey)`,
-`atomic.commit()`, then `updatePuzzleStats` + `updateCanonicalGroup` in parallel.
-No visibility into where time goes.
-
-**Auto-solve chain** — client-side solve triggers three server requests
-(POST puzzle → GET puzzle page → GET celebrate-stats) that appear as unlinked
-traces with no way to correlate them.
+Archive pagination and header navigation cause full page reloads — re-downloading
+the JS bundle, re-running island hydration from scratch. Perceived navigation is
+slower than it needs to be, especially for archive pagination where the page
+shell is identical between pages.
 
 ## Solution
 
-### 1. `lib/tracing.ts` — span helpers
+Opt-in Fresh Partials on the two areas where client-side navigation adds clear
+value, without touching the rest of the app.
 
-`withSpan(name, fn)` — creates a child span under the active context, runs
-`fn(span)` so the caller can set attributes, ends the span on completion,
-records exceptions on error.
+### 1. `routes/_app.tsx` — partial target
 
-`getTraceparent()` — injects the active span context into a W3C carrier and
-returns the `traceparent` header value. Used server-side to embed the trace
-context into rendered HTML.
+Wrap `<Component />` in `<Partial name="body">`. This is the swap target for all
+partial navigations — Fresh fetches the new page, extracts the matching partial,
+and replaces it in the DOM. No `f-client-nav` on the body itself.
 
-```ts
-export function withSpan<T>(name: string, fn: (span: Span) => Promise<T> | T): Promise<T>
-export function getTraceparent(): string | undefined
-```
+### 2. `components/header.tsx` — header navigation
 
-### 2. Home page instrumentation (`routes/index.tsx`)
+Add `f-client-nav` to the `<header>` element. Covers:
+- Back button (puzzle → archives, puzzle → home, etc.)
+- Profile link
 
-Fetch solutions once and share between `getUserStats` and `getBestMoves` to
-avoid a double KV scan. Instrument the scan as a single child span:
+### 3. `routes/puzzles/index.tsx` — archive pagination
 
-- `home.solutions` — wraps `listUserSolutions`
-  - attribute: `solutions.count` — number of solutions returned (key signal for scan cost)
+Add `f-client-nav` to the `<section>` wrapping the puzzle card grid and
+pagination controls. Covers:
+- Pagination page links
+- Puzzle card links (navigate to puzzle page as a partial)
 
-`getLatestPuzzle` and `getRandomPuzzle` are unspanned — confirmed fast in
-initial investigation.
+## What was explicitly left out
 
-### 3. Puzzle POST instrumentation (`routes/puzzles/[slug]/index.tsx`)
+Global `f-client-nav` on the body was tried and reverted — it intercepted POST
+forms (cookie banner, tutorial dismiss, profile save) and `data-router="replace"`
+links in the board/controls islands, causing conflicts. Opt-in is cleaner.
 
-Add attributes to the active span for request-level context:
-- `solution.source` — `"auto"` vs `"manual"` (from form field)
-- `solution.moves` — move count
-
-Parallelize `setUser` and `saveSolution` (were sequential, no dependency).
-Wrap `saveSolution` as a child span — `setUser` is unspanned, not on critical path:
-- `puzzle.save_solution` — wraps `saveSolution(...)`
-  - attributes: `solution.is_new`, `solution.is_new_path`
-
-Initial trace shows `puzzle.save_solution` at ~523ms. Follow-up should add
-internal spans inside `saveSolution` to find which KV step dominates (dedup
-scan, atomic commit, aggregate updates). Out of scope for now.
-
-### 4. W3C trace context propagation
-
-Links the three-request auto-solve chain into a single connected trace:
-
-1. `routes/_app.tsx` — injects `<meta name="traceparent" content="...">` into
-   every server-rendered page `<head>` via `getTraceparent()`
-2. `client/tracing.ts` — `addTraceParentHeader(headers)` reads the meta tag and
-   sets the `traceparent` header on outgoing fetches
-3. `islands/auto-post-solution.tsx` — passes the header on the solution POST
-4. `islands/celebration-dialog.tsx` — passes the header on the celebrate-stats fetch
-
-Deno Deploy's auto-instrumentation reads the incoming `traceparent` header and
-starts each handler span as a child of the page span, linking all three requests.
+View transitions (`f-view-transition`) were tried but not pursued — no visible
+effect without explicit `::view-transition-*` CSS, and the crossfade didn't add
+enough value to justify the added complexity.
 
 ## Files
 
-- **new** `lib/tracing.ts` — `withSpan` + `getTraceparent`, module-level tracer
-- **new** `client/trace-context.ts` — `addTraceParentHeader` for client-side fetches
-- **modified** `routes/_app.tsx` — injects `<meta name="traceparent">` in `<head>`
-- **modified** `routes/index.tsx` — `home.fetch` + `home.random_puzzle` child spans, shared solutions list
-- **modified** `routes/puzzles/[slug]/index.tsx` — active span attributes + parallelized `setUser`/`saveSolution` + `puzzle.save_solution` child span
-- **modified** `islands/auto-post-solution.tsx` — passes `traceparent` header on POST
-- **modified** `islands/celebration-dialog.tsx` — passes `traceparent` header on celebrate-stats fetch
+- **modified** `routes/_app.tsx` — `<Partial name="body">` wrapping `<Component />`
+- **modified** `components/header.tsx` — `f-client-nav` on `<header>`
+- **modified** `routes/puzzles/index.tsx` — `f-client-nav` on archive `<section>`
