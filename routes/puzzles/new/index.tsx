@@ -69,7 +69,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
           <DifficultyBadge puzzle={puzzle} className="lg:mt-1" solverEnabled />
         </div>
 
-        <div className="relative max-lg:pb-fl-5 lg:pb-0">
+        <div className="relative max-lg:pb-fl-5">
           <Board
             puzzle={puzzle}
             href={href}

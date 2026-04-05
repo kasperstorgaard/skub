@@ -1,4 +1,5 @@
 import { useSignal } from "@preact/signals";
+import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
@@ -141,23 +142,35 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
 
         <h1 className="text-5 text-brand mt-2">{puzzle.value.name}</h1>
 
-        <Board
-          href={href}
-          puzzle={puzzle}
-          mode={mode}
-        />
+        <div className="relative max-lg:pb-fl-7">
+          <Board
+            href={href}
+            puzzle={puzzle}
+            mode={mode}
+          />
 
-        {urlMode === "solve" && (
-          <div className="flex flex-col items-center place-content-center gap-fl-1 text-text-2 max-lg:mt-auto lg:mb-fl-3">
-            <p className="leading-flat text-fl-min lg:hidden">Rather watch?</p>
-            <p className="leading-flat text-fl-min max-lg:hidden">
-              Rather watch a solve?
-            </p>
-            <a href={props.data.showMeUrl.href} className="btn shadow-sm">
-              <Icon icon={Play} /> Show me
-            </a>
-          </div>
-        )}
+          {urlMode === "solve" && (
+            <div
+              className={clsx(
+                "absolute",
+                "flex flex-col items-center place-content-center gap-fl-1",
+                "text-center text-text-2",
+                "max-lg:bottom-0 max-lg:left-1/2 max-lg:-translate-x-1/2",
+                "lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              )}
+            >
+              <p className="leading-flat text-fl-min lg:hidden">
+                Rather watch?
+              </p>
+              <p className="leading-flat text-fl-min max-lg:hidden">
+                Rather watch a solve?
+              </p>
+              <a href={props.data.showMeUrl.href} className="btn shadow-sm">
+                <Icon icon={Play} /> Show me
+              </a>
+            </div>
+          )}
+        </div>
       </Main>
 
       <ControlsPanel puzzle={puzzle} href={href} isDev={isDev} />
