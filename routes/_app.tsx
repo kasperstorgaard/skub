@@ -75,8 +75,6 @@ export default define.page(
         </head>
 
         <body
-          f-client-nav
-          f-view-transition
           className={clsx(
             "grow grid grid-cols-[minmax(var(--size-fluid-3),auto)_1fr_minmax(var(--size-fluid-3),auto)]",
             "sm:grid-cols-[minmax(var(--size-fluid-3),auto)_max-content_minmax(var(--size-fluid-3),auto)]",
