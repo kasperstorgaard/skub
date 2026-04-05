@@ -16,7 +16,10 @@ export function Header({ url, back, share, hideProfile }: Props) {
     : url.origin + url.pathname;
 
   return (
-    <header f-client-nav className="print:hidden flex items-center justify-between text-5 text-text-2">
+    <header
+      f-client-nav
+      className="print:hidden flex items-center justify-between text-5 text-text-2"
+    >
       {back && (
         <a
           href={back.href}
