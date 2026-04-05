@@ -1,4 +1,5 @@
 import { useSignal } from "@preact/signals";
+import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
@@ -19,7 +20,6 @@ import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { TutorialDialog } from "#/islands/tutorial-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
-import clsx from "clsx/lite";
 
 type Data = {
   puzzle: Puzzle;
