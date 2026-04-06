@@ -153,7 +153,7 @@ export default define.page<typeof handler>(function Home(ctx) {
                   puzzle={onboardingPuzzle}
                   tagline={user.onboarding === "started"
                     ? "Starter puzzle"
-                    : "Graduation puzzle"} // too weird wording?
+                    : "Quick puzzle"}
                 />
               )}
 
