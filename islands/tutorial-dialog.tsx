@@ -53,9 +53,7 @@ export function TutorialDialog(
         animationDelay: `${(1 / replaySpeed) * solution.moves.length}s`,
       }}
     >
-      {step === "welcome" && (
-        <TutorialWelcomeStep href={href.value} open={open} />
-      )}
+      {step === "welcome" && <TutorialWelcomeStep href={href.value} />}
       {step === "pieces" && <TutorialPiecesStep href={href.value} />}
       {step === "replay" && (
         <TutorialReplayStep href={href.value} solution={solution} />
@@ -67,10 +65,9 @@ export function TutorialDialog(
 
 type TutorialStepProps = {
   href: string;
-  open?: boolean;
 };
 
-function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
+function TutorialWelcomeStep({ href }: TutorialStepProps) {
   const nextStep = useMemo(() => getStepLink(href, "pieces"), [
     href,
   ]);
@@ -92,18 +89,10 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
         </p>
       </div>
 
-      <form
-        action={href}
-        method="POST"
-        className="flex w-full"
-      >
-        <button
-          type="submit"
-          className="btn mr-auto"
-          disabled={!open}
-        >
+      <div className="flex w-full">
+        <a href="/" className="btn mr-auto">
           Dismiss
-        </button>
+        </a>
 
         <a
           href={nextStep}
@@ -113,7 +102,7 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
         >
           Next
         </a>
-      </form>
+      </div>
     </>
   );
 }
