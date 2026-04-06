@@ -56,7 +56,7 @@ Deno.test("a returning player sees the celebration dialog when submitting a dupl
 Deno.test("a new user sees the tutorial nudge on the puzzle page", async () => {
   const { page, teardown } = await setup();
   try {
-    await new PuzzlePage(page).goto("lars");
+    await new PuzzlePage(page).goto("karla");
     await expect(page.getByText(/learn the basics/i)).toBeVisible();
   } finally {
     await teardown();
@@ -67,7 +67,7 @@ Deno.test("a returning user does not see the tutorial nudge", async () => {
   const { page, asUser, teardown } = await setup();
   try {
     await asUser({ name: "e2enudge", skillLevel: "beginner" });
-    await new PuzzlePage(page).goto("lars");
+    await new PuzzlePage(page).goto("karla");
     await expect(page.getByText(/learn the basics/i)).not.toBeVisible();
   } finally {
     await teardown();
