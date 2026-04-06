@@ -68,7 +68,8 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
         <div className="flex items-center justify-between place-self-start mt-2 w-full flex-wrap">
           <div className="flex flex-col">
             <h1 className="text-5 text-brand leading-tight">
-              {props.data.puzzle.number && `#${props.data.puzzle.number} `}{props.data.puzzle.name}
+              {props.data.puzzle.number && `#${props.data.puzzle.number} `}
+              {props.data.puzzle.name}
             </h1>
             <p className="text-fl-0 text-text-3 leading-tight italic -mb-[.6lh] -mt-[.4lh]">
               solved by{" "}

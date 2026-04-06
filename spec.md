@@ -59,13 +59,7 @@ Skill promotion checks run on every new solve (checked in order, first match win
 
 - Loads puzzle via `getTutorialPuzzle()`
 - POST: promotes user to `"beginner"` + fires `trackTutorialCompleted`
-- "Rather watch?" extracted to `TutorialWatchButton` island (renders after 3+ moves)
-
-### Tutorial dialog (`islands/tutorial-dialog.tsx`)
-
-- Copy rewrite: clearer language, mechanic-first
-- Arrow icons on Previous/Next; "How it works" step label
-- Welcome step: "Home" dismiss, "How it works" primary CTA
+- "Rather watch?" extracted to `TutorialWatchButton` island (renders in solve mode)
 
 ### Tracking (`lib/tracking.ts`)
 
@@ -78,8 +72,6 @@ Skill promotion checks run on every new solve (checked in order, first match win
 
 ### Minor
 
-- `solution-dialog.tsx`: copy tweaks ("Save", "Play again"), `autocomplete="username"`, removed "Close" button
-- `celebration-dialog.tsx`: "Start over" → "Play again"
 - `puzzle-card.tsx`, `[slug]/index.tsx`, `solutions/`, `preview/`, `share.ts`: `puzzle.number` guarded (undefined-safe)
 - `routes/_app.tsx`: `"daily"` removed from OG image exclusion list
 - `routes/puzzles/index.tsx`: hardcoded `"tutorial"` exclusion removed (loader filter handles it)
@@ -98,12 +90,9 @@ Skill promotion checks run on every new solve (checked in order, first match win
 - **modified** `routes/puzzles/preview/index.tsx` — `skillLevel` prop on `ControlsPanel`
 - **modified** `routes/puzzles/index.tsx` — removed hardcoded tutorial exclusion
 - **modified** `routes/_app.tsx` — OG exclusion list
-- **modified** `routes/api/migrate-user.ts` — removed `Onboarding` import
+- **deleted** `routes/api/migrate-user.ts` — removed (no longer needed)
 - **modified** `routes/api/e2e/users/index.ts` — `skillLevel` default
 - **modified** `islands/controls-panel.tsx` — `onboarding` → `skillLevel`, hint logic updated
-- **modified** `islands/tutorial-dialog.tsx` — copy + navigation icons
-- **modified** `islands/solution-dialog.tsx` — copy + autocomplete
-- **modified** `islands/celebration-dialog.tsx` — copy
 - **modified** `components/puzzle-card.tsx` — null-safe number
 - **added** `islands/tutorial-watch-button.tsx` — "Rather watch?" island
 - **added** `static/puzzles/lars.md` — onboardingLevel 2, starter puzzle

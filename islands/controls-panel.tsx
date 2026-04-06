@@ -34,8 +34,15 @@ type ControlsPanelProps = {
 };
 
 export function ControlsPanel(
-  { puzzle, href, isDev, hintCount, isPreview, skillLevel = "intermediate", className }:
-    ControlsPanelProps,
+  {
+    puzzle,
+    href,
+    isDev,
+    hintCount,
+    isPreview,
+    skillLevel = "intermediate",
+    className,
+  }: ControlsPanelProps,
 ) {
   const hintLimit = 1;
   const hintDisabled = !isDev && !isPreview &&

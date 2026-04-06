@@ -1,7 +1,5 @@
 import clsx from "clsx/lite";
 
-import { ChalkboardTeacher, Icon } from "#/components/icons.tsx";
-
 type Props = {
   className?: string;
 };

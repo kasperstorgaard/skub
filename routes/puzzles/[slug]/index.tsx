@@ -7,6 +7,7 @@ import { HttpError, page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
+import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { define } from "#/core.ts";
 import { saveSolution } from "#/db/solutions.ts";
 import { setUser } from "#/db/user.ts";
@@ -28,7 +29,6 @@ import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
 import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
-import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 
 type PageData = {
   puzzle: Puzzle;

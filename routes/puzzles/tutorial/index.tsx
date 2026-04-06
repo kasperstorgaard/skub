@@ -8,7 +8,7 @@ import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getOnboardingPuzzle, getTutorialPuzzle } from "#/game/loader.ts";
+import { getTutorialPuzzle } from "#/game/loader.ts";
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
