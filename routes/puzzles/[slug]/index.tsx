@@ -196,7 +196,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           {props.state.user.skillLevel === null && (
             <TutorialNudge
               className={clsx(
-                "max-lg:max-w-2xs max-lg:justify-self-center max-lg:mt-fl-2",
+                "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
                 "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
               )}
             />

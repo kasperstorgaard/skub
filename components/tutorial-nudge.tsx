@@ -21,8 +21,8 @@ export function TutorialNudge({ className }: Props) {
         mid-slide
       </p>
 
-      <a href="/puzzles/tutorial" className="btn shadow-sm">
-        <Icon icon={ChalkboardTeacher} /> Learn the basics
+      <a href="/puzzles/tutorial" className="btn">
+        Learn the basics
       </a>
     </div>
   );
