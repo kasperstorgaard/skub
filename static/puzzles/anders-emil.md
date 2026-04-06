@@ -3,7 +3,7 @@ number: 96
 name: Anders Emil
 slug: anders-emil
 createdAt: 2026-03-06T13:39:00.339Z
-difficulty: hard
+difficulty: easy
 minMoves: 5
 ---
 
