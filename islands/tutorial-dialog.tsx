@@ -7,6 +7,8 @@ import type { Solution } from "#/db/types.ts";
 import { getReplaySpeed } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 
+const BASE_URL = "http://example.com";
+
 type Props = {
   href: Signal<string>;
   solution: Omit<Solution, "id" | "name">;
@@ -120,10 +122,11 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
   const prevStep = useMemo(() => getStepLink(href, "welcome"), [href]);
 
   const tryItHref = useMemo(() => {
-    const url = new URL(href);
+    const url = new URL(href, BASE_URL);
     url.search = "";
     url.searchParams.set("mode", "solve");
-    return url.href;
+
+    return url.pathname + url.search;
   }, [href]);
 
   return (
@@ -260,7 +263,7 @@ function getStepLink(
   step: TutorialStep,
   { mode, replaySpeed }: GetStepLinkOptions = {},
 ) {
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
   url.searchParams.set("tutorial_step", step);
 
   if (mode) url.searchParams.set("mode", mode);
@@ -268,7 +271,7 @@ function getStepLink(
     url.searchParams.set("replay_speed", replaySpeed.toString());
   }
 
-  return url.href;
+  return url.pathname + url.search;
 }
 
 function IconPuck() {

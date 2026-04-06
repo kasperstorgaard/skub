@@ -23,7 +23,7 @@ import { isDev } from "#/lib/env.ts";
 
 type Data = {
   puzzle: Puzzle;
-  showMeUrl: URL;
+  showMeHref: string;
   solution: Solution;
 };
 
@@ -80,18 +80,17 @@ export const handler = define.handlers<Data>({
       userId: "",
     };
 
-    const showMeUrl = new URL(ctx.url);
-
-    showMeUrl.search = "";
-    showMeUrl.searchParams.set("mode", "replay");
-    showMeUrl.searchParams.set("moves", solutionRaw);
-    showMeUrl.searchParams.set("dialog", "tutorial");
-    showMeUrl.searchParams.set("tutorial_step", "replay");
-    showMeUrl.searchParams.set("replay_speed", "1");
+    const showMeParams = new URLSearchParams({
+      mode: "replay",
+      moves: solutionRaw,
+      dialog: "tutorial",
+      tutorial_step: "replay",
+      replay_speed: "1",
+    });
 
     return page({
       puzzle,
-      showMeUrl,
+      showMeHref: `/puzzles/tutorial?${showMeParams}`,
       solution,
     });
   },
@@ -124,6 +123,8 @@ export const handler = define.handlers<Data>({
 export default define.page<typeof handler>(function PuzzleTutorial(props) {
   const href = useSignal(props.url.href);
   const puzzle = useSignal(props.data.puzzle);
+
+  const showMeHref = props.data.showMeHref;
 
   const urlMode = props.url.searchParams.get("mode");
   const mode = useSignal(
@@ -165,7 +166,7 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
               <p className="leading-flat text-fl-min max-lg:hidden">
                 Rather watch a solve?
               </p>
-              <a href={props.data.showMeUrl.href} className="btn shadow-sm">
+              <a href={showMeHref} className="btn shadow-sm">
                 <Icon icon={Play} /> Show me
               </a>
             </div>
