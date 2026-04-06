@@ -27,7 +27,7 @@ import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
-import { trackOnboardingCompleted, trackPuzzleSolved } from "#/lib/tracking.ts";
+import { trackPlayerGraduated, trackPuzzleSolved } from "#/lib/tracking.ts";
 
 type PageData = {
   puzzle: Puzzle;
@@ -127,14 +127,31 @@ export const handler = define.handlers<PageData>({
 
     trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
-    // Complete onboarding on a good solve
+    // User progressed from starting puzzle to next one
     if (
+      puzzle.onboarding === "started" &&
+      ctx.state.user.onboarding !== "done"
+    ) {
+      await setUser(ctx.state.userId, { onboarding: "progressing" });
+    }
+
+    // User graduates through onboarding
+    if (
+      puzzle.onboarding === "progressing" &&
+      ctx.state.user.onboarding !== "done"
+    ) {
+      await setUser(ctx.state.userId, { onboarding: "done" });
+      trackPlayerGraduated(ctx.state, puzzle, { moves, url: referer });
+    }
+
+    // User graduates through a daily
+    if (
+      !puzzle.onboarding &&
       moves.length <= puzzle.minMoves * 1.33 &&
       ctx.state.user.onboarding !== "done"
     ) {
       await setUser(ctx.state.userId, { onboarding: "done" });
-
-      trackOnboardingCompleted(ctx.state, puzzle, { moves, url: referer });
+      trackPlayerGraduated(ctx.state, puzzle, { moves, url: referer });
     }
 
     return Response.redirect(redirectUrl, 303);

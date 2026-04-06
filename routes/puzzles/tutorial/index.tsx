@@ -9,7 +9,7 @@ import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getPuzzle } from "#/game/loader.ts";
+import { getOnboardingPuzzle, getPuzzle } from "#/game/loader.ts";
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
@@ -20,6 +20,9 @@ import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { TutorialDialog } from "#/islands/tutorial-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
+import { trackTutorialCompleted } from "#/lib/tracking.ts";
+import { useMemo } from "preact/hooks";
+import { TutorialWatchButton } from "../../../islands/tutorial-watch-button.tsx";
 
 type Data = {
   puzzle: Puzzle;
@@ -34,7 +37,7 @@ export const handler = define.handlers<Data>({
       throw new HttpError(500, "Tutorial puzzle solution not found");
     }
 
-    const puzzle = await getPuzzle("tutorial");
+    const puzzle = await getOnboardingPuzzle("new");
     if (!puzzle) throw new HttpError(404, "Tutorial puzzle not found");
 
     if (ctx.state.user.onboarding === "new") {
@@ -107,6 +110,11 @@ export const handler = define.handlers<Data>({
       throw new HttpError(400, "Solution is not valid");
     }
 
+    trackTutorialCompleted(ctx.state, puzzle, {
+      moves,
+      url: ctx.req.headers.get("referer") ?? "",
+    });
+
     const url = new URL("/puzzles/tutorial", ctx.url);
 
     url.searchParams.delete("mode");
@@ -150,25 +158,15 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
           />
 
           {urlMode === "solve" && (
-            <div
+            <TutorialWatchButton
+              href={href}
+              showMeUrl={props.data.showMeUrl}
               className={clsx(
                 "absolute",
-                "flex flex-col items-center place-content-center gap-fl-1",
-                "text-center text-text-2",
                 "max-lg:bottom-0 max-lg:left-1/2 max-lg:-translate-x-1/2",
                 "lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
               )}
-            >
-              <p className="leading-flat text-fl-min lg:hidden">
-                Rather watch?
-              </p>
-              <p className="leading-flat text-fl-min max-lg:hidden">
-                Rather watch a solve?
-              </p>
-              <a href={props.data.showMeUrl.href} className="btn shadow-sm">
-                <Icon icon={Play} /> Show me
-              </a>
-            </div>
+            />
           )}
         </div>
       </Main>

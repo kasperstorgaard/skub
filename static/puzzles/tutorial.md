@@ -1,21 +1,21 @@
 ---
-number: 0
 name: Tutorial
 slug: tutorial
-createdAt: 2025-01-01T00:00:00.000Z
+createdAt: 2026-04-06T09:47:05.173Z
 difficulty: easy
-minMoves: 5
+minMoves: 3
+onboarding: new
 ---
 
 ```
 + A B C D E F G H +
-1   _   #     _   |
-2     X           |
-3    |  _ _  |    |
-4      |   |      |
-5      |_ _|      |
-6    |      @|    |
-7   #̲         _   |
-8                 |
+1  |           |  |
+2    |       |    |
+3 #    |   |    # |
+4    |X           |
+5   #       @|    |
+6      |   |      |
+7    |       |    |
+8  |        #  |  |
 +-----------------+
 ```

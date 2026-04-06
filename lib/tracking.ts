@@ -29,16 +29,36 @@ export function trackPuzzleSolved(
 }
 
 /**
- * Track onboarding completion (triggered on a sufficiently efficient first solve).
+ * Track tutorial completion (triggered when finishing the last tutorial step).
  */
-export function trackOnboardingCompleted(
+export function trackTutorialCompleted(
   state: State,
   puzzle: Puzzle,
   options: { moves: Move[]; url: string },
 ): void {
   posthog?.capture({
     distinctId: state.trackingId,
-    event: "onboarding_completed",
+    event: "tutorial_completed",
+    properties: {
+      $current_url: options.url,
+      $process_person_profile: state.cookieChoice === "accepted",
+      puzzle_slug: puzzle.slug,
+      game_moves: options.moves.length,
+    },
+  });
+}
+
+/**
+ * Track player graduation (triggered on a sufficiently efficient first solve or when finishing "lone" puzzle).
+ */
+export function trackPlayerGraduated(
+  state: State,
+  puzzle: Puzzle,
+  options: { moves: Move[]; url: string },
+): void {
+  posthog?.capture({
+    distinctId: state.trackingId,
+    event: "player_graduated",
     properties: {
       $current_url: options.url,
       $process_person_profile: state.cookieChoice === "accepted",
