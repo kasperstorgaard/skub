@@ -169,7 +169,7 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
 
         <div className="flex justify-center gap-fl-2 mt-1">
           <a href={getResetHref(href.value)} className="text-text-2 text-1">
-            Start over
+            Play again
           </a>
           <a href="/" className="text-text-2 text-1">
             Home

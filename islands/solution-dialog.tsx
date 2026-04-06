@@ -95,7 +95,7 @@ export function SolutionDialog(
           <a
             href={getResetHref(href.value)}
           >
-            Start over
+            Play again
           </a>
         </div>
 
