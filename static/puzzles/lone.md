@@ -3,7 +3,7 @@ name: Lone
 slug: lone
 createdAt: 2026-04-06T12:07:27.971Z
 difficulty: easy
-minMoves:
+minMoves: 5
 onboarding: progressing
 ---
 
