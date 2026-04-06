@@ -41,8 +41,7 @@ export async function getAvailableEntries() {
   const manifest = await getPuzzleManifest();
 
   return manifest
-    .filter((entry) => entry.number <= dayOfYear)
-    .filter((entry) => entry.slug !== "tutorial");
+    .filter((entry) => (entry.number ?? 0) <= dayOfYear);
 }
 
 /**
@@ -55,8 +54,8 @@ export async function getFutureEntries() {
   const manifest = await getPuzzleManifest();
 
   return manifest
-    .filter((entry) => entry.number > dayOfYear)
-    .filter((entry) => entry.slug !== "tutorial");
+    .filter((entry) => !entry.onboarding)
+    .filter((entry) => (entry.number ?? 0) > dayOfYear);
 }
 
 /**
@@ -96,9 +95,9 @@ export async function listPuzzles(
     ? await getFutureEntries()
     : await getAvailableEntries();
 
-  entries = entries.filter((entry) =>
-    !options.excludeSlugs?.includes(entry.slug)
-  );
+  entries = entries
+    .filter((entry) => !entry.onboarding)
+    .filter((entry) => !options.excludeSlugs?.includes(entry.slug));
 
   entries = sortList(entries, options);
 
@@ -136,7 +135,10 @@ export async function listPuzzles(
 export async function getDifficultyBreakdown(): Promise<
   Record<Difficulty, number>
 > {
-  const entries = await getAvailableEntries();
+  let entries = await getAvailableEntries();
+
+  entries = entries.filter((entry) => !entry.onboarding);
+
   const breakdown: Record<Difficulty, number> = { easy: 0, medium: 0, hard: 0 };
   for (const entry of entries) {
     breakdown[entry.difficulty]++;
@@ -166,6 +168,7 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
   let entries = await getAvailableEntries();
 
   entries = entries
+    .filter((puzzle) => !puzzle.onboarding)
     .filter((puzzle) =>
       options.difficulty ? options.difficulty.includes(puzzle.difficulty) : true
     )
@@ -174,6 +177,20 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
   if (!entries.length) throw new Error("Unable to get random puzzle");
 
   const entry = entries[Math.floor(Math.random() * entries.length)];
+
+  return getPuzzle(entry.slug);
+}
+
+/**
+ * Gets the onboarding puzzle matching the desired state
+ */
+export async function getOnboardingPuzzle(
+  state: NonNullable<Puzzle["onboarding"]>,
+) {
+  const entries = await getAvailableEntries();
+
+  const entry = entries.find((puzzle) => puzzle.onboarding === state);
+  if (!entry) throw new Error(`Unable to find onboarding puzzle for ${state}`);
 
   return getPuzzle(entry.slug);
 }
