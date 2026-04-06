@@ -8,6 +8,9 @@ import {
 } from "#/game/strings.ts";
 import { DIFFICULTIES, Difficulty, Move, Position } from "#/game/types.ts";
 
+// Dummy base for parsing relative URLs — never appears in output.
+const BASE_URL = "http://example.com";
+
 /**
  * All state needed to represent the current game
  */
@@ -56,8 +59,9 @@ export function encodeState({ moves, active, cursor, hint }: GameState) {
  * @returns Game state
  */
 export function decodeState(urlOrHref: URL | string): GameState {
-  // Handle both full URLs and query strings
-  const url = new URL(urlOrHref);
+  const url = urlOrHref instanceof URL
+    ? urlOrHref
+    : new URL(urlOrHref, BASE_URL);
   const params = url.searchParams;
 
   const moveParam = params.get("moves");
@@ -94,7 +98,7 @@ export function getMovesHref(
   { href, moves, cursor }: GetMoveOptions,
 ) {
   const updatedMoves = [...moves.slice(0, cursor ?? moves.length), ...newMoves];
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
 
   url.search = encodeState({
     moves: updatedMoves,
@@ -102,7 +106,7 @@ export function getMovesHref(
     active: newMoves[newMoves.length - 1][1],
   });
 
-  return url.href;
+  return toRelative(url);
 }
 
 type GetActiveHrefOptions = GameState & { href: string };
@@ -115,14 +119,14 @@ export function getActiveHref(
   active: Position,
   { href, ...state }: GetActiveHrefOptions,
 ) {
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
 
   url.search = encodeState({
     ...state,
     active,
   });
 
-  return url.href;
+  return toRelative(url);
 }
 
 // Builds an href with the cursor moved back one step. Clears the hint.
@@ -130,14 +134,14 @@ export function getUndoHref(
   href: string,
   state: GameState,
 ) {
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
   const cursor = state.cursor != null
     ? Math.max(state.cursor - 1, 0)
     : state.moves.length - 2;
 
   url.search = encodeState({ ...state, cursor, hint: undefined });
 
-  return url.href;
+  return toRelative(url);
 }
 
 // Builds an href with the cursor moved forward one step. Clears the hint.
@@ -145,19 +149,19 @@ export function getRedoHref(
   href: string,
   state: GameState,
 ) {
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
   const cursor = state.cursor != null
     ? Math.min(state.cursor + 1, state.moves.length)
     : state.moves.length;
 
   url.search = encodeState({ ...state, cursor, hint: undefined });
 
-  return url.href;
+  return toRelative(url);
 }
 
 // Strips all game-state params (moves, active, cursor, hint) from the URL.
 export function getResetHref(href: string) {
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
 
   url.searchParams.delete("active");
   url.searchParams.delete("cursor");
@@ -165,7 +169,7 @@ export function getResetHref(href: string) {
   url.searchParams.delete("hint");
   url.searchParams.delete("dialog");
 
-  return url.href;
+  return toRelative(url);
 }
 
 /**
@@ -173,7 +177,7 @@ export function getResetHref(href: string) {
  * Extracts the puzzle slug from the pathname and redirects to `/puzzles/:slug/hint`.
  */
 export function getHintHref(href: string) {
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
   const slugMatcher = /\/puzzles\/([^/]+)/;
 
   const matches = url.pathname.match(slugMatcher) ?? [];
@@ -183,15 +187,15 @@ export function getHintHref(href: string) {
 
   url.pathname = `/puzzles/${slug}/hint`;
 
-  return url.href;
+  return toRelative(url);
 }
 
 /**
  * Builds an href pointing to the server-side solve route for the current puzzle.
- * Extracts the puzzle slug from the pathname and redirects to `/puzzles/:slug/solev`.
+ * Extracts the puzzle slug from the pathname and redirects to `/puzzles/:slug/solve`.
  */
 export function getSolveHref(href: string) {
-  const url = new URL(href);
+  const url = new URL(href, BASE_URL);
   const slugMatcher = /\/puzzles\/([^/]+)/;
 
   const matches = url.pathname.match(slugMatcher) ?? [];
@@ -201,12 +205,14 @@ export function getSolveHref(href: string) {
 
   url.pathname = `/puzzles/${slug}/solve`;
 
-  return url.href;
+  return toRelative(url);
 }
 
 // Reads the `replay_speed` search param from a URL
 export function getReplaySpeed(urlOrHref: URL | string): number | null {
-  const url = typeof urlOrHref === "string" ? new URL(urlOrHref) : urlOrHref;
+  const url = urlOrHref instanceof URL
+    ? urlOrHref
+    : new URL(urlOrHref, BASE_URL);
 
   const rawValue = url.searchParams.get("replay_speed");
   const value = parseFloat(rawValue ?? "");
@@ -217,7 +223,9 @@ export function getReplaySpeed(urlOrHref: URL | string): number | null {
 export function getDifficulty(
   urlOrHref: URL | string,
 ): Difficulty[] | null {
-  const url = typeof urlOrHref === "string" ? new URL(urlOrHref) : urlOrHref;
+  const url = urlOrHref instanceof URL
+    ? urlOrHref
+    : new URL(urlOrHref, BASE_URL);
   const rawValue = url.searchParams.get("difficulty");
 
   if (!rawValue) return null;
@@ -235,11 +243,17 @@ export function getDifficulty(
 export function getPage(
   urlOrHref: URL | string,
 ) {
-  const url = typeof urlOrHref === "string" ? new URL(urlOrHref) : urlOrHref;
+  const url = urlOrHref instanceof URL
+    ? urlOrHref
+    : new URL(urlOrHref, BASE_URL);
   const pageParam = url.searchParams.get("page");
 
   if (!pageParam) return null;
 
   const parsed = parseInt(pageParam, 10);
   return Number.isNaN(parsed) ? 1 : parsed;
+}
+
+function toRelative(url: URL): string {
+  return url.pathname + url.search;
 }
