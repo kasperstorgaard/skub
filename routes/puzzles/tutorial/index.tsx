@@ -3,7 +3,6 @@ import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
@@ -19,11 +18,9 @@ import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { TutorialDialog } from "#/islands/tutorial-dialog.tsx";
+import { TutorialWatchButton } from "#/islands/tutorial-watch-button.tsx";
 import { isDev } from "#/lib/env.ts";
 import { trackTutorialCompleted } from "#/lib/tracking.ts";
-import { useMemo } from "preact/hooks";
-import { TutorialWatchButton } from "../../../islands/tutorial-watch-button.tsx";
-
 type Data = {
   puzzle: Puzzle;
   showMeUrl: URL;

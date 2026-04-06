@@ -2,14 +2,7 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
-import {
-  ArrowLeft,
-  ArrowRight,
-  GameController,
-  Icon,
-  Joystick,
-  X,
-} from "#/components/icons.tsx";
+import { ArrowLeft, ArrowRight, Icon, X } from "#/components/icons.tsx";
 import type { Solution } from "#/db/types.ts";
 import { getReplaySpeed } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -180,13 +173,12 @@ function TutorialReplayStep({ href }: TutorialStepProps & {
     <>
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h1 className="text-fl-2 leading-tight text-text-1">
-          There you go
+          That's one way to solve it
         </h1>
 
         <p>
           Every puzzle has many solutions, each ranked by number of moves.<br />
-          Difficulties range from easy to hard, and often requires 6-9 moves for
-          a perfect solve.
+          We've prepped both the daily and a starter puzzle for you.
         </p>
       </div>
 
