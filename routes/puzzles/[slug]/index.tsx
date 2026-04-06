@@ -28,6 +28,7 @@ import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
 import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
+import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 
 type PageData = {
   puzzle: Puzzle;
@@ -189,7 +190,18 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           <DifficultyBadge puzzle={puzzle} className="lg:mt-1" />
         </div>
 
-        <Board href={href} puzzle={puzzle} mode={mode} />
+        <div className="relative max-lg:pb-fl-7">
+          <Board href={href} puzzle={puzzle} mode={mode} />
+
+          {props.state.user.skillLevel === null && (
+            <TutorialNudge
+              className={clsx(
+                "max-lg:max-w-2xs max-lg:justify-self-center max-lg:mt-fl-2",
+                "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              )}
+            />
+          )}
+        </div>
       </Main>
 
       <ControlsPanel
