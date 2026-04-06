@@ -32,7 +32,7 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
 }
 
 /**
- * Manifest entries available today: number <= day-of-year, tutorial excluded.
+ * Manifest entries available today: number <= day-of-year, onboarding excluded.
  */
 export async function getAvailableEntries() {
   const today = new Date(Date.now());
@@ -41,11 +41,12 @@ export async function getAvailableEntries() {
   const manifest = await getPuzzleManifest();
 
   return manifest
+    .filter((entry) => !entry.onboarding)
     .filter((entry) => (entry.number ?? 0) <= dayOfYear);
 }
 
 /**
- * Manifest entries available after today: number > day-of-year, tutorial excluded.
+ * Manifest entries available after today: number > day-of-year, onboarding excluded.
  */
 export async function getFutureEntries() {
   const today = new Date(Date.now());
@@ -96,7 +97,6 @@ export async function listPuzzles(
     : await getAvailableEntries();
 
   entries = entries
-    .filter((entry) => !entry.onboarding)
     .filter((entry) => !options.excludeSlugs?.includes(entry.slug));
 
   entries = sortList(entries, options);
@@ -135,9 +135,7 @@ export async function listPuzzles(
 export async function getDifficultyBreakdown(): Promise<
   Record<Difficulty, number>
 > {
-  let entries = await getAvailableEntries();
-
-  entries = entries.filter((entry) => !entry.onboarding);
+  const entries = await getAvailableEntries();
 
   const breakdown: Record<Difficulty, number> = { easy: 0, medium: 0, hard: 0 };
   for (const entry of entries) {
@@ -168,7 +166,6 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
   let entries = await getAvailableEntries();
 
   entries = entries
-    .filter((puzzle) => !puzzle.onboarding)
     .filter((puzzle) =>
       options.difficulty ? options.difficulty.includes(puzzle.difficulty) : true
     )
@@ -187,9 +184,9 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
 export async function getOnboardingPuzzle(
   state: NonNullable<Puzzle["onboarding"]>,
 ) {
-  const entries = await getAvailableEntries();
+  const manifest = await getPuzzleManifest();
 
-  const entry = entries.find((puzzle) => puzzle.onboarding === state);
+  const entry = manifest.find((puzzle) => puzzle.onboarding === state);
   if (!entry) throw new Error(`Unable to find onboarding puzzle for ${state}`);
 
   return getPuzzle(entry.slug);
