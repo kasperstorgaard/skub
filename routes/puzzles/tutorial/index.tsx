@@ -8,7 +8,7 @@ import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getOnboardingPuzzle } from "#/game/loader.ts";
+import { getOnboardingPuzzle, getTutorialPuzzle } from "#/game/loader.ts";
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
@@ -34,7 +34,7 @@ export const handler = define.handlers<Data>({
       throw new HttpError(500, "Tutorial puzzle solution not found");
     }
 
-    const puzzle = await getOnboardingPuzzle();
+    const puzzle = await getTutorialPuzzle();
     if (!puzzle) throw new HttpError(404, "Tutorial puzzle not found");
 
     const { moves } = decodeState(ctx.url);
@@ -96,7 +96,7 @@ export const handler = define.handlers<Data>({
     const rawMoves = form.get("moves")?.toString() ?? "";
     const moves = JSON.parse(rawMoves) as Move[];
 
-    const puzzle = await getOnboardingPuzzle();
+    const puzzle = await getTutorialPuzzle();
     if (!puzzle) throw new HttpError(400, "Tutorial not found");
 
     if (!isValidSolution(resolveMoves(puzzle.board, moves))) {

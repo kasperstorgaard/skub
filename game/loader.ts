@@ -179,33 +179,29 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
 }
 
 /**
- * Gets all onboarding puzzles sorted by level ascending.
+ * Gets the tutorial puzzle.
  */
-export async function getOnboardingPuzzles(): Promise<PuzzleManifestEntry[]> {
+export async function getTutorialPuzzle(): Promise<Puzzle | null> {
   const manifest = await getPuzzleManifest();
-  return manifest
-    .filter((entry) => entry.onboardingLevel != null)
-    .sort((a, b) => (a.onboardingLevel ?? 0) - (b.onboardingLevel ?? 0));
+
+  const entry = manifest.find((entry) => entry.onboardingLevel === 1);
+  if (!entry) throw new Error("No tutorial puzzle (onboardingLevel 1) found");
+  return getPuzzle(entry.slug);
 }
 
 /**
- * Gets an onboarding puzzle.
- * - Default (no args): returns level 1 (the tutorial puzzle).
- * - With `excludeSlugs`: returns the next unsolved puzzle at level > 1, or null if all solved.
+ * Gets the next non-excluded onboarding puzzle.
  */
 export async function getOnboardingPuzzle(
-  options?: { excludeSlugs?: Set<string> },
+  options: { excludeSlugs: string[] },
 ): Promise<Puzzle | null> {
-  const entries = await getOnboardingPuzzles();
+  const manifest = await getPuzzleManifest();
+  const lookup = new Set(options.excludeSlugs);
 
-  if (options?.excludeSlugs) {
-    const next = entries
-      .filter((e) => (e.onboardingLevel ?? 0) > 1)
-      .find((e) => !options.excludeSlugs!.has(e.slug));
-    return next ? getPuzzle(next.slug) : null;
-  }
+  const next = manifest
+    .filter((entry) => (entry.onboardingLevel ?? 0) > 1)
+    .sort((a, b) => (a.onboardingLevel ?? 0) - (b.onboardingLevel ?? 0))
+    .find((entry) => !lookup.has(entry.slug));
 
-  const entry = entries.find((e) => e.onboardingLevel === 1);
-  if (!entry) throw new Error("No tutorial puzzle (onboardingLevel 1) found");
-  return getPuzzle(entry.slug);
+  return next ? getPuzzle(next.slug) : null;
 }

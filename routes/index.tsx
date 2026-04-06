@@ -53,18 +53,22 @@ export const handler = define.handlers<PageData>({
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    let randomPuzzle: Puzzle | null = null;
-    let onboardingPuzzle: Puzzle | null = null;
+    const solvedSlugs = solutions.map((solution) => solution.puzzleSlug);
 
-    if (user.skillLevel === "beginner") {
-      const solvedSlugs = new Set(solutions.map((s) => s.puzzleSlug));
-      onboardingPuzzle = await getOnboardingPuzzle({ excludeSlugs: solvedSlugs });
-      if (!onboardingPuzzle) {
-        randomPuzzle = await getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
-      }
-    } else if (user.skillLevel !== null) {
-      randomPuzzle = await getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
-    }
+    const onboardingPuzzle = user.skillLevel === "beginner"
+      ? await getOnboardingPuzzle({
+        excludeSlugs: solvedSlugs,
+      })
+      : null;
+
+    const randomPuzzle = !onboardingPuzzle
+      ? await getRandomPuzzle({
+        excludeSlugs: [dailyPuzzle.slug],
+        difficulty: user.skillLevel === "expert"
+          ? ["easy", "medium", "hard"]
+          : ["easy", "medium"],
+      })
+      : null;
 
     const userStats = await getUserStats(ctx.state.userId, solutions);
 
