@@ -27,26 +27,33 @@ export type Board = {
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export type Difficulty = typeof DIFFICULTIES[number];
 
-export type Onboarding = "new" | "started" | "done";
+export type SkillLevel = "beginner" | "intermediate" | "expert";
 
 // A move represented as a pair of positions [from, to]
 export type Move = [Position, Position];
 
 // A complete puzzle with metadata and board configuration
 export type Puzzle = {
-  number: number;
+  number?: number;
   slug: string;
   name: string;
   board: Board;
   createdAt: Date;
   difficulty: Difficulty;
   minMoves: number;
+  onboardingLevel?: number;
 };
 
 // Lightweight puzzle entry used in the manifest index
 export type PuzzleManifestEntry = Pick<
   Puzzle,
-  "number" | "slug" | "name" | "createdAt" | "minMoves" | "difficulty"
+  | "number"
+  | "slug"
+  | "name"
+  | "createdAt"
+  | "minMoves"
+  | "difficulty"
+  | "onboardingLevel"
 >;
 
 // Tracks current pagination position and total counts

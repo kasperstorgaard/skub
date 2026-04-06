@@ -27,7 +27,8 @@ import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
-import { trackOnboardingCompleted, trackPuzzleSolved } from "#/lib/tracking.ts";
+import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
+import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 
 type PageData = {
   puzzle: Puzzle;
@@ -127,14 +128,35 @@ export const handler = define.handlers<PageData>({
 
     trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
-    // Complete onboarding on a good solve
-    if (
-      moves.length <= puzzle.minMoves * 1.33 &&
-      ctx.state.user.onboarding !== "done"
-    ) {
-      await setUser(ctx.state.userId, { onboarding: "done" });
+    const { skillLevel } = ctx.state.user;
 
-      trackOnboardingCompleted(ctx.state, puzzle, { moves, url: referer });
+    // Promote to expert: medium or hard puzzle solved perfectly
+    if (
+      (puzzle.difficulty === "medium" || puzzle.difficulty === "hard") &&
+      moves.length === puzzle.minMoves &&
+      skillLevel !== "expert"
+    ) {
+      await setUser(ctx.state.userId, { skillLevel: "expert" });
+      trackSkillLevelUp(ctx.state, puzzle, {
+        moves,
+        url: referer,
+        skillLevel: "expert",
+      });
+    } else if (
+      // Promote to intermediate: medium puzzle solved within 1.33x optimal
+      puzzle.difficulty === "medium" &&
+      moves.length <= puzzle.minMoves * 1.33 &&
+      skillLevel !== "intermediate" && skillLevel !== "expert"
+    ) {
+      await setUser(ctx.state.userId, { skillLevel: "intermediate" });
+      trackSkillLevelUp(ctx.state, puzzle, {
+        moves,
+        url: referer,
+        skillLevel: "intermediate",
+      });
+    } else if (skillLevel === null) {
+      // Promote to beginner on first solve (skipped tutorial path)
+      await setUser(ctx.state.userId, { skillLevel: "beginner" });
     }
 
     return Response.redirect(redirectUrl, 303);
@@ -156,17 +178,30 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
           <h1 className="text-6 text-brand leading-tight">
-            <span className="font-4 tracking-wide">
-              #{props.data.puzzle.number}
-              {" "}
-            </span>
+            {props.data.puzzle.number && (
+              <span className="font-4 tracking-wide">
+                #{props.data.puzzle.number}
+                {" "}
+              </span>
+            )}
             <span className="font-5">{props.data.puzzle.name}</span>
           </h1>
 
           <DifficultyBadge puzzle={puzzle} className="lg:mt-1" />
         </div>
 
-        <Board href={href} puzzle={puzzle} mode={mode} />
+        <div className="relative max-lg:pb-fl-7">
+          <Board href={href} puzzle={puzzle} mode={mode} />
+
+          {props.state.user.skillLevel === null && (
+            <TutorialNudge
+              className={clsx(
+                "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
+                "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              )}
+            />
+          )}
+        </div>
       </Main>
 
       <ControlsPanel
@@ -174,7 +209,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         hintCount={props.data.hintCount}
         isDev={isDev}
-        onboarding={props.state.user.onboarding}
+        skillLevel={props.state.user.skillLevel}
         className="print:hidden"
       />
 

@@ -30,6 +30,14 @@ export class HomePage {
     return this.page.getByRole("link").filter({ hasText: /random puzzle/i });
   }
 
+  get starterPuzzleLink() {
+    return this.page.getByRole("link").filter({ hasText: /starter puzzle/i });
+  }
+
+  get quickPuzzleLink() {
+    return this.page.getByRole("link").filter({ hasText: /quick puzzle/i });
+  }
+
   get newHereLink() {
     return this.page.getByRole("link", { name: /new here\?/i });
   }
@@ -44,8 +52,8 @@ export class HomePage {
     return new PuzzlePage(this.page);
   }
 
-  async clickWarmUpPuzzle() {
-    await this.page.getByRole("link", { name: /warm-up puzzle/i }).click();
+  async clickStarterPuzzle() {
+    await this.page.getByRole("link", { name: /starter puzzle/i }).click();
     return new PuzzlePage(this.page);
   }
 

@@ -111,9 +111,9 @@ export function PuzzleCard({
           </span>
         )}
         <span className="text-4 font-semibold leading-flat">
-          <span className="tracking-wide font-normal">#{puzzle.number}</span>
-          {" "}
-          <span>{puzzle.name}</span>
+          {puzzle.number && (
+            <span className="tracking-wide font-normal">#{puzzle.number}</span>
+          )} <span>{puzzle.name}</span>
         </span>
       </div>
     </a>

@@ -40,7 +40,7 @@ export const handler = define.handlers<PageData>({
           sortBy: "number",
           sortOrder: "descending",
           page: currentPage,
-          excludeSlugs: ["tutorial", dailyPuzzle.slug],
+          excludeSlugs: [dailyPuzzle.slug],
           itemsPerPage: ITEMS_PER_PAGE,
           isFuture,
         }),

@@ -26,12 +26,13 @@ export async function updateManifest() {
         createdAt: attrs.createdAt,
         difficulty: attrs.difficulty,
         minMoves: attrs.minMoves,
+        onboardingLevel: attrs.onboardingLevel,
       });
     }
   }
 
   // Sort all by number
-  entries = entries.sort((a, b) => b.number - a.number);
+  entries = entries.sort((a, b) => (b.number ?? 0) - (a.number ?? 0));
 
   await Deno.writeTextFile(
     `${PUZZLES_DIR}/manifest.json`,
