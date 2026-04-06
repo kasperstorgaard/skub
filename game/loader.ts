@@ -41,7 +41,7 @@ export async function getAvailableEntries() {
   const manifest = await getPuzzleManifest();
 
   return manifest
-    .filter((entry) => !entry.onboarding)
+    .filter((entry) => !entry.onboardingLevel)
     .filter((entry) => (entry.number ?? 0) <= dayOfYear);
 }
 
@@ -55,7 +55,7 @@ export async function getFutureEntries() {
   const manifest = await getPuzzleManifest();
 
   return manifest
-    .filter((entry) => !entry.onboarding)
+    .filter((entry) => !entry.onboardingLevel)
     .filter((entry) => (entry.number ?? 0) > dayOfYear);
 }
 
@@ -179,15 +179,21 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
 }
 
 /**
- * Gets the onboarding puzzle matching the desired state
+ * Gets all onboarding puzzles sorted by level ascending.
  */
-export async function getOnboardingPuzzle(
-  state: NonNullable<Puzzle["onboarding"]>,
-) {
+export async function getOnboardingPuzzles(): Promise<PuzzleManifestEntry[]> {
   const manifest = await getPuzzleManifest();
+  return manifest
+    .filter((entry) => entry.onboardingLevel != null)
+    .sort((a, b) => (a.onboardingLevel ?? 0) - (b.onboardingLevel ?? 0));
+}
 
-  const entry = manifest.find((puzzle) => puzzle.onboarding === state);
-  if (!entry) throw new Error(`Unable to find onboarding puzzle for ${state}`);
-
+/**
+ * Gets the onboarding puzzle for a given level.
+ */
+export async function getOnboardingPuzzle(level: number): Promise<Puzzle | null> {
+  const manifest = await getPuzzleManifest();
+  const entry = manifest.find((puzzle) => puzzle.onboardingLevel === level);
+  if (!entry) throw new Error(`No onboarding puzzle for level ${level}`);
   return getPuzzle(entry.slug);
 }

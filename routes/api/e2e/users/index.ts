@@ -22,7 +22,7 @@ export const handler = define.handlers({
 
     const user: User = {
       ...body,
-      onboarding: body.onboarding ?? "done",
+      skillLevel: body.skillLevel ?? null,
       id: body.id ?? crypto.randomUUID(),
     };
 

@@ -26,7 +26,7 @@ export async function updateManifest() {
         createdAt: attrs.createdAt,
         difficulty: attrs.difficulty,
         minMoves: attrs.minMoves,
-        onboarding: attrs.onboarding,
+        onboardingLevel: attrs.onboardingLevel,
       });
     }
   }

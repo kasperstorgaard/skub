@@ -18,7 +18,8 @@ import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getUserStats } from "#/db/stats.ts";
 import {
   getLatestPuzzle,
-  getOnboardingPuzzle,
+  getOnboardingPuzzles,
+  getPuzzle,
   getRandomPuzzle,
 } from "#/game/loader.ts";
 import type { UserStats } from "#/game/streak.ts";
@@ -53,14 +54,23 @@ export const handler = define.handlers<PageData>({
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    const randomPuzzle: Puzzle | null = user.onboarding === "done"
-      ? await getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] })
-      : null;
+    let randomPuzzle: Puzzle | null = null;
+    let onboardingPuzzle: Puzzle | null = null;
 
-    const onboardingPuzzle: Puzzle | null =
-      user.onboarding !== "new" && user.onboarding !== "done"
-        ? await getOnboardingPuzzle(user.onboarding)
-        : null;
+    if (user.skillLevel === "beginner") {
+      const entries = await getOnboardingPuzzles();
+      const solvedSlugs = new Set(solutions.map((s) => s.puzzleSlug));
+      const nextEntry = entries
+        .filter((e) => (e.onboardingLevel ?? 0) > 1)
+        .find((e) => !solvedSlugs.has(e.slug));
+      if (nextEntry) {
+        onboardingPuzzle = await getPuzzle(nextEntry.slug);
+      } else {
+        randomPuzzle = await getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
+      }
+    } else if (user.skillLevel !== null) {
+      randomPuzzle = await getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
+    }
 
     const userStats = await getUserStats(ctx.state.userId, solutions);
 
@@ -119,7 +129,7 @@ export default define.page<typeof handler>(function Home(ctx) {
             </li>
 
             <li className="list-none pl-0 min-w-0">
-              {user.onboarding === "new" && (
+              {user.skillLevel === null && (
                 <a
                   href="/puzzles/tutorial"
                   className="flex flex-col gap-2 text-text-1 no-underline"
@@ -151,7 +161,7 @@ export default define.page<typeof handler>(function Home(ctx) {
               {onboardingPuzzle && (
                 <PuzzleCard
                   puzzle={onboardingPuzzle}
-                  tagline={user.onboarding === "started"
+                  tagline={onboardingPuzzle.onboardingLevel === 2
                     ? "Starter puzzle"
                     : "Quick puzzle"}
                 />

@@ -3,7 +3,7 @@
 // boilerplate (distinctId, $process_person_profile, $current_url) is
 // derived automatically.
 import type { State } from "#/core.ts";
-import type { Move, Puzzle } from "#/game/types.ts";
+import type { Move, Puzzle, SkillLevel } from "#/game/types.ts";
 import { posthog } from "#/lib/posthog.ts";
 
 /**
@@ -42,6 +42,7 @@ export function trackTutorialCompleted(
     properties: {
       $current_url: options.url,
       $process_person_profile: state.cookieChoice === "accepted",
+      $set: { skill_level: "beginner" },
       puzzle_slug: puzzle.slug,
       game_moves: options.moves.length,
     },
@@ -49,22 +50,25 @@ export function trackTutorialCompleted(
 }
 
 /**
- * Track player graduation (triggered on a sufficiently efficient first solve or when finishing "lone" puzzle).
+ * Track a skill level promotion (triggered when a puzzle solve demonstrates a new level).
  */
-export function trackPlayerGraduated(
+export function trackSkillLevelUp(
   state: State,
   puzzle: Puzzle,
-  options: { moves: Move[]; url: string },
+  options: { moves: Move[]; url: string; skillLevel: SkillLevel },
 ): void {
   posthog?.capture({
     distinctId: state.trackingId,
-    event: "player_graduated",
+    event: "skill_level_up",
     properties: {
       $current_url: options.url,
       $process_person_profile: state.cookieChoice === "accepted",
+      $set: { skill_level: options.skillLevel },
       puzzle_slug: puzzle.slug,
+      puzzle_difficulty: puzzle.difficulty,
       puzzle_min_moves: puzzle.minMoves,
       game_moves: options.moves.length,
+      skill_level: options.skillLevel,
     },
   });
 }

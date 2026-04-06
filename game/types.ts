@@ -27,7 +27,7 @@ export type Board = {
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export type Difficulty = typeof DIFFICULTIES[number];
 
-export type Onboarding = "new" | "started" | "progressing" | "done";
+export type SkillLevel = "beginner" | "intermediate" | "expert";
 
 // A move represented as a pair of positions [from, to]
 export type Move = [Position, Position];
@@ -41,7 +41,7 @@ export type Puzzle = {
   createdAt: Date;
   difficulty: Difficulty;
   minMoves: number;
-  onboarding?: "new" | "started" | "progressing";
+  onboardingLevel?: number;
 };
 
 // Lightweight puzzle entry used in the manifest index
@@ -53,7 +53,7 @@ export type PuzzleManifestEntry = Pick<
   | "createdAt"
   | "minMoves"
   | "difficulty"
-  | "onboarding"
+  | "onboardingLevel"
 >;
 
 // Tracks current pagination position and total counts

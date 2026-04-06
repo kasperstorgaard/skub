@@ -240,7 +240,7 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           href="/"
           className="btn"
         >
-          I'm ready
+          I'm ready!
         </a>
       </form>
     </>

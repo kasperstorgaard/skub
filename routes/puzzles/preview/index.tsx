@@ -65,7 +65,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
         href={href}
         isDev={isDev}
         isPreview
-        onboarding={props.state.user.onboarding}
+        skillLevel={props.state.user.skillLevel}
         className="print:hidden"
       />
 

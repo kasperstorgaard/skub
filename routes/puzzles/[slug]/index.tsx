@@ -27,7 +27,7 @@ import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
-import { trackPlayerGraduated, trackPuzzleSolved } from "#/lib/tracking.ts";
+import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
 
 type PageData = {
   puzzle: Puzzle;
@@ -127,31 +127,35 @@ export const handler = define.handlers<PageData>({
 
     trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
-    // User progressed from starting puzzle to next one
-    if (
-      puzzle.onboarding === "started" &&
-      ctx.state.user.onboarding !== "done"
-    ) {
-      await setUser(ctx.state.userId, { onboarding: "progressing" });
-    }
+    const { skillLevel } = ctx.state.user;
 
-    // User graduates through onboarding
+    // Promote to expert: medium or hard puzzle solved perfectly
     if (
-      puzzle.onboarding === "progressing" &&
-      ctx.state.user.onboarding !== "done"
+      (puzzle.difficulty === "medium" || puzzle.difficulty === "hard") &&
+      moves.length === puzzle.minMoves &&
+      skillLevel !== "expert"
     ) {
-      await setUser(ctx.state.userId, { onboarding: "done" });
-      trackPlayerGraduated(ctx.state, puzzle, { moves, url: referer });
-    }
-
-    // User graduates through a daily
-    if (
-      !puzzle.onboarding &&
+      await setUser(ctx.state.userId, { skillLevel: "expert" });
+      trackSkillLevelUp(ctx.state, puzzle, {
+        moves,
+        url: referer,
+        skillLevel: "expert",
+      });
+    } else if (
+      // Promote to intermediate: medium puzzle solved within 1.33x optimal
+      puzzle.difficulty === "medium" &&
       moves.length <= puzzle.minMoves * 1.33 &&
-      ctx.state.user.onboarding !== "done"
+      skillLevel !== "intermediate" && skillLevel !== "expert"
     ) {
-      await setUser(ctx.state.userId, { onboarding: "done" });
-      trackPlayerGraduated(ctx.state, puzzle, { moves, url: referer });
+      await setUser(ctx.state.userId, { skillLevel: "intermediate" });
+      trackSkillLevelUp(ctx.state, puzzle, {
+        moves,
+        url: referer,
+        skillLevel: "intermediate",
+      });
+    } else if (skillLevel === null) {
+      // Promote to beginner on first solve (skipped tutorial path)
+      await setUser(ctx.state.userId, { skillLevel: "beginner" });
     }
 
     return Response.redirect(redirectUrl, 303);
@@ -193,7 +197,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         hintCount={props.data.hintCount}
         isDev={isDev}
-        onboarding={props.state.user.onboarding}
+        skillLevel={props.state.user.skillLevel}
         className="print:hidden"
       />
 

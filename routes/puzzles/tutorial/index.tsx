@@ -34,12 +34,8 @@ export const handler = define.handlers<Data>({
       throw new HttpError(500, "Tutorial puzzle solution not found");
     }
 
-    const puzzle = await getOnboardingPuzzle("new");
+    const puzzle = await getOnboardingPuzzle(1);
     if (!puzzle) throw new HttpError(404, "Tutorial puzzle not found");
-
-    if (ctx.state.user.onboarding === "new") {
-      await setUser(ctx.state.userId, { onboarding: "started" });
-    }
 
     const { moves } = decodeState(ctx.url);
     const mode = ctx.url.searchParams.get("mode");
@@ -100,12 +96,14 @@ export const handler = define.handlers<Data>({
     const rawMoves = form.get("moves")?.toString() ?? "";
     const moves = JSON.parse(rawMoves) as Move[];
 
-    const puzzle = await getOnboardingPuzzle("new");
+    const puzzle = await getOnboardingPuzzle(1);
     if (!puzzle) throw new HttpError(400, "Tutorial not found");
 
     if (!isValidSolution(resolveMoves(puzzle.board, moves))) {
       throw new HttpError(400, "Solution is not valid");
     }
+
+    await setUser(ctx.state.userId, { skillLevel: "beginner" });
 
     trackTutorialCompleted(ctx.state, puzzle, {
       moves,

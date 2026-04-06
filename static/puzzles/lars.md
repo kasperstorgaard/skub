@@ -4,7 +4,7 @@ slug: lars
 createdAt: 2026-04-06T11:55:36.751Z
 difficulty: easy
 minMoves: 4
-onboarding: started
+onboardingLevel: 2
 ---
 
 ```
