@@ -4,6 +4,7 @@ import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
+import { TutorialWatchButton } from "#/components/tutorial-watch-button.tsx";
 import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
@@ -18,7 +19,6 @@ import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { TutorialDialog } from "#/islands/tutorial-dialog.tsx";
-import { TutorialWatchButton } from "#/islands/tutorial-watch-button.tsx";
 import { isDev } from "#/lib/env.ts";
 import { trackTutorialCompleted } from "#/lib/tracking.ts";
 type Data = {
@@ -154,7 +154,6 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
 
           {urlMode === "solve" && (
             <TutorialWatchButton
-              href={href}
               showMeUrl={props.data.showMeUrl}
               className={clsx(
                 "absolute",

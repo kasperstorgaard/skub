@@ -94,7 +94,7 @@ Skill promotion checks run on every new solve (checked in order, first match win
 - **modified** `routes/api/e2e/users/index.ts` — `skillLevel` default
 - **modified** `islands/controls-panel.tsx` — `onboarding` → `skillLevel`, hint logic updated
 - **modified** `components/puzzle-card.tsx` — null-safe number
-- **added** `islands/tutorial-watch-button.tsx` — "Rather watch?" island
+- **added** `components/tutorial-watch-button.tsx` — "Rather watch?" island
 - **added** `static/puzzles/lars.md` — onboardingLevel 2, starter puzzle
 - **added** `static/puzzles/lone.md` — onboardingLevel 3, quick puzzle
 - **added** `routes/api/migrate-skill-level.ts` — skill level migration from solution history

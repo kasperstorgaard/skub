@@ -1,21 +1,13 @@
-import type { Signal } from "@preact/signals";
 import clsx from "clsx/lite";
-import { useMemo } from "preact/hooks";
 
 import { Icon, Play } from "#/components/icons.tsx";
-import { decodeState } from "#/game/url.ts";
 
 type Props = {
-  href: Signal<string>;
   showMeUrl: URL;
   className?: string;
 };
 
-export function TutorialWatchButton({ href, showMeUrl, className }: Props) {
-  const state = useMemo(() => decodeState(href.value), [href.value]);
-
-  if (state.moves.length <= 3) return null;
-
+export function TutorialWatchButton({ showMeUrl, className }: Props) {
   return (
     <div
       className={clsx(
