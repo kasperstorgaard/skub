@@ -6,7 +6,7 @@ import { solvePuzzle } from "./helpers.ts";
 Deno.test("new user flow — a new user completes the tutorial", async () => {
   const { page, teardown } = await setup();
   try {
-    const home = await new HomePage(page).goto();
+    let home = await new HomePage(page).goto();
     const tutorial = await home.clickNewHereLink();
 
     await tutorial.clickNext();
@@ -14,7 +14,7 @@ Deno.test("new user flow — a new user completes the tutorial", async () => {
 
     const moves = await solvePuzzle("tutorial");
     await tutorial.solveByClicking(moves);
-    await tutorial.clickImReady();
+    home = await tutorial.clickImReady();
 
     await expect(home.starterPuzzleLink).toBeVisible();
   } finally {
