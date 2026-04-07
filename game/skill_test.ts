@@ -1,4 +1,5 @@
 import { assertEquals } from "@std/assert";
+
 import { assessSkillLevel } from "#/game/skill.ts";
 import type { Move } from "#/game/types.ts";
 
