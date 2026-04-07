@@ -1,105 +1,46 @@
-# Tutorial rework + skill level system
+# Tutorial UX copy + flow polish
 
 ## Problem
 
-The old onboarding was a single-state toggle (`new` → `done`) tied to puzzle-solving
-efficiency. First-time players got a tutorial, then immediately saw the daily puzzle
-with no scaffolding. There was no model for how capable a player actually is.
+The tutorial and solution dialog copy was wordy and didn't read well. Button
+labels were generic ("Dismiss", "Next") instead of describing what they do.
+Headings buried the key idea.
 
 ## Solution
 
-Replace the onboarding state machine with a **skill level** on the user record and a
-sequence of onboarding puzzles ordered by `onboardingLevel`. Skill is earned through
-play, not just by completing steps.
+Tighten the copy in the tutorial dialog and solution dialog. Replace generic
+button labels with action-oriented ones, and add directional arrow icons to
+Previous/Next so navigation reads at a glance.
 
-### Skill level (`User.skillLevel: SkillLevel | null`)
+### Tutorial dialog (`islands/tutorial-dialog.tsx`)
 
-| Level | Earned by | Home page shows |
-|---|---|---|
-| `null` | Default (unknown) | Tutorial CTA |
-| `"beginner"` | Completing tutorial, or first puzzle solve (skip path) | Next unsolved onboarding puzzle, or random if all done |
-| `"intermediate"` | Medium solved within 1.33× optimal, OR easy solved perfectly with `minMoves > 5` | Random puzzle |
-| `"expert"` | Medium or hard puzzle solved perfectly | Random puzzle |
+**Welcome step**
+- Body: shortened to "A sliding puzzle game inspired by the boardgame Ricochet Robots."
+- "Dismiss" → "Home"
+- "Next" → "How it works" + right-arrow icon
 
-Promotions only move upward. `trackSkillLevelUp` fires (with `$set: { skill_level }` for PostHog person profile) on intermediate/expert promotions. `trackTutorialCompleted` sets `$set: { skill_level: "beginner" }` on the profile.
+**Pieces step**
+- Heading: "The pieces" → "How it works"
+- Body: rewritten to emphasise the goal — puck must stop **exactly** on the target
+- Previous button gets a left-arrow icon
 
-### Onboarding puzzles
+**Replay step**
+- Heading: "Finding a solution" → "That's one way to solve it"
+- Body: mentions that both the daily and a starter puzzle are prepped for the user
+- Previous button gets a left-arrow icon
 
-Puzzles tagged with `onboardingLevel: number` in frontmatter are filtered from all regular listings. The home page shows the first unsolved one (level > 1) to `"beginner"` users.
+### Solution dialog (`islands/solution-dialog.tsx`)
 
-| Level | Slug | Tagline |
-|---|---|---|
-| 1 | `tutorial` | — (separate route) |
-| 2 | `lars` | "Starter puzzle" |
-| 3 | `lone` | "Quick puzzle" |
+- Body copy: "Claim your solve to see how others did it." → "Get your solve on the board." (and the unnamed variant matches)
+- Removed the redundant "Close" button — "Try again" already covers the dismiss case
 
-### Loader (`game/loader.ts`)
+## Follow-up
 
-- `Puzzle.number` is now optional — onboarding puzzles have no number
-- All listing functions (`getAvailableEntries`, `getFutureEntries`, `getRandomPuzzle`, etc.) filter `!entry.onboardingLevel`
-- `getTutorialPuzzle()` — fetch level 1 puzzle
-- `getOnboardingPuzzle({ excludeSlugs })` — next unsolved puzzle at level > 1, or null if all solved
-
-### Home page (`routes/index.tsx`)
-
-- `skillLevel === null` → tutorial CTA (no puzzle loaded)
-- `skillLevel === "beginner"` → `getOnboardingPuzzle({ excludeSlugs: solvedSlugs })`; falls through to random if null
-- `skillLevel !== null && !== "beginner"` → random puzzle (difficulty filtered: `expert` gets easy/medium/hard, others get easy/medium)
-- `onboardingPuzzle` and `randomPuzzle` are mutually exclusive — random only loaded when onboarding is null
-
-### Puzzle solve handler (`routes/puzzles/[slug]/index.tsx`)
-
-Skill promotion is assessed via `assessSkillLevel(puzzle, moves, { current })` in `game/skill.ts` — idempotent, returns the current level if no promotion applies. Called on every new solve; result compared against current level to detect a change.
-
-Promotion rules (first match wins):
-
-1. Medium/hard + `moves === minMoves` + not already expert → `"expert"` + `trackSkillLevelUp`
-2. Medium + `moves ≤ minMoves * 1.33` + not intermediate/expert → `"intermediate"` + `trackSkillLevelUp`
-3. Easy + `moves === minMoves` + `minMoves > 5` + not intermediate/expert → `"intermediate"` + `trackSkillLevelUp`
-4. `skillLevel === null` → `"beginner"` (silent, skip-tutorial path)
-
-### Tutorial route (`routes/puzzles/tutorial/index.tsx`)
-
-- Loads puzzle via `getTutorialPuzzle()`
-- POST: promotes user to `"beginner"` + fires `trackTutorialCompleted`
-- "Rather watch?" extracted to `TutorialWatchButton` island (renders in solve mode)
-
-### Tracking (`lib/tracking.ts`)
-
-- `trackTutorialCompleted` — sets `$set: { skill_level: "beginner" }` on PostHog profile
-- `trackSkillLevelUp` — fires on intermediate/expert promotions, sets `$set: { skill_level }` on profile; includes `puzzle_difficulty`, `puzzle_min_moves`, `game_moves`, `skill_level`
-
-### Migration (`routes/api/migrate-skill-level.ts`)
-
-`GET /api/migrate-skill-level?secret=<MIGRATE_SECRET>` — assesses each user's skill level from their solution history using the same promotion rules, skips users already with `skillLevel`.
-
-### Minor
-
-- `puzzle-card.tsx`, `[slug]/index.tsx`, `solutions/`, `preview/`, `share.ts`: `puzzle.number` guarded (undefined-safe)
-- `routes/_app.tsx`: `"daily"` removed from OG image exclusion list
-- `routes/puzzles/index.tsx`: hardcoded `"tutorial"` exclusion removed (loader filter handles it)
+- **e2e selector is stale**: `routes/puzzles/tutorial/_e2e/tutorial-page.ts:29`
+  still matches `/finding a solution/i`. Update to `/that's one way to solve it/i`
+  before the e2e suite runs.
 
 ## Files
 
-- **modified** `game/types.ts` — `Onboarding` → `SkillLevel`, `Puzzle.onboarding` → `onboardingLevel?: number`
-- **modified** `db/types.ts` — `User.onboarding` → `skillLevel: SkillLevel | null`
-- **modified** `middleware/user.ts` — new user defaults to `skillLevel: null`
-- **modified** `game/loader.ts` — `onboardingLevel` filtering, `getTutorialPuzzle()`, `getOnboardingPuzzle({ excludeSlugs })`
-- **modified** `lib/manifest.ts` — `onboardingLevel` field in manifest
-- **modified** `lib/tracking.ts` — `trackTutorialCompleted` (profile set), `trackSkillLevelUp`
-- **modified** `routes/index.tsx` — skill-level-based home page branching
-- **modified** `routes/puzzles/[slug]/index.tsx` — skill promotion logic
-- **modified** `routes/puzzles/tutorial/index.tsx` — `getTutorialPuzzle()`, beginner promotion, `TutorialWatchButton`
-- **modified** `routes/puzzles/preview/index.tsx` — `skillLevel` prop on `ControlsPanel`
-- **modified** `routes/puzzles/index.tsx` — removed hardcoded tutorial exclusion
-- **modified** `routes/_app.tsx` — OG exclusion list
-- **deleted** `routes/api/migrate-user.ts` — removed (no longer needed)
-- **modified** `routes/api/e2e/users/index.ts` — `skillLevel` default
-- **modified** `islands/controls-panel.tsx` — `onboarding` → `skillLevel`, hint logic updated
-- **modified** `components/puzzle-card.tsx` — null-safe number
-- **added** `components/tutorial-watch-button.tsx` — "Rather watch?" island
-- **added** `static/puzzles/lars.md` — onboardingLevel 2, starter puzzle
-- **added** `static/puzzles/lone.md` — onboardingLevel 3, quick puzzle
-- **added** `routes/api/migrate-skill-level.ts` — skill level migration from solution history
-- **added** `game/skill.ts` — `assessSkillLevel(puzzle, moves, { current })` — idempotent skill assessment
-- **added** `game/skill_test.ts` — unit tests for all promotion rules and idempotency
+- **modified** `islands/tutorial-dialog.tsx` — copy + arrow icons across all three steps
+- **modified** `islands/solution-dialog.tsx` — copy tweak, removed Close button
