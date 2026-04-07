@@ -48,7 +48,7 @@ export class PuzzlePage {
   }
 
   get tutorialNudge() {
-    return this.page.getByRole("complementary", { name: /learn the basics/i });
+    return this.page.getByRole("link", { name: /learn the basics/i });
   }
 
   async goto(slug: string, opts?: Parameters<typeof this.page.goto>[1]) {
