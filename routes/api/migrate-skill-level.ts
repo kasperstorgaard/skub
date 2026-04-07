@@ -1,6 +1,7 @@
 import { define } from "#/core.ts";
 import { kv } from "#/db/kv.ts";
 import type { Solution, User } from "#/db/types.ts";
+import { assessSkillLevel } from "#/game/skill.ts";
 import type { PuzzleManifestEntry, SkillLevel } from "#/game/types.ts";
 
 /**
@@ -71,17 +72,25 @@ export const handler = define.handlers({
             if (value) solutions.push(value);
           }
 
-          const oldOnboarding = (user as Record<string, unknown>)
-            .onboarding as string | undefined;
+          const oldUser = user as Omit<User, "skillLevel"> & {
+            onboarding: string;
+          };
 
-          const skillLevel = getSkillLevel(solutions, puzzleLookup);
+          let skillLevel: SkillLevel | null = null;
 
-          await kv.set(["user", userId], { ...user, skillLevel });
+          for (const solution of solutions) {
+            const puzzle = puzzleLookup.get(solution.puzzleSlug);
+            if (!puzzle) continue;
+            skillLevel = assessSkillLevel(puzzle, solution.moves);
+            if (skillLevel === "expert") break;
+          }
+
+          await kv.set(["user", userId], { ...oldUser, skillLevel });
 
           migrated++;
           log(
             `${userId}: skillLevel=${skillLevel} (${solutions.length} solutions, onboarding=${
-              oldOnboarding ?? "none"
+              oldUser.onboarding ?? "none"
             })`,
           );
         }
@@ -99,35 +108,3 @@ export const handler = define.handlers({
     });
   },
 });
-
-function getSkillLevel(
-  solutions: Solution[],
-  puzzleLookup: Map<string, PuzzleManifestEntry>,
-): SkillLevel | null {
-  let skillLevel: SkillLevel | null = null;
-
-  for (const solution of solutions) {
-    const entry = puzzleLookup.get(solution.puzzleSlug);
-    if (!entry) continue;
-
-    if (
-      (entry.difficulty === "medium" || entry.difficulty === "hard") &&
-      solution.moves.length === entry.minMoves
-    ) {
-      return "expert";
-    }
-
-    if (
-      entry.difficulty === "medium" &&
-      solution.moves.length <= entry.minMoves * 1.33
-    ) {
-      skillLevel = "intermediate";
-    }
-  }
-
-  if (skillLevel) return skillLevel;
-
-  if (solutions.length > 0) return "beginner";
-
-  return null;
-}

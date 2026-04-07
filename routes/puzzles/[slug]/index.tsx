@@ -14,6 +14,7 @@ import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { getPuzzle } from "#/game/loader.ts";
+import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
@@ -129,34 +130,15 @@ export const handler = define.handlers<PageData>({
     trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
     const { skillLevel } = ctx.state.user;
+    const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
-    // Promote to expert: medium or hard puzzle solved perfectly
-    if (
-      (puzzle.difficulty === "medium" || puzzle.difficulty === "hard") &&
-      moves.length === puzzle.minMoves &&
-      skillLevel !== "expert"
-    ) {
-      await setUser(ctx.state.userId, { skillLevel: "expert" });
+    if (newLevel && newLevel !== skillLevel) {
+      await setUser(ctx.state.userId, { skillLevel: newLevel });
       trackSkillLevelUp(ctx.state, puzzle, {
         moves,
         url: referer,
-        skillLevel: "expert",
+        skillLevel: newLevel,
       });
-    } else if (
-      // Promote to intermediate: medium puzzle solved within 1.33x optimal
-      puzzle.difficulty !== "easy" &&
-      moves.length <= puzzle.minMoves * 1.33 &&
-      skillLevel !== "intermediate" && skillLevel !== "expert"
-    ) {
-      await setUser(ctx.state.userId, { skillLevel: "intermediate" });
-      trackSkillLevelUp(ctx.state, puzzle, {
-        moves,
-        url: referer,
-        skillLevel: "intermediate",
-      });
-    } else if (skillLevel === null) {
-      // Promote to beginner on first solve (skipped tutorial path)
-      await setUser(ctx.state.userId, { skillLevel: "beginner" });
     }
 
     return Response.redirect(redirectUrl, 303);

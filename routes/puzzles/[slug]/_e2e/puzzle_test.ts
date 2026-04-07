@@ -57,7 +57,8 @@ Deno.test("a new user sees the tutorial nudge on the puzzle page", async () => {
   const { page, teardown } = await setup();
   try {
     await new PuzzlePage(page).goto("karla");
-    await expect(page.getByRole("complementary").getByText(/learn the basics/i)).toBeVisible();
+    await expect(page.getByRole("complementary").getByText(/learn the basics/i))
+      .toBeVisible();
   } finally {
     await teardown();
   }
