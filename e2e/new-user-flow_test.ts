@@ -3,7 +3,7 @@ import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
 import { solvePuzzle } from "./helpers.ts";
 
-Deno.test("new user flow — completing the tutorial shows the starter puzzle on home", async () => {
+Deno.test("new user flow — a new user completes the tutorial", async () => {
   const { page, teardown } = await setup();
   try {
     const home = await new HomePage(page).goto();
