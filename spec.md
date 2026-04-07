@@ -18,7 +18,7 @@ play, not just by completing steps.
 |---|---|---|
 | `null` | Default (unknown) | Tutorial CTA |
 | `"beginner"` | Completing tutorial, or first puzzle solve (skip path) | Next unsolved onboarding puzzle, or random if all done |
-| `"intermediate"` | Medium puzzle solved within 1.33× optimal | Random puzzle |
+| `"intermediate"` | Medium solved within 1.33× optimal, OR easy solved perfectly with `minMoves > 5` | Random puzzle |
 | `"expert"` | Medium or hard puzzle solved perfectly | Random puzzle |
 
 Promotions only move upward. `trackSkillLevelUp` fires (with `$set: { skill_level }` for PostHog person profile) on intermediate/expert promotions. `trackTutorialCompleted` sets `$set: { skill_level: "beginner" }` on the profile.
@@ -49,11 +49,14 @@ Puzzles tagged with `onboardingLevel: number` in frontmatter are filtered from a
 
 ### Puzzle solve handler (`routes/puzzles/[slug]/index.tsx`)
 
-Skill promotion checks run on every new solve (checked in order, first match wins):
+Skill promotion is assessed via `assessSkillLevel(puzzle, moves, { current })` in `game/skill.ts` — idempotent, returns the current level if no promotion applies. Called on every new solve; result compared against current level to detect a change.
+
+Promotion rules (first match wins):
 
 1. Medium/hard + `moves === minMoves` + not already expert → `"expert"` + `trackSkillLevelUp`
 2. Medium + `moves ≤ minMoves * 1.33` + not intermediate/expert → `"intermediate"` + `trackSkillLevelUp`
-3. `skillLevel === null` → `"beginner"` (silent, skip-tutorial path)
+3. Easy + `moves === minMoves` + `minMoves > 5` + not intermediate/expert → `"intermediate"` + `trackSkillLevelUp`
+4. `skillLevel === null` → `"beginner"` (silent, skip-tutorial path)
 
 ### Tutorial route (`routes/puzzles/tutorial/index.tsx`)
 
@@ -98,3 +101,5 @@ Skill promotion checks run on every new solve (checked in order, first match win
 - **added** `static/puzzles/lars.md` — onboardingLevel 2, starter puzzle
 - **added** `static/puzzles/lone.md` — onboardingLevel 3, quick puzzle
 - **added** `routes/api/migrate-skill-level.ts` — skill level migration from solution history
+- **added** `game/skill.ts` — `assessSkillLevel(puzzle, moves, { current })` — idempotent skill assessment
+- **added** `game/skill_test.ts` — unit tests for all promotion rules and idempotency
