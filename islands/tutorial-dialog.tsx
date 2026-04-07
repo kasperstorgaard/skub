@@ -181,7 +181,7 @@ function TutorialReplayStep({ href }: TutorialStepProps) {
 
         <p>
           Every puzzle has many solutions, each ranked by number of moves.<br />
-          We've prepped both the daily and a starter puzzle for you.
+          Next up: the daily or a starter puzzle.
         </p>
       </div>
 
@@ -202,7 +202,7 @@ function TutorialReplayStep({ href }: TutorialStepProps) {
         </a>
 
         <button type="submit" className="btn">
-          I'm ready
+          I'm ready!
         </button>
       </form>
     </>
@@ -219,8 +219,8 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           You found a solution!
         </h1>
         <p>
-          Every puzzle has many solutions, each ranked by number of moves.
-          Today's puzzle is waiting.
+          Every puzzle has many solutions, each ranked by number of moves.<br />
+          Next up: the daily or a starter puzzle.
         </p>
       </div>
 
@@ -236,11 +236,12 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           className="btn"
           data-router="push"
         >
+          <Icon icon={ArrowLeft} />
           Previous
         </a>
 
         <button type="submit" className="btn">
-          I'm ready
+          I'm ready!
         </button>
       </form>
     </>
