@@ -6,7 +6,7 @@ type Props = {
 
 export function TutorialNudge({ className }: Props) {
   return (
-    <div
+    <aside
       className={clsx(
         "flex flex-col place-content-center gap-fl-1 p-2 px-3",
         "text-text-2 text-pretty",
@@ -22,7 +22,7 @@ export function TutorialNudge({ className }: Props) {
       <a href="/puzzles/tutorial" className="btn">
         Learn the basics
       </a>
-    </div>
+    </aside>
   );
 }
 

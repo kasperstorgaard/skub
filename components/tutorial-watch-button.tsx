@@ -9,7 +9,7 @@ type Props = {
 
 export function TutorialWatchButton({ showMeUrl, className }: Props) {
   return (
-    <div
+    <aside
       className={clsx(
         "flex flex-col items-center place-content-center gap-fl-1",
         "text-center text-text-2",
@@ -26,6 +26,6 @@ export function TutorialWatchButton({ showMeUrl, className }: Props) {
       <a href={showMeUrl.href} className="btn shadow-sm">
         <Icon icon={Play} /> Show me
       </a>
-    </div>
+    </aside>
   );
 }
