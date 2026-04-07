@@ -1,48 +1,105 @@
-# Fresh Partials for archive pagination and header navigation
+# Tutorial rework + skill level system
 
 ## Problem
 
-Archive pagination and header navigation cause full page reloads — re-downloading
-the JS bundle, re-running island hydration from scratch. Perceived navigation is
-slower than it needs to be, especially for archive pagination where the page
-shell is identical between pages.
+The old onboarding was a single-state toggle (`new` → `done`) tied to puzzle-solving
+efficiency. First-time players got a tutorial, then immediately saw the daily puzzle
+with no scaffolding. There was no model for how capable a player actually is.
 
 ## Solution
 
-Opt-in Fresh Partials on the two areas where client-side navigation adds clear
-value, without touching the rest of the app.
+Replace the onboarding state machine with a **skill level** on the user record and a
+sequence of onboarding puzzles ordered by `onboardingLevel`. Skill is earned through
+play, not just by completing steps.
 
-### 1. `routes/_app.tsx` — partial target
+### Skill level (`User.skillLevel: SkillLevel | null`)
 
-Wrap `<Component />` in `<Partial name="body">`. This is the swap target for all
-partial navigations — Fresh fetches the new page, extracts the matching partial,
-and replaces it in the DOM. No `f-client-nav` on the body itself.
+| Level | Earned by | Home page shows |
+|---|---|---|
+| `null` | Default (unknown) | Tutorial CTA |
+| `"beginner"` | Completing tutorial, or first puzzle solve (skip path) | Next unsolved onboarding puzzle, or random if all done |
+| `"intermediate"` | Medium solved within 1.33× optimal, OR easy solved perfectly with `minMoves > 5` | Random puzzle |
+| `"expert"` | Medium or hard puzzle solved perfectly | Random puzzle |
 
-### 2. `components/header.tsx` — header navigation
+Promotions only move upward. `trackSkillLevelUp` fires (with `$set: { skill_level }` for PostHog person profile) on intermediate/expert promotions. `trackTutorialCompleted` sets `$set: { skill_level: "beginner" }` on the profile.
 
-Add `f-client-nav` to the `<header>` element. Covers:
-- Back button (puzzle → archives, puzzle → home, etc.)
-- Profile link
+### Onboarding puzzles
 
-### 3. `routes/puzzles/index.tsx` — archive pagination
+Puzzles tagged with `onboardingLevel: number` in frontmatter are filtered from all regular listings. The home page shows the first unsolved one (level > 1) to `"beginner"` users.
 
-Add `f-client-nav` to the `<section>` wrapping the puzzle card grid and
-pagination controls. Covers:
-- Pagination page links
-- Puzzle card links (navigate to puzzle page as a partial)
+| Level | Slug | Tagline |
+|---|---|---|
+| 1 | `tutorial` | — (separate route) |
+| 2 | `lars` | "Starter puzzle" |
+| 3 | `lone` | "Quick puzzle" |
 
-## What was explicitly left out
+### Loader (`game/loader.ts`)
 
-Global `f-client-nav` on the body was tried and reverted — it intercepted POST
-forms (cookie banner, tutorial dismiss, profile save) and `data-router="replace"`
-links in the board/controls islands, causing conflicts. Opt-in is cleaner.
+- `Puzzle.number` is now optional — onboarding puzzles have no number
+- All listing functions (`getAvailableEntries`, `getFutureEntries`, `getRandomPuzzle`, etc.) filter `!entry.onboardingLevel`
+- `getTutorialPuzzle()` — fetch level 1 puzzle
+- `getOnboardingPuzzle({ excludeSlugs })` — next unsolved puzzle at level > 1, or null if all solved
 
-View transitions (`f-view-transition`) were tried but not pursued — no visible
-effect without explicit `::view-transition-*` CSS, and the crossfade didn't add
-enough value to justify the added complexity.
+### Home page (`routes/index.tsx`)
+
+- `skillLevel === null` → tutorial CTA (no puzzle loaded)
+- `skillLevel === "beginner"` → `getOnboardingPuzzle({ excludeSlugs: solvedSlugs })`; falls through to random if null
+- `skillLevel !== null && !== "beginner"` → random puzzle (difficulty filtered: `expert` gets easy/medium/hard, others get easy/medium)
+- `onboardingPuzzle` and `randomPuzzle` are mutually exclusive — random only loaded when onboarding is null
+
+### Puzzle solve handler (`routes/puzzles/[slug]/index.tsx`)
+
+Skill promotion is assessed via `assessSkillLevel(puzzle, moves, { current })` in `game/skill.ts` — idempotent, returns the current level if no promotion applies. Called on every new solve; result compared against current level to detect a change.
+
+Promotion rules (first match wins):
+
+1. Medium/hard + `moves === minMoves` + not already expert → `"expert"` + `trackSkillLevelUp`
+2. Medium + `moves ≤ minMoves * 1.33` + not intermediate/expert → `"intermediate"` + `trackSkillLevelUp`
+3. Easy + `moves === minMoves` + `minMoves > 5` + not intermediate/expert → `"intermediate"` + `trackSkillLevelUp`
+4. `skillLevel === null` → `"beginner"` (silent, skip-tutorial path)
+
+### Tutorial route (`routes/puzzles/tutorial/index.tsx`)
+
+- Loads puzzle via `getTutorialPuzzle()`
+- POST: promotes user to `"beginner"` + fires `trackTutorialCompleted`
+- "Rather watch?" extracted to `TutorialWatchButton` island (renders in solve mode)
+
+### Tracking (`lib/tracking.ts`)
+
+- `trackTutorialCompleted` — sets `$set: { skill_level: "beginner" }` on PostHog profile
+- `trackSkillLevelUp` — fires on intermediate/expert promotions, sets `$set: { skill_level }` on profile; includes `puzzle_difficulty`, `puzzle_min_moves`, `game_moves`, `skill_level`
+
+### Migration (`routes/api/migrate-skill-level.ts`)
+
+`GET /api/migrate-skill-level?secret=<MIGRATE_SECRET>` — assesses each user's skill level from their solution history using the same promotion rules, skips users already with `skillLevel`.
+
+### Minor
+
+- `puzzle-card.tsx`, `[slug]/index.tsx`, `solutions/`, `preview/`, `share.ts`: `puzzle.number` guarded (undefined-safe)
+- `routes/_app.tsx`: `"daily"` removed from OG image exclusion list
+- `routes/puzzles/index.tsx`: hardcoded `"tutorial"` exclusion removed (loader filter handles it)
 
 ## Files
 
-- **modified** `routes/_app.tsx` — `<Partial name="body">` wrapping `<Component />`
-- **modified** `components/header.tsx` — `f-client-nav` on `<header>`
-- **modified** `routes/puzzles/index.tsx` — `f-client-nav` on archive `<section>`
+- **modified** `game/types.ts` — `Onboarding` → `SkillLevel`, `Puzzle.onboarding` → `onboardingLevel?: number`
+- **modified** `db/types.ts` — `User.onboarding` → `skillLevel: SkillLevel | null`
+- **modified** `middleware/user.ts` — new user defaults to `skillLevel: null`
+- **modified** `game/loader.ts` — `onboardingLevel` filtering, `getTutorialPuzzle()`, `getOnboardingPuzzle({ excludeSlugs })`
+- **modified** `lib/manifest.ts` — `onboardingLevel` field in manifest
+- **modified** `lib/tracking.ts` — `trackTutorialCompleted` (profile set), `trackSkillLevelUp`
+- **modified** `routes/index.tsx` — skill-level-based home page branching
+- **modified** `routes/puzzles/[slug]/index.tsx` — skill promotion logic
+- **modified** `routes/puzzles/tutorial/index.tsx` — `getTutorialPuzzle()`, beginner promotion, `TutorialWatchButton`
+- **modified** `routes/puzzles/preview/index.tsx` — `skillLevel` prop on `ControlsPanel`
+- **modified** `routes/puzzles/index.tsx` — removed hardcoded tutorial exclusion
+- **modified** `routes/_app.tsx` — OG exclusion list
+- **deleted** `routes/api/migrate-user.ts` — removed (no longer needed)
+- **modified** `routes/api/e2e/users/index.ts` — `skillLevel` default
+- **modified** `islands/controls-panel.tsx` — `onboarding` → `skillLevel`, hint logic updated
+- **modified** `components/puzzle-card.tsx` — null-safe number
+- **added** `components/tutorial-watch-button.tsx` — "Rather watch?" island
+- **added** `static/puzzles/lars.md` — onboardingLevel 2, starter puzzle
+- **added** `static/puzzles/lone.md` — onboardingLevel 3, quick puzzle
+- **added** `routes/api/migrate-skill-level.ts` — skill level migration from solution history
+- **added** `game/skill.ts` — `assessSkillLevel(puzzle, moves, { current })` — idempotent skill assessment
+- **added** `game/skill_test.ts` — unit tests for all promotion rules and idempotency

@@ -12,7 +12,7 @@ import {
   Ranking,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { Onboarding, Puzzle } from "#/game/types.ts";
+import { Puzzle, SkillLevel } from "#/game/types.ts";
 import {
   decodeState,
   getHintHref,
@@ -29,16 +29,24 @@ type ControlsPanelProps = {
   isDev: boolean;
   hintCount?: number;
   isPreview?: boolean;
-  onboarding?: Onboarding;
+  skillLevel?: SkillLevel | null;
   className?: string;
 };
 
 export function ControlsPanel(
-  { puzzle, href, isDev, hintCount, isPreview, onboarding = "done", className }:
-    ControlsPanelProps,
+  {
+    puzzle,
+    href,
+    isDev,
+    hintCount,
+    isPreview,
+    skillLevel = "intermediate",
+    className,
+  }: ControlsPanelProps,
 ) {
   const hintLimit = 1;
-  const hintDisabled = !isDev && !isPreview && onboarding === "done" &&
+  const hintDisabled = !isDev && !isPreview &&
+    skillLevel !== null && skillLevel !== "beginner" &&
     (hintCount ?? 0) >= hintLimit;
 
   const state = useMemo(() => decodeState(href.value), [href.value]);

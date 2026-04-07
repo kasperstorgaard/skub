@@ -17,9 +17,9 @@ export function getShareText(
   { origin, puzzle, moveCount, stats }: ShareParams,
 ): { text: string; url: string } {
   const url = `${origin}/puzzles/${puzzle.slug}`;
-  const header = `Skub #${puzzle.number} ${puzzle.name} \u00b7 ${
-    capitalize(puzzle.difficulty)
-  }`;
+  const header = `Skub${
+    puzzle.number ? ` #${puzzle.number}` : ""
+  } ${puzzle.name} \u00b7 ${capitalize(puzzle.difficulty)}`;
 
   const { solutionsHistogram, totalSolutions } = stats;
   const isOptimal = moveCount === puzzle.minMoves;

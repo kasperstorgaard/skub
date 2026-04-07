@@ -30,6 +30,7 @@ const puzzles = await Promise.all(
 
 let nextNumber = 0;
 for (const { puzzle } of puzzles) {
+  if (!puzzle.number) continue;
   if (puzzle.number > nextNumber) nextNumber = puzzle.number;
 }
 nextNumber++;

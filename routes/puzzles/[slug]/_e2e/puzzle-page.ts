@@ -47,6 +47,10 @@ export class PuzzlePage {
     };
   }
 
+  get tutorialNudge() {
+    return this.page.getByRole("link", { name: /learn the basics/i });
+  }
+
   async goto(slug: string, opts?: Parameters<typeof this.page.goto>[1]) {
     await this.page.goto(`${BASE_URL}/puzzles/${slug}`, opts);
     return this;

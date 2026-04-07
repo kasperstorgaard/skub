@@ -16,14 +16,19 @@ import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getUserStats } from "#/db/stats.ts";
-import { getLatestPuzzle, getPuzzle, getRandomPuzzle } from "#/game/loader.ts";
+import {
+  getLatestPuzzle,
+  getOnboardingPuzzle,
+  getRandomPuzzle,
+} from "#/game/loader.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { Puzzle } from "#/game/types.ts";
 import { withSpan } from "#/lib/tracing.ts";
 
 type PageData = {
   dailyPuzzle: Puzzle;
-  randomPuzzle: Puzzle;
+  randomPuzzle: Puzzle | null;
+  onboardingPuzzle: Puzzle | null;
   bestMoves: Record<string, number>;
   userStats: UserStats | null;
 };
@@ -48,23 +53,40 @@ export const handler = define.handlers<PageData>({
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    const randomPuzzle: Puzzle | null = user.onboarding === "started"
-      ? await getPuzzle("karla")
-      : await getRandomPuzzle({ excludeSlugs: [dailyPuzzle.slug] });
+    const solvedSlugs = solutions.map((solution) => solution.puzzleSlug);
 
-    if (!randomPuzzle) throw new HttpError(500, "Unable to get random puzzle");
+    const onboardingPuzzle = user.skillLevel === "beginner"
+      ? await getOnboardingPuzzle({
+        excludeSlugs: solvedSlugs,
+      })
+      : null;
+
+    const randomPuzzle = user.skillLevel !== null && !onboardingPuzzle
+      ? await getRandomPuzzle({
+        excludeSlugs: [dailyPuzzle.slug],
+        difficulty: user.skillLevel === "expert"
+          ? ["easy", "medium", "hard"]
+          : ["easy", "medium"],
+      })
+      : null;
+
+    // User must get either onboardingPuzzle or randomPuzzle
+    if (user.skillLevel && !onboardingPuzzle && !randomPuzzle) {
+      throw new HttpError(500, "Unable to get random puzzle");
+    }
 
     const userStats = await getUserStats(ctx.state.userId, solutions);
 
     const bestMoves = getBestMoves(
       solutions.filter((solution) =>
         solution.puzzleSlug === dailyPuzzle.slug ||
-        solution.puzzleSlug === randomPuzzle.slug
+        solution.puzzleSlug === randomPuzzle?.slug
       ),
     );
 
     return page({
       dailyPuzzle,
+      onboardingPuzzle,
       randomPuzzle,
       bestMoves,
       userStats: userStats.totalSolves > 0 ? userStats : null,
@@ -75,7 +97,8 @@ export const handler = define.handlers<PageData>({
 export default define.page<typeof handler>(function Home(ctx) {
   const url = new URL(ctx.req.url);
 
-  const { dailyPuzzle, randomPuzzle, bestMoves, userStats } = ctx.data;
+  const { dailyPuzzle, randomPuzzle, onboardingPuzzle, bestMoves, userStats } =
+    ctx.data;
   const { user } = ctx.state;
 
   return (
@@ -109,44 +132,51 @@ export default define.page<typeof handler>(function Home(ctx) {
             </li>
 
             <li className="list-none pl-0 min-w-0">
-              {user.onboarding === "new"
-                ? (
-                  <a
-                    href="/puzzles/tutorial"
-                    className="flex flex-col gap-2 text-text-1 no-underline"
+              {user.skillLevel === null && (
+                <a
+                  href="/puzzles/tutorial"
+                  className="flex flex-col gap-2 text-text-1 no-underline"
+                >
+                  <div
+                    className={clsx(
+                      "group flex gap-fl-1 p-fl-3 place-content-center place-items-center",
+                      "text-3 text-text-2 border-2 border-link rounded-1 no-underline",
+                      "aspect-square lg:flex-col lg:gap-fl-1 lg:w-full",
+                      "hover:filter-[lighten(1.3)] hover:no-underline",
+                    )}
                   >
-                    <div
-                      className={clsx(
-                        "group flex gap-fl-1 p-fl-3 place-content-center place-items-center",
-                        "text-3 text-text-2 border-2 border-link rounded-1 no-underline",
-                        "aspect-square lg:flex-col lg:gap-fl-1 lg:w-full",
-                        "hover:filter-[lighten(1.3)] hover:no-underline",
-                      )}
-                    >
-                      <span className="flex gap-2 text-6">
-                        <Icon icon={ChalkboardTeacher} />
-                      </span>
-                    </div>
+                    <span className="flex gap-2 text-6">
+                      <Icon icon={ChalkboardTeacher} />
+                    </span>
+                  </div>
 
-                    <div className="flex flex-col gap-1">
-                      <span className="text-1 text-text-2 tracking-wide leading-tight">
-                        New here?
-                      </span>
-                      <span className="text-text-1 text-3 font-semibold leading-flat items-center">
-                        Learn the basics
-                      </span>
-                    </div>
-                  </a>
-                )
-                : (
-                  <PuzzleCard
-                    puzzle={randomPuzzle!}
-                    tagline={user.onboarding === "started"
-                      ? "Warm-up puzzle"
-                      : "Random puzzle"}
-                    bestMoves={bestMoves[randomPuzzle.slug]}
-                  />
-                )}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-1 text-text-2 tracking-wide leading-tight">
+                      New here?
+                    </span>
+                    <span className="text-text-1 text-3 font-semibold leading-flat items-center">
+                      Learn the basics
+                    </span>
+                  </div>
+                </a>
+              )}
+
+              {onboardingPuzzle && (
+                <PuzzleCard
+                  puzzle={onboardingPuzzle}
+                  tagline={onboardingPuzzle.onboardingLevel === 2
+                    ? "Starter puzzle"
+                    : "Quick puzzle"}
+                />
+              )}
+
+              {randomPuzzle && (
+                <PuzzleCard
+                  puzzle={randomPuzzle}
+                  tagline="Random puzzle"
+                  bestMoves={bestMoves[randomPuzzle.slug]}
+                />
+              )}
             </li>
           </ul>
 

@@ -17,7 +17,7 @@ export default define.page(
       /^\/puzzles\/([^/]+)(?:\/|$)/,
     );
     const puzzleSlug = puzzleSlugMatch?.[1];
-    const ogExcluded = ["new", "tutorial", "daily", "preview"];
+    const ogExcluded = ["new", "tutorial", "preview"];
     const ogSlug = puzzleSlug && !ogExcluded.includes(puzzleSlug)
       ? puzzleSlug
       : null;

@@ -1,11 +1,11 @@
-import { Move, Onboarding, PuzzleStats } from "#/game/types.ts";
+import { Move, PuzzleStats, SkillLevel } from "#/game/types.ts";
 
 export type { PuzzleStats };
 
 export type User = {
   id: string;
   theme?: string;
-  onboarding: Onboarding;
+  skillLevel: SkillLevel | null;
   email?: string;
   name?: string;
 };

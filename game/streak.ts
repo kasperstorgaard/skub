@@ -60,6 +60,8 @@ export function computeUserStats(
   }
 
   // optimalSolves: solutions where moves.length === entry.minMoves
+  // TODO: onboarding puzzles are excluded here (not in entries) but should count.
+  // Tricky because they don't belong to the date-based archive system.
   const entryBySlug = new Map(entries.map((e) => [e.slug, e]));
   // Track optimal per puzzle (best attempt wins)
   const optimalBySlug = new Set<string>();

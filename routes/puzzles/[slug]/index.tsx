@@ -7,12 +7,14 @@ import { HttpError, page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
+import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { define } from "#/core.ts";
 import { saveSolution } from "#/db/solutions.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { getPuzzle } from "#/game/loader.ts";
+import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
@@ -27,7 +29,7 @@ import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
-import { trackOnboardingCompleted, trackPuzzleSolved } from "#/lib/tracking.ts";
+import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
 
 type PageData = {
   puzzle: Puzzle;
@@ -127,14 +129,16 @@ export const handler = define.handlers<PageData>({
 
     trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
-    // Complete onboarding on a good solve
-    if (
-      moves.length <= puzzle.minMoves * 1.33 &&
-      ctx.state.user.onboarding !== "done"
-    ) {
-      await setUser(ctx.state.userId, { onboarding: "done" });
+    const { skillLevel } = ctx.state.user;
+    const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
-      trackOnboardingCompleted(ctx.state, puzzle, { moves, url: referer });
+    if (newLevel && newLevel !== skillLevel) {
+      await setUser(ctx.state.userId, { skillLevel: newLevel });
+      trackSkillLevelUp(ctx.state, puzzle, {
+        moves,
+        url: referer,
+        skillLevel: newLevel,
+      });
     }
 
     return Response.redirect(redirectUrl, 303);
@@ -156,17 +160,30 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
           <h1 className="text-6 text-brand leading-tight">
-            <span className="font-4 tracking-wide">
-              #{props.data.puzzle.number}
-              {" "}
-            </span>
+            {props.data.puzzle.number && (
+              <span className="font-4 tracking-wide">
+                #{props.data.puzzle.number}
+                {" "}
+              </span>
+            )}
             <span className="font-5">{props.data.puzzle.name}</span>
           </h1>
 
           <DifficultyBadge puzzle={puzzle} className="lg:mt-1" />
         </div>
 
-        <Board href={href} puzzle={puzzle} mode={mode} />
+        <div className="relative max-lg:pb-fl-7">
+          <Board href={href} puzzle={puzzle} mode={mode} />
+
+          {props.state.user.skillLevel === null && (
+            <TutorialNudge
+              className={clsx(
+                "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
+                "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              )}
+            />
+          )}
+        </div>
       </Main>
 
       <ControlsPanel
@@ -174,7 +191,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         hintCount={props.data.hintCount}
         isDev={isDev}
-        onboarding={props.state.user.onboarding}
+        skillLevel={props.state.user.skillLevel}
         className="print:hidden"
       />
 

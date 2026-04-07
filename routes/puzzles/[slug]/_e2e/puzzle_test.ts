@@ -51,6 +51,32 @@ Deno.test("a returning player sees the celebration dialog when submitting a dupl
   }
 });
 
+// -- Tutorial nudge ---
+
+Deno.test("a new user sees the tutorial nudge on the puzzle page", async () => {
+  const { page, teardown } = await setup();
+  try {
+    const puzzlePage = await new PuzzlePage(page).goto("karla");
+
+    await expect(puzzlePage.tutorialNudge).toBeVisible();
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("a returning user does not see the tutorial nudge", async () => {
+  const { page, asUser, teardown } = await setup();
+  try {
+    await asUser({ name: "e2enudge", skillLevel: "beginner" });
+
+    const puzzlePage = await new PuzzlePage(page).goto("karla");
+
+    await expect(puzzlePage.tutorialNudge).not.toBeVisible();
+  } finally {
+    await teardown();
+  }
+});
+
 // -- Completing a puzzle as a new player ---
 
 Deno.test("a new player who solves a puzzle using the keyboard is prompted to save their solve", async () => {

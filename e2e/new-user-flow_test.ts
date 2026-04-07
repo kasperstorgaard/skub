@@ -3,31 +3,20 @@ import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
 import { solvePuzzle } from "./helpers.ts";
 
-Deno.test("a new user discovers the tutorial, plays their first puzzle, and submits their name", async () => {
+Deno.test("new user flow — a new user completes the tutorial", async () => {
   const { page, teardown } = await setup();
   try {
     let home = await new HomePage(page).goto();
     const tutorial = await home.clickNewHereLink();
 
-    await expect(tutorial.welcomeHeading).toBeVisible();
     await tutorial.clickNext();
-
-    await expect(tutorial.piecesHeading).toBeVisible();
     await tutorial.clickTryIt();
 
-    const tutorialMoves = await solvePuzzle("tutorial");
-    await tutorial.solveByClicking(tutorialMoves);
-
-    await expect(tutorial.solvedHeading).toBeVisible();
+    const moves = await solvePuzzle("tutorial");
+    await tutorial.solveByClicking(moves);
     home = await tutorial.clickImReady();
 
-    const puzzlePage = await home.clickWarmUpPuzzle();
-    const moves = await solvePuzzle(puzzlePage.currentSlug);
-    await puzzlePage.solveByClicking(moves);
-
-    await expect(puzzlePage.solutionDialog.heading).toBeVisible();
-    const solutions = await puzzlePage.solutionDialog.submitName("e2eddy");
-    await expect(solutions.solveByName("e2eddy")).toBeVisible();
+    await expect(home.starterPuzzleLink).toBeVisible();
   } finally {
     await teardown();
   }
