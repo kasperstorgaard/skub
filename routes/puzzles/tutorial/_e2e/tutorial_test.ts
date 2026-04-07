@@ -39,8 +39,8 @@ Deno.test("tutorial — watches the replay instead of solving", async () => {
     // "Try it" closes the dialog and enters solve mode, showing "Show me" on the page
     await tutorial.clickShowMe();
 
-    // Wait for the replay animation to complete before the dialog fades in
-    await expect(tutorial.solutionHeading).toBeVisible({ timeout: 10_000 });
+    // Dialog fades in after the replay animation (~3s delay) — give CI extra headroom
+    await expect(tutorial.solutionHeading).toBeVisible({ timeout: 20_000 });
     await tutorial.clickImReady();
 
     await expect(page).toHaveURL(/\/$/);
