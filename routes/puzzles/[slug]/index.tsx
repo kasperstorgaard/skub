@@ -144,7 +144,7 @@ export const handler = define.handlers<PageData>({
       });
     } else if (
       // Promote to intermediate: medium puzzle solved within 1.33x optimal
-      puzzle.difficulty === "medium" &&
+      puzzle.difficulty !== "easy" &&
       moves.length <= puzzle.minMoves * 1.33 &&
       skillLevel !== "intermediate" && skillLevel !== "expert"
     ) {
