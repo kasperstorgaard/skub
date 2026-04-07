@@ -61,7 +61,7 @@ export const handler = define.handlers<PageData>({
       })
       : null;
 
-    const randomPuzzle = !onboardingPuzzle
+    const randomPuzzle = user.skillLevel !== null && !onboardingPuzzle
       ? await getRandomPuzzle({
         excludeSlugs: [dailyPuzzle.slug],
         difficulty: user.skillLevel === "expert"
@@ -71,7 +71,7 @@ export const handler = define.handlers<PageData>({
       : null;
 
     // User must get either onboardingPuzzle or randomPuzzle
-    if (!onboardingPuzzle && !randomPuzzle) {
+    if (user.skillLevel && !onboardingPuzzle && !randomPuzzle) {
       throw new HttpError(500, "Unable to get random puzzle");
     }
 
