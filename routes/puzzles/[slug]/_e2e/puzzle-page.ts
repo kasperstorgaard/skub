@@ -26,7 +26,7 @@ export class PuzzlePage {
       usernameInput: page.getByRole("textbox", { name: /username/i }),
       submitName: async (name: string) => {
         await page.getByRole("textbox", { name: /username/i }).fill(name);
-        await page.getByRole("button", { name: /Claim your solve/i }).click();
+        await page.getByRole("button", { name: /Save/i }).click();
         return new SolutionsPage(page);
       },
     };

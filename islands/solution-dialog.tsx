@@ -95,7 +95,7 @@ export function SolutionDialog(
           <a
             href={getResetHref(href.value)}
           >
-            Try again
+            Play again
           </a>
         </div>
 
@@ -107,7 +107,7 @@ export function SolutionDialog(
         >
           {isSubmitting
             ? <Icon icon={Spinner} className="animate-spin" />
-            : "Claim your solve"}
+            : "Save"}
         </button>
       </div>
     </Dialog>
