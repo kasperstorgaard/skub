@@ -190,6 +190,7 @@ export async function getTutorialPuzzle() {
 
 /**
  * Gets the next non-excluded onboarding puzzle.
+ * TODO: extend onboarding sequence with more levels (currently caps at lone, level 3)
  */
 export async function getOnboardingPuzzle(
   options: { excludeSlugs: string[] },
