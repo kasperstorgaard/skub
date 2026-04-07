@@ -69,7 +69,7 @@ export function SolutionDialog(
 
           <input
             name="name"
-            autocomplete="name"
+            autocomplete="username"
             placeholder="fx. Jungleboi87"
             value={savedName ?? undefined}
             required

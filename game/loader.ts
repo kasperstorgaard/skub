@@ -181,12 +181,11 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
 /**
  * Gets the tutorial puzzle.
  */
-export async function getTutorialPuzzle(): Promise<Puzzle | null> {
+export async function getTutorialPuzzle() {
   const manifest = await getPuzzleManifest();
 
   const entry = manifest.find((entry) => entry.onboardingLevel === 1);
-  if (!entry) throw new Error("No tutorial puzzle (onboardingLevel 1) found");
-  return getPuzzle(entry.slug);
+  return entry ? getPuzzle(entry.slug) : null;
 }
 
 /**
@@ -194,7 +193,7 @@ export async function getTutorialPuzzle(): Promise<Puzzle | null> {
  */
 export async function getOnboardingPuzzle(
   options: { excludeSlugs: string[] },
-): Promise<Puzzle | null> {
+) {
   const manifest = await getPuzzleManifest();
   const lookup = new Set(options.excludeSlugs);
 

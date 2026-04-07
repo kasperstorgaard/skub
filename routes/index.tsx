@@ -70,6 +70,11 @@ export const handler = define.handlers<PageData>({
       })
       : null;
 
+    // User must get either onboardingPuzzle or randomPuzzle
+    if (!onboardingPuzzle && !randomPuzzle) {
+      throw new HttpError(500, "Unable to get random puzzle");
+    }
+
     const userStats = await getUserStats(ctx.state.userId, solutions);
 
     const bestMoves = getBestMoves(
