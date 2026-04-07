@@ -49,7 +49,7 @@ export class TutorialPage {
   }
 
   async clickImReady() {
-    await this.page.getByRole("link", { name: /i'm ready/i }).click();
+    await this.page.getByRole("button", { name: /i'm ready/i }).click();
     return new HomePage(this.page);
   }
 
