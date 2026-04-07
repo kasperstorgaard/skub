@@ -21,7 +21,7 @@ import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { TutorialDialog } from "#/islands/tutorial-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { trackTutorialCompleted } from "#/lib/tracking.ts";
-import { user } from "#/middleware/user.ts";
+
 type Data = {
   puzzle: Puzzle;
   showMeHref: string;
