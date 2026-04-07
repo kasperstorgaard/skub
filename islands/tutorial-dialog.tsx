@@ -163,10 +163,6 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
 
 function TutorialReplayStep({ href }: TutorialStepProps) {
   const prevStep = useMemo(() => getStepLink(href, "pieces"), [href]);
-  const reloadStep = useMemo(
-    () => getStepLink(href, "replay", { mode: "replay", replaySpeed: 0.667 }),
-    [href],
-  );
 
   return (
     <>
