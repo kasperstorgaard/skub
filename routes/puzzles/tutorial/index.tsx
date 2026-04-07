@@ -23,7 +23,7 @@ import { isDev } from "#/lib/env.ts";
 import { trackTutorialCompleted } from "#/lib/tracking.ts";
 type Data = {
   puzzle: Puzzle;
-  showMeUrl: URL;
+  showMeHref: string;
   solution: Solution;
 };
 
@@ -87,7 +87,7 @@ export const handler = define.handlers<Data>({
 
     return page({
       puzzle,
-      showMeUrl,
+      showMeHref: showMeUrl.pathname + showMeUrl.search,
       solution,
     });
   },
@@ -154,7 +154,7 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
 
           {urlMode === "solve" && (
             <TutorialWatchButton
-              showMeUrl={props.data.showMeUrl}
+              showMeHref={props.data.showMeHref}
               className={clsx(
                 "absolute",
                 "max-lg:bottom-0 max-lg:left-1/2 max-lg:-translate-x-1/2",

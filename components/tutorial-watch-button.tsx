@@ -3,11 +3,11 @@ import clsx from "clsx/lite";
 import { Icon, Play } from "#/components/icons.tsx";
 
 type Props = {
-  showMeUrl: URL;
+  showMeHref: string;
   className?: string;
 };
 
-export function TutorialWatchButton({ showMeUrl, className }: Props) {
+export function TutorialWatchButton({ showMeHref, className }: Props) {
   return (
     <aside
       className={clsx(
@@ -23,7 +23,7 @@ export function TutorialWatchButton({ showMeUrl, className }: Props) {
       <p className="leading-flat text-fl-min max-lg:hidden">
         Rather watch a solve?
       </p>
-      <a href={showMeUrl.href} className="btn shadow-sm">
+      <a href={showMeHref} className="btn shadow-sm">
         <Icon icon={Play} /> Show me
       </a>
     </aside>
