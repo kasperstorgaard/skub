@@ -28,19 +28,29 @@ Previous/Next so navigation reads at a glance.
 - Heading: "Finding a solution" → "That's one way to solve it"
 - Body: mentions that both the daily and a starter puzzle are prepped for the user
 - Previous button gets a left-arrow icon
+- "I'm ready" → "I'm ready!"
+
+**Solved step**
+- Body: same "daily and starter puzzle prepped" line as the replay step
+- Previous button gets a left-arrow icon
+- "I'm ready" → "I'm ready!"
 
 ### Solution dialog (`islands/solution-dialog.tsx`)
 
 - Body copy: "Claim your solve to see how others did it." → "Get your solve on the board." (and the unnamed variant matches)
 - Removed the redundant "Close" button — "Try again" already covers the dismiss case
 
-## Follow-up
+## E2e updates
 
-- **e2e selector is stale**: `routes/puzzles/tutorial/_e2e/tutorial-page.ts:29`
-  still matches `/finding a solution/i`. Update to `/that's one way to solve it/i`
-  before the e2e suite runs.
+`routes/puzzles/tutorial/_e2e/tutorial-page.ts` matchers updated to track copy:
+- `piecesHeading` → `/how it works/i`
+- `solutionHeading` → `/that's one way to solve it/i`
+- `clickNext()` → `/how it works/i`
+
+`/i'm ready/i` substring-matches "I'm ready!" so no change needed there.
 
 ## Files
 
-- **modified** `islands/tutorial-dialog.tsx` — copy + arrow icons across all three steps
+- **modified** `islands/tutorial-dialog.tsx` — copy + arrow icons across all four steps
 - **modified** `islands/solution-dialog.tsx` — copy tweak, removed Close button
+- **modified** `routes/puzzles/tutorial/_e2e/tutorial-page.ts` — selectors track new copy

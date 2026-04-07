@@ -2,7 +2,7 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
-import { ArrowLeft, ArrowRight, Icon, X } from "#/components/icons.tsx";
+import { ArrowLeft, Icon, X } from "#/components/icons.tsx";
 import type { Solution } from "#/db/types.ts";
 import { getReplaySpeed } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -107,7 +107,6 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
           autoFocus
         >
           How it works
-          <Icon icon={ArrowRight} />
         </a>
       </form>
     </>
@@ -148,7 +147,7 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
           data-router="push"
         >
           <Icon icon={ArrowLeft} />
-          Previous
+          Back
         </a>
 
         <a
@@ -172,16 +171,15 @@ function TutorialReplayStep({ href }: TutorialStepProps) {
   return (
     <>
       <div className="flex flex-col gap-fl-2 text-text-2">
-        <h1 className="text-fl-2 leading-tight text-text-1">
+        <h1 className="text-fl-2 leading-none text-text-1 text-pretty">
           That's one way to solve it
         </h1>
-        <p>
-          That's one way to solve it. <a href={reloadStep}>Show again</a>
-        </p>
 
         <p>
           Every puzzle has many solutions, each ranked by number of moves.<br />
-          Next up: the daily or a starter puzzle.
+        </p>
+        <p>
+          Next up: today's puzzle, or an easier starter.
         </p>
       </div>
 
@@ -198,7 +196,7 @@ function TutorialReplayStep({ href }: TutorialStepProps) {
           data-router="push"
         >
           <Icon icon={ArrowLeft} />
-          Previous
+          Back
         </a>
 
         <button type="submit" className="btn">
@@ -219,8 +217,10 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           You found a solution!
         </h1>
         <p>
-          Every puzzle has many solutions, each ranked by number of moves.<br />
-          Next up: the daily or a starter puzzle.
+          Every puzzle has many solutions, each ranked by number of moves.
+        </p>
+        <p>
+          Next up: today's puzzle, or an easier starter.
         </p>
       </div>
 
@@ -237,7 +237,7 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           data-router="push"
         >
           <Icon icon={ArrowLeft} />
-          Previous
+          Back
         </a>
 
         <button type="submit" className="btn">
@@ -295,7 +295,7 @@ function IconBlocker() {
 
 function IconDestination() {
   return (
-    <span className="inline-flex items-center justify-center w-5 h-5 border border-ui-1">
+    <span className="inline-flex items-center justify-center w-4 h-4 border border-ui-1 -mb-1">
       <Icon icon={X} className="text-ui-1 text-[1.3em]" />
     </span>
   );
