@@ -17,24 +17,31 @@ export function assessSkillLevel(
   const { difficulty, minMoves } = puzzle;
   const count = moves.length;
 
+  if (current === "expert") return "expert";
+
+  // Solve a puzzle perfectly
   if (
     (difficulty === "medium" || difficulty === "hard") &&
-    count === minMoves &&
-    current !== "expert"
+    count === minMoves
   ) {
     return "expert";
   }
 
-  if (current !== "intermediate" && current !== "expert") {
-    if (difficulty === "medium" && count <= minMoves * 1.33) {
+  if (current !== "intermediate") {
+    // Solve a puzzle well
+    if (difficulty !== "easy" && count <= minMoves + 3) {
       return "intermediate";
     }
+
+    // Solve an easy puzzle perfectly
     if (difficulty === "easy" && count === minMoves && minMoves > 5) {
       return "intermediate";
     }
   }
 
+  // Solve any puzzle suboptimally
   if (current === null) return "beginner";
 
+  // No progression
   return current;
 }

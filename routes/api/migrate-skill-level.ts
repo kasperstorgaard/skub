@@ -54,7 +54,7 @@ export const handler = define.handlers({
           const user = existing.value;
           if (!user) continue;
 
-          if ("skillLevel" in user) {
+          if ("skillLevel" in user && user.skillLevel) {
             skipped++;
             log(
               `${userId}: already has skillLevel (${user.skillLevel}), skipping`,
@@ -72,7 +72,7 @@ export const handler = define.handlers({
             if (value) solutions.push(value);
           }
 
-          const oldUser = user as Omit<User, "skillLevel"> & {
+          const oldUser = user as unknown as Omit<User, "skillLevel"> & {
             onboarding: string;
           };
 
@@ -81,7 +81,11 @@ export const handler = define.handlers({
           for (const solution of solutions) {
             const puzzle = puzzleLookup.get(solution.puzzleSlug);
             if (!puzzle) continue;
-            skillLevel = assessSkillLevel(puzzle, solution.moves);
+
+            skillLevel = assessSkillLevel(puzzle, solution.moves, {
+              current: skillLevel,
+            });
+
             if (skillLevel === "expert") break;
           }
 
