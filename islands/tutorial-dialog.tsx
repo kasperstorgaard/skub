@@ -55,9 +55,7 @@ export function TutorialDialog(
         <TutorialWelcomeStep href={href.value} open={open} />
       )}
       {step === "pieces" && <TutorialPiecesStep href={href.value} />}
-      {step === "replay" && (
-        <TutorialReplayStep href={href.value} solution={solution} />
-      )}
+      {step === "replay" && <TutorialReplayStep href={href.value} />}
       {step === "solved" && <TutorialSolveStep href={href.value} />}
     </Dialog>
   );
@@ -162,9 +160,7 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
   );
 }
 
-function TutorialReplayStep({ href }: TutorialStepProps & {
-  solution: Omit<Solution, "id" | "name">;
-}) {
+function TutorialReplayStep({ href }: TutorialStepProps) {
   const prevStep = useMemo(() => getStepLink(href, "pieces"), [href]);
   const reloadStep = useMemo(
     () => getStepLink(href, "replay", { mode: "replay", replaySpeed: 0.667 }),
@@ -192,6 +188,8 @@ function TutorialReplayStep({ href }: TutorialStepProps & {
         method="POST"
         className="flex w-full gap-fl-1 flex-wrap justify-between"
       >
+        <input type="hidden" name="source" value="tutorial-dialog" />
+
         <a
           href={prevStep}
           className="btn"
@@ -200,12 +198,9 @@ function TutorialReplayStep({ href }: TutorialStepProps & {
           Previous
         </a>
 
-        <a
-          href="/"
-          className="btn"
-        >
+        <button type="submit" className="btn">
           I'm ready
-        </a>
+        </button>
       </form>
     </>
   );
@@ -231,6 +226,8 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
         method="POST"
         className="flex w-full gap-fl-1 flex-wrap justify-between"
       >
+        <input type="hidden" name="source" value="tutorial-dialog" />
+
         <a
           href={prevStep}
           className="btn"
@@ -239,12 +236,9 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           Previous
         </a>
 
-        <a
-          href="/"
-          className="btn"
-        >
+        <button type="submit" className="btn">
           I'm ready
-        </a>
+        </button>
       </form>
     </>
   );
