@@ -2,7 +2,7 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
-import { Icon, X } from "#/components/icons.tsx";
+import { ArrowLeft, Icon, X } from "#/components/icons.tsx";
 import type { Solution } from "#/db/types.ts";
 import { getReplaySpeed } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -79,8 +79,7 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
         </h1>
 
         <p>
-          A tiny puzzle game where you slide pieces into walls and each other to
-          get the puck to the target — in as few moves as possible.
+          A sliding puzzle game inspired by the boardgame Ricochet Robots.
         </p>
 
         <p className="text-text-3 text-fl-min">
@@ -98,7 +97,7 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
           className="btn mr-auto"
           disabled={!open}
         >
-          Dismiss
+          Home
         </button>
 
         <a
@@ -107,7 +106,7 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
           data-router="push"
           autoFocus
         >
-          Next
+          How it works
         </a>
       </form>
     </>
@@ -127,16 +126,17 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
   return (
     <>
       <div className="flex flex-col gap-fl-2 text-text-2">
-        <h1 className="text-fl-2 leading-tight text-text-1">The pieces</h1>
+        <h1 className="text-fl-2 leading-tight text-text-1">How it works</h1>
         <p>
-          There are two pieces: the puck <IconPuck /> and the blocker{" "}
-          <IconBlocker />. Both slide until they hit each other or a
+          Meet the puck <IconPuck /> and the blocker{" "}
+          <IconBlocker />. They both slide until they hit each other or a
           wa<span className="text-ui-4">ll</span>.
         </p>
 
         <p>
-          Get the puck to stop on the target <IconDestination />{" "}
-          and you've found a solution.
+          Your goal: get the puck <IconPuck /> to stop <strong>exactly</strong>
+          {" "}
+          on the target <IconDestination />.
         </p>
       </div>
 
@@ -146,7 +146,8 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
           className="btn"
           data-router="push"
         >
-          Previous
+          <Icon icon={ArrowLeft} />
+          Back
         </a>
 
         <a
@@ -162,24 +163,19 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
 
 function TutorialReplayStep({ href }: TutorialStepProps) {
   const prevStep = useMemo(() => getStepLink(href, "pieces"), [href]);
-  const reloadStep = useMemo(
-    () => getStepLink(href, "replay", { mode: "replay", replaySpeed: 0.667 }),
-    [href],
-  );
 
   return (
     <>
       <div className="flex flex-col gap-fl-2 text-text-2">
-        <h1 className="text-fl-2 leading-tight text-text-1">
-          Finding a solution
+        <h1 className="text-fl-2 leading-none text-text-1 text-pretty">
+          That's one way to solve it
         </h1>
-        <p>
-          That's one way to solve it. <a href={reloadStep}>Show again</a>
-        </p>
 
         <p>
-          Every puzzle has many solutions, each ranked by number of moves. A new
-          puzzle drops every day.
+          Every puzzle has many solutions, each ranked by number of moves.<br />
+        </p>
+        <p>
+          Next up: today's puzzle, or an easier starter.
         </p>
       </div>
 
@@ -195,11 +191,12 @@ function TutorialReplayStep({ href }: TutorialStepProps) {
           className="btn"
           data-router="push"
         >
-          Previous
+          <Icon icon={ArrowLeft} />
+          Back
         </a>
 
         <button type="submit" className="btn">
-          I'm ready
+          I'm ready!
         </button>
       </form>
     </>
@@ -217,7 +214,9 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
         </h1>
         <p>
           Every puzzle has many solutions, each ranked by number of moves.
-          Today's puzzle is waiting.
+        </p>
+        <p>
+          Next up: today's puzzle, or an easier starter.
         </p>
       </div>
 
@@ -233,11 +232,12 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
           className="btn"
           data-router="push"
         >
-          Previous
+          <Icon icon={ArrowLeft} />
+          Back
         </a>
 
         <button type="submit" className="btn">
-          I'm ready
+          I'm ready!
         </button>
       </form>
     </>
@@ -291,7 +291,7 @@ function IconBlocker() {
 
 function IconDestination() {
   return (
-    <span className="inline-flex items-center justify-center w-5 h-5 border border-ui-1">
+    <span className="inline-flex items-center justify-center w-4 h-4 border border-ui-1 -mb-1">
       <Icon icon={X} className="text-ui-1 text-[1.3em]" />
     </span>
   );

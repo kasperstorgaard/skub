@@ -22,11 +22,13 @@ export class TutorialPage {
   }
 
   get piecesHeading() {
-    return this.page.getByRole("heading", { name: /the pieces/i });
+    return this.page.getByRole("heading", { name: /how it works/i });
   }
 
   get solutionHeading() {
-    return this.page.getByRole("heading", { name: /finding a solution/i });
+    return this.page.getByRole("heading", {
+      name: /that's one way to solve it/i,
+    });
   }
 
   get solvedHeading() {
@@ -34,7 +36,7 @@ export class TutorialPage {
   }
 
   async clickNext() {
-    await this.page.getByRole("link", { name: /next/i }).click();
+    await this.page.getByRole("link", { name: /how it works/i }).click();
     return this;
   }
 

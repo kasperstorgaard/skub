@@ -52,8 +52,8 @@ export function SolutionDialog(
 
         <p>
           {savedName
-            ? "Claim your solve to see how others did it."
-            : "Pick a name and see how others did it."}
+            ? "Get your solve on the board."
+            : "Pick a name and get your solve on the board."}
         </p>
       </div>
 
@@ -95,19 +95,8 @@ export function SolutionDialog(
           <a
             href={getResetHref(href.value)}
           >
-            Try again
+            Play again
           </a>
-
-          <form method="dialog" className="inline">
-            <button
-              type="submit"
-              className="link p-0 bg-transparent"
-              formNoValidate
-              disabled={!hasSolution}
-            >
-              Close
-            </button>
-          </form>
         </div>
 
         <button
@@ -118,7 +107,7 @@ export function SolutionDialog(
         >
           {isSubmitting
             ? <Icon icon={Spinner} className="animate-spin" />
-            : "Claim your solve"}
+            : "Save"}
         </button>
       </div>
     </Dialog>
