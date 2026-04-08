@@ -172,7 +172,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           <DifficultyBadge puzzle={puzzle} className="lg:mt-1" />
         </div>
 
-        <div className="relative max-lg:pb-fl-7">
+        <div className="relative">
           <Board href={href} puzzle={puzzle} mode={mode} />
 
           {props.state.user.skillLevel === null && (
