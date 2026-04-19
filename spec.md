@@ -37,9 +37,9 @@ Covers all `[slug]` routes in one place — no inline checks needed.
 
 ### Solver dialog
 
-`SolveDialog` island gated behind `isDev` so it only ships in local dev:
-- `routes/puzzles/[slug]/index.tsx`
-- `routes/puzzles/tutorial/index.tsx`
+`SolveDialog` removed from puzzle and tutorial routes. On preview, gated
+behind `isDev` — the editor stays open for showcasing/collab, but the BFS
+solver is a design tool, not a collaboration feature.
 
 ## Files
 
@@ -50,5 +50,6 @@ Covers all `[slug]` routes in one place — no inline checks needed.
 - **modified** `static/puzzles/lars.md` — `hidden: true`
 - **modified** `static/puzzles/lone.md` — `hidden: true`
 - **added** `routes/puzzles/[slug]/_middleware.ts` — future puzzle guard
-- **modified** `routes/puzzles/[slug]/index.tsx` — solver gated behind isDev
-- **modified** `routes/puzzles/tutorial/index.tsx` — solver gated behind isDev
+- **modified** `routes/puzzles/[slug]/index.tsx` — removed SolveDialog
+- **modified** `routes/puzzles/tutorial/index.tsx` — removed SolveDialog
+- **modified** `routes/puzzles/preview/index.tsx` — SolveDialog gated behind isDev
