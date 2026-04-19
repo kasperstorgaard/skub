@@ -5,7 +5,7 @@
   "tasks": {
     "build": "vite build",
     "dev": "vite",
-    "e2e": "deno test -A --no-check --env e2e/ routes/",
+    "e2e": "deno test -A --no-check --fail-fast --env e2e/ routes/",
     "preview": "deno serve -A _fresh/server.js",
     "screenshots": "deno run -A ./scripts/screenshots.ts",
     "tunnel": "deno run --tunnel --allow-env main.ts",
