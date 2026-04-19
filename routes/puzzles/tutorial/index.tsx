@@ -17,7 +17,6 @@ import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
-
 import { TutorialDialog } from "#/islands/tutorial-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { trackTutorialCompleted } from "#/lib/tracking.ts";
@@ -194,7 +193,6 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
       />
 
       <HintDialog puzzle={puzzle} href={href} />
-
 
       <TutorialDialog
         href={href}
