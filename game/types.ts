@@ -42,6 +42,7 @@ export type Puzzle = {
   difficulty: Difficulty;
   minMoves: number;
   onboardingLevel?: number;
+  hidden?: boolean;
 };
 
 // Lightweight puzzle entry used in the manifest index
@@ -54,6 +55,7 @@ export type PuzzleManifestEntry = Pick<
   | "minMoves"
   | "difficulty"
   | "onboardingLevel"
+  | "hidden"
 >;
 
 // Tracks current pagination position and total counts
