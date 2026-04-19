@@ -41,7 +41,7 @@ export async function getAvailableEntries() {
   const manifest = await getPuzzleManifest();
 
   return manifest
-    .filter((entry) => !entry.onboardingLevel)
+    .filter((entry) => !entry.hidden)
     .filter((entry) => (entry.number ?? 0) <= dayOfYear);
 }
 
@@ -55,7 +55,7 @@ export async function getFutureEntries() {
   const manifest = await getPuzzleManifest();
 
   return manifest
-    .filter((entry) => !entry.onboardingLevel)
+    .filter((entry) => !entry.hidden)
     .filter((entry) => (entry.number ?? 0) > dayOfYear);
 }
 
