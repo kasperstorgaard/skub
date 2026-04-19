@@ -158,8 +158,16 @@ export function ControlsPanel(
             This is slightly expensive, so needs to be on demand, not optimistic.
           */
             }
-            {puzzle.value.slug !== "preview"
+            {puzzle.value.slug === "preview" && isDev
               ? (
+                <a
+                  href={getSolveHref(href.value)}
+                  className="noscript:hidden"
+                >
+                  Solve
+                </a>
+              )
+              : (
                 <a
                   href={hintDisabled ? "#" : getHintHref(href.value)}
                   aria-disabled={hintDisabled ? true : undefined}
@@ -173,14 +181,6 @@ export function ControlsPanel(
                     : puzzle.value.difficulty === "easy"
                     ? "Hints used"
                     : "Hint used"}
-                </a>
-              )
-              : (
-                <a
-                  href={getSolveHref(href.value)}
-                  className="noscript:hidden"
-                >
-                  Solve
                 </a>
               )}
 
