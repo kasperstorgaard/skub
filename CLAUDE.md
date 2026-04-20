@@ -59,9 +59,11 @@ Size doesn't matter — a one-liner on a different topic still belongs elsewhere
 
 When planning work before implementation, write the plan to `spec.md` at the project root and commit it. On every push, CI auto-populates the PR body between `<!-- spec:start -->` / `<!-- spec:end -->` markers with the current spec content.
 
-On merge to main, the `archive-spec` workflow automatically moves `spec.md` to `specs/<branch-slug>.md` — no manual step needed.
+On merge to main, the `archive-spec` workflow automatically moves `spec.md` to `specs/<pr-number>-<branch-slug>.md` — no manual step needed.
 
 Past specs live in `specs/` — excluded from context by default, reference them explicitly if needed.
+
+**Spec content:** describe *intent* — the problem, the approach, and non-goals if helpful. Don't enumerate changed files; `git diff` and the PR Files tab are the authoritative record and won't drift. The exception is pre-implementation planning when the files don't exist yet and listing them communicates scope.
 
 **Agent behaviour:**
 - If `spec.md` exists and substantial changes are made outside of plan mode, update `spec.md` to reflect what was actually built.
