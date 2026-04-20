@@ -64,6 +64,9 @@ jobs:
           fetch-depth: 0
 
       - uses: denoland/setup-deno@v2
+        with:
+          # 2.7.12 fails, issue filed
+          deno-version: 2.7.11
 
       - name: Fetch PR description
         id: pr

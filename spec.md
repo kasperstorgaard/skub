@@ -1,56 +1,55 @@
-# Tutorial UX copy + flow polish
+# Guard future puzzles and dev-only solver
 
 ## Problem
 
-The tutorial and solution dialog copy was wordy and didn't read well. Button
-labels were generic ("Dismiss", "Next") instead of describing what they do.
-Headings buried the key idea.
+Knowing a puzzle slug lets you play ahead — future puzzles are loadable by
+direct URL. The BFS solver dialog is also available in production, making it
+trivial to cheat.
+
+Additionally, listing exclusion is inferred from `onboardingLevel` which
+doesn't generalise — the upcoming endgame puzzle (Loke) needs exclusion too
+but isn't onboarding.
 
 ## Solution
 
-Tighten the copy in the tutorial dialog and solution dialog. Replace generic
-button labels with action-oriented ones, and add directional arrow icons to
-Previous/Next so navigation reads at a glance.
+### `hidden` flag
 
-### Tutorial dialog (`islands/tutorial-dialog.tsx`)
+Add `hidden?: boolean` to puzzle frontmatter and manifest. Replaces the
+`!entry.onboardingLevel` filter in `getAvailableEntries()` and
+`getFutureEntries()` with `!entry.hidden`.
 
-**Welcome step**
-- Body: shortened to "A sliding puzzle game inspired by the boardgame Ricochet Robots."
-- "Dismiss" → "Home"
-- "Next" → "How it works" + right-arrow icon
+`onboardingLevel` stays for ordering the onboarding sequence — `hidden`
+takes over the "should this appear in listings" concern.
 
-**Pieces step**
-- Heading: "The pieces" → "How it works"
-- Body: rewritten to emphasise the goal — puck must stop **exactly** on the target
-- Previous button gets a left-arrow icon
+Puzzles with `hidden: true`:
+- `tutorial.md` (onboarding level 1)
+- `lars.md` (onboarding level 2)
+- `lone.md` (onboarding level 3)
 
-**Replay step**
-- Heading: "Finding a solution" → "That's one way to solve it"
-- Body: mentions that both the daily and a starter puzzle are prepped for the user
-- Previous button gets a left-arrow icon
-- "I'm ready" → "I'm ready!"
+### Future puzzle guard
 
-**Solved step**
-- Body: same "daily and starter puzzle prepped" line as the replay step
-- Previous button gets a left-arrow icon
-- "I'm ready" → "I'm ready!"
+Middleware at `routes/puzzles/[slug]/_middleware.ts` — runs before all child
+routes. Loads the puzzle by slug, returns 404 if the puzzle's number is beyond
+today's day-of-year. Numberless puzzles (onboarding, endgame) are always
+allowed. Dev bypasses the guard entirely.
 
-### Solution dialog (`islands/solution-dialog.tsx`)
+Covers all `[slug]` routes in one place — no inline checks needed.
 
-- Body copy: "Claim your solve to see how others did it." → "Get your solve on the board." (and the unnamed variant matches)
-- Removed the redundant "Close" button — "Try again" already covers the dismiss case
+### Solver dialog
 
-## E2e updates
-
-`routes/puzzles/tutorial/_e2e/tutorial-page.ts` matchers updated to track copy:
-- `piecesHeading` → `/how it works/i`
-- `solutionHeading` → `/that's one way to solve it/i`
-- `clickNext()` → `/how it works/i`
-
-`/i'm ready/i` substring-matches "I'm ready!" so no change needed there.
+`SolveDialog` removed from puzzle and tutorial routes. On preview, gated
+behind `isDev` — the editor stays open for showcasing/collab, but the BFS
+solver is a design tool, not a collaboration feature.
 
 ## Files
 
-- **modified** `islands/tutorial-dialog.tsx` — copy + arrow icons across all four steps
-- **modified** `islands/solution-dialog.tsx` — copy tweak, removed Close button
-- **modified** `routes/puzzles/tutorial/_e2e/tutorial-page.ts` — selectors track new copy
+- **modified** `game/types.ts` — `hidden?: boolean` on `Puzzle` and `PuzzleManifestEntry`
+- **modified** `game/loader.ts` — listing filters use `!entry.hidden`
+- **modified** `lib/manifest.ts` — include `hidden` in manifest generation
+- **modified** `static/puzzles/tutorial.md` — `hidden: true`
+- **modified** `static/puzzles/lars.md` — `hidden: true`
+- **modified** `static/puzzles/lone.md` — `hidden: true`
+- **added** `routes/puzzles/[slug]/_middleware.ts` — future puzzle guard
+- **modified** `routes/puzzles/[slug]/index.tsx` — removed SolveDialog
+- **modified** `routes/puzzles/tutorial/index.tsx` — removed SolveDialog
+- **modified** `routes/puzzles/preview/index.tsx` — SolveDialog gated behind isDev

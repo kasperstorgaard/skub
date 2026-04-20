@@ -82,7 +82,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
         {printUrl}
       </a>
 
-      <SolveDialog puzzle={puzzle} href={href} />
+      {isDev && <SolveDialog puzzle={puzzle} href={href} />}
     </>
   );
 });

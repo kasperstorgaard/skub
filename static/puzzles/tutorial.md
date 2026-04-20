@@ -5,6 +5,7 @@ createdAt: 2026-04-06T09:47:05.173Z
 difficulty: easy
 minMoves: 3
 onboardingLevel: 1
+hidden: true
 ---
 
 ```
