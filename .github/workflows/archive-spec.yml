@@ -22,26 +22,38 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Get branch name from merge commit
-        id: branch
+      - name: Resolve archive filename from merged PR
+        id: name
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          BRANCH=$(git log -1 --pretty=%s | grep -oP '(?<=\().*(?=\))' | head -1 || echo "")
-          if [ -z "$BRANCH" ]; then
-            BRANCH="unknown-$(git rev-parse --short HEAD)"
-          fi
+          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0] // {}')
+          NUMBER=$(echo "$PR_JSON" | jq -r '.number // ""')
+          BRANCH=$(echo "$PR_JSON" | jq -r '.head.ref // ""')
+
           # Slugify: lowercase, replace non-alphanumeric with dashes, trim
           SLUG=$(echo "$BRANCH" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g; s/--*/-/g; s/^-//; s/-$//')
-          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+
+          if [ -n "$NUMBER" ] && [ -n "$SLUG" ]; then
+            NAME="${NUMBER}-${SLUG}"
+          elif [ -n "$NUMBER" ]; then
+            NAME="$NUMBER"
+          elif [ -n "$SLUG" ]; then
+            NAME="$SLUG"
+          else
+            NAME="unknown-$(git rev-parse --short HEAD)"
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
       - name: Archive spec.md
         run: |
           mkdir -p specs
-          mv spec.md "specs/${{ steps.branch.outputs.slug }}.md"
+          mv spec.md "specs/${{ steps.name.outputs.name }}.md"
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add specs/ spec.md
-          git commit -m "Archive spec → specs/${{ steps.branch.outputs.slug }}.md [skip ci]"
+          git commit -m "Archive spec → specs/${{ steps.name.outputs.name }}.md [skip ci]"
           git push
