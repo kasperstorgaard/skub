@@ -3,7 +3,8 @@ name: Lea
 slug: lea
 createdAt: 2026-04-23T18:37:52.536Z
 difficulty: medium
-minMoves: 0
+minMoves: 8
+number: 119
 ---
 
 ```

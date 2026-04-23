@@ -3,7 +3,8 @@ name: Signe
 slug: signe
 createdAt: 2026-04-23T18:48:33.555Z
 difficulty: medium
-minMoves: 0
+minMoves: 6
+number: 121
 ---
 
 ```
