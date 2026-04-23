@@ -3,6 +3,7 @@ import { formatPuzzle } from "#/game/formatter.ts";
 import { parsePuzzle } from "#/game/parser.ts";
 import { isDev } from "#/lib/env.ts";
 import { updateManifest } from "#/lib/manifest.ts";
+import path from "node:path";
 
 const PUZZLES_DIR = "./static/puzzles";
 
@@ -25,14 +26,9 @@ export const handler = define.handlers({
     try {
       const puzzle = parsePuzzle(markdown);
 
-      let totalPuzzles = 0;
-      for await (const entry of Deno.readDir(PUZZLES_DIR)) {
-        if (entry.isFile && entry.name.endsWith(".md")) totalPuzzles++;
-      }
-
       markdown = formatPuzzle({
         ...puzzle,
-        number: totalPuzzles,
+        number: undefined,
         minMoves: puzzle.minMoves ?? 0,
         createdAt: new Date(Date.now()),
       });
