@@ -31,3 +31,4 @@ Both use Open Props keyframes, no custom keyframes needed:
 - `styles.css` — add `@utility pulse-puck` and `@utility jiggle`
 - `islands/board.tsx` — add `isNew` prop; `wiggle` state object `{ puck, bouncer }`; apply animation classes; dismiss on `onFocus`
 - `routes/puzzles/[slug]/index.tsx` — pass `isNew={user.skillLevel === null}` to Board
+- `routes/puzzles/tutorial/index.tsx` — pass `isNew` (always true in tutorial context)
