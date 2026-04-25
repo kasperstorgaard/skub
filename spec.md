@@ -43,5 +43,8 @@ panel are gone.
 
 ## Non-goals
 
-- No KV reads in the middleware
+- No KV reads in the middleware. The preview page (`routes/puzzles/preview/`) is a
+  sibling of `[slug]`, loads its draft from KV directly, and is intentionally left
+  outside the middleware — folding it in would require either reserved-slug branching
+  or a KV fallback inside middleware.
 - No future-puzzle guarding (separate concern)
