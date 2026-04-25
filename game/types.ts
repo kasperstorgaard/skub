@@ -24,7 +24,9 @@ export type Board = {
   pieces: Piece[];
 };
 
-export const DIFFICULTIES = ["easy", "medium", "hard"] as const;
+// "ultra" is a one-off tier for "Loke" — the hidden endgame puzzle shown
+// when a player has solved every other puzzle at minimum moves.
+export const DIFFICULTIES = ["easy", "medium", "hard", "ultra"] as const;
 export type Difficulty = typeof DIFFICULTIES[number];
 
 export type SkillLevel = "beginner" | "intermediate" | "expert";

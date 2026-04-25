@@ -20,10 +20,11 @@ import {
   getAvailableEntries,
   getLatestPuzzle,
   getOnboardingPuzzle,
+  getPuzzle,
   getRandomPuzzle,
 } from "#/game/loader.ts";
 import type { UserStats } from "#/game/streak.ts";
-import { Puzzle } from "#/game/types.ts";
+import type { Puzzle } from "#/game/types.ts";
 import { withSpan } from "#/lib/tracing.ts";
 
 type PageData = {
@@ -67,15 +68,21 @@ export const handler = define.handlers<PageData>({
     const optimalSlugs = entries
       .filter((entry) => bestMoves[entry.slug] === entry.minMoves)
       .map((entry) => entry.slug);
+    const allPerfected = entries
+      .filter((entry) => entry.minMoves)
+      .every((entry) => optimalSlugs.includes(entry.slug));
 
-    const randomPuzzle = user.skillLevel !== null && !onboardingPuzzle
-      ? await getRandomPuzzle({
-        excludeSlugs: [dailyPuzzle.slug, ...optimalSlugs],
-        difficulty: user.skillLevel === "expert"
-          ? ["easy", "medium", "hard"]
-          : ["easy", "medium"],
-      })
-      : null;
+    let randomPuzzle: Puzzle | null = null;
+    if (user.skillLevel !== null && !onboardingPuzzle) {
+      randomPuzzle = allPerfected
+        ? await getPuzzle("loke")
+        : await getRandomPuzzle({
+          excludeSlugs: [dailyPuzzle.slug, ...optimalSlugs],
+          difficulty: user.skillLevel === "expert"
+            ? ["easy", "medium", "hard"]
+            : ["easy", "medium"],
+        });
+    }
 
     const userStats = await getUserStats(ctx.state.userId, solutions);
 

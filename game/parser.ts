@@ -257,7 +257,10 @@ function extractRows(content: string): string[] {
   const lines = content.split(/[\r\n]/);
   const rows: string[] = [];
 
-  const rowMatcher = /^[1-8]\s(.{16})|/;
+  // Capture cell content between the row number and the trailing boundary `|`.
+  // Variable length so combining marks (e.g. `X̲`, `#̲`) don't push the last cell
+  // out of the capture window.
+  const rowMatcher = /^[1-8]\s(.+?)\s\|\s*$/;
   let inGrid = false;
 
   for (const line of lines) {
