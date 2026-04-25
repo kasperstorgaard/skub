@@ -6,14 +6,13 @@ import { Header } from "#/components/header.tsx";
 import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { define } from "#/core.ts";
 import { getPuzzleSolution } from "#/db/solutions.ts";
 import { Solution } from "#/db/types.ts";
-import { getPuzzle } from "#/game/loader.ts";
 import { Puzzle } from "#/game/types.ts";
 import { encodeState } from "#/game/url.ts";
 import Board from "#/islands/board.tsx";
 import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
+import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
   puzzle: Puzzle;
@@ -25,11 +24,7 @@ export const handler = define.handlers<Data>({
   async GET(ctx) {
     const req = ctx.req;
     const { slug, solutionId } = ctx.params;
-
-    const puzzle = await getPuzzle(slug);
-    if (!puzzle) {
-      throw new HttpError(404, `Unable to find a puzzle with slug: ${slug}`);
-    }
+    const { puzzle } = ctx.state;
 
     const solution = await getPuzzleSolution(slug, solutionId);
     if (!solution) {

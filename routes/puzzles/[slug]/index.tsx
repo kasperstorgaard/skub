@@ -8,12 +8,10 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
-import { define } from "#/core.ts";
 import { saveSolution } from "#/db/solutions.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
-import { getPuzzle } from "#/game/loader.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import type { UserStats } from "#/game/streak.ts";
@@ -30,6 +28,7 @@ import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
 import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
+import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type PageData = {
   puzzle: Puzzle;
@@ -40,15 +39,10 @@ type PageData = {
 };
 
 export const handler = define.handlers<PageData>({
-  async GET(ctx) {
+  GET(ctx) {
     const { slug } = ctx.params;
+    const { puzzle } = ctx.state;
     const savedName = ctx.state.user?.name ?? null;
-
-    const puzzle = await getPuzzle(slug);
-
-    if (!puzzle) {
-      throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
-    }
 
     const hintCount = getHintCount(ctx.req.headers);
 
@@ -84,16 +78,12 @@ export const handler = define.handlers<PageData>({
   async POST(ctx) {
     const req = ctx.req;
     const { slug } = ctx.params;
+    const { puzzle } = ctx.state;
     const referer = ctx.req.headers.get("referer") ?? "";
 
     const form = await req.formData();
     const name = form.get("name")?.toString();
     const source = form.get("source")?.toString();
-
-    const puzzle = await getPuzzle(slug);
-    if (!puzzle) {
-      throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
-    }
 
     if (!name) throw new HttpError(400, "Must provide a username");
 

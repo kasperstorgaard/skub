@@ -24,6 +24,14 @@ export const handler = define.handlers<PageData>({
     const draft = await getUserPuzzleDraft(ctx.state.userId);
     if (!draft) throw new HttpError(500, "No stored puzzle");
 
+    if (isDev) {
+      const url = new URL(ctx.req.url);
+      if (!url.searchParams.has("dialog")) {
+        url.searchParams.set("dialog", "solve");
+        return Response.redirect(url, 303);
+      }
+    }
+
     const puzzle: Puzzle = { ...draft, slug: "preview", number: 0 };
 
     return page({ puzzle });

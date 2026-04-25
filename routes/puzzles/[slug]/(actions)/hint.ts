@@ -1,21 +1,18 @@
 import { HttpError } from "fresh";
 
-import { define } from "#/core.ts";
 import { incrementHintUsageCount } from "#/db/stats.ts";
 import { getHintCount, setHintCount } from "#/game/cookies.ts";
-import { getPuzzle } from "#/game/loader.ts";
 import { decodeState } from "#/game/url.ts";
 import { isDev } from "#/lib/env.ts";
 import { trackHintRequested } from "#/lib/tracking.ts";
+import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 export const handler = define.handlers({
   async GET(ctx) {
     const slug = ctx.params.slug;
+    const { puzzle } = ctx.state;
 
     const state = decodeState(ctx.req.url);
-
-    const puzzle = await getPuzzle(slug);
-    if (!puzzle) throw new HttpError(404, "Unable to get puzzle");
 
     if (slug === "preview") {
       throw new HttpError(503, "Hints not allowed on preview");
