@@ -1,7 +1,6 @@
 import { createDefine } from "fresh";
 
 import type { User } from "#/db/types.ts";
-import type { Puzzle } from "#/game/types.ts";
 
 /**
  * Shared state passed through ctx.state in middlewares, layouts, and routes.
@@ -18,9 +17,6 @@ export type State = {
 
   // Full user record from KV (populated by middleware/user.ts)
   user: User;
-
-  // Loaded puzzle (populated by routes/puzzles/[slug]/_middleware.ts)
-  puzzle?: Puzzle;
 };
 
 export const define = createDefine<State>();
