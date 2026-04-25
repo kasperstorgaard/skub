@@ -18,7 +18,6 @@ import {
   getHintHref,
   getRedoHref,
   getResetHref,
-  getSolveHref,
   getUndoHref,
 } from "#/game/url.ts";
 import { useRouter } from "#/islands/router.tsx";
@@ -158,31 +157,22 @@ export function ControlsPanel(
             This is slightly expensive, so needs to be on demand, not optimistic.
           */
             }
-            {puzzle.value.slug === "preview" && isDev
-              ? (
-                <a
-                  href={getSolveHref(href.value)}
-                  className="noscript:hidden"
-                >
-                  Solve
-                </a>
-              )
-              : (
-                <a
-                  href={hintDisabled ? "#" : getHintHref(href.value)}
-                  aria-disabled={hintDisabled ? true : undefined}
-                  onClick={(event) => {
-                    if (hintDisabled) event.preventDefault();
-                  }}
-                  className="noscript:hidden"
-                >
-                  {!hintDisabled
-                    ? "Get a hint"
-                    : puzzle.value.difficulty === "easy"
-                    ? "Hints used"
-                    : "Hint used"}
-                </a>
-              )}
+            {puzzle.value.slug !== "preview" && (
+              <a
+                href={hintDisabled ? "#" : getHintHref(href.value)}
+                aria-disabled={hintDisabled ? true : undefined}
+                onClick={(event) => {
+                  if (hintDisabled) event.preventDefault();
+                }}
+                className="noscript:hidden"
+              >
+                {!hintDisabled
+                  ? "Get a hint"
+                  : puzzle.value.difficulty === "easy"
+                  ? "Hints used"
+                  : "Hint used"}
+              </a>
+            )}
 
             <a
               href={getResetHref(href.value)}
