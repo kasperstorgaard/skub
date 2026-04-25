@@ -3,7 +3,8 @@ name: Lukas
 slug: lukas
 createdAt: 2026-04-25T13:20:55.366Z
 difficulty: medium
-minMoves: 0
+minMoves: 8
+number: 129
 ---
 
 ```
