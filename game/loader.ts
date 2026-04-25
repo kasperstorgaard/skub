@@ -162,7 +162,9 @@ type GetRandomPuzzleOptions = {
 /**
  * Gets a random puzzle from the pool matching the given difficulty options.
  */
-export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
+export async function getRandomPuzzle(
+  options: GetRandomPuzzleOptions,
+): Promise<Puzzle | null> {
   let entries = await getAvailableEntries();
 
   entries = entries
@@ -171,7 +173,7 @@ export async function getRandomPuzzle(options: GetRandomPuzzleOptions) {
     )
     .filter((puzzle) => !options.excludeSlugs?.includes(puzzle.slug));
 
-  if (!entries.length) throw new Error("Unable to get random puzzle");
+  if (!entries.length) return null;
 
   const entry = entries[Math.floor(Math.random() * entries.length)];
 

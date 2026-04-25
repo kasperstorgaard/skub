@@ -17,6 +17,7 @@ import { define } from "#/core.ts";
 import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getUserStats } from "#/db/stats.ts";
 import {
+  getAvailableEntries,
   getLatestPuzzle,
   getOnboardingPuzzle,
   getRandomPuzzle,
@@ -61,28 +62,22 @@ export const handler = define.handlers<PageData>({
       })
       : null;
 
+    const bestMoves = getBestMoves(solutions);
+    const entries = await getAvailableEntries();
+    const optimalSlugs = entries
+      .filter((entry) => bestMoves[entry.slug] === entry.minMoves)
+      .map((entry) => entry.slug);
+
     const randomPuzzle = user.skillLevel !== null && !onboardingPuzzle
       ? await getRandomPuzzle({
-        excludeSlugs: [dailyPuzzle.slug],
+        excludeSlugs: [dailyPuzzle.slug, ...optimalSlugs],
         difficulty: user.skillLevel === "expert"
           ? ["easy", "medium", "hard"]
           : ["easy", "medium"],
       })
       : null;
 
-    // User must get either onboardingPuzzle or randomPuzzle
-    if (user.skillLevel && !onboardingPuzzle && !randomPuzzle) {
-      throw new HttpError(500, "Unable to get random puzzle");
-    }
-
     const userStats = await getUserStats(ctx.state.userId, solutions);
-
-    const bestMoves = getBestMoves(
-      solutions.filter((solution) =>
-        solution.puzzleSlug === dailyPuzzle.slug ||
-        solution.puzzleSlug === randomPuzzle?.slug
-      ),
-    );
 
     return page({
       dailyPuzzle,
