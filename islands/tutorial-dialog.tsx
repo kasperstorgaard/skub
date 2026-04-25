@@ -87,18 +87,13 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
         </p>
       </div>
 
-      <form
-        action={href}
-        method="POST"
-        className="flex w-full"
-      >
-        <button
-          type="submit"
+      <div className="flex w-full">
+        <a
           className="btn mr-auto"
-          disabled={!open}
+          href="/"
         >
           Home
-        </button>
+        </a>
 
         <a
           href={nextStep}
@@ -108,7 +103,7 @@ function TutorialWelcomeStep({ href, open }: TutorialStepProps) {
         >
           How it works
         </a>
-      </form>
+      </div>
     </>
   );
 }
