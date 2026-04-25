@@ -1,6 +1,6 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { useCallback, useMemo, useRef } from "preact/hooks";
+import { useCallback, useMemo, useRef, useState } from "preact/hooks";
 
 import { useRouter } from "./router.tsx";
 import { useMoves } from "#/client/moves.ts";
@@ -33,11 +33,12 @@ type BoardProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   mode: Signal<"editor" | "replay" | "solve" | "readonly">;
+  isNew?: boolean;
   className?: string;
 };
 
 export default function Board(
-  { href, puzzle, mode, className }: BoardProps,
+  { href, puzzle, mode, isNew = false, className }: BoardProps,
 ) {
   const swipeRegionRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -82,6 +83,8 @@ export default function Board(
     () => getReplaySpeed(href.value) ?? 1,
     [href.value],
   );
+
+  const [wiggle, setWiggle] = useState({ puck: isNew, blocker: isNew });
 
   const onMove = useCallback(
     (src: Position, opts: {
@@ -194,9 +197,11 @@ export default function Board(
             id={getPieceId(piece, idx)}
             isActive={state.active && isPositionSame(piece, state.active)}
             isReadonly={mode.value === "replay" || mode.value === "editor"}
+            wiggle={mode.value === "solve" && wiggle[piece.type]}
             onFocus={(event) => {
               const href = (event.target as HTMLAnchorElement).href;
               updateLocation(href, { replace: true });
+              setWiggle((val) => ({ ...val, [piece.type]: false }));
             }}
           />
         ))}
@@ -229,8 +234,8 @@ function BoardWall({ x, y, orientation }: Wall) {
         "place-self-start col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full",
         "border-ui-4 aspect-square pointer-events-none",
         orientation === "vertical"
-          ? "border-l-[3px] -ml-1"
-          : "border-t-[3px] -mt-1",
+          ? "border-l-[3px] -ml-[3.5px]"
+          : "border-t-[3px] -mt-[3.5px]",
       )}
       style={{
         "--x": x,
@@ -353,11 +358,13 @@ type BoardPieceProps = {
   type: "puck" | "blocker";
   isActive?: boolean;
   isReadonly?: boolean;
+  wiggle?: boolean;
   onFocus: (event: FocusEvent) => void;
 };
 
 function BoardPiece(
-  { x, y, id, href, type, isReadonly, isActive, onFocus }: BoardPieceProps,
+  { x, y, id, href, type, isReadonly, isActive, wiggle, onFocus }:
+    BoardPieceProps,
 ) {
   return (
     <a
@@ -390,6 +397,8 @@ function BoardPiece(
           "w-full h-full",
           type === "puck" && "bg-ui-2 rounded-round",
           type === "blocker" && "bg-ui-3 rounded-1",
+          wiggle && type === "puck" && "pulse-puck",
+          wiggle && type === "blocker" && "jiggle",
         )}
       />
     </a>
