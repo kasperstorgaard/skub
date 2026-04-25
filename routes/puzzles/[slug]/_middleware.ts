@@ -1,9 +1,14 @@
-import { HttpError } from "fresh";
+import { createDefine, HttpError } from "fresh";
 
-import { define } from "#/core.ts";
+import type { State } from "#/core.ts";
 import { getDayOfYear } from "#/game/date.ts";
 import { getPuzzle } from "#/game/loader.ts";
+import type { Puzzle } from "#/game/types.ts";
 import { isDev } from "#/lib/env.ts";
+
+export type PuzzleState = State & { puzzle: Puzzle };
+
+export const define = createDefine<PuzzleState>();
 
 /**
  * Loads the puzzle for all routes under /puzzles/[slug].
