@@ -1,9 +1,7 @@
-import { HttpError } from "fresh";
 import { renderToString } from "preact-render-to-string";
 
 import { Thumbnail, ThumbnailColors } from "#/components/thumbnail.tsx";
-import { define } from "#/core.ts";
-import { getPuzzle } from "#/game/loader.ts";
+import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 // Matches the actual rendered thumbnail: light-mode piece colors on dark background.
 // ui1: teal-4, ui2: yellow-3, ui3: violet-6, ui4: orange-6
@@ -18,9 +16,8 @@ const OG_COLORS: ThumbnailColors = {
 const BACKGROUND = "#212529";
 
 export const handler = define.handlers({
-  async GET(ctx) {
-    const puzzle = await getPuzzle(ctx.params.slug);
-    if (!puzzle) throw new HttpError(404);
+  GET(ctx) {
+    const { puzzle } = ctx.state;
 
     const svg = renderToString(
       <Thumbnail

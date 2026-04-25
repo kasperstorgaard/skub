@@ -1,23 +1,22 @@
 import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
-import { HttpError, page } from "fresh";
+import { page } from "fresh";
 import { useMemo } from "preact/hooks";
 
 import { Header } from "#/components/header.tsx";
 import { Icon, Play, Shuffle, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { define } from "#/core.ts";
 import {
   getCanonicalGroup,
   listCanonicalGroups,
   listUserPuzzleSolutions,
 } from "#/db/solutions.ts";
 import { CanonicalGroup } from "#/db/types.ts";
-import { getPuzzle } from "#/game/loader.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { Puzzle } from "#/game/types.ts";
 import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
+import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
   puzzle: Puzzle;
@@ -30,26 +29,14 @@ type Data = {
 export const handler = define.handlers<Data>({
   async GET(ctx) {
     const { slug } = ctx.params;
+    const puzzle = ctx.state.puzzle;
     const userId = ctx.state.userId;
     const userCanonicalKeys: string[] = [];
 
-    const puzzlePromise = getPuzzle(slug);
-
-    const groupsPromise = listCanonicalGroups(slug, { limit: 6 });
-
-    const userSolutionsPromise = listUserPuzzleSolutions(userId, slug, {
-      limit: 100,
-    });
-
-    const [puzzle, groups, userSolutions] = await Promise.all([
-      puzzlePromise,
-      groupsPromise,
-      userSolutionsPromise,
+    const [groups, userSolutions] = await Promise.all([
+      listCanonicalGroups(slug, { limit: 6 }),
+      listUserPuzzleSolutions(userId, slug, { limit: 100 }),
     ]);
-
-    if (!puzzle) {
-      throw new HttpError(404, `Unable to find a puzzle with slug: ${slug}`);
-    }
 
     const groupKeySet = new Set(groups.map((g) => g.canonicalKey));
 

@@ -1,19 +1,11 @@
-import { HttpError } from "fresh";
-
-import { define } from "#/core.ts";
 import { setUserPuzzleDraft } from "#/db/user.ts";
-import { getPuzzle } from "#/game/loader.ts";
 import { isDev } from "#/lib/env.ts";
+import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 // Redirect handler to create a new puzzle based on an existing one
 export const handler = define.handlers({
   async GET(ctx) {
-    const { slug } = ctx.params;
-
-    const puzzle = await getPuzzle(slug);
-    if (!puzzle) {
-      throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
-    }
+    const puzzle = ctx.state.puzzle;
     if (!isDev) puzzle.name = "Untitled";
 
     puzzle.createdAt = new Date(Date.now());
