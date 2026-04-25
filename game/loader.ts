@@ -137,7 +137,12 @@ export async function getDifficultyBreakdown(): Promise<
 > {
   const entries = await getAvailableEntries();
 
-  const breakdown: Record<Difficulty, number> = { easy: 0, medium: 0, hard: 0 };
+  const breakdown: Record<Difficulty, number> = {
+    easy: 0,
+    medium: 0,
+    hard: 0,
+    ultra: 0,
+  };
   for (const entry of entries) {
     breakdown[entry.difficulty]++;
   }
