@@ -135,8 +135,8 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
 
         <p>
           Click a blocker <IconBlocker /> or the puck <IconPuck />{" "}
-          to select it, then decide where to move it.<br />
-          The caveat: pieces <strong>keep sliding</strong>{" "}
+          to select it, then decide which direction to move it.<br />
+          The catch: pieces <strong>keep sliding</strong>{" "}
           until they hit something.
         </p>
 
