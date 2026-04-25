@@ -15,8 +15,8 @@ export function TutorialNudge({ className }: Props) {
       )}
     >
       <p className="gap-1 min-w-[16ch] text-center leading-snug">
-        Tip: use blockers <IconBlocker /> to stop the puck <IconPuck />{" "}
-        mid-slide
+        Tip: click and move blockers <IconBlocker /> to stop the puck{" "}
+        <IconPuck /> mid-slide
       </p>
 
       <a href="/puzzles/tutorial" className="btn">

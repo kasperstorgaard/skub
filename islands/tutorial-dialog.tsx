@@ -129,8 +129,9 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
         <h1 className="text-fl-2 leading-tight text-text-1">How it works</h1>
         <p>
           Meet the puck <IconPuck /> and the blocker{" "}
-          <IconBlocker />. They both slide until they hit each other or a
-          wa<span className="text-ui-4">ll</span>.
+          <IconBlocker />. You move both by clicking them, then choosing a
+          direction to push them, stopping at the first
+          wa<span className="text-ui-4">ll</span> or other piece.
         </p>
 
         <p>
