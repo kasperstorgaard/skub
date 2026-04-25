@@ -849,6 +849,16 @@
   Newly available custom properties definition syntax,
   which allows us to transition values without javascript.
 */
+@utility pulse-puck {
+  animation: var(--animation-pulse);
+}
+
+@utility jiggle {
+  animation: var(--animation-shake-z);
+  animation-iteration-count: infinite;
+  transform-origin: center;
+}
+
 @property --x {
   syntax: "<number>";
   inherits: true;

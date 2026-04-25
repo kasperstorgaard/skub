@@ -120,15 +120,20 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h1 className="text-fl-2 leading-tight text-text-1">How it works</h1>
         <p>
-          Meet the puck <IconPuck /> and the blocker{" "}
-          <IconBlocker />. They both slide until they hit each other or a
-          wa<span className="text-ui-4">ll</span>.
+          Your goal is simple: get the puck <IconPuck /> to stop{" "}
+          <strong>exactly</strong> on the target{" "}
+          <IconDestination />, using the blockers <IconBlocker /> to help you.
         </p>
 
         <p>
-          Your goal: get the puck <IconPuck /> to stop <strong>exactly</strong>
-          {" "}
-          on the target <IconDestination />.
+          Click a blocker <IconBlocker /> or the puck <IconPuck />{" "}
+          to select it, then decide which direction to move it.<br />
+          The catch: pieces <strong>keep sliding</strong>{" "}
+          until they hit something.
+        </p>
+
+        <p className="pointer-fine:hidden">
+          Tip: you can flick/swipe the pieces instead of clicking
         </p>
       </div>
 
