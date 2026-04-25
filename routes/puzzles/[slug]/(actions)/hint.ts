@@ -10,7 +10,7 @@ import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 export const handler = define.handlers({
   async GET(ctx) {
     const slug = ctx.params.slug;
-    const puzzle = ctx.state.puzzle;
+    const { puzzle } = ctx.state;
 
     const state = decodeState(ctx.req.url);
 

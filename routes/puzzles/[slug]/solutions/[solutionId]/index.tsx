@@ -24,7 +24,7 @@ export const handler = define.handlers<Data>({
   async GET(ctx) {
     const req = ctx.req;
     const { slug, solutionId } = ctx.params;
-    const puzzle = ctx.state.puzzle;
+    const { puzzle } = ctx.state;
 
     const solution = await getPuzzleSolution(slug, solutionId);
     if (!solution) {

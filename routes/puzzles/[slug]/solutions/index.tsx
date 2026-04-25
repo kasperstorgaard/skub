@@ -29,8 +29,7 @@ type Data = {
 export const handler = define.handlers<Data>({
   async GET(ctx) {
     const { slug } = ctx.params;
-    const puzzle = ctx.state.puzzle;
-    const userId = ctx.state.userId;
+    const { puzzle, userId } = ctx.state;
     const userCanonicalKeys: string[] = [];
 
     const [groups, userSolutions] = await Promise.all([

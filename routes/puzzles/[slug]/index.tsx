@@ -41,7 +41,7 @@ type PageData = {
 export const handler = define.handlers<PageData>({
   GET(ctx) {
     const { slug } = ctx.params;
-    const puzzle = ctx.state.puzzle;
+    const { puzzle } = ctx.state;
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
@@ -78,7 +78,7 @@ export const handler = define.handlers<PageData>({
   async POST(ctx) {
     const req = ctx.req;
     const { slug } = ctx.params;
-    const puzzle = ctx.state.puzzle;
+    const { puzzle } = ctx.state;
     const referer = ctx.req.headers.get("referer") ?? "";
 
     const form = await req.formData();
