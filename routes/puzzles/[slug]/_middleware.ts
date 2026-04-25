@@ -18,8 +18,6 @@ export const define = createDefine<PuzzleState>();
  * Dev always bypasses the guard.
  */
 export const handler = define.middleware(async (ctx) => {
-  if (isDev) return ctx.next();
-
   const { slug } = ctx.params;
   const puzzle = await getPuzzle(slug);
 
@@ -27,7 +25,7 @@ export const handler = define.middleware(async (ctx) => {
     throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
   }
 
-  if (puzzle.number) {
+  if (!isDev && puzzle.number) {
     const dayOfYear = getDayOfYear(new Date(Date.now()));
     if (puzzle.number > dayOfYear) {
       throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
