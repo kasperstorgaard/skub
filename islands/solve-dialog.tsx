@@ -81,10 +81,10 @@ export function SolveDialog({ puzzle, href }: Props) {
   const { start: startSolve, cancel: cancelSolve } = useSolveStream((event) => {
     if (event.type === "progress") {
       queueSolveState({ status: "solving", depth: event.depth }, {
-        delay: 500,
+        delay: 100,
       });
     } else if (event.type === "solution") {
-      queueSolveState({ status: "done", moves: event.moves }, { delay: 500 });
+      queueSolveState({ status: "done", moves: event.moves }, { delay: 100 });
     } else if (event.type === "error") {
       queueSolveState({ status: "error" }, { immediate: true });
     }
