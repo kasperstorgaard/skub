@@ -169,6 +169,7 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
             href={href}
             puzzle={puzzle}
             mode={mode}
+            isNew
           />
 
           {urlMode === "solve" && (
