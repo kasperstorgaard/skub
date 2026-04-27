@@ -1,8 +1,6 @@
 import { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 
-import { getArchiveDate } from "#/game/url.ts";
-
 type MonthStripProps = {
   href: string;
 };
