@@ -43,13 +43,21 @@ export class ArchivesPage {
 
   /** Clicks the selected-day detail panel to navigate to the puzzle. */
   async clickSelectedPuzzle() {
-    await this.page.locator("a[aria-current='true']").first().click();
+    await this.selectedPuzzleLink.click();
     return new PuzzlePage(this.page);
   }
 
   /** Clicks a month pill in the strip by its short label (e.g. "Mar"). */
   async clickMonth(label: string) {
     await this.page.getByRole("link", { name: new RegExp(`^${label}\\b`) })
+      .first()
+      .click();
+    return this;
+  }
+
+  /** Clicks the first month pill in the strip (oldest available month). */
+  async clickFirstMonth() {
+    await this.page.locator("nav[aria-label='Months with puzzles'] a")
       .first()
       .click();
     return this;

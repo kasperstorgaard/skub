@@ -24,7 +24,7 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
   }
 });
 
-// -- New user, no JavaScript: home → archives → page 2 → solve → submit name ---
+// -- New user, no JavaScript: home → archives → earlier month → solve → submit name ---
 
 Deno.test("without js - a returning user plays an archived puzzle and submits their solve", async () => {
   const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
@@ -33,12 +33,14 @@ Deno.test("without js - a returning user plays an archived puzzle and submits th
 
     const home = await new HomePage(page).goto();
 
-    let archivesPage = await home.clickArchivesLink();
+    const archivesPage = await home.clickArchivesLink();
     await expect(archivesPage.heading).toBeVisible();
 
-    archivesPage = await archivesPage.clickNextPage();
+    // Navigate to the first available month so we're guaranteed a non-today puzzle.
+    await archivesPage.clickMonth("Jan");
+    await archivesPage.clickDay(1);
 
-    const puzzlePage = await archivesPage.clickPuzzleAt(3);
+    const puzzlePage = await archivesPage.clickSelectedPuzzle();
     const moves = await solvePuzzle(puzzlePage.currentSlug);
     await puzzlePage.solveByClicking(moves);
 

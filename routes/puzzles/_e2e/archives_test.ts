@@ -16,7 +16,7 @@ Deno.test("archives — clicking a day selects it and populates the detail panel
   try {
     const archivesPage = await new ArchivesPage(page).goto();
     await archivesPage.puzzleDays.first().click();
-    await expect(page).toHaveURL(/[?&]day=\d+/);
+    await expect(page).toHaveURL(/[?&]date=\d{4}-\d{2}-\d{2}/);
   } finally {
     await teardown();
   }
@@ -28,7 +28,7 @@ Deno.test("archives — clicking the selected-day detail navigates to the puzzle
     const archivesPage = await new ArchivesPage(page).goto();
     await archivesPage.puzzleDays.first().click();
     await archivesPage.selectedPuzzleLink.click();
-    await expect(page).toHaveURL(/\/(puzzles\/.+|$)/);
+    await expect(page).toHaveURL(/\/(puzzles\/[^/]+|)$/);
   } finally {
     await teardown();
   }
