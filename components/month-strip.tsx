@@ -1,8 +1,6 @@
 import { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 
-import { getArchiveDate } from "#/game/url.ts";
-
 type MonthStripProps = {
   href: string;
 };
@@ -29,8 +27,6 @@ type Props = {
 };
 
 export function MonthStrip({ href, today, selectedDate }: Props) {
-  const date = getArchiveDate(href.value);
-
   return (
     <div className="flex max-sm:overflow-x-auto -mx-1 px-1 -my-1 py-1">
       <nav
@@ -43,7 +39,7 @@ export function MonthStrip({ href, today, selectedDate }: Props) {
 
           if (isFuture) return null;
 
-          const isActive = date?.month === idx + 1;
+          const isActive = selectedDate.month === idx + 1;
 
           return (
             <a
