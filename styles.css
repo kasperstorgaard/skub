@@ -778,47 +778,6 @@
   }
 }
 
-@utility link-border-dim {
-  /*
-   * Opaque approximation of border-link/60.
-   * `:visited` blocks semi-transparent colors, so we mix with the surface
-   * color instead of transparent to stay fully opaque.
-   */
-  border-color: color-mix(
-    in srgb,
-    var(--color-link) 60%,
-    var(--color-surface-1)
-  );
-}
-
-@utility svg-dim {
-  /*
-   * Explicit fill/stroke overrides for SVG elements.
-   * CSS custom property changes are blocked by browsers in :visited context,
-   * but fill and stroke are in the allowed :visited property list,
-   * so these are what actually produce the grayscale effect when visited.
-   */
-  & .svg-destination {
-    fill: color-mix(in srgb, var(--color-ui-1) 70%, var(--color-surface-1));
-    stroke: color-mix(in srgb, var(--color-ui-1) 70%, var(--color-surface-1));
-  }
-
-  & .svg-puck {
-    fill: color-mix(in srgb, var(--color-ui-2) 70%, var(--color-surface-1));
-    stroke: color-mix(in srgb, var(--color-ui-2) 70%, var(--color-surface-1));
-  }
-
-  & .svg-blocker {
-    fill: color-mix(in srgb, var(--color-ui-3) 70%, var(--color-surface-1));
-    stroke: color-mix(in srgb, var(--color-ui-3) 70%, var(--color-surface-1));
-  }
-
-  & .svg-wall {
-    fill: color-mix(in srgb, var(--color-ui-4) 70%, var(--color-surface-1));
-    stroke: color-mix(in srgb, var(--color-ui-4) 70%, var(--color-surface-1));
-  }
-}
-
 @layer components {
   .callout {
     display: flex;
@@ -849,6 +808,23 @@
   Newly available custom properties definition syntax,
   which allows us to transition values without javascript.
 */
+@utility slashed {
+  background-image: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.5px),
+    var(--color-surface-2) calc(50% - 0.5px),
+    var(--color-surface-2) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @utility pulse-puck {
   animation: var(--animation-pulse);
 }

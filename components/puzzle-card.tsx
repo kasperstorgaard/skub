@@ -1,7 +1,7 @@
 import { clsx } from "clsx/lite";
 import { AnchorHTMLAttributes } from "preact";
 
-import { Check, Icon, Trophy } from "#/components/icons.tsx";
+import { Check, Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Thumbnail } from "#/components/thumbnail.tsx";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -11,6 +11,7 @@ export type PuzzleCardProps =
     puzzle: Puzzle;
     bestMoves?: number;
     tagline?: string;
+    showPlay?: boolean;
   };
 
 /**
@@ -18,7 +19,6 @@ export type PuzzleCardProps =
  * showing an svg of the puzzle, and letting the consumer pass the
  *
  * States:
- *   - visited: SVG dimmed + text mutes via CSS :visited (only when unsolved)
  *   - solved (bestMoves > minMoves): ph-check icon + move count
  *   - optimal (bestMoves === minMoves): ph-trophy icon + move count
  *
@@ -28,6 +28,7 @@ export function PuzzleCard({
   puzzle,
   bestMoves,
   tagline,
+  showPlay,
   className,
   ...rest
 }: PuzzleCardProps) {
@@ -40,8 +41,7 @@ export function PuzzleCard({
     <a
       href={`/puzzles/${puzzle.slug}`}
       class={clsx(
-        "group flex flex-col gap-2 text-text-1 no-underline",
-        !isSolved && "visited:svg-dim",
+        "group flex flex-col gap-1 text-text-1 no-underline",
         className,
       )}
       {...rest}
@@ -50,13 +50,21 @@ export function PuzzleCard({
         class={clsx(
           "relative flex border-2 border-link rounded-1",
           "group-hover:filter-[lighten(1.3)] transition-colors",
-          !isSolved && "group-visited:link-border-dim",
         )}
       >
         <Thumbnail
           board={puzzle.board}
           className="basis-0 grow aspect-square h-full"
         />
+
+        {showPlay && (
+          <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <Icon
+              icon={Play}
+              className="text-[4rem] lg:text-[5rem] text-link opacity-50 group-hover:opacity-90 transition-opacity"
+            />
+          </div>
+        )}
 
         <div
           class={clsx(

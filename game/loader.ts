@@ -186,6 +186,21 @@ export async function getRandomPuzzle(
 }
 
 /**
+ * Gets a puzzle by date
+ */
+export async function getPuzzleByDate(
+  date: Temporal.PlainDate | Date,
+): Promise<Puzzle | null> {
+  const entries = await getAvailableEntries();
+
+  const dayOfYear = getDayOfYear(date);
+  const entry = entries.find((puzzle) => puzzle.number === dayOfYear);
+  if (!entry) return null;
+
+  return getPuzzle(entry.slug);
+}
+
+/**
  * Gets the tutorial puzzle.
  */
 export async function getTutorialPuzzle() {

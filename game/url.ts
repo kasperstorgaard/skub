@@ -225,3 +225,19 @@ export function getPage(
   const parsed = parseInt(pageParam, 10);
   return Number.isNaN(parsed) ? 1 : parsed;
 }
+
+// Reads the ?date=YYYY-MM-DD param. Returns null if absent or invalid.
+export function getArchiveDate(
+  urlOrHref: URL | string,
+) {
+  const url = typeof urlOrHref === "string" ? new URL(urlOrHref) : urlOrHref;
+  const date = url.searchParams.get("date");
+
+  if (!date) return null;
+
+  try {
+    return Temporal.PlainDate.from(date);
+  } catch {
+    throw new Error("Unable to parse archive date");
+  }
+}
