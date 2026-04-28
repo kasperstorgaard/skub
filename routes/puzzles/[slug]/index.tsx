@@ -12,11 +12,12 @@ import { saveSolution } from "#/db/solutions.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
+import { isTodaysPuzzle } from "#/game/date.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
-import { decodeState } from "#/game/url.ts";
+import { decodeState, getPuzzleArchiveHref } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
 import { CelebrationDialog } from "#/islands/celebration-dialog.tsx";
@@ -143,10 +144,17 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
 
   const url = new URL(props.req.url);
 
+  const back = isTodaysPuzzle(props.data.puzzle)
+    ? { href: "/", label: "Home" }
+    : {
+      href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
+      label: "Archives",
+    };
+
   return (
     <>
       <Main>
-        <Header url={url} back={{ href: "/" }} share />
+        <Header url={url} back={{ href: back.href }} share />
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
           <h1 className="text-6 text-brand leading-tight">
@@ -218,6 +226,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         puzzle={puzzle}
         stats={props.data.puzzleStats}
         userStats={props.data.userStats}
+        back={back}
       />
 
       {/* Client-side auto-post for named users */}

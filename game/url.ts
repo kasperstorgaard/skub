@@ -6,7 +6,13 @@ import {
   encodeMoves,
   encodePosition,
 } from "#/game/strings.ts";
-import { DIFFICULTIES, Difficulty, Move, Position } from "#/game/types.ts";
+import {
+  DIFFICULTIES,
+  Difficulty,
+  Move,
+  Position,
+  Puzzle,
+} from "#/game/types.ts";
 
 /**
  * All state needed to represent the current game
@@ -240,4 +246,19 @@ export function getArchiveDate(
   } catch {
     throw new Error("Unable to parse archive date");
   }
+}
+
+/**
+ * Returns the archive URL that lands on this puzzle's release date,
+ * or null for entries without a `number` (tutorial / onboarding).
+ * Release date = day-of-year (`number`) within the year of `createdAt`.
+ */
+export function getPuzzleArchiveHref(puzzle: Puzzle): string | null {
+  if (puzzle.number === undefined) return null;
+  const releaseDate = new Temporal.PlainDate(
+    puzzle.createdAt.getFullYear(),
+    1,
+    1,
+  ).add({ days: puzzle.number - 1 });
+  return `/puzzles?date=${releaseDate.toString()}`;
 }
