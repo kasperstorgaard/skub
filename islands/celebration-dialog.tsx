@@ -30,7 +30,7 @@ type Props = {
   puzzle: Signal<Puzzle>;
   stats: PuzzleStats;
   userStats?: UserStats | null;
-  back?: { href: string; label: string };
+  back: { href: string; label: string };
 };
 
 export function CelebrationDialog(
@@ -174,8 +174,8 @@ export function CelebrationDialog(
           <a href={getResetHref(href.value)} className="text-text-2 text-1">
             Start over
           </a>
-          <a href={back?.href ?? "/"} className="text-text-2 text-1">
-            {back?.label ?? "Home"}
+          <a href={back.href} className="text-text-2 text-1">
+            {back.label}
           </a>
         </div>
       </div>
