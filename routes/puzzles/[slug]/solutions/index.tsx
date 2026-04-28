@@ -75,6 +75,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
   const { groups, extraGroup, userCanonicalKeys } = props.data;
   const minMoves = props.data.puzzle.minMoves;
   const solutionsHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
+  const backHref = `/puzzles/${props.data.puzzle.slug}`;
 
   const visibleGroups: (CanonicalGroup | null)[] = extraGroup
     ? [...groups.slice(0, 5), null, extraGroup]
@@ -85,7 +86,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
       <Main className="justify-stretch min-h-96">
         <Header
           url={url}
-          back={{ href: "/" }}
+          back={{ href: backHref }}
         />
 
         <div className="flex items-center justify-between mt-2 flex-wrap gap-fl-1">

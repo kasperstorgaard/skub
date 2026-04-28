@@ -49,14 +49,14 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
   const href = useSignal(props.url.href);
   const mode = useSignal<"replay">("replay");
   const url = new URL(props.req.url);
-  const solutionsHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
+  const backHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
 
   return (
     <>
       <Main>
         <Header
           url={url}
-          back={{ href: solutionsHref }}
+          back={{ href: backHref }}
           share={{ params: true }}
         />
 

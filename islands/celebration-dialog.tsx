@@ -30,9 +30,12 @@ type Props = {
   puzzle: Signal<Puzzle>;
   stats: PuzzleStats;
   userStats?: UserStats | null;
+  back?: { href: string; label: string };
 };
 
-export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
+export function CelebrationDialog(
+  { href, puzzle, stats, userStats, back }: Props,
+) {
   const [copied, setCopied] = useState(false);
 
   const liveStats = useSignal<CelebrateStats | null>(null);
@@ -171,8 +174,8 @@ export function CelebrationDialog({ href, puzzle, stats, userStats }: Props) {
           <a href={getResetHref(href.value)} className="text-text-2 text-1">
             Start over
           </a>
-          <a href="/" className="text-text-2 text-1">
-            Home
+          <a href={back?.href ?? "/"} className="text-text-2 text-1">
+            {back?.label ?? "Home"}
           </a>
         </div>
       </div>

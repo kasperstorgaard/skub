@@ -49,6 +49,7 @@ export const handler = define.handlers<PageData>({
       easy: 0,
       medium: 0,
       hard: 0,
+      ultra: 0,
     };
 
     for (const entry of entries) {
