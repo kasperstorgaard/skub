@@ -5,7 +5,7 @@ import { useMemo, useState } from "preact/hooks";
 import { Icon, Spinner } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
-import { decodeState, getResetHref } from "#/game/url.ts";
+import { decodeState } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 
 type Props = {
@@ -92,10 +92,8 @@ export function SolutionDialog(
             "max-md:justify-center",
           )}
         >
-          <a
-            href={getResetHref(href.value)}
-          >
-            Play again
+          <a href="/puzzles/recommended">
+            One more
           </a>
         </div>
 
