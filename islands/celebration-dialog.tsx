@@ -123,7 +123,7 @@ export function CelebrationDialog(
           </a>
 
           <a
-            href="/puzzles/random"
+            href="/puzzles/recommended"
             className="btn flex-1 justify-center"
             data-primary
             autoFocus
@@ -133,9 +133,11 @@ export function CelebrationDialog(
         </div>
 
         <div className="flex justify-center gap-fl-2 mt-1">
-          <a href={getResetHref(href.value)} className="text-text-2 text-1">
-            Start over
-          </a>
+          {!isOptimal && (
+            <a href={getResetHref(href.value)} className="text-text-2 text-1">
+              Try again
+            </a>
+          )}
           <a href={back.href} className="text-text-2 text-1">
             {back.label}
           </a>

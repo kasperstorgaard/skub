@@ -1,4 +1,4 @@
-# Chain games: `/puzzles/random` redirect + dialog buttons
+# Chain games: `/puzzles/recommended` redirect + dialog buttons
 
 ## Problem
 
@@ -12,7 +12,7 @@ dialogs.
 
 Two pieces:
 
-1. **`/puzzles/random` redirect route** — a server-side handler that picks the
+1. **`/puzzles/recommended` redirect route** — a server-side handler that picks the
    recommended puzzle for the user and 303s to `/puzzles/<slug>`. Works
    without JavaScript (it's a plain link target). Falls back to `/` when
    nothing can be recommended (new user with no skill level, or every puzzle
@@ -31,10 +31,10 @@ The home handler is refactored to call `pickRecommendedPuzzle` instead of
 inlining the decision tree. The home UI gates the new onboarding/recommended
 cards behind `skillLevel !== null` so the existing "Learn the basics" CTA
 remains the sole signal for brand-new players — the tutorial recommendation
-is consumed by the `/puzzles/random` redirect, not the home cards.
+is consumed by the `/puzzles/recommended` redirect, not the home cards.
 
 Dialog buttons added in `SolutionDialog` and `CelebrationDialog` linking to
-`/puzzles/random`. Plain `<a>` tags, no client-side state, no fetch — the
+`/puzzles/recommended`. Plain `<a>` tags, no client-side state, no fetch — the
 navigation does all the work.
 
 In `CelebrationDialog` the **share** CTA is removed and its slot is taken

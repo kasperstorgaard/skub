@@ -20,7 +20,7 @@ export const handler = define.handlers({
     );
 
     const target = recommended
-      ? new URL(`/puzzles/${recommended.puzzle.slug}`, ctx.url)
+      ? new URL(`/puzzles/${recommended.slug}`, ctx.url)
       : new URL("/", ctx.url);
 
     return Response.redirect(target, 303);

@@ -12,7 +12,7 @@ import type { SkillLevel } from "#/game/types.ts";
 
 /**
  * Picks the puzzle to recommend to the user — the "what should I play next"
- * answer shared between the home page card and the `/puzzles/random` redirect:
+ * answer shared between the home page card and the `/puzzles/recommended` redirect:
  *
  *  - new user (`skillLevel === null`) → tutorial puzzle (kind: "onboarding")
  *  - beginner with remaining onboarding → onboarding puzzle (kind: "onboarding")
