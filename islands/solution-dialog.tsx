@@ -97,6 +97,9 @@ export function SolutionDialog(
           >
             Play again
           </a>
+          <a href="/puzzles/random">
+            One more
+          </a>
         </div>
 
         <button

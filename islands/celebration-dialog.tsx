@@ -1,11 +1,10 @@
 import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo } from "preact/hooks";
 
 import { addTraceParentHeader } from "#/client/trace-context.ts";
-import { Check, Icon, Ranking, ShareNetwork } from "#/components/icons.tsx";
+import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getShareText } from "#/game/share.ts";
 import { UserStats } from "#/game/streak.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
@@ -36,8 +35,6 @@ type Props = {
 export function CelebrationDialog(
   { href, puzzle, stats, userStats, back }: Props,
 ) {
-  const [copied, setCopied] = useState(false);
-
   const liveStats = useSignal<CelebrateStats | null>(null);
   const statsFetched = useSignal(false);
 
@@ -104,30 +101,6 @@ export function CelebrationDialog(
     [moves.length, isNewPath, puzzle.value, activePuzzleStats, activeUserStats],
   );
 
-  const onShare = useCallback(async () => {
-    const origin = globalThis.location?.origin ?? "";
-    const { text, url } = getShareText({
-      origin,
-      puzzle: puzzle.value,
-      moveCount: moves.length,
-      stats: activePuzzleStats,
-    });
-
-    try {
-      if ("share" in navigator) {
-        await globalThis.navigator.share({ text, url });
-      } else {
-        await globalThis.navigator.clipboard.writeText(`${text}\n${url}`);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        console.error("Share failed:", err);
-      }
-    }
-  }, [puzzle.value, moves.length, activePuzzleStats]);
-
   return (
     <Dialog open={isOpen}>
       <div className="flex flex-col gap-fl-2">
@@ -145,29 +118,18 @@ export function CelebrationDialog(
           <a
             href={`/puzzles/${puzzle.value.slug}/solutions`}
             className="btn flex-1 justify-center"
-            data-primary
-            autoFocus
           >
             <Icon icon={Ranking} /> See solves
           </a>
 
-          <button
-            type="button"
-            className="btn flex-1 hidden js:inline-flex"
-            onClick={onShare}
+          <a
+            href="/puzzles/random"
+            className="btn flex-1 justify-center"
+            data-primary
+            autoFocus
           >
-            {copied
-              ? (
-                <>
-                  <Icon icon={Check} /> Copied!
-                </>
-              )
-              : (
-                <>
-                  <Icon icon={ShareNetwork} /> Share
-                </>
-              )}
-          </button>
+            One more <Icon icon={ArrowRight} />
+          </a>
         </div>
 
         <div className="flex justify-center gap-fl-2 mt-1">

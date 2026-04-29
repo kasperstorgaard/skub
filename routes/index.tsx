@@ -16,21 +16,15 @@ import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getUserStats } from "#/db/stats.ts";
-import {
-  getAvailableEntries,
-  getLatestPuzzle,
-  getOnboardingPuzzle,
-  getPuzzle,
-  getRandomPuzzle,
-} from "#/game/loader.ts";
+import { getLatestPuzzle } from "#/game/loader.ts";
+import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
 import type { UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { withSpan } from "#/lib/tracing.ts";
 
 type PageData = {
   dailyPuzzle: Puzzle;
-  randomPuzzle: Puzzle | null;
-  onboardingPuzzle: Puzzle | null;
+  recommendedPuzzle: Puzzle;
   bestMoves: Record<string, number>;
   userStats: UserStats | null;
 };
@@ -55,41 +49,13 @@ export const handler = define.handlers<PageData>({
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    const solvedSlugs = solutions.map((solution) => solution.puzzleSlug);
-
-    const onboardingPuzzle = user.skillLevel === "beginner"
-      ? await getOnboardingPuzzle({
-        excludeSlugs: solvedSlugs,
-      })
-      : null;
-
     const bestMoves = getBestMoves(solutions);
-    const entries = await getAvailableEntries();
-    const optimalSlugs = entries
-      .filter((entry) => bestMoves[entry.slug] === entry.minMoves)
-      .map((entry) => entry.slug);
-    const allPerfected = entries
-      .filter((entry) => entry.minMoves)
-      .every((entry) => optimalSlugs.includes(entry.slug));
-
-    let randomPuzzle: Puzzle | null = null;
-    if (user.skillLevel !== null && !onboardingPuzzle) {
-      randomPuzzle = allPerfected
-        ? await getPuzzle("loke")
-        : await getRandomPuzzle({
-          excludeSlugs: [dailyPuzzle.slug, ...optimalSlugs],
-          difficulty: user.skillLevel === "expert"
-            ? ["easy", "medium", "hard"]
-            : ["easy", "medium"],
-        });
-    }
-
+    const recommendedPuzzle = await pickRecommendedPuzzle(user, solutions);
     const userStats = await getUserStats(ctx.state.userId, solutions);
 
     return page({
       dailyPuzzle,
-      onboardingPuzzle,
-      randomPuzzle,
+      recommendedPuzzle,
       bestMoves,
       userStats: userStats.totalSolves > 0 ? userStats : null,
     });
@@ -99,8 +65,12 @@ export const handler = define.handlers<PageData>({
 export default define.page<typeof handler>(function Home(ctx) {
   const url = new URL(ctx.req.url);
 
-  const { dailyPuzzle, randomPuzzle, onboardingPuzzle, bestMoves, userStats } =
-    ctx.data;
+  const {
+    dailyPuzzle,
+    recommendedPuzzle,
+    bestMoves,
+    userStats,
+  } = ctx.data;
   const { user } = ctx.state;
 
   return (
@@ -163,20 +133,20 @@ export default define.page<typeof handler>(function Home(ctx) {
                 </a>
               )}
 
-              {onboardingPuzzle && (
+              {user.skillLevel && recommendedPuzzle.onboardingLevel && (
                 <PuzzleCard
-                  puzzle={onboardingPuzzle}
-                  tagline={onboardingPuzzle.onboardingLevel === 2
+                  puzzle={recommendedPuzzle}
+                  tagline={recommendedPuzzle.onboardingLevel === 2
                     ? "Starter puzzle"
                     : "Quick puzzle"}
                 />
               )}
 
-              {randomPuzzle && (
+              {user.skillLevel && !recommendedPuzzle.onboardingLevel && (
                 <PuzzleCard
-                  puzzle={randomPuzzle}
+                  puzzle={recommendedPuzzle}
                   tagline="Random puzzle"
-                  bestMoves={bestMoves[randomPuzzle.slug]}
+                  bestMoves={bestMoves[recommendedPuzzle.slug]}
                 />
               )}
             </li>
