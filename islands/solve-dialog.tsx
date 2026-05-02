@@ -3,7 +3,6 @@ import { clsx } from "clsx/lite";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { Dialog } from "./dialog.tsx";
-import { useDelayedValue } from "#/client/use-delayed-value.ts";
 import { useSolveStream } from "#/client/use-solve-stream.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { encodeMoves } from "#/game/strings.ts";
