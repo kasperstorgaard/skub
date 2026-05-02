@@ -1,9 +1,8 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { useCallback, useEffect, useMemo } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { Dialog } from "./dialog.tsx";
-import { useDelayedValue } from "#/client/use-delayed-value.ts";
 import { useSolveStream } from "#/client/use-solve-stream.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { encodeMoves } from "#/game/strings.ts";
@@ -31,11 +30,7 @@ type SolveState = {
 export function SolveDialog({ puzzle, href }: Props) {
   const gameState = useMemo(() => decodeState(href.value), [href.value]);
 
-  const {
-    value: solveState,
-    queueValue: queueSolveState,
-    clearQueue: clearSolveState,
-  } = useDelayedValue<SolveState>({ status: "starting" });
+  const [solveState, setSolveState] = useState<SolveState | null>(null);
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -80,30 +75,27 @@ export function SolveDialog({ puzzle, href }: Props) {
 
   const { start: startSolve, cancel: cancelSolve } = useSolveStream((event) => {
     if (event.type === "progress") {
-      queueSolveState({ status: "solving", depth: event.depth }, {
-        delay: 100,
-      });
+      setSolveState({ status: "solving", depth: event.depth });
     } else if (event.type === "solution") {
-      queueSolveState({ status: "done", moves: event.moves }, { delay: 100 });
+      setSolveState({ status: "done", moves: event.moves });
     } else if (event.type === "error") {
-      queueSolveState({ status: "error" }, { immediate: true });
+      setSolveState({ status: "error" });
     }
   });
 
   useEffect(() => {
     if (!open) {
       cancelSolve();
-      clearSolveState();
+      setSolveState(null);
       return;
     }
 
     if (isValidSolution(board)) {
-      queueSolveState({ status: "done", moves: [] }, { immediate: true });
+      setSolveState({ status: "done", moves: [] });
       return;
     }
 
-    clearSolveState();
-    queueSolveState({ status: "starting" }, { immediate: true });
+    setSolveState({ status: "starting" });
     startSolve(board);
 
     return cancelSolve;
