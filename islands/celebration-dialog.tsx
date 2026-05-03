@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
-import { useEffect, useMemo } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
@@ -9,6 +9,7 @@ import { UserStats } from "#/game/streak.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
+import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 import type { CelebrateStats } from "#/routes/api/celebrate-stats.ts";
 
 type CelebrationCase =
@@ -30,13 +31,39 @@ type Props = {
   stats: PuzzleStats;
   userStats?: UserStats | null;
   back: { href: string; label: string };
+  isSubmitting?: Signal<boolean>;
 };
 
+// Pause after the ripple ends before the dialog starts to fade in.
+const POST_RIPPLE_PAUSE_MS = 200;
+// Extra slack before the cap fires — safety net for slow POSTs.
+const MAX_CAP_SLACK_MS = 1000;
+
 export function CelebrationDialog(
-  { href, puzzle, stats, userStats, back }: Props,
+  {
+    href,
+    puzzle,
+    stats,
+    userStats,
+    back,
+    isSubmitting,
+  }: Props,
 ) {
+  // Only bypass the ripple wait when the dialog was already in the URL on
+  // mount (no-JS redirect path). Mid-session, AutoPostSolution writes
+  // dialog=celebrate to the URL, which must NOT short-circuit the timer.
+  const initialDialog = useRef(
+    new URL(href.value).searchParams.get("dialog"),
+  );
+
+  const rippleDuration = useMemo(
+    () => getBoardRippleDuration(puzzle.value.board.destination),
+    [puzzle.value.board.destination.x, puzzle.value.board.destination.y],
+  );
   const liveStats = useSignal<CelebrateStats | null>(null);
   const statsFetched = useSignal(false);
+  const [minElapsed, setMinElapsed] = useState(false);
+  const [maxElapsed, setMaxElapsed] = useState(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -56,35 +83,68 @@ export function CelebrationDialog(
   ]);
 
   const hasSolution = useMemo(() => isValidSolution(board), [board]);
-  const isOpen = hasSolution && dialog === "celebrate";
+
+  const isOpen = hasSolution && (
+    (!isSubmitting?.value && minElapsed) ||
+    maxElapsed ||
+    initialDialog.current === "celebrate"
+  );
 
   const isNewPath = useMemo(
     () => new URL(href.value).searchParams.get("new_path") === "true",
     [href.value],
   );
 
+  // Wait timers from the moment a solve is detected. Dialog can't open
+  // before the board exit transition completes; force-opens shortly after
+  // (slow POST safety net). The exit duration is computed per-board in
+  // lib/board-exit.ts and bubbled up via the shared signal. Both reset
+  // when the user undoes back across the solve.
+  useEffect(() => {
+    if (!hasSolution) {
+      setMinElapsed(false);
+      setMaxElapsed(false);
+      return;
+    }
+    const minWait = rippleDuration + POST_RIPPLE_PAUSE_MS;
+    const maxWait = minWait + MAX_CAP_SLACK_MS;
+    const minTimer = setTimeout(() => setMinElapsed(true), minWait);
+    const maxTimer = setTimeout(() => setMaxElapsed(true), maxWait);
+    return () => {
+      clearTimeout(minTimer);
+      clearTimeout(maxTimer);
+    };
+  }, [hasSolution, rippleDuration]);
+
   // Fetch fresh stats once the celebrate dialog is open
   useEffect(() => {
-    if (dialog !== "celebrate") return;
+    if (!isOpen) return;
+    if (statsFetched.value) return;
 
+    const controller = new AbortController();
     const headers = addTraceParentHeader(new Headers());
 
-    fetch(`/api/celebrate-stats?slug=${puzzle.value.slug}`, { headers })
+    fetch(`/api/celebrate-stats?slug=${puzzle.value.slug}`, {
+      headers,
+      signal: controller.signal,
+    })
       .then((r) => r.json())
       .then((data: CelebrateStats) => {
         liveStats.value = data;
+        statsFetched.value = true;
       })
-      .catch(() => {
-        // Silently fall back to server-rendered props
-      })
-      .finally(() => {
+      .catch((err) => {
+        // AbortError is expected on unmount/close; everything else falls back silently
+        if (err?.name === "AbortError") return;
         statsFetched.value = true;
       });
-  }, [dialog, puzzle.value.slug]);
+
+    return () => controller.abort();
+  }, [isOpen, puzzle.value.slug]);
 
   const activePuzzleStats = liveStats.value?.puzzleStats ?? stats;
   const activeUserStats = liveStats.value?.userStats ?? userStats ?? null;
-  const isLoading = dialog === "celebrate" && !statsFetched.value;
+  const isLoading = isOpen && !statsFetched.value;
 
   const isOptimal = moves.length === puzzle.value.minMoves;
   const headline = isOptimal
@@ -102,14 +162,22 @@ export function CelebrationDialog(
   );
 
   return (
-    <Dialog open={isOpen}>
+    <Dialog open={isOpen} className="w-full">
       <div className="flex flex-col gap-fl-2">
         <h2 className="text-fl-2 font-semibold text-text-1">
           {headline}
         </h2>
 
         {isLoading
-          ? <div className="h-[1lh] w-3/4 rounded-1 bg-ui-1/30 animate-pulse" />
+          ? (
+            <p className="text-3 text-text-2">
+              Calculating stats<span className="celebrate-dots">
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+              </span>
+            </p>
+          )
           : <p className="text-3 text-text-2">{celebration.body}</p>}
       </div>
 
@@ -158,6 +226,10 @@ export function CelebrationDialog(
  * 6. Fallback (player count or generic)
  *
  * Headline is always derived locally: "Perfect — X moves" / "Solved — X moves".
+ *
+ * TODO: replace the rarity / unique-solver framing with percentile-based stats —
+ * "You're in the top X% of solvers on this puzzle" or "Faster than X% of solves".
+ * More motivating, more actionable, and survives once the puzzle has many solvers.
  */
 function getCelebration(
   solve: { moveCount: number; isNewPath: boolean },

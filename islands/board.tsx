@@ -1,6 +1,11 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { useCallback, useMemo, useRef, useState } from "preact/hooks";
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 
 import { useRouter } from "./router.tsx";
 import { useMoves } from "#/client/moves.ts";
@@ -10,6 +15,7 @@ import {
   getGrid,
   getTargets,
   isPositionSame,
+  isValidSolution,
   resolveMoves,
 } from "#/game/board.ts";
 import { getGuides, Guide } from "#/game/guides.ts";
@@ -27,6 +33,7 @@ import {
   getMovesHref,
   getReplaySpeed,
 } from "#/game/url.ts";
+import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import { buildReplayKeyframes, type KeyframeStop } from "#/lib/replay.ts";
 
 type BoardProps = {
@@ -56,6 +63,11 @@ export default function Board(
     puzzle.value.board,
     moves,
   ]);
+
+  const hasSolution = useMemo(
+    () => mode.value === "solve" && isValidSolution(board),
+    [board, mode.value],
+  );
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -133,6 +145,7 @@ export default function Board(
     <>
       <div
         ref={boardRef}
+        data-rippling={hasSolution ? "true" : undefined}
         // Reusable board style variables
         style={{
           "--active-bg": activePiece
@@ -146,6 +159,7 @@ export default function Board(
           // 39px
           "--space-w": "clamp(40px - var(--gap), 9.4666vw, 56px)",
           "--replay-speed": `${1 / replaySpeed}s`,
+          "--ripple-tile-duration": `${TILE_DURATION_MS}ms`,
         }}
         className={clsx(
           // Relative for the touch region positioning
@@ -158,6 +172,8 @@ export default function Board(
           row.map((space) => (
             <BoardSpace
               {...space}
+              destination={board.destination}
+              hasSolution={hasSolution}
               isActive={Boolean(
                 mode.value === "editor" && state.active &&
                   isPositionSame(state.active, space),
@@ -179,8 +195,12 @@ export default function Board(
           />
         ))}
 
-        {/* Move guides: target destinations + hint (if active) */}
-        {guides.map((guide) => (
+        {
+          /* Move guides: target destinations + hint (if active).
+            Hidden the moment a solve is detected — they shouldn't linger
+            into the celebration cascade. */
+        }
+        {!hasSolution && guides.map((guide) => (
           <MoveGuide
             {...guide}
             href={getMovesHref([guide.move], {
@@ -197,6 +217,7 @@ export default function Board(
             id={getPieceId(piece, idx)}
             isActive={state.active && isPositionSame(piece, state.active)}
             isReadonly={mode.value === "replay" || mode.value === "editor"}
+            isReplay={mode.value === "replay"}
             wiggle={mode.value === "solve" && wiggle[piece.type]}
             onFocus={(event) => {
               const href = (event.target as HTMLAnchorElement).href;
@@ -212,6 +233,7 @@ export default function Board(
             moves={moves}
           />
         )}
+
 
         {/* Swipe region for touch detection, hidden on non-coarse pointer devices */}
         {mode.value === "solve" && (
@@ -248,9 +270,21 @@ function BoardWall({ x, y, orientation }: Wall) {
 type BoardSpaceProps = Position & {
   isActive?: boolean;
   href?: string;
+  destination: Position;
+  hasSolution: boolean;
 };
 
-function BoardSpace({ x, y, href, isActive }: BoardSpaceProps) {
+function BoardSpace({ x, y, href, isActive, destination, hasSolution }: BoardSpaceProps) {
+  const tileStyle = {
+    "--x": x,
+    "--y": y,
+    "--ripple-tx": Math.sign(x - destination.x),
+    "--ripple-ty": Math.sign(y - destination.y),
+    "--ripple-delay": hasSolution
+      ? `${getRippleDelay({ x, y }, destination)}ms`
+      : undefined,
+  };
+
   if (href) {
     return (
       <a
@@ -258,12 +292,10 @@ function BoardSpace({ x, y, href, isActive }: BoardSpaceProps) {
         className={clsx(
           "grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
           "border-1 border-stone-9 border-b-1 border-r-1 border-r-stone-7 border-b-stone-7",
+          "ripple-tile",
           isActive && "bg-brand/30 animate-blink",
         )}
-        style={{
-          "--x": x,
-          "--y": y,
-        }}
+        style={tileStyle}
         data-router="replace"
       />
     );
@@ -274,11 +306,9 @@ function BoardSpace({ x, y, href, isActive }: BoardSpaceProps) {
       className={clsx(
         "grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
         "border-1 border-stone-9 border-b-1 border-r-1 border-r-stone-7 border-b-stone-7",
+        "ripple-tile",
       )}
-      style={{
-        "--x": x,
-        "--y": y,
-      }}
+      style={tileStyle}
     />
   );
 }
@@ -358,13 +388,24 @@ type BoardPieceProps = {
   type: "puck" | "blocker";
   isActive?: boolean;
   isReadonly?: boolean;
+  isReplay?: boolean;
   wiggle?: boolean;
   onFocus: (event: FocusEvent) => void;
 };
 
 function BoardPiece(
-  { x, y, id, href, type, isReadonly, isActive, wiggle, onFocus }:
-    BoardPieceProps,
+  {
+    x,
+    y,
+    id,
+    href,
+    type,
+    isReadonly,
+    isReplay,
+    isActive,
+    wiggle,
+    onFocus,
+  }: BoardPieceProps,
 ) {
   return (
     <a
@@ -374,13 +415,17 @@ function BoardPiece(
         "--x": x,
         "--y": y,
         "--pad": "min(20%,var(--size-2))",
-        // replay-{id} is generated by BoardReplayStyles based on moves list
-        animation: `replay-${id} var(--replay-duration) ease-in-out`,
+        // replay-{id} keyframes are generated by BoardReplayStyles, only mounted
+        // in replay mode. Setting the inline animation outside that mode would
+        // shadow the board exit animation (inline > stylesheet specificity).
+        animation: isReplay
+          ? `replay-${id} var(--replay-duration) ease-in-out`
+          : undefined,
         "--replay-duration": "calc(var(--replay-len) * var(--replay-speed))",
       }}
       className={clsx(
         // position all pieces in the same grid spot, then translate them to their x/y position
-        "grid col-start-1 row-start-1 w-full h-full p-(--pad) ",
+        "grid col-start-1 row-start-1 w-full h-full p-(--pad)",
         "translate-x-[calc((var(--space-w)+var(--gap))*var(--x))]",
         "translate-y-[calc((var(--space-w)+var(--gap))*var(--y))]",
         "transition-transform duration-(--piece-speed,200ms) ease-out",

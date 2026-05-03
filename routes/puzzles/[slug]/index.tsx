@@ -140,6 +140,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const href = useSignal(props.url.href);
   const puzzle = useSignal(props.data.puzzle);
   const mode = useSignal<"solve">("solve");
+  const isSubmitting = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
 
   const url = new URL(props.req.url);
@@ -148,7 +149,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
     ? { href: "/", label: "Home" }
     : {
       href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
-      label: "Archives",
+      label: "Back to archives",
     };
 
   return (
@@ -227,6 +228,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         stats={props.data.puzzleStats}
         userStats={props.data.userStats}
         back={back}
+        isSubmitting={isSubmitting}
       />
 
       {/* Client-side auto-post for named users */}
@@ -235,6 +237,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           href={href}
           puzzle={puzzle}
           savedName={props.data.savedName}
+          isSubmitting={isSubmitting}
         />
       )}
     </>

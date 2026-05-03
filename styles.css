@@ -705,16 +705,25 @@
 
   dialog {
     background-color: var(--color-surface-1);
+    transition:
+      opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 400ms cubic-bezier(0.16, 1, 0.3, 1),
+      overlay 400ms allow-discrete,
+      display 400ms allow-discrete;
   }
 
   dialog[open] {
     opacity: 1;
-    transition: opacity 200ms ease;
+    transform: scale(1) translateY(0);
   }
 
   dialog::backdrop {
     background-color: rgb(0 0 0 / 0.4);
-    transition: background-color 200ms ease;
+    transition:
+      opacity 400ms ease-out,
+      background-color 400ms ease-out,
+      overlay 400ms allow-discrete,
+      display 400ms allow-discrete;
   }
 
   [data-js] dialog[data-modal][open]:not(:modal) {
@@ -725,9 +734,10 @@
   @starting-style {
     dialog[open] {
       opacity: 0;
+      transform: scale(0.96) translateY(8px);
     }
 
-    dialog::backdrop {
+    dialog[open]::backdrop {
       background-color: rgb(0 0 0 / 0);
     }
   }
@@ -833,6 +843,59 @@
   animation: var(--animation-shake-z);
   animation-iteration-count: infinite;
   transform-origin: center;
+}
+
+@layer components {
+  /* Three sequenced dots after "Calculating stats" while the celebrate-stats
+     fetch is in flight. Pure CSS, no JS. */
+  .celebrate-dots > span {
+    display: inline-block;
+    opacity: 0.2;
+    animation: celebrate-dot 1.2s ease-in-out infinite;
+  }
+  .celebrate-dots > span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  .celebrate-dots > span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes celebrate-dot {
+    0%, 60%, 100% {
+      opacity: 0.2;
+    }
+    30% {
+      opacity: 1;
+    }
+  }
+
+  /* Post-solve ripple: tiles pulse outward ring by ring from the destination.
+     Per-tile delay (--ripple-delay) is set by a JS-generated stylesheet
+     (lib/board-ripple.ts → islands/board.tsx), keyed by data-exit-key.
+     Board stays intact — tiles return to their normal state. */
+  @keyframes board-tile-ripple {
+    0% {
+      transform: scale(1) translate(0, 0);
+      filter: brightness(1);
+    }
+    50% {
+      transform: scale(1.07)
+        translate(
+          calc(var(--ripple-tx, 0) * 12%),
+          calc(var(--ripple-ty, 0) * 12%)
+        );
+      filter: brightness(1.35);
+    }
+    100% {
+      transform: scale(1) translate(0, 0);
+      filter: brightness(1);
+    }
+  }
+
+  [data-rippling="true"] .ripple-tile {
+    animation: board-tile-ripple var(--ripple-tile-duration, 500ms) ease-in-out var(--ripple-delay, 0ms) both;
+    transform-origin: center;
+  }
 }
 
 @property --x {

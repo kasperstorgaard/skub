@@ -1,63 +1,69 @@
-# Chain games: `/puzzles/recommended` redirect + dialog buttons
+# Celebration transition: ripple animation + client-side post
 
 ## Problem
 
-After solving a puzzle, players have to navigate back home (or to the archive)
-to find the next thing to play. The flow is friction for engaged players who
-just want to keep going. The home page already picks a "recommended" puzzle
-for them — that same logic should be reachable from inside the post-solve
-dialogs.
+Two independent issues:
 
-## Approach
+1. The existing post-solve animation (board explosion) is too long and
+   destructive — tiles fly off screen, leaving nothing behind. A shorter
+   celebratory ripple that leaves the board intact is a better fit.
 
-Two pieces:
+2. `AutoPostSolution` uses `redirect: "follow"` against the page POST route
+   to discover the resulting URL. This fetches a full HTML page just to read
+   `response.url` — wasteful, and couples the client to server redirect logic.
 
-1. **`/puzzles/recommended` redirect route** — a server-side handler that picks the
-   recommended puzzle for the user and 303s to `/puzzles/<slug>`. Works
-   without JavaScript (it's a plain link target). Falls back to `/` when
-   nothing can be recommended (new user with no skill level, or every puzzle
-   perfected and "loke" can't be loaded).
-2. **`pickRecommendedPuzzle(user, solutions)`** in a new
-   `game/recommendation.ts` — extracts the home-page picker so both the home
-   handler and the redirect route share one source of truth. Logic:
-   - new user (`skillLevel === null`) → tutorial puzzle (filling the gap
-     where the previous home logic returned nothing for new users)
-   - beginner → onboarding puzzle, falling through to random when exhausted
-   - everything perfected → "loke" (endgame puzzle)
-   - otherwise → random non-optimal puzzle of appropriate difficulty,
-     today's daily always excluded
+## Changes
 
-The home handler is refactored to call `pickRecommendedPuzzle` instead of
-inlining the decision tree. The home UI gates the new onboarding/recommended
-cards behind `skillLevel !== null` so the existing "Learn the basics" CTA
-remains the sole signal for brand-new players — the tutorial recommendation
-is consumed by the `/puzzles/recommended` redirect, not the home cards.
+### 1. Ripple animation (replaces board explosion)
 
-Dialog buttons added in `SolutionDialog` and `CelebrationDialog` linking to
-`/puzzles/recommended`. Plain `<a>` tags, no client-side state, no fetch — the
-navigation does all the work.
+A scale + brightness pulse radiates outward ring by ring from the destination
+tile. All tiles in a ring fire simultaneously (~80ms between rings, 250ms per
+tile animation). Total: ~810ms. Board returns to normal — no tiles leave the
+screen.
 
-In `CelebrationDialog` the **share** CTA is removed and its slot is taken
-over by the new "Another puzzle" primary action. Share usage is effectively
-zero today, and the chaining CTA earns the prime real-estate while the game
-still builds critical mass through word of mouth. Share can come back later
-once organic loops are stronger; the underlying `getShareText` helper stays
-available.
+CSS trigger: `data-rippling="true"` on the board wrapper. Per-tile delay
+(`--ripple-delay`) set by a JS-generated stylesheet (`lib/board-ripple.ts`),
+keyed by `data-exit-key`. Properties animated: `transform: scale(...)` +
+`filter: brightness(...)` — both on the compositor, no layout.
+
+Actors (pieces, walls, destination marker) are not animated — they sit on top
+of the ripple naturally.
+
+`lib/board-exit.ts` → `lib/board-ripple.ts` (renamed + rewritten, same
+`{ css, totalMs }` shape).
+
+### 2. Dialog fade-in
+
+Dialog opens after ripple completes. `MIN_WAIT_FLOOR_MS` lowered to 900ms
+(ripple is ~810ms). The existing `dialog[open]` CSS transition handles the
+fade-in. `exitDurationMs` signal renamed to `rippleDurationMs`.
+
+### 3. Client-side auto-post via `/api/solutions`
+
+New `POST /api/solutions` endpoint returns JSON `{ isNewPath: boolean }`.
+Same KV writes, analytics, and skill-level assessment as the existing page
+POST — just no redirect.
+
+`AutoPostSolution` now:
+- POSTs to `/api/solutions` (formdata with `name`, `moves`, `puzzleSlug`)
+- Receives JSON, constructs `?dialog=celebrate[&new_path=true]` URL itself
+- No `redirect: "follow"`, no `response.url` reading
+
+The page POST at `/puzzles/[slug]` is unchanged — still handles the no-JS
+path and solution-dialog submissions.
 
 ## Non-goals
 
-- A general "next puzzle" API endpoint returning JSON. Navigation-shaped is
-  enough for the chaining UX; an API-shape would invite client-side state
-  juggling that this feature doesn't need.
-- Surfacing "another puzzle" on the home page or archive list. The button
-  only appears in post-solve dialogs (the moment chaining matters).
-- Changing the home page's tagline / `bestMoves` wiring for the picked puzzle —
-  the refactor preserves existing behaviour byte-for-byte.
-- Per-call exclusion (e.g. "skip the puzzle I just solved"). Optimal solves
-  are already filtered out of the random pool; non-optimal repeats are rare
-  enough not to warrant a `?exclude=` param's complexity.
-- Celebration transition / animation buildup before the dialog opens
-  (separate follow-up).
-- Skipping name submission for anonymous players who click "Another puzzle"
-  from `SolutionDialog` — that's the scoreboard-opt-out feature, deferred.
-  The link bypasses Save as a side effect; acceptable for now.
+- No-JS path unchanged.
+
+## Follow-up: hide optimal score pre-solve
+
+`minMoves` is currently passed to the client on page load (drives the board
+difficulty badge and the "Perfect" headline). A follow-up PR will:
+
+- Withhold `minMoves` from the initial page data
+- Have `/api/solutions` return `{ isNewPath, isOptimal }` so the celebration
+  dialog can show "Perfect — X moves" without needing `minMoves` beforehand
+- Open the door for richer messaging: "only X% of solvers matched or beat this"
+  using the solutions histogram already available in `celebrate-stats`
+- Remove or defer the `DifficultyBadge` `minMoves` display until after solving

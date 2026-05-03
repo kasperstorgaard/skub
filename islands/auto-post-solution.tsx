@@ -10,14 +10,21 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName: string;
+  isSubmitting: Signal<boolean>;
 };
 
 /**
  * Client-side auto-post: when a named user solves the puzzle via JS moves,
  * POST the solution and update href to include dialog=celebrate.
  * Renders nothing — purely a side-effect island.
+ *
+ * The shared `isSubmitting` signal flips true at POST start and false on
+ * settle, letting the celebration dialog gate its visibility against the
+ * network without staring at an empty board.
  */
-export function AutoPostSolution({ href, puzzle, savedName }: Props) {
+export function AutoPostSolution(
+  { href, puzzle, savedName, isSubmitting }: Props,
+) {
   const postingRef = useRef(false);
   const celebratedRef = useRef(false);
 
@@ -42,36 +49,39 @@ export function AutoPostSolution({ href, puzzle, savedName }: Props) {
 
   const isEnabled = hasSolution && !!savedName && !dialog;
 
-  // TODO: expose a "submitting" state from the moment hasSolution becomes true
-  // until href updates to ?dialog=celebrate, so the board or controls can show
-  // a transition (e.g. disabled controls, subtle spinner) during the POST round trip
-  // and the celebrate-stats fetch. Currently there is a silent gap between the last
-  // move and the dialog appearing.
-
   useEffect(() => {
     if (!isEnabled) return;
     if (postingRef.current || celebratedRef.current) return;
 
     postingRef.current = true;
+    isSubmitting.value = true;
 
     const form = new FormData();
     form.set("name", savedName);
+    form.set("puzzleSlug", puzzle.value.slug);
     form.set("moves", JSON.stringify(moves));
 
     const headers = addTraceParentHeader(new Headers());
 
-    fetch(`/puzzles/${puzzle.value.slug}`, {
+    // Intentionally not aborted on unmount — the solve must persist even if
+    // the user navigates away mid-submission.
+    fetch("/api/solutions", {
       method: "POST",
-      redirect: "follow",
       headers,
       body: form,
-    }).then((response) => {
+    }).then(async (response) => {
+      const { isNewPath } = await response.json() as { isNewPath: boolean };
+      const celebrateUrl = new URL(href.value);
+      celebrateUrl.searchParams.set("dialog", "celebrate");
+      if (isNewPath) celebrateUrl.searchParams.set("new_path", "true");
       celebratedRef.current = true;
-      href.value = response.url;
-      globalThis.history.replaceState({}, "", response.url);
+      href.value = celebrateUrl.href;
+      globalThis.history.replaceState({}, "", celebrateUrl.href);
     }).catch(() => {
       // Silently fail — server path will handle it on next navigation
       postingRef.current = false;
+    }).finally(() => {
+      isSubmitting.value = false;
     });
   }, [isEnabled, state.moves, puzzle.value.slug]);
 
