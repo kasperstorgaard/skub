@@ -879,12 +879,12 @@
       filter: brightness(1);
     }
     50% {
-      transform: scale(1.07)
+      transform: scale(1.02)
         translate(
-          calc(var(--ripple-tx, 0) * 12%),
-          calc(var(--ripple-ty, 0) * 12%)
+          calc(var(--ripple-tx, 0) * 4%),
+          calc(var(--ripple-ty, 0) * 4%)
         );
-      filter: brightness(1.35);
+      filter: brightness(1.5);
     }
     100% {
       transform: scale(1) translate(0, 0);
@@ -893,7 +893,8 @@
   }
 
   [data-rippling="true"] .ripple-tile {
-    animation: board-tile-ripple var(--ripple-tile-duration, 500ms) ease-in-out var(--ripple-delay, 0ms) both;
+    animation: board-tile-ripple var(--ripple-tile-duration, 500ms) ease-in-out
+      var(--ripple-delay, 0ms) both;
     transform-origin: center;
   }
 }

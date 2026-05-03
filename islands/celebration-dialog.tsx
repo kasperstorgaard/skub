@@ -35,7 +35,7 @@ type Props = {
 };
 
 // Pause after the ripple ends before the dialog starts to fade in.
-const POST_RIPPLE_PAUSE_MS = 200;
+const POST_RIPPLE_PAUSE_MS = 50;
 // Extra slack before the cap fires — safety net for slow POSTs.
 const MAX_CAP_SLACK_MS = 1000;
 

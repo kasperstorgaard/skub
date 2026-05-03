@@ -1,9 +1,9 @@
 import type { Position } from "#/game/types.ts";
 
 // Per-tile animation duration.
-export const TILE_DURATION_MS = 650;
+export const TILE_DURATION_MS = 400;
 // Delay between rings. All tiles in a ring fire together.
-export const RING_STAGGER_MS = 155;
+export const RING_STAGGER_MS = 100;
 
 /**
  * Delay (ms) for a single tile at `pos` relative to the destination.
