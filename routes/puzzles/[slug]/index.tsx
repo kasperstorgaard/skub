@@ -86,6 +86,7 @@ export const handler = define.handlers<PageData>({
     }
 
     const activeSpan = trace.getActiveSpan();
+    activeSpan?.setAttribute("solution.source", source ?? "unknown");
     activeSpan?.setAttribute("solution.moves", moves.length);
 
     const [{ isNew, isNewPath }] = await Promise.all([
@@ -103,37 +104,24 @@ export const handler = define.handlers<PageData>({
       setUser(ctx.state.userId, { name }),
     ]);
 
-    if (isNew) {
-      trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
+    const redirectUrl = getSolveRedirectUrl(ctx, source, { isNewPath });
+    if (!isNew) return Response.redirect(redirectUrl, 303);
 
-      const { skillLevel } = ctx.state.user;
-      const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
+    trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
-      if (newLevel && newLevel !== skillLevel) {
-        await setUser(ctx.state.userId, { skillLevel: newLevel });
-        trackSkillLevelUp(ctx.state, puzzle, {
-          moves,
-          url: referer,
-          skillLevel: newLevel,
-        });
-      }
+    const { skillLevel } = ctx.state.user;
+    const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
+
+    if (newLevel && newLevel !== skillLevel) {
+      await setUser(ctx.state.userId, { skillLevel: newLevel });
+      trackSkillLevelUp(ctx.state, puzzle, {
+        moves,
+        url: referer,
+        skillLevel: newLevel,
+      });
     }
 
-    if (source === "auto-post") {
-      const celebrateUrl = new URL(ctx.url);
-      celebrateUrl.searchParams.delete("active");
-      celebrateUrl.searchParams.delete("hint");
-      celebrateUrl.searchParams.set("dialog", "celebrate");
-      if (isNewPath) celebrateUrl.searchParams.set("new_path", "true");
-      return Response.redirect(celebrateUrl, 303);
-    }
-
-    const solutionsUrl = new URL(
-      ctx.req.headers.get("referer") ?? "",
-      ctx.req.url,
-    );
-    solutionsUrl.pathname = `/puzzles/${slug}/solutions`;
-    return Response.redirect(solutionsUrl, 303);
+    return Response.redirect(redirectUrl, 303);
   },
 });
 
@@ -258,6 +246,8 @@ function getSolveRedirectUrl(
 
   url.pathname = `/puzzles/${slug}`;
   url.searchParams.set("dialog", "celebrate");
+  url.searchParams.delete("active");
+  url.searchParams.delete("hint");
   if (options?.isNewPath) url.searchParams.set("new_path", "true");
 
   return url;
