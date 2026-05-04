@@ -48,7 +48,8 @@ export function CelebrationDialog(
     [puzzle.value.board.destination.x, puzzle.value.board.destination.y],
   );
   const celebrateStats = useSignal<CelebrateStats | null>(null);
-  const statsFetched = useSignal(false);
+  const statsSettled = useSignal(false);
+  const statsError = useSignal(false);
   const [minElapsed, setMinElapsed] = useState(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
@@ -83,7 +84,7 @@ export function CelebrationDialog(
   useEffect(() => {
     if (!isOpen) return;
     if (isSubmitting?.value) return;
-    if (statsFetched.value) return;
+    if (statsSettled.value) return;
 
     const controller = new AbortController();
     const headers = addTraceParentHeader(new Headers());
@@ -95,20 +96,20 @@ export function CelebrationDialog(
       .then((r) => r.json())
       .then((data: CelebrateStats) => {
         celebrateStats.value = data;
-        statsFetched.value = true;
+        statsSettled.value = true;
       })
       .catch((err) => {
-        // AbortError is expected on unmount/close; everything else falls back silently
         if (err?.name === "AbortError") return;
-        statsFetched.value = true;
+        statsSettled.value = true;
+        statsError.value = true;
       });
 
     return () => controller.abort();
-  }, [isOpen, isSubmitting?.value, puzzle.value.slug]);
+  }, [isOpen, isSubmitting?.value, statsSettled.value, puzzle.value.slug]);
 
   const puzzleStats = celebrateStats.value?.puzzleStats ?? defaultPuzzleStats;
   const userStats = celebrateStats.value?.userStats ?? null;
-  const isLoading = isOpen && !statsFetched.value;
+  const isLoading = isOpen && !statsSettled.value;
 
   const isOptimal = moves.length === puzzle.value.minMoves;
   const headline = isOptimal
@@ -148,7 +149,11 @@ export function CelebrationDialog(
               </span>
             </p>
           )
-          : <p className="text-3 text-text-2">{celebration.body}</p>}
+          : (
+            <p className="text-3 text-text-2">
+              {statsError.value ? "Couldn't load stats." : celebration.body}
+            </p>
+          )}
       </div>
 
       <div className="flex flex-col gap-fl-1 items-stretch">

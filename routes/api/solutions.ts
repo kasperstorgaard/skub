@@ -16,7 +16,7 @@ import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
 /**
  * POST /api/solutions
  *
- * Post a solution for a puzzle, returns
+ * Saves a solution for a puzzle. Returns `{ isNewPath }`.
  */
 export const handler = define.handlers({
   async POST(ctx) {
@@ -31,12 +31,18 @@ export const handler = define.handlers({
     if (!puzzle) throw new HttpError(404, `Unknown puzzle: ${puzzleSlug}`);
 
     if (!isDev && puzzle.number) {
-      const dayOfYear = getDayOfYear(new Date(Date.now()));
+      const dayOfYear = getDayOfYear();
       if (puzzle.number > dayOfYear) throw new HttpError(404);
     }
 
     const rawMoves = form.get("moves")?.toString() ?? "";
-    const moves = JSON.parse(rawMoves) as Move[];
+    let moves: Move[] = [];
+
+    try {
+      moves = JSON.parse(rawMoves) as Move[];
+    } catch {
+      throw new HttpError(500, "Invalid moves format");
+    }
 
     if (!isValidSolution(resolveMoves(puzzle.board, moves))) {
       throw new HttpError(400, "Solution is not valid");

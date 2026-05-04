@@ -35,8 +35,7 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
  * Manifest entries available today: number <= day-of-year, onboarding excluded.
  */
 export async function getAvailableEntries() {
-  const today = new Date(Date.now());
-  const dayOfYear = getDayOfYear(today);
+  const dayOfYear = getDayOfYear();
 
   const manifest = await getPuzzleManifest();
 
@@ -49,8 +48,7 @@ export async function getAvailableEntries() {
  * Manifest entries available after today: number > day-of-year, onboarding excluded.
  */
 export async function getFutureEntries() {
-  const today = new Date(Date.now());
-  const dayOfYear = getDayOfYear(today);
+  const dayOfYear = getDayOfYear();
 
   const manifest = await getPuzzleManifest();
 
