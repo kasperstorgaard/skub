@@ -140,7 +140,6 @@ export default function Board(
     <>
       <div
         ref={boardRef}
-        data-rippling={hasSolution ? "true" : undefined}
         // Reusable board style variables
         style={{
           "--active-bg": activePiece
