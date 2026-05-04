@@ -846,21 +846,21 @@
 }
 
 @layer components {
-  /* Three sequenced dots after "Calculating stats" while the celebrate-stats
-     fetch is in flight. Pure CSS, no JS. */
-  .celebrate-dots > span {
+  /* Three sequenced dots to indicate loading */
+  .loading-dots > span {
     display: inline-block;
     opacity: 0.2;
-    animation: celebrate-dot 1.2s ease-in-out infinite;
+    animation: load-dot 1.5s ease-in-out infinite;
+    letter-spacing: 0.13ch;
   }
-  .celebrate-dots > span:nth-child(2) {
-    animation-delay: 0.2s;
+  .loading-dots > span:nth-child(2) {
+    animation-delay: 0.3s;
   }
-  .celebrate-dots > span:nth-child(3) {
-    animation-delay: 0.4s;
+  .loading-dots > span:nth-child(3) {
+    animation-delay: 0.5s;
   }
 
-  @keyframes celebrate-dot {
+  @keyframes load-dot {
     0%, 60%, 100% {
       opacity: 0.2;
     }
@@ -892,8 +892,8 @@
     }
   }
 
-  [data-rippling="true"] .ripple-tile {
-    animation: board-tile-ripple var(--ripple-tile-duration, 500ms) ease-in-out
+  .tile-ripple {
+    animation: board-tile-ripple var(--tile-ripple-duration, 500ms) ease-in-out
       var(--ripple-delay, 0ms) both;
     transform-origin: center;
   }

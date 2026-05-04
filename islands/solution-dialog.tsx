@@ -82,7 +82,6 @@ export function SolutionDialog(
           name="moves"
           value={JSON.stringify(state.moves)}
         />
-        <input type="hidden" name="source" value="solution-dialog" />
       </form>
 
       <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">

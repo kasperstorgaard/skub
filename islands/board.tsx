@@ -1,11 +1,6 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import {
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from "preact/hooks";
+import { useCallback, useMemo, useRef, useState } from "preact/hooks";
 
 import { useRouter } from "./router.tsx";
 import { useMoves } from "#/client/moves.ts";
@@ -159,7 +154,7 @@ export default function Board(
           // 39px
           "--space-w": "clamp(40px - var(--gap), 9.4666vw, 56px)",
           "--replay-speed": `${1 / replaySpeed}s`,
-          "--ripple-tile-duration": `${TILE_DURATION_MS}ms`,
+          "--tile-ripple-duration": `${TILE_DURATION_MS}ms`,
         }}
         className={clsx(
           // Relative for the touch region positioning
@@ -234,7 +229,6 @@ export default function Board(
           />
         )}
 
-
         {/* Swipe region for touch detection, hidden on non-coarse pointer devices */}
         {mode.value === "solve" && (
           <div
@@ -274,7 +268,9 @@ type BoardSpaceProps = Position & {
   hasSolution: boolean;
 };
 
-function BoardSpace({ x, y, href, isActive, destination, hasSolution }: BoardSpaceProps) {
+function BoardSpace(
+  { x, y, href, isActive, destination, hasSolution }: BoardSpaceProps,
+) {
   const tileStyle = {
     "--x": x,
     "--y": y,
@@ -292,7 +288,7 @@ function BoardSpace({ x, y, href, isActive, destination, hasSolution }: BoardSpa
         className={clsx(
           "grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
           "border-1 border-stone-9 border-b-1 border-r-1 border-r-stone-7 border-b-stone-7",
-          "ripple-tile",
+          hasSolution && "tile-ripple",
           isActive && "bg-brand/30 animate-blink",
         )}
         style={tileStyle}
@@ -306,7 +302,7 @@ function BoardSpace({ x, y, href, isActive, destination, hasSolution }: BoardSpa
       className={clsx(
         "grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
         "border-1 border-stone-9 border-b-1 border-r-1 border-r-stone-7 border-b-stone-7",
-        "ripple-tile",
+        hasSolution && "tile-ripple",
       )}
       style={tileStyle}
     />

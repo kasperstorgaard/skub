@@ -16,10 +16,7 @@ import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
 /**
  * POST /api/solutions
  *
- * Client-side solution submission from AutoPostSolution. Returns JSON so the
- * island can construct the celebrate URL itself without following a redirect.
- *
- * Body (formdata): name, moves (JSON array), puzzleSlug
+ * Post a solution for a puzzle, returns
  */
 export const handler = define.handlers({
   async POST(ctx) {

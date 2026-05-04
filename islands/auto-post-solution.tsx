@@ -5,12 +5,14 @@ import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
+import { useRouter } from "#/islands/router.tsx";
 
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName: string;
   isSubmitting: Signal<boolean>;
+  isNewPath: Signal<boolean>;
 };
 
 /**
@@ -23,8 +25,9 @@ type Props = {
  * network without staring at an empty board.
  */
 export function AutoPostSolution(
-  { href, puzzle, savedName, isSubmitting }: Props,
+  { href, puzzle, savedName, isSubmitting, isNewPath }: Props,
 ) {
+  const { updateLocation } = useRouter();
   const postingRef = useRef(false);
   const celebratedRef = useRef(false);
 
@@ -70,13 +73,13 @@ export function AutoPostSolution(
       headers,
       body: form,
     }).then(async (response) => {
-      const { isNewPath } = await response.json() as { isNewPath: boolean };
+      const data = await response.json() as { isNewPath: boolean };
+      isNewPath.value = data.isNewPath;
+
       const celebrateUrl = new URL(href.value);
       celebrateUrl.searchParams.set("dialog", "celebrate");
-      if (isNewPath) celebrateUrl.searchParams.set("new_path", "true");
       celebratedRef.current = true;
-      href.value = celebrateUrl.href;
-      globalThis.history.replaceState({}, "", celebrateUrl.href);
+      updateLocation(celebrateUrl.href, { replace: true });
     }).catch(() => {
       // Silently fail — server path will handle it on next navigation
       postingRef.current = false;

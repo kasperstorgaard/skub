@@ -1,10 +1,11 @@
 import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
+import { defaultPuzzleStats } from "#/game/stats.ts";
 import { UserStats } from "#/game/streak.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
@@ -28,49 +29,29 @@ type CelebrationContent = {
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  stats: PuzzleStats;
-  userStats?: UserStats | null;
   back: { href: string; label: string };
   isSubmitting?: Signal<boolean>;
+  isNewPath?: Signal<boolean>;
 };
-
-// Pause after the ripple ends before the dialog starts to fade in.
-const POST_RIPPLE_PAUSE_MS = 50;
-// Extra slack before the cap fires — safety net for slow POSTs.
-const MAX_CAP_SLACK_MS = 1000;
 
 export function CelebrationDialog(
   {
     href,
     puzzle,
-    stats,
-    userStats,
     back,
     isSubmitting,
+    isNewPath,
   }: Props,
 ) {
-  // Only bypass the ripple wait when the dialog was already in the URL on
-  // mount (no-JS redirect path). Mid-session, AutoPostSolution writes
-  // dialog=celebrate to the URL, which must NOT short-circuit the timer.
-  const initialDialog = useRef(
-    new URL(href.value).searchParams.get("dialog"),
-  );
-
   const rippleDuration = useMemo(
     () => getBoardRippleDuration(puzzle.value.board.destination),
     [puzzle.value.board.destination.x, puzzle.value.board.destination.y],
   );
-  const liveStats = useSignal<CelebrateStats | null>(null);
+  const celebrateStats = useSignal<CelebrateStats | null>(null);
   const statsFetched = useSignal(false);
   const [minElapsed, setMinElapsed] = useState(false);
-  const [maxElapsed, setMaxElapsed] = useState(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
-
-  const dialog = useMemo(
-    () => new URL(href.value).searchParams.get("dialog"),
-    [href.value],
-  );
 
   const moves = useMemo(
     () => state.moves.slice(0, state.cursor ?? state.moves.length),
@@ -84,41 +65,24 @@ export function CelebrationDialog(
 
   const hasSolution = useMemo(() => isValidSolution(board), [board]);
 
-  const isOpen = hasSolution && (
-    (!isSubmitting?.value && minElapsed) ||
-    maxElapsed ||
-    initialDialog.current === "celebrate"
-  );
+  const isOpen = hasSolution && minElapsed;
 
-  const isNewPath = useMemo(
-    () => new URL(href.value).searchParams.get("new_path") === "true",
-    [href.value],
-  );
-
-  // Wait timers from the moment a solve is detected. Dialog can't open
-  // before the board exit transition completes; force-opens shortly after
-  // (slow POST safety net). The exit duration is computed per-board in
-  // lib/board-exit.ts and bubbled up via the shared signal. Both reset
-  // when the user undoes back across the solve.
+  // Wait for the board ripple transition before opening. Resets when the
+  // user undoes back across the solve.
   useEffect(() => {
     if (!hasSolution) {
       setMinElapsed(false);
-      setMaxElapsed(false);
       return;
     }
-    const minWait = rippleDuration + POST_RIPPLE_PAUSE_MS;
-    const maxWait = minWait + MAX_CAP_SLACK_MS;
-    const minTimer = setTimeout(() => setMinElapsed(true), minWait);
-    const maxTimer = setTimeout(() => setMaxElapsed(true), maxWait);
-    return () => {
-      clearTimeout(minTimer);
-      clearTimeout(maxTimer);
-    };
+    const timer = setTimeout(() => setMinElapsed(true), rippleDuration);
+    return () => clearTimeout(timer);
   }, [hasSolution, rippleDuration]);
 
-  // Fetch fresh stats once the celebrate dialog is open
+  // Fetch stats once the dialog is open and the POST has completed —
+  // stats include the current solution so must wait for it to be saved.
   useEffect(() => {
     if (!isOpen) return;
+    if (isSubmitting?.value) return;
     if (statsFetched.value) return;
 
     const controller = new AbortController();
@@ -130,7 +94,7 @@ export function CelebrationDialog(
     })
       .then((r) => r.json())
       .then((data: CelebrateStats) => {
-        liveStats.value = data;
+        celebrateStats.value = data;
         statsFetched.value = true;
       })
       .catch((err) => {
@@ -140,10 +104,10 @@ export function CelebrationDialog(
       });
 
     return () => controller.abort();
-  }, [isOpen, puzzle.value.slug]);
+  }, [isOpen, isSubmitting?.value, puzzle.value.slug]);
 
-  const activePuzzleStats = liveStats.value?.puzzleStats ?? stats;
-  const activeUserStats = liveStats.value?.userStats ?? userStats ?? null;
+  const puzzleStats = celebrateStats.value?.puzzleStats ?? defaultPuzzleStats;
+  const userStats = celebrateStats.value?.userStats ?? null;
   const isLoading = isOpen && !statsFetched.value;
 
   const isOptimal = moves.length === puzzle.value.minMoves;
@@ -154,11 +118,17 @@ export function CelebrationDialog(
   const celebration = useMemo(
     () =>
       getCelebration(
-        { moveCount: moves.length, isNewPath },
+        { moveCount: moves.length, isNewPath: isNewPath?.value ?? false },
         puzzle.value,
-        { puzzle: activePuzzleStats, user: activeUserStats },
+        { puzzle: puzzleStats, user: userStats },
       ),
-    [moves.length, isNewPath, puzzle.value, activePuzzleStats, activeUserStats],
+    [
+      moves.length,
+      isNewPath?.value,
+      puzzle.value,
+      puzzleStats,
+      userStats,
+    ],
   );
 
   return (
@@ -171,7 +141,7 @@ export function CelebrationDialog(
         {isLoading
           ? (
             <p className="text-3 text-text-2">
-              Calculating stats<span className="celebrate-dots">
+              Calculating stats<span className="loading-dots ml-[0.2ch]">
                 <span>.</span>
                 <span>.</span>
                 <span>.</span>

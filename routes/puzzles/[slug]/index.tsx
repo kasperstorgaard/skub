@@ -14,9 +14,7 @@ import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { isTodaysPuzzle } from "#/game/date.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
-import { defaultPuzzleStats } from "#/game/stats.ts";
-import type { UserStats } from "#/game/streak.ts";
-import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
+import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState, getPuzzleArchiveHref } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
@@ -34,9 +32,7 @@ import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 type PageData = {
   puzzle: Puzzle;
   hintCount: number;
-  puzzleStats: PuzzleStats;
   savedName: string | null;
-  userStats: UserStats | null;
 };
 
 export const handler = define.handlers<PageData>({
@@ -68,14 +64,9 @@ export const handler = define.handlers<PageData>({
       }
     }
 
-    return page({
-      puzzle,
-      hintCount,
-      puzzleStats: defaultPuzzleStats,
-      savedName,
-      userStats: null,
-    });
+    return page({ puzzle, hintCount, savedName });
   },
+  // Adding a solution, only used for first solve and no-js paths
   async POST(ctx) {
     const req = ctx.req;
     const { slug } = ctx.params;
@@ -84,7 +75,6 @@ export const handler = define.handlers<PageData>({
 
     const form = await req.formData();
     const name = form.get("name")?.toString();
-    const source = form.get("source")?.toString();
 
     if (!name) throw new HttpError(400, "Must provide a username");
 
@@ -96,10 +86,9 @@ export const handler = define.handlers<PageData>({
     }
 
     const activeSpan = trace.getActiveSpan();
-    activeSpan?.setAttribute("solution.source", source ?? "unknown");
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const [{ isNew, isNewPath }] = await Promise.all([
+    const [{ isNew }] = await Promise.all([
       withSpan("puzzle.save_solution", async (span) => {
         const result = await saveSolution({
           puzzleSlug: slug,
@@ -108,13 +97,16 @@ export const handler = define.handlers<PageData>({
           userId: ctx.state.userId,
         });
         span.setAttribute("solution.is_new", result.isNew);
-        span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
       }),
       setUser(ctx.state.userId, { name }),
     ]);
 
-    const redirectUrl = getSolveRedirectUrl(ctx, source, { isNewPath });
+    const redirectUrl = new URL(
+      ctx.req.headers.get("referer") ?? "",
+      ctx.req.url,
+    );
+    redirectUrl.pathname = `/puzzles/${slug}/solutions`;
 
     if (!isNew) return Response.redirect(redirectUrl, 303);
 
@@ -141,6 +133,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const puzzle = useSignal(props.data.puzzle);
   const mode = useSignal<"solve">("solve");
   const isSubmitting = useSignal(false);
+  const isNewPath = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
 
   const url = new URL(props.req.url);
@@ -225,10 +218,9 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
       <CelebrationDialog
         href={href}
         puzzle={puzzle}
-        stats={props.data.puzzleStats}
-        userStats={props.data.userStats}
         back={back}
         isSubmitting={isSubmitting}
+        isNewPath={isNewPath}
       />
 
       {/* Client-side auto-post for named users */}
@@ -238,28 +230,9 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           puzzle={puzzle}
           savedName={props.data.savedName}
           isSubmitting={isSubmitting}
+          isNewPath={isNewPath}
         />
       )}
     </>
   );
 });
-
-function getSolveRedirectUrl(
-  ctx: { req: Request; params: Record<string, string> },
-  source: string | undefined,
-  options?: { isNewPath?: boolean },
-): URL {
-  const { slug } = ctx.params;
-  const url = new URL(ctx.req.headers.get("referer") ?? "", ctx.req.url);
-
-  if (source === "solution-dialog") {
-    url.pathname = `/puzzles/${slug}/solutions`;
-    return url;
-  }
-
-  url.pathname = `/puzzles/${slug}`;
-  url.searchParams.set("dialog", "celebrate");
-  if (options?.isNewPath) url.searchParams.set("new_path", "true");
-
-  return url;
-}
