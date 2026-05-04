@@ -66,7 +66,6 @@ export const handler = define.handlers<PageData>({
 
     return page({ puzzle, hintCount, savedName });
   },
-  // Adding a solution, only used for first solve and no-js paths
   async POST(ctx) {
     const req = ctx.req;
     const { slug } = ctx.params;
@@ -75,6 +74,7 @@ export const handler = define.handlers<PageData>({
 
     const form = await req.formData();
     const name = form.get("name")?.toString();
+    const source = form.get("source")?.toString();
 
     if (!name) throw new HttpError(400, "Must provide a username");
 
@@ -88,7 +88,7 @@ export const handler = define.handlers<PageData>({
     const activeSpan = trace.getActiveSpan();
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const [{ isNew }] = await Promise.all([
+    const [{ isNew, isNewPath }] = await Promise.all([
       withSpan("puzzle.save_solution", async (span) => {
         const result = await saveSolution({
           puzzleSlug: slug,
@@ -97,34 +97,43 @@ export const handler = define.handlers<PageData>({
           userId: ctx.state.userId,
         });
         span.setAttribute("solution.is_new", result.isNew);
+        span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
       }),
       setUser(ctx.state.userId, { name }),
     ]);
 
-    const redirectUrl = new URL(
+    if (isNew) {
+      trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
+
+      const { skillLevel } = ctx.state.user;
+      const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
+
+      if (newLevel && newLevel !== skillLevel) {
+        await setUser(ctx.state.userId, { skillLevel: newLevel });
+        trackSkillLevelUp(ctx.state, puzzle, {
+          moves,
+          url: referer,
+          skillLevel: newLevel,
+        });
+      }
+    }
+
+    if (source === "auto-post") {
+      const celebrateUrl = new URL(ctx.url);
+      celebrateUrl.searchParams.delete("active");
+      celebrateUrl.searchParams.delete("hint");
+      celebrateUrl.searchParams.set("dialog", "celebrate");
+      if (isNewPath) celebrateUrl.searchParams.set("new_path", "true");
+      return Response.redirect(celebrateUrl, 303);
+    }
+
+    const solutionsUrl = new URL(
       ctx.req.headers.get("referer") ?? "",
       ctx.req.url,
     );
-    redirectUrl.pathname = `/puzzles/${slug}/solutions`;
-
-    if (!isNew) return Response.redirect(redirectUrl, 303);
-
-    trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
-
-    const { skillLevel } = ctx.state.user;
-    const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
-
-    if (newLevel && newLevel !== skillLevel) {
-      await setUser(ctx.state.userId, { skillLevel: newLevel });
-      trackSkillLevelUp(ctx.state, puzzle, {
-        moves,
-        url: referer,
-        skillLevel: newLevel,
-      });
-    }
-
-    return Response.redirect(redirectUrl, 303);
+    solutionsUrl.pathname = `/puzzles/${slug}/solutions`;
+    return Response.redirect(solutionsUrl, 303);
   },
 });
 
@@ -133,7 +142,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const puzzle = useSignal(props.data.puzzle);
   const mode = useSignal<"solve">("solve");
   const isSubmitting = useSignal(false);
-  const isNewPath = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
 
   const url = new URL(props.req.url);
@@ -220,7 +228,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         puzzle={puzzle}
         back={back}
         isSubmitting={isSubmitting}
-        isNewPath={isNewPath}
       />
 
       {/* Client-side auto-post for named users */}
@@ -230,9 +237,28 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           puzzle={puzzle}
           savedName={props.data.savedName}
           isSubmitting={isSubmitting}
-          isNewPath={isNewPath}
         />
       )}
     </>
   );
 });
+
+function getSolveRedirectUrl(
+  ctx: { req: Request; params: Record<string, string> },
+  source: string | undefined,
+  options?: { isNewPath?: boolean },
+): URL {
+  const { slug } = ctx.params;
+  const url = new URL(ctx.req.headers.get("referer") ?? "", ctx.req.url);
+
+  if (source === "solution-dialog") {
+    url.pathname = `/puzzles/${slug}/solutions`;
+    return url;
+  }
+
+  url.pathname = `/puzzles/${slug}`;
+  url.searchParams.set("dialog", "celebrate");
+  if (options?.isNewPath) url.searchParams.set("new_path", "true");
+
+  return url;
+}

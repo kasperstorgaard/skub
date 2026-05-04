@@ -31,7 +31,6 @@ type Props = {
   puzzle: Signal<Puzzle>;
   back: { href: string; label: string };
   isSubmitting?: Signal<boolean>;
-  isNewPath?: Signal<boolean>;
 };
 
 export function CelebrationDialog(
@@ -40,7 +39,6 @@ export function CelebrationDialog(
     puzzle,
     back,
     isSubmitting,
-    isNewPath,
   }: Props,
 ) {
   const rippleDuration = useMemo(
@@ -116,16 +114,21 @@ export function CelebrationDialog(
     ? `Perfect — ${moves.length} moves`
     : `Solved — ${moves.length} moves`;
 
+  const isNewPath = useMemo(
+    () => new URL(href.value).searchParams.get("new_path") === "true",
+    [href.value],
+  );
+
   const celebration = useMemo(
     () =>
       getCelebration(
-        { moveCount: moves.length, isNewPath: isNewPath?.value ?? false },
+        { moveCount: moves.length, isNewPath },
         puzzle.value,
         { puzzle: puzzleStats, user: userStats },
       ),
     [
       moves.length,
-      isNewPath?.value,
+      isNewPath,
       puzzle.value,
       puzzleStats,
       userStats,
