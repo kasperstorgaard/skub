@@ -102,11 +102,15 @@ export const handler = define.handlers<Data>({
     // Form POST: "I'm ready" button from the tutorial dialog. Explicit
     // completion signal — sets beginner, tracks, redirects home.
     if (!isJson) {
-      await setUser(ctx.state.userId, { skillLevel: "beginner" });
-      trackTutorialCompleted(ctx.state, puzzle, {
-        moves: [],
-        url: ctx.req.headers.get("referer") ?? "",
-      });
+      // only set skill level if not already set
+      if (!ctx.state.user.skillLevel) {
+        await setUser(ctx.state.userId, { skillLevel: "beginner" });
+
+        trackTutorialCompleted(ctx.state, puzzle, {
+          moves: [],
+          url: ctx.req.headers.get("referer") ?? "",
+        });
+      }
       return new Response(null, {
         status: 303,
         headers: { Location: "/" },
