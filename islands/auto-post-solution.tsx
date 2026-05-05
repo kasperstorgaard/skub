@@ -5,21 +5,29 @@ import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
+import type { CelebrationData } from "#/islands/celebration-dialog.tsx";
+import { useRouter } from "#/islands/router.tsx";
 
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName: string;
+  celebrationData?: Signal<CelebrationData | null>;
+  celebrationError?: Signal<boolean>;
 };
 
 /**
  * Client-side auto-post: when a named user solves the puzzle via JS moves,
- * POST the solution and update href to include dialog=celebrate.
- * Renders nothing — purely a side-effect island.
+ * POST the solution as JSON. If the server responds with celebration data,
+ * write it to the signal. If the server redirects (e.g. tutorial flow),
+ * navigate to the redirected URL. Renders nothing.
  */
-export function AutoPostSolution({ href, puzzle, savedName }: Props) {
+export function AutoPostSolution(
+  { href, puzzle, savedName, celebrationData, celebrationError }: Props,
+) {
+  const { updateLocation } = useRouter();
   const postingRef = useRef(false);
-  const celebratedRef = useRef(false);
+  const completedRef = useRef(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -42,36 +50,40 @@ export function AutoPostSolution({ href, puzzle, savedName }: Props) {
 
   const isEnabled = hasSolution && !!savedName && !dialog;
 
-  // TODO: expose a "submitting" state from the moment hasSolution becomes true
-  // until href updates to ?dialog=celebrate, so the board or controls can show
-  // a transition (e.g. disabled controls, subtle spinner) during the POST round trip
-  // and the celebrate-stats fetch. Currently there is a silent gap between the last
-  // move and the dialog appearing.
-
   useEffect(() => {
     if (!isEnabled) return;
-    if (postingRef.current || celebratedRef.current) return;
+    if (postingRef.current || completedRef.current) return;
 
     postingRef.current = true;
 
-    const form = new FormData();
-    form.set("name", savedName);
-    form.set("moves", JSON.stringify(moves));
+    const headers = addTraceParentHeader(
+      new Headers({
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      }),
+    );
 
-    const headers = addTraceParentHeader(new Headers());
-
-    fetch(`/puzzles/${puzzle.value.slug}`, {
+    // Intentionally not aborted on unmount — the solve must persist even if
+    // the user navigates away mid-submission.
+    fetch(href.value, {
       method: "POST",
-      redirect: "follow",
       headers,
-      body: form,
-    }).then((response) => {
-      celebratedRef.current = true;
-      href.value = response.url;
-      globalThis.history.replaceState({}, "", response.url);
+      body: JSON.stringify({ name: savedName, moves }),
+    }).then(async (response) => {
+      completedRef.current = true;
+
+      if (response.redirected) {
+        updateLocation(response.url, { replace: true });
+        return;
+      }
+
+      if (celebrationData) {
+        const data = await response.json() as CelebrationData;
+        celebrationData.value = data;
+      }
     }).catch(() => {
-      // Silently fail — server path will handle it on next navigation
       postingRef.current = false;
+      if (celebrationError) celebrationError.value = true;
     });
   }, [isEnabled, state.moves, puzzle.value.slug]);
 

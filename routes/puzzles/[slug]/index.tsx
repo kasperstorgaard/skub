@@ -9,18 +9,21 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { saveSolution } from "#/db/solutions.ts";
+import { getPuzzleStats, getUserStats } from "#/db/stats.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { isTodaysPuzzle } from "#/game/date.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
-import type { UserStats } from "#/game/streak.ts";
-import { Move, Puzzle, PuzzleStats } from "#/game/types.ts";
+import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState, getPuzzleArchiveHref } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
-import { CelebrationDialog } from "#/islands/celebration-dialog.tsx";
+import {
+  type CelebrationData,
+  CelebrationDialog,
+} from "#/islands/celebration-dialog.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
@@ -34,9 +37,7 @@ import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 type PageData = {
   puzzle: Puzzle;
   hintCount: number;
-  puzzleStats: PuzzleStats;
   savedName: string | null;
-  userStats: UserStats | null;
 };
 
 export const handler = define.handlers<PageData>({
@@ -68,35 +69,27 @@ export const handler = define.handlers<PageData>({
       }
     }
 
-    return page({
-      puzzle,
-      hintCount,
-      puzzleStats: defaultPuzzleStats,
-      savedName,
-      userStats: null,
-    });
+    return page({ puzzle, hintCount, savedName });
   },
   async POST(ctx) {
-    const req = ctx.req;
     const { slug } = ctx.params;
     const { puzzle } = ctx.state;
     const referer = ctx.req.headers.get("referer") ?? "";
+    const isJson = ctx.req.headers.get("content-type")?.includes(
+      "application/json",
+    );
 
-    const form = await req.formData();
-    const name = form.get("name")?.toString();
-    const source = form.get("source")?.toString();
+    const { name, moves } = isJson
+      ? await ctx.req.json() as { name: string; moves: Move[] }
+      : await parseSolveForm(ctx.req);
 
     if (!name) throw new HttpError(400, "Must provide a username");
-
-    const rawMoves = form.get("moves")?.toString() ?? "";
-    const moves = JSON.parse(rawMoves) as Move[];
 
     if (!isValidSolution(resolveMoves(puzzle.board, moves))) {
       throw new HttpError(400, "Solution is not valid");
     }
 
     const activeSpan = trace.getActiveSpan();
-    activeSpan?.setAttribute("solution.source", source ?? "unknown");
     activeSpan?.setAttribute("solution.moves", moves.length);
 
     const [{ isNew, isNewPath }] = await Promise.all([
@@ -114,25 +107,36 @@ export const handler = define.handlers<PageData>({
       setUser(ctx.state.userId, { name }),
     ]);
 
-    const redirectUrl = getSolveRedirectUrl(ctx, source, { isNewPath });
+    if (isNew) {
+      trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
 
-    if (!isNew) return Response.redirect(redirectUrl, 303);
+      const { skillLevel } = ctx.state.user;
+      const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
-    trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
+      if (newLevel && newLevel !== skillLevel) {
+        await setUser(ctx.state.userId, { skillLevel: newLevel });
+        trackSkillLevelUp(ctx.state, puzzle, {
+          moves,
+          url: referer,
+          skillLevel: newLevel,
+        });
+      }
+    }
 
-    const { skillLevel } = ctx.state.user;
-    const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
-
-    if (newLevel && newLevel !== skillLevel) {
-      await setUser(ctx.state.userId, { skillLevel: newLevel });
-      trackSkillLevelUp(ctx.state, puzzle, {
-        moves,
-        url: referer,
-        skillLevel: newLevel,
+    if (isJson) {
+      const [puzzleStats, userStats] = await Promise.all([
+        getPuzzleStats(slug),
+        getUserStats(ctx.state.userId),
+      ]);
+      return Response.json({
+        isNewPath,
+        puzzleStats: puzzleStats ?? defaultPuzzleStats,
+        userStats,
       });
     }
 
-    return Response.redirect(redirectUrl, 303);
+    const solutionsUrl = new URL(`/puzzles/${slug}/solutions`, ctx.url);
+    return Response.redirect(solutionsUrl, 303);
   },
 });
 
@@ -140,6 +144,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const href = useSignal(props.url.href);
   const puzzle = useSignal(props.data.puzzle);
   const mode = useSignal<"solve">("solve");
+  const celebrationData = useSignal<CelebrationData | null>(null);
+  const celebrationError = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
 
   const url = new URL(props.req.url);
@@ -148,7 +154,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
     ? { href: "/", label: "Home" }
     : {
       href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
-      label: "Archives",
+      label: "Back to archives",
     };
 
   return (
@@ -221,42 +227,42 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         savedName={props.data.savedName}
       />
 
-      <CelebrationDialog
-        href={href}
-        puzzle={puzzle}
-        stats={props.data.puzzleStats}
-        userStats={props.data.userStats}
-        back={back}
-      />
-
-      {/* Client-side auto-post for named users */}
+      {/* Celebration + auto-post are paired: only named users get them */}
       {props.data.savedName && (
-        <AutoPostSolution
-          href={href}
-          puzzle={puzzle}
-          savedName={props.data.savedName}
-        />
+        <>
+          <CelebrationDialog
+            href={href}
+            puzzle={puzzle}
+            back={back}
+            celebrationData={celebrationData}
+            celebrationError={celebrationError}
+          />
+          <AutoPostSolution
+            href={href}
+            puzzle={puzzle}
+            savedName={props.data.savedName}
+            celebrationData={celebrationData}
+            celebrationError={celebrationError}
+          />
+        </>
       )}
     </>
   );
 });
 
-function getSolveRedirectUrl(
-  ctx: { req: Request; params: Record<string, string> },
-  source: string | undefined,
-  options?: { isNewPath?: boolean },
-): URL {
-  const { slug } = ctx.params;
-  const url = new URL(ctx.req.headers.get("referer") ?? "", ctx.req.url);
+async function parseSolveForm(
+  req: Request,
+): Promise<{ name: string; moves: Move[] }> {
+  const form = await req.formData();
+  const name = form.get("name")?.toString() ?? "";
+  const rawMoves = form.get("moves")?.toString() ?? "";
 
-  if (source === "solution-dialog") {
-    url.pathname = `/puzzles/${slug}/solutions`;
-    return url;
+  let moves: Move[] = [];
+  try {
+    moves = JSON.parse(rawMoves) as Move[];
+  } catch {
+    throw new HttpError(400, "Invalid moves format");
   }
 
-  url.pathname = `/puzzles/${slug}`;
-  url.searchParams.set("dialog", "celebrate");
-  if (options?.isNewPath) url.searchParams.set("new_path", "true");
-
-  return url;
+  return { name, moves };
 }

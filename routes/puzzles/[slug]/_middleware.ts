@@ -26,7 +26,7 @@ export const handler = define.middleware(async (ctx) => {
   }
 
   if (!isDev && puzzle.number) {
-    const dayOfYear = getDayOfYear(new Date(Date.now()));
+    const dayOfYear = getDayOfYear();
     if (puzzle.number > dayOfYear) {
       throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
     }

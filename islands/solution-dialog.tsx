@@ -40,8 +40,7 @@ export function SolutionDialog(
 
   // Opens on the JS path (anonymous user solves in browser) or the no-JS path
   // (server detects solve and redirects here with dialog=solution).
-  const isOpen = dialog === "solution" ||
-    (hasSolution && !savedName && dialog !== "celebrate");
+  const isOpen = dialog === "solution" || (hasSolution && !savedName);
 
   return (
     <Dialog open={isOpen}>
@@ -82,7 +81,6 @@ export function SolutionDialog(
           name="moves"
           value={JSON.stringify(state.moves)}
         />
-        <input type="hidden" name="source" value="solution-dialog" />
       </form>
 
       <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">

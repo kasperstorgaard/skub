@@ -35,8 +35,7 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
  * Manifest entries available today: number <= day-of-year, onboarding excluded.
  */
 export async function getAvailableEntries() {
-  const today = new Date(Date.now());
-  const dayOfYear = getDayOfYear(today);
+  const dayOfYear = getDayOfYear();
 
   const manifest = await getPuzzleManifest();
 
@@ -49,8 +48,7 @@ export async function getAvailableEntries() {
  * Manifest entries available after today: number > day-of-year, onboarding excluded.
  */
 export async function getFutureEntries() {
-  const today = new Date(Date.now());
-  const dayOfYear = getDayOfYear(today);
+  const dayOfYear = getDayOfYear();
 
   const manifest = await getPuzzleManifest();
 
@@ -220,10 +218,12 @@ export async function getOnboardingPuzzle(
   const manifest = await getPuzzleManifest();
   const lookup = new Set(options.excludeSlugs);
 
-  const next = manifest
+  const pool = manifest
     .filter((entry) => (entry.onboardingLevel ?? 0) > 1)
-    .sort((a, b) => (a.onboardingLevel ?? 0) - (b.onboardingLevel ?? 0))
-    .find((entry) => !lookup.has(entry.slug));
+    .sort((a, b) => (a.onboardingLevel ?? 0) - (b.onboardingLevel ?? 0));
 
-  return next ? getPuzzle(next.slug) : null;
+  const next = pool.find((entry) => !lookup.has(entry.slug)) ??
+    pool[pool.length - 1];
+
+  return getPuzzle(next.slug);
 }

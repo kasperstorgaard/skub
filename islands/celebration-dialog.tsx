@@ -1,15 +1,20 @@
-import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
-import { useEffect, useMemo } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
-import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
+import { defaultPuzzleStats } from "#/game/stats.ts";
 import { UserStats } from "#/game/streak.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
-import type { CelebrateStats } from "#/routes/api/celebrate-stats.ts";
+import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
+
+export type CelebrationData = {
+  isNewPath: boolean;
+  puzzleStats: PuzzleStats;
+  userStats: UserStats | null;
+};
 
 type CelebrationCase =
   | "first-solver"
@@ -27,23 +32,21 @@ type CelebrationContent = {
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  stats: PuzzleStats;
-  userStats?: UserStats | null;
   back: { href: string; label: string };
+  celebrationData: Signal<CelebrationData | null>;
+  celebrationError: Signal<boolean>;
 };
 
 export function CelebrationDialog(
-  { href, puzzle, stats, userStats, back }: Props,
+  { href, puzzle, back, celebrationData, celebrationError }: Props,
 ) {
-  const liveStats = useSignal<CelebrateStats | null>(null);
-  const statsFetched = useSignal(false);
+  const rippleDuration = useMemo(
+    () => getBoardRippleDuration(puzzle.value.board.destination),
+    [puzzle.value.board.destination.x, puzzle.value.board.destination.y],
+  );
+  const [minElapsed, setMinElapsed] = useState(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
-
-  const dialog = useMemo(
-    () => new URL(href.value).searchParams.get("dialog"),
-    [href.value],
-  );
 
   const moves = useMemo(
     () => state.moves.slice(0, state.cursor ?? state.moves.length),
@@ -56,35 +59,27 @@ export function CelebrationDialog(
   ]);
 
   const hasSolution = useMemo(() => isValidSolution(board), [board]);
-  const isOpen = hasSolution && dialog === "celebrate";
 
-  const isNewPath = useMemo(
-    () => new URL(href.value).searchParams.get("new_path") === "true",
-    [href.value],
-  );
+  const isOpen = hasSolution && minElapsed;
 
-  // Fetch fresh stats once the celebrate dialog is open
+  // Wait for the board ripple transition before opening. Resets when the
+  // user undoes back across the solve.
   useEffect(() => {
-    if (dialog !== "celebrate") return;
+    if (!hasSolution) {
+      setMinElapsed(false);
+      return;
+    }
+    const timer = setTimeout(() => setMinElapsed(true), rippleDuration);
+    return () => clearTimeout(timer);
+  }, [hasSolution, rippleDuration]);
 
-    const headers = addTraceParentHeader(new Headers());
+  const data = celebrationData.value;
+  const isError = celebrationError.value;
+  const isLoading = isOpen && !data && !isError;
 
-    fetch(`/api/celebrate-stats?slug=${puzzle.value.slug}`, { headers })
-      .then((r) => r.json())
-      .then((data: CelebrateStats) => {
-        liveStats.value = data;
-      })
-      .catch(() => {
-        // Silently fall back to server-rendered props
-      })
-      .finally(() => {
-        statsFetched.value = true;
-      });
-  }, [dialog, puzzle.value.slug]);
-
-  const activePuzzleStats = liveStats.value?.puzzleStats ?? stats;
-  const activeUserStats = liveStats.value?.userStats ?? userStats ?? null;
-  const isLoading = dialog === "celebrate" && !statsFetched.value;
+  const isNewPath = data?.isNewPath ?? false;
+  const puzzleStats = data?.puzzleStats ?? defaultPuzzleStats;
+  const userStats = data?.userStats ?? null;
 
   const isOptimal = moves.length === puzzle.value.minMoves;
   const headline = isOptimal
@@ -96,21 +91,33 @@ export function CelebrationDialog(
       getCelebration(
         { moveCount: moves.length, isNewPath },
         puzzle.value,
-        { puzzle: activePuzzleStats, user: activeUserStats },
+        { puzzle: puzzleStats, user: userStats },
       ),
-    [moves.length, isNewPath, puzzle.value, activePuzzleStats, activeUserStats],
+    [moves.length, isNewPath, puzzle.value, puzzleStats, userStats],
   );
 
   return (
-    <Dialog open={isOpen}>
+    <Dialog open={isOpen} className="w-full">
       <div className="flex flex-col gap-fl-2">
         <h2 className="text-fl-2 font-semibold text-text-1">
           {headline}
         </h2>
 
         {isLoading
-          ? <div className="h-[1lh] w-3/4 rounded-1 bg-ui-1/30 animate-pulse" />
-          : <p className="text-3 text-text-2">{celebration.body}</p>}
+          ? (
+            <p className="text-3 text-text-2">
+              Calculating stats<span className="loading-dots ml-[0.2ch]">
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+              </span>
+            </p>
+          )
+          : (
+            <p className="text-3 text-text-2">
+              {isError ? "Couldn't load stats." : celebration.body}
+            </p>
+          )}
       </div>
 
       <div className="flex flex-col gap-fl-1 items-stretch">
@@ -158,6 +165,10 @@ export function CelebrationDialog(
  * 6. Fallback (player count or generic)
  *
  * Headline is always derived locally: "Perfect — X moves" / "Solved — X moves".
+ *
+ * TODO: replace the rarity / unique-solver framing with percentile-based stats —
+ * "You're in the top X% of solvers on this puzzle" or "Faster than X% of solves".
+ * More motivating, more actionable, and survives once the puzzle has many solvers.
  */
 function getCelebration(
   solve: { moveCount: number; isNewPath: boolean },

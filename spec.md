@@ -1,63 +1,103 @@
-# Chain games: `/puzzles/recommended` redirect + dialog buttons
+# Celebration transition: ripple animation + signal-driven flow
 
 ## Problem
 
-After solving a puzzle, players have to navigate back home (or to the archive)
-to find the next thing to play. The flow is friction for engaged players who
-just want to keep going. The home page already picks a "recommended" puzzle
-for them — that same logic should be reachable from inside the post-solve
-dialogs.
+Three issues, addressed together:
 
-## Approach
+1. The existing post-solve animation (board explosion) was too long and
+   destructive — tiles flew off screen, leaving nothing behind.
+2. `AutoPostSolution` used `redirect: "follow"` against the page POST and
+   read `response.url` to discover where to navigate — wasteful (full HTML
+   for a tiny string) and tightly coupled the client to server redirect
+   shape.
+3. The celebration flow accumulated coordinating state — `isSubmitting`,
+   `isNewPath` URL param, `?dialog=celebrate` URL convention, a separate
+   `/api/celebrate-stats` fetch, `statsSettled`/`statsError` signals — each
+   piece making sense in isolation but the whole tangling persistence,
+   navigation, and UX into one knotted flow.
 
-Two pieces:
+## Changes
 
-1. **`/puzzles/recommended` redirect route** — a server-side handler that picks the
-   recommended puzzle for the user and 303s to `/puzzles/<slug>`. Works
-   without JavaScript (it's a plain link target). Falls back to `/` when
-   nothing can be recommended (new user with no skill level, or every puzzle
-   perfected and "loke" can't be loaded).
-2. **`pickRecommendedPuzzle(user, solutions)`** in a new
-   `game/recommendation.ts` — extracts the home-page picker so both the home
-   handler and the redirect route share one source of truth. Logic:
-   - new user (`skillLevel === null`) → tutorial puzzle (filling the gap
-     where the previous home logic returned nothing for new users)
-   - beginner → onboarding puzzle, falling through to random when exhausted
-   - everything perfected → "loke" (endgame puzzle)
-   - otherwise → random non-optimal puzzle of appropriate difficulty,
-     today's daily always excluded
+### 1. Ripple animation (replaces board explosion)
 
-The home handler is refactored to call `pickRecommendedPuzzle` instead of
-inlining the decision tree. The home UI gates the new onboarding/recommended
-cards behind `skillLevel !== null` so the existing "Learn the basics" CTA
-remains the sole signal for brand-new players — the tutorial recommendation
-is consumed by the `/puzzles/recommended` redirect, not the home cards.
+A scale + brightness pulse radiates outward ring by ring from the
+destination tile. All tiles in a ring fire simultaneously (~80ms between
+rings, 250ms per tile). Total ~810ms. Board returns to normal.
 
-Dialog buttons added in `SolutionDialog` and `CelebrationDialog` linking to
-`/puzzles/recommended`. Plain `<a>` tags, no client-side state, no fetch — the
-navigation does all the work.
+The `tile-ripple` class is applied conditionally (only when `hasSolution`)
+so it doesn't create a stacking context during normal play, which would
+block guide clicks.
 
-In `CelebrationDialog` the **share** CTA is removed and its slot is taken
-over by the new "Another puzzle" primary action. Share usage is effectively
-zero today, and the chaining CTA earns the prime real-estate while the game
-still builds critical mass through word of mouth. Share can come back later
-once organic loops are stronger; the underlying `getShareText` helper stays
-available.
+`lib/board-exit.ts` → `lib/board-ripple.ts` (renamed + rewritten, same
+`{ css, totalMs }` shape).
+
+### 2. Single POST endpoint, dual contract by `Content-Type`
+
+The page POST handler at `/puzzles/[slug]` is the only solution endpoint.
+Its contract:
+
+- **`Content-Type: application/json`** (fetch from `AutoPostSolution`):
+  saves the solution, runs analytics + skill assessment, returns
+  `{ isNewPath, puzzleStats, userStats }` as JSON. No redirect. The client
+  decides what to do.
+- **Form encoding** (no-JS submit from `SolutionDialog`): saves and
+  redirects to `/puzzles/[slug]/solutions`. No celebration shown — no-JS
+  users go straight to the leaderboard, accepted as a fair trade.
+
+`/api/solutions` and `/api/celebrate-stats` deleted.
+
+The tutorial page's POST follows the same shape: JSON for auto-post (303
+redirect to `?tutorial_step=solved`, fetch follows), form for the
+"I'm ready" button (303 home).
+
+### 3. Signal-driven celebration
+
+The puzzle page owns two signals:
+
+- `celebrationData: Signal<CelebrationData | null>` — populated by the
+  POST response.
+- `celebrationError: Signal<boolean>` — set if the POST fails.
+
+`AutoPostSolution`:
+- Renders nothing.
+- One job: on solve detection, POST as JSON, set `celebrationData` (or
+  `celebrationError` on failure). If the response was redirected (tutorial
+  case), navigates to `response.url` instead.
+- Mounted only when the user has a saved name.
+
+`CelebrationDialog`:
+- Opens on `hasSolution && minElapsed` — purely client-side solve
+  detection, no URL `?dialog=celebrate` convention.
+- Reads `celebrationData` for the enriched body, falls back to defaults
+  while the POST is pending. Shows "Couldn't load stats" on error.
+- Mounted only when the user has a saved name (paired with
+  `AutoPostSolution`).
+
+`SolutionDialog` is unchanged in role — still the unnamed-user form. Its
+`isOpen` check no longer needs to exclude `?dialog=celebrate` (that URL
+state is gone).
+
+## What this kills
+
+- `?dialog=celebrate` URL state
+- `?new_path=true` URL param
+- `source` form field branching in the POST handler
+- `getSuccessHref` callback prop on `AutoPostSolution`
+- `response.url` follow-the-redirect dance
+- `isSubmitting` signal (collapsed into `celebrationData === null`)
+- Internal `celebrate-stats` fetch in the dialog
+- `/api/solutions` and `/api/celebrate-stats` routes
 
 ## Non-goals
 
-- A general "next puzzle" API endpoint returning JSON. Navigation-shaped is
-  enough for the chaining UX; an API-shape would invite client-side state
-  juggling that this feature doesn't need.
-- Surfacing "another puzzle" on the home page or archive list. The button
-  only appears in post-solve dialogs (the moment chaining matters).
-- Changing the home page's tagline / `bestMoves` wiring for the picked puzzle —
-  the refactor preserves existing behaviour byte-for-byte.
-- Per-call exclusion (e.g. "skip the puzzle I just solved"). Optimal solves
-  are already filtered out of the random pool; non-optimal repeats are rare
-  enough not to warrant a `?exclude=` param's complexity.
-- Celebration transition / animation buildup before the dialog opens
-  (separate follow-up).
-- Skipping name submission for anonymous players who click "Another puzzle"
-  from `SolutionDialog` — that's the scoreboard-opt-out feature, deferred.
-  The link bypasses Save as a side effect; acceptable for now.
+- No-JS users do not see the celebration dialog. They land on the
+  leaderboard. The leaderboard is itself a kind of celebration.
+
+## Follow-up: hide optimal score pre-solve
+
+`minMoves` is currently passed to the client on page load. A follow-up:
+
+- Withhold `minMoves` from the initial page data
+- Have the POST response carry `isOptimal` so the dialog can show
+  "Perfect — X moves" without `minMoves` beforehand
+- Defer `DifficultyBadge`'s `minMoves` display until after solving

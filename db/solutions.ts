@@ -47,7 +47,6 @@ export async function saveSolution(
   const solution = { ...payload, id };
   const canonicalKey = getCanonicalMoveKey(moves);
 
-  // Check if this canonical path already exists
   const groupKey = [
     "solution_groups_by_puzzle",
     puzzleSlug,
