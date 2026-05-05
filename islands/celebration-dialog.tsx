@@ -1,8 +1,6 @@
-import { useSignal } from "@preact/signals";
 import { type Signal } from "@preact/signals";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
-import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
@@ -11,7 +9,12 @@ import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
-import type { CelebrateStats } from "#/routes/api/celebrate-stats.ts";
+
+export type CelebrationData = {
+  isNewPath: boolean;
+  puzzleStats: PuzzleStats;
+  userStats: UserStats | null;
+};
 
 type CelebrationCase =
   | "first-solver"
@@ -30,24 +33,17 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   back: { href: string; label: string };
-  isSubmitting?: Signal<boolean>;
+  celebrationData: Signal<CelebrationData | null>;
+  celebrationError: Signal<boolean>;
 };
 
 export function CelebrationDialog(
-  {
-    href,
-    puzzle,
-    back,
-    isSubmitting,
-  }: Props,
+  { href, puzzle, back, celebrationData, celebrationError }: Props,
 ) {
   const rippleDuration = useMemo(
     () => getBoardRippleDuration(puzzle.value.board.destination),
     [puzzle.value.board.destination.x, puzzle.value.board.destination.y],
   );
-  const celebrateStats = useSignal<CelebrateStats | null>(null);
-  const statsSettled = useSignal(false);
-  const statsError = useSignal(false);
   const [minElapsed, setMinElapsed] = useState(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
@@ -77,47 +73,18 @@ export function CelebrationDialog(
     return () => clearTimeout(timer);
   }, [hasSolution, rippleDuration]);
 
-  // Fetch stats once the dialog is open and the POST has completed —
-  // stats include the current solution so must wait for it to be saved.
-  useEffect(() => {
-    if (!isOpen) return;
-    if (isSubmitting?.value) return;
-    if (statsSettled.value) return;
+  const data = celebrationData.value;
+  const isError = celebrationError.value;
+  const isLoading = isOpen && !data && !isError;
 
-    const controller = new AbortController();
-    const headers = addTraceParentHeader(new Headers());
-
-    fetch(`/api/celebrate-stats?slug=${puzzle.value.slug}`, {
-      headers,
-      signal: controller.signal,
-    })
-      .then((r) => r.json())
-      .then((data: CelebrateStats) => {
-        celebrateStats.value = data;
-        statsSettled.value = true;
-      })
-      .catch((err) => {
-        if (err?.name === "AbortError") return;
-        statsSettled.value = true;
-        statsError.value = true;
-      });
-
-    return () => controller.abort();
-  }, [isOpen, isSubmitting?.value, statsSettled.value, puzzle.value.slug]);
-
-  const puzzleStats = celebrateStats.value?.puzzleStats ?? defaultPuzzleStats;
-  const userStats = celebrateStats.value?.userStats ?? null;
-  const isLoading = isOpen && !statsSettled.value;
+  const isNewPath = data?.isNewPath ?? false;
+  const puzzleStats = data?.puzzleStats ?? defaultPuzzleStats;
+  const userStats = data?.userStats ?? null;
 
   const isOptimal = moves.length === puzzle.value.minMoves;
   const headline = isOptimal
     ? `Perfect — ${moves.length} moves`
     : `Solved — ${moves.length} moves`;
-
-  const isNewPath = useMemo(
-    () => new URL(href.value).searchParams.get("new_path") === "true",
-    [href.value],
-  );
 
   const celebration = useMemo(
     () =>
@@ -126,13 +93,7 @@ export function CelebrationDialog(
         puzzle.value,
         { puzzle: puzzleStats, user: userStats },
       ),
-    [
-      moves.length,
-      isNewPath,
-      puzzle.value,
-      puzzleStats,
-      userStats,
-    ],
+    [moves.length, isNewPath, puzzle.value, puzzleStats, userStats],
   );
 
   return (
@@ -154,7 +115,7 @@ export function CelebrationDialog(
           )
           : (
             <p className="text-3 text-text-2">
-              {statsError.value ? "Couldn't load stats." : celebration.body}
+              {isError ? "Couldn't load stats." : celebration.body}
             </p>
           )}
       </div>

@@ -5,30 +5,29 @@ import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
+import type { CelebrationData } from "#/islands/celebration-dialog.tsx";
 import { useRouter } from "#/islands/router.tsx";
 
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName: string;
-  isSubmitting?: Signal<boolean>;
+  celebrationData?: Signal<CelebrationData | null>;
+  celebrationError?: Signal<boolean>;
 };
 
 /**
  * Client-side auto-post: when a named user solves the puzzle via JS moves,
- * POST the solution to the current page and navigate to the redirect URL.
- * Renders nothing — purely a side-effect island.
- *
- * The shared `isSubmitting` signal flips true at POST start and false on
- * settle, letting the celebration dialog gate its stats fetch against the
- * network.
+ * POST the solution as JSON. If the server responds with celebration data,
+ * write it to the signal. If the server redirects (e.g. tutorial flow),
+ * navigate to the redirected URL. Renders nothing.
  */
 export function AutoPostSolution(
-  { href, puzzle, savedName, isSubmitting }: Props,
+  { href, puzzle, savedName, celebrationData, celebrationError }: Props,
 ) {
   const { updateLocation } = useRouter();
   const postingRef = useRef(false);
-  const celebratedRef = useRef(false);
+  const completedRef = useRef(false);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -53,32 +52,38 @@ export function AutoPostSolution(
 
   useEffect(() => {
     if (!isEnabled) return;
-    if (postingRef.current || celebratedRef.current) return;
+    if (postingRef.current || completedRef.current) return;
 
     postingRef.current = true;
-    if (isSubmitting) isSubmitting.value = true;
 
-    const form = new FormData();
-    form.set("name", savedName);
-    form.set("moves", JSON.stringify(moves));
-    form.set("source", "auto-post");
-
-    const headers = addTraceParentHeader(new Headers());
+    const headers = addTraceParentHeader(
+      new Headers({
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      }),
+    );
 
     // Intentionally not aborted on unmount — the solve must persist even if
     // the user navigates away mid-submission.
     fetch(href.value, {
       method: "POST",
       headers,
-      body: form,
-    }).then((response) => {
-      celebratedRef.current = true;
-      updateLocation(response.url, { replace: true });
+      body: JSON.stringify({ name: savedName, moves }),
+    }).then(async (response) => {
+      completedRef.current = true;
+
+      if (response.redirected) {
+        updateLocation(response.url, { replace: true });
+        return;
+      }
+
+      if (celebrationData) {
+        const data = await response.json() as CelebrationData;
+        celebrationData.value = data;
+      }
     }).catch(() => {
-      // Silently fail — server path will handle it on next navigation
       postingRef.current = false;
-    }).finally(() => {
-      if (isSubmitting) isSubmitting.value = false;
+      if (celebrationError) celebrationError.value = true;
     });
   }, [isEnabled, state.moves, puzzle.value.slug]);
 

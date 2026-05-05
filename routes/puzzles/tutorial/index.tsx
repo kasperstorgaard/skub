@@ -92,45 +92,41 @@ export const handler = define.handlers<Data>({
     });
   },
   async POST(ctx) {
-    const form = await ctx.req.formData();
-    const source = form.get("source")?.toString();
-
     const puzzle = await getTutorialPuzzle();
     if (!puzzle) throw new HttpError(400, "Tutorial not found");
 
-    // "I'm ready" from the replay or solved step — explicit completion signal.
-    // Sets beginner and fires tracking, then redirects home.
-    if (source === "tutorial-dialog") {
-      await setUser(ctx.state.userId, { skillLevel: "beginner" });
+    const isJson = ctx.req.headers.get("content-type")?.includes(
+      "application/json",
+    );
 
+    // Form POST: "I'm ready" button from the tutorial dialog. Explicit
+    // completion signal — sets beginner, tracks, redirects home.
+    if (!isJson) {
+      await setUser(ctx.state.userId, { skillLevel: "beginner" });
       trackTutorialCompleted(ctx.state, puzzle, {
         moves: [],
         url: ctx.req.headers.get("referer") ?? "",
       });
-
       return new Response(null, {
         status: 303,
         headers: { Location: "/" },
       });
     }
 
-    // Auto-post path: user solved the tutorial by interacting with the board.
-    const rawMoves = form.get("moves")?.toString() ?? "";
-    const moves = JSON.parse(rawMoves) as Move[];
+    // JSON POST: AutoPostSolution — user solved the tutorial interactively.
+    const { moves } = await ctx.req.json() as { moves: Move[] };
 
     if (!isValidSolution(resolveMoves(puzzle.board, moves))) {
       throw new HttpError(400, "Solution is not valid");
     }
 
     await setUser(ctx.state.userId, { skillLevel: "beginner" });
-
     trackTutorialCompleted(ctx.state, puzzle, {
       moves,
       url: ctx.req.headers.get("referer") ?? "",
     });
 
     const url = new URL("/puzzles/tutorial", ctx.url);
-
     url.searchParams.delete("mode");
     url.searchParams.set("dialog", "tutorial");
     url.searchParams.set("tutorial_step", "solved");
