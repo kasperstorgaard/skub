@@ -1,125 +1,103 @@
-# Hide ideal move count + celebration redesign
-
-Closes #181.
+# Celebration transition: ripple animation + signal-driven flow
 
 ## Problem
 
-Two related issues, addressed together:
+Three issues, addressed together:
 
-1. **Optimal move count is revealed up-front.** `DifficultyBadge` and
-   `HintDialog` both show `minMoves` before the user has solved the puzzle.
-   The issue suggests withholding it adds suspense — finding out how close
-   to perfect you are becomes the payoff.
-
-2. **The current celebration body relies on streak / "new canonical path" /
-   first-solver framings.** None of these answer the question the player
-   actually cares about: how does my solve compare to others? The streak
-   framing is especially misleading — players replay puzzles, so streaks
-   don't carry the meaning they used to.
-
-## Approach
-
-Two-dimensional celebration model:
-
-- **Headline** conveys closeness to optimal (Perfect / Great solve / Solved)
-- **Body** conveys comparison context against other solvers
-
-`minMoves` stays on the client (the puzzle object). It's not a secret — the
-hide is purely UI. `CelebrationDialog` still reads `puzzle.minMoves`
-directly for the closeness check.
+1. The existing post-solve animation (board explosion) was too long and
+   destructive — tiles flew off screen, leaving nothing behind.
+2. `AutoPostSolution` used `redirect: "follow"` against the page POST and
+   read `response.url` to discover where to navigate — wasteful (full HTML
+   for a tiny string) and tightly coupled the client to server redirect
+   shape.
+3. The celebration flow accumulated coordinating state — `isSubmitting`,
+   `isNewPath` URL param, `?dialog=celebrate` URL convention, a separate
+   `/api/celebrate-stats` fetch, `statsSettled`/`statsError` signals — each
+   piece making sense in isolation but the whole tangling persistence,
+   navigation, and UX into one knotted flow.
 
 ## Changes
 
-### 1. Hide `minMoves` until previously solved
+### 1. Ripple animation (replaces board explosion)
 
-`routes/puzzles/[slug]/index.tsx` GET handler fetches a cheap
-`listUserPuzzleSolutions(userId, slug, { limit: 1 })` and exposes
-`hasSolved: boolean` in `PageData`.
+A scale + brightness pulse radiates outward ring by ring from the
+destination tile. All tiles in a ring fire simultaneously (~80ms between
+rings, 250ms per tile). Total ~810ms. Board returns to normal.
 
-- **`DifficultyBadge`**: new `hideMinMoves` prop. When set, renders `?`
-  with a "solve the puzzle to reveal" tooltip.
-- **`HintDialog`**: new `hideMinMoves` prop. Drops the
-  "(optimal is X)" parenthetical and any totals that imply optimal.
+The `tile-ripple` class is applied conditionally (only when `hasSolution`)
+so it doesn't create a stacking context during normal play, which would
+block guide clicks.
 
-### 2. Celebration tier redesign
+`lib/board-exit.ts` → `lib/board-ripple.ts` (renamed + rewritten, same
+`{ css, totalMs }` shape).
 
-Drop the existing rarity-ranked cases (first-solver, first-optimal,
-new-path, streak-milestone, streak, other-solvers). Replace with a
-two-dimensional model: headline conveys closeness, body conveys context.
+### 2. Single POST endpoint, dual contract by `Content-Type`
 
-**Headline** (driven by `moveCount` vs `puzzle.minMoves`):
+The page POST handler at `/puzzles/[slug]` is the only solution endpoint.
+Its contract:
 
-| Condition | Headline |
-|---|---|
-| `moveCount === minMoves` | "Perfect — N moves!" |
-| `moveCount ≤ minMoves + 2` | "Great — N moves!" |
-| else | "Solved — N moves" |
+- **`Content-Type: application/json`** (fetch from `AutoPostSolution`):
+  saves the solution, runs analytics + skill assessment, returns
+  `{ isNewPath, puzzleStats, userStats }` as JSON. No redirect. The client
+  decides what to do.
+- **Form encoding** (no-JS submit from `SolutionDialog`): saves and
+  redirects to `/puzzles/[slug]/solutions`. No celebration shown — no-JS
+  users go straight to the leaderboard, accepted as a fair trade.
 
-Named tiers (Perfect / Great) keep the exclamation; baseline ("Solved")
-is neutral — exclamation would read as sarcasm at high move counts.
+`/api/solutions` and `/api/celebrate-stats` deleted.
 
-**Body case** (achievement-noun style — sets up for a future achievements
-feature). Each case has 3 wording variants picked randomly for variety,
-stored in a `messages` lookup table:
+The tutorial page's POST follows the same shape: JSON for auto-post (303
+redirect to `?tutorial_step=solved`, fetch follows), form for the
+"I'm ready" button (303 home).
 
-| Case | Condition |
-|---|---|
-| `champion` | Perfect AND `histogram[minMoves] === 1` (only this user at perfect) |
-| `perfectionist` | Perfect, others have also hit it |
-| `pioneer` | `totalSolutions ≤ 1` (only this user has solved) |
-| `creative` | `isNewPath === true` (found a canonical path no one else has) |
-| `adept` | `totalSolutions ≥ 10` AND beat ≥40% of solves |
-| `fallback` | Everything else |
+### 3. Signal-driven celebration
 
-Precedence (top-down — first match wins): champion → perfectionist →
-pioneer → creative → adept → fallback.
+The puzzle page owns two signals:
 
-"Beat ≥40%" = `solves_with_more_moves / totalSolutions ≥ 0.4`.
-Percentages rounded to nearest integer.
+- `celebrationData: Signal<CelebrationData | null>` — populated by the
+  POST response.
+- `celebrationError: Signal<boolean>` — set if the POST fails.
 
-Example body strings (one variant shown; each case has 3). Bodies are
-factual fragments — no terminal punctuation, no praise word stacked on
-top of the headline (which already carries "Perfect" / "Great"):
+`AutoPostSolution`:
+- Renders nothing.
+- One job: on solve detection, POST as JSON, set `celebrationData` (or
+  `celebrationError` on failure). If the response was redirected (tutorial
+  case), navigates to `response.url` instead.
+- Mounted only when the user has a saved name.
 
-| Case | Example |
-|---|---|
-| `champion` | "First to nail it" |
-| `perfectionist` | "Top X% of solves" |
-| `pioneer` | "First solve in the books" |
-| `creative` | "A creative path" |
-| `adept` | "Better than X% of solves" |
-| `fallback` | "Joined X others" |
+`CelebrationDialog`:
+- Opens on `hasSolution && minElapsed` — purely client-side solve
+  detection, no URL `?dialog=celebrate` convention.
+- Reads `celebrationData` for the enriched body, falls back to defaults
+  while the POST is pending. Shows "Couldn't load stats" on error.
+- Mounted only when the user has a saved name (paired with
+  `AutoPostSolution`).
 
-### 3. Drop unused signal references
+`SolutionDialog` is unchanged in role — still the unnamed-user form. Its
+`isOpen` check no longer needs to exclude `?dialog=celebrate` (that URL
+state is gone).
 
-`isNewPath` stays in `CelebrationData` (read by `creative` case logic).
-`userStats` removed from `CelebrationData` and the POST response — streak
-data is no longer surfaced in the celebration. Saves a per-solve KV call.
+## What this kills
 
-### 4. Achievements: vocabulary only, not the storage model
-
-The case names (`pioneer`, `champion`, `perfectionist`, `adept`, `creative`,
-`fallback`) borrow achievement-style nouns to set up a future achievements
-feature. But this PR only ships the vocabulary — the celebration case is
-recomputed fresh from current `puzzleStats` every time the dialog opens.
-
-A real achievements feature would need:
-
-- The earned case persisted at solve time (otherwise `pioneer` flips to
-  `fallback` once others solve it, and the user "loses" their badge)
-- Possibly the data that justified it stored too (move count, total
-  solves at time of earn) for later "X% rarity" display
-- Stable rules — once earned, never lost (or with clear loss rules)
-
-Out of scope here. The case-name choice just makes that follow-up easier.
+- `?dialog=celebrate` URL state
+- `?new_path=true` URL param
+- `source` form field branching in the POST handler
+- `getSuccessHref` callback prop on `AutoPostSolution`
+- `response.url` follow-the-redirect dance
+- `isSubmitting` signal (collapsed into `celebrationData === null`)
+- Internal `celebrate-stats` fetch in the dialog
+- `/api/solutions` and `/api/celebrate-stats` routes
 
 ## Non-goals
 
-- Visual histogram / bar chart. We tried wording first; if the wording-only
-  flow lands well, the viz isn't worth adding.
-- Personal-best overlay ("New personal best!"). The player remembers their
-  own previous solve; the comparison-context body is the more valuable
-  signal.
-- Hiding `minMoves` server-side / from network payloads.
-- No-JS path celebration (separate concern — no-JS users go to
-  `/solutions` directly).
+- No-JS users do not see the celebration dialog. They land on the
+  leaderboard. The leaderboard is itself a kind of celebration.
+
+## Follow-up: hide optimal score pre-solve
+
+`minMoves` is currently passed to the client on page load. A follow-up:
+
+- Withhold `minMoves` from the initial page data
+- Have the POST response carry `isOptimal` so the dialog can show
+  "Perfect — X moves" without `minMoves` beforehand
+- Defer `DifficultyBadge`'s `minMoves` display until after solving
