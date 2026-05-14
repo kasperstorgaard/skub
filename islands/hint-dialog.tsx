@@ -1,8 +1,13 @@
 import type { Signal } from "@preact/signals";
-import { useCallback, useEffect, useMemo } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 
 import { Dialog } from "./dialog.tsx";
-import { useDelayedValue } from "#/client/use-delayed-value.ts";
 import { useSolveStream } from "#/client/use-solve-stream.ts";
 import { ArrowCounterClockwise, Icon } from "#/components/icons.tsx";
 import { resolveMoves } from "#/game/board.ts";
@@ -14,13 +19,12 @@ import { useRouter } from "#/islands/router.tsx";
 type Props = {
   puzzle: Signal<Puzzle>;
   href: Signal<string>;
+  /** Hide the optimal move count when the user hasn't solved this puzzle before. */
+  hideMinMoves?: boolean;
 };
 
 type SolveState = {
-  status: "starting";
-} | {
   status: "solving";
-  depth: number;
 } | {
   status: "done";
   moves: Move[];
@@ -28,19 +32,15 @@ type SolveState = {
   status: "error";
 };
 
-export function HintDialog({ puzzle, href }: Props) {
+// Minimum time the solving state is shown so the hint feels earned
+// rather than instant — slow puzzles already exceed this naturally.
+const MIN_THINK_MS = 3000;
+
+export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   const gameState = useMemo(() => decodeState(href.value), [href.value]);
   const minMoves = puzzle.value.minMoves;
-  const {
-    value: solveState,
-    queueValue: queueSolveState,
-    clearQueue: clearSolveValue,
-  } = useDelayedValue<
-    SolveState
-  >({
-    status: "solving",
-    depth: 0,
-  });
+  const [solveState, setSolveState] = useState<SolveState | null>(null);
+  const minThinkRef = useRef<Promise<void> | null>(null);
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -92,26 +92,25 @@ export function HintDialog({ puzzle, href }: Props) {
   };
 
   const { start: startSolve, cancel: cancelSolve } = useSolveStream((event) => {
-    if (event.type === "progress") {
-      queueSolveState({
-        status: "solving",
-        depth: event.depth,
-      }, { delay: 700 });
-    } else if (event.type === "solution") {
-      queueSolveState({ status: "done", moves: event.moves }, { delay: 1000 });
+    if (event.type === "solution") {
+      const { moves } = event;
+      minThinkRef.current?.then(() => setSolveState({ status: "done", moves }));
     } else if (event.type === "error") {
-      queueSolveState({ status: "error" }, { immediate: true });
+      setSolveState({ status: "error" });
     }
   });
 
   // React to ?dialog=hint appearing in the URL (set by the server-side hint route)
   useEffect(() => {
     if (!open) {
-      clearSolveValue();
+      setSolveState(null);
       return;
     }
 
-    queueSolveState({ status: "starting" }, { immediate: true });
+    setSolveState({ status: "solving" });
+    minThinkRef.current = new Promise<void>((resolve) =>
+      setTimeout(resolve, MIN_THINK_MS)
+    );
 
     const board = resolveMoves(puzzle.value.board, moves);
     startSolve(board);
@@ -130,37 +129,18 @@ export function HintDialog({ puzzle, href }: Props) {
   return (
     <Dialog open={open}>
       <div class="flex flex-col gap-fl-2 text-text-2">
-        {solveState?.status === "starting" && (
-          <>
-            <h2 class="text-4 text-text-1 font-semibold leading-tight">
-              Warming up the solver…
-            </h2>
-
-            <p class="leading-snug text-2">
-              Crunching your moves…
-            </p>
-
-            <div class="flex items-center gap-fl-2 mt-fl-1">
-              <button
-                type="button"
-                className="link p-0 bg-transparent"
-                disabled={!open}
-                onClick={closeModal}
-              >
-                Cancel
-              </button>
-            </div>
-          </>
-        )}
-
         {solveState?.status === "solving" && (
           <>
-            <p class="text-4 text-text-1 font-semibold leading-tight">
+            <h2 class="text-4 text-text-1 font-semibold leading-tight">
               Finding the shortest path…
-            </p>
+            </h2>
 
-            <span class="leading-snug animate-blink">
-              Trying all {solveState.depth}-move paths from here…
+            <span class="leading-snug">
+              Crunching the possibilities<span class="loading-dots ml-[0.2ch]">
+                <span>.</span>
+                <span>.</span>
+                <span>.</span>
+              </span>
             </span>
 
             <div class="flex items-center gap-fl-2 mt-fl-1">
@@ -183,8 +163,9 @@ export function HintDialog({ puzzle, href }: Props) {
             </h2>
 
             <p className="leading-snug">
-              You can still solve the puzzle, but you'll need {totalMoves}{" "}
-              moves total (optimal is {minMoves})
+              {hideMinMoves
+                ? "You can still solve the puzzle, but there are much shorter paths."
+                : `You can still solve the puzzle, but you'll need ${totalMoves} moves total (optimal is ${minMoves})`}
             </p>
 
             <p className="leading-snug">
@@ -212,8 +193,11 @@ export function HintDialog({ puzzle, href }: Props) {
         {solveState?.status === "done" && !offTrack && (
           <>
             <h2 className="text-4 leading-tight text-text-1">
-              Found it - {remainingMoves}{" "}
-              {remainingMoves && remainingMoves === 1 ? "move" : "moves"} to go
+              Found it — {hideMinMoves
+                ? remainingMoves <= 2 ? "almost there" : "some way to go"
+                : `${remainingMoves} ${
+                  remainingMoves === 1 ? "move" : "moves"
+                } to go`}
             </h2>
 
             <p className="leading-snug">

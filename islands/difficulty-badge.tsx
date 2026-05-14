@@ -11,12 +11,14 @@ import type { Board, Puzzle } from "#/game/types.ts";
 type DifficultyBadgeProps = {
   puzzle: Signal<Puzzle>;
   solverEnabled?: boolean;
+  /** Hide the move count when the user hasn't solved this puzzle before. */
+  hideMinMoves?: boolean;
   className?: string;
 };
 
 // Displays the shortest solution length, updated on a 3s debounce with fade transition.
 export function DifficultyBadge(
-  { puzzle, solverEnabled, className }: DifficultyBadgeProps,
+  { puzzle, solverEnabled, hideMinMoves, className }: DifficultyBadgeProps,
 ) {
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -108,9 +110,11 @@ export function DifficultyBadge(
             "px-2 bg-surface-3 min-w-[3ch] text-center",
             "cursor-help",
           )}
-          title="shortest possible solution"
+          title={hideMinMoves
+            ? "solve the puzzle to reveal"
+            : "shortest possible solution"}
         >
-          {minMoves ?? "?"}
+          {hideMinMoves ? "?" : minMoves ?? "?"}
         </span>
       )}
     </span>

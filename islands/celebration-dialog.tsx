@@ -3,8 +3,12 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
+import {
+  type CelebrationType,
+  countSolvesAbove,
+  getCelebrationType,
+} from "#/game/celebration.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
-import { UserStats } from "#/game/streak.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -13,20 +17,6 @@ import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 export type CelebrationData = {
   isNewPath: boolean;
   puzzleStats: PuzzleStats;
-  userStats: UserStats | null;
-};
-
-type CelebrationCase =
-  | "first-solver"
-  | "first-optimal"
-  | "new-path"
-  | "streak-milestone"
-  | "streak"
-  | "other-solvers";
-
-type CelebrationContent = {
-  case: CelebrationCase;
-  body: string;
 };
 
 type Props = {
@@ -77,23 +67,27 @@ export function CelebrationDialog(
   const isError = celebrationError.value;
   const isLoading = isOpen && !data && !isError;
 
-  const isNewPath = data?.isNewPath ?? false;
   const puzzleStats = data?.puzzleStats ?? defaultPuzzleStats;
-  const userStats = data?.userStats ?? null;
+  const isNewPath = data?.isNewPath ?? false;
 
-  const isOptimal = moves.length === puzzle.value.minMoves;
-  const headline = isOptimal
-    ? `Perfect — ${moves.length} moves`
+  const isPerfect = moves.length === puzzle.value.minMoves;
+  const isGreat = moves.length <= puzzle.value.minMoves + 2;
+
+  const headline = isPerfect
+    ? `Perfect — ${moves.length} moves!`
+    : isGreat
+    ? `Great — ${moves.length} moves!`
     : `Solved — ${moves.length} moves`;
 
-  const celebration = useMemo(
-    () =>
-      getCelebration(
-        { moveCount: moves.length, isNewPath },
-        puzzle.value,
-        { puzzle: puzzleStats, user: userStats },
-      ),
-    [moves.length, isNewPath, puzzle.value, puzzleStats, userStats],
+  const body = useMemo(
+    () => {
+      const type = getCelebrationType(moves.length, puzzle.value, {
+        puzzleStats,
+        isNewPath,
+      });
+      return getMessage(type, moves.length, puzzleStats);
+    },
+    [moves.length, puzzle.value, puzzleStats, isNewPath],
   );
 
   return (
@@ -115,7 +109,7 @@ export function CelebrationDialog(
           )
           : (
             <p className="text-3 text-text-2">
-              {isError ? "Couldn't load stats." : celebration.body}
+              {isError ? "Couldn't load stats." : body}
             </p>
           )}
       </div>
@@ -135,12 +129,12 @@ export function CelebrationDialog(
             data-primary
             autoFocus
           >
-            One more <Icon icon={ArrowRight} />
+            Play one more <Icon icon={ArrowRight} />
           </a>
         </div>
 
         <div className="flex justify-center gap-fl-2 mt-1">
-          {!isOptimal && (
+          {!isPerfect && (
             <a href={getResetHref(href.value)} className="text-text-2 text-1">
               Try again
             </a>
@@ -154,83 +148,71 @@ export function CelebrationDialog(
   );
 }
 
+function pickRandom<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
 /**
- * Picks the single best celebration body to show. Ranked by rarity — first match wins:
- *
- * 1. First solver ever
- * 2. First perfect solve (on this puzzle)
- * 3. New canonical path (only if within ~2 moves of optimal)
- * 4. Streak milestone (new best, or round number like 5/10/15)
- * 5. Active streak (> 1)
- * 6. Fallback (player count or generic)
- *
- * Headline is always derived locally: "Perfect — X moves" / "Solved — X moves".
- *
- * TODO: replace the rarity / unique-solver framing with percentile-based stats —
- * "You're in the top X% of solvers on this puzzle" or "Faster than X% of solves".
- * More motivating, more actionable, and survives once the puzzle has many solvers.
+ * Maps a celebration type to a randomly-picked body string. Each case has
+ * 3 wording variants. The headline carries closeness (Perfect / Great /
+ * Solved) — bodies are factual fragments, no praise word stacking.
  */
-function getCelebration(
-  solve: { moveCount: number; isNewPath: boolean },
-  puzzle: Puzzle,
-  stats: { puzzle: PuzzleStats; user: UserStats | null },
-): CelebrationContent {
-  const { moveCount, isNewPath } = solve;
-  const { totalSolutions, solutionsHistogram, uniqueSolvers } = stats.puzzle;
-  const { user: userStats } = stats;
-  const isOptimal = moveCount === puzzle.minMoves;
+function getMessage(
+  type: CelebrationType,
+  moveCount: number,
+  puzzleStats: PuzzleStats,
+): string {
+  const { totalSolutions, solutionsHistogram } = puzzleStats;
 
-  // 1. First solver: only this user's solution exists in fresh stats
-  if (totalSolutions <= 1) {
-    return {
-      case: "first-solver",
-      body: "No one cracked this one before you.",
-    };
-  }
-
-  // 2. First perfect solve: at most one entry in histogram at this count
-  if (isOptimal && (solutionsHistogram[moveCount] ?? 0) <= 1) {
-    return {
-      case: "first-optimal",
-      body: "You found the first perfect solve!",
-    };
-  }
-
-  // 3. New canonical path, only celebrate when close to optimal (~2 moves)
-  if (isNewPath && puzzle.minMoves && moveCount <= puzzle.minMoves + 2) {
-    return {
-      case: "new-path",
-      body: "Nice thinking — no one found this route before",
-    };
-  }
-
-  // 4. Streak milestone: new personal best or round number (5, 10, 15…)
-  if (userStats && userStats.currentStreak > 1) {
-    const isNewBest = userStats.currentStreak >= userStats.bestStreak;
-    const isRound = userStats.currentStreak % 5 === 0;
-    if (isNewBest || isRound) {
-      return {
-        case: "streak-milestone",
-        body: isNewBest
-          ? `${userStats.currentStreak}-puzzle streak — new personal best!`
-          : `${userStats.currentStreak} puzzles in a row!`,
-      };
+  switch (type) {
+    case "champion":
+      return pickRandom([
+        "First to nail it",
+        "First perfect solve so far",
+        "No one else has hit it yet",
+      ]);
+    case "perfectionist": {
+      const perfectsCount = solutionsHistogram[moveCount] ?? 0;
+      const pct = Math.max(
+        1,
+        Math.round((perfectsCount / totalSolutions) * 100),
+      );
+      return pickRandom([
+        `Top ${pct}% of solves`,
+        `In the top ${pct}% of solves`,
+        `${pct}% of solves match this`,
+      ]);
+    }
+    case "pioneer":
+      return pickRandom([
+        "First solve in the books",
+        "First to crack this puzzle",
+        "Only solver so far",
+      ]);
+    case "creative":
+      return pickRandom([
+        "First to get this solution",
+        "No one has solved it this way before",
+        "A creative path",
+      ]);
+    case "adept": {
+      const pct = Math.round(
+        (countSolvesAbove(solutionsHistogram, moveCount) / totalSolutions) *
+          100,
+      );
+      return pickRandom([
+        `Better than ${pct}% of solves`,
+        `${pct}% of solves were slower`,
+        `Beat ${pct}% of solves`,
+      ]);
+    }
+    case "fallback": {
+      const count = totalSolutions - 1;
+      return pickRandom([
+        `Joined ${count} ${count === 1 ? "other" : "others"}`,
+        `${count} other ${count === 1 ? "solve" : "solves"} so far`,
+        `${count} ${count === 1 ? "other has" : "others have"} solved this`,
+      ]);
     }
   }
-
-  // 5. Active streak
-  if (userStats && userStats.currentStreak > 1) {
-    return {
-      case: "streak",
-      body: `${userStats.currentStreak}-puzzle streak - keep it going :)`,
-    };
-  }
-
-  // 6. Fallback
-  return {
-    case: "other-solvers",
-    body: `${uniqueSolvers - 1} ${
-      uniqueSolvers === 2 ? "other player" : "other players"
-    } solved this`,
-  };
 }

@@ -8,8 +8,8 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
-import { saveSolution } from "#/db/solutions.ts";
-import { getPuzzleStats, getUserStats } from "#/db/stats.ts";
+import { listUserPuzzleSolutions, saveSolution } from "#/db/solutions.ts";
+import { getPuzzleStats } from "#/db/stats.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
@@ -38,15 +38,30 @@ type PageData = {
   puzzle: Puzzle;
   hintCount: number;
   savedName: string | null;
+  hasSolved: boolean;
 };
 
 export const handler = define.handlers<PageData>({
-  GET(ctx) {
+  async GET(ctx) {
     const { slug } = ctx.params;
     const { puzzle } = ctx.state;
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
+
+    // Default to false on KV failure — the game itself stays playable; the
+    // worst case is the user temporarily sees "?" on a puzzle they've solved.
+    let hasSolved = false;
+    try {
+      const priorSolutions = await listUserPuzzleSolutions(
+        ctx.state.userId,
+        slug,
+        { limit: 1 },
+      );
+      hasSolved = priorSolutions.length > 0;
+    } catch {
+      hasSolved = false;
+    }
 
     // No-JS solve detection: moves are encoded in the URL on each navigation.
     // JS users go via AutoPostSolution → POST instead. The dialog guard prevents
@@ -69,7 +84,7 @@ export const handler = define.handlers<PageData>({
       }
     }
 
-    return page({ puzzle, hintCount, savedName });
+    return page({ puzzle, hintCount, savedName, hasSolved });
   },
   async POST(ctx) {
     const { slug } = ctx.params;
@@ -124,14 +139,10 @@ export const handler = define.handlers<PageData>({
     }
 
     if (isJson) {
-      const [puzzleStats, userStats] = await Promise.all([
-        getPuzzleStats(slug),
-        getUserStats(ctx.state.userId),
-      ]);
+      const puzzleStats = await getPuzzleStats(slug);
       return Response.json({
         isNewPath,
         puzzleStats: puzzleStats ?? defaultPuzzleStats,
-        userStats,
       });
     }
 
@@ -151,7 +162,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const url = new URL(props.req.url);
 
   const back = isTodaysPuzzle(props.data.puzzle)
-    ? { href: "/", label: "Home" }
+    ? { href: "/", label: "Back to Home" }
     : {
       href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
       label: "Back to archives",
@@ -173,7 +184,11 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             <span className="font-5">{props.data.puzzle.name}</span>
           </h1>
 
-          <DifficultyBadge puzzle={puzzle} className="lg:mt-1" />
+          <DifficultyBadge
+            puzzle={puzzle}
+            hideMinMoves={!props.data.hasSolved}
+            className="lg:mt-1"
+          />
         </div>
 
         <div className="relative">
@@ -218,7 +233,11 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         {printUrl}
       </a>
 
-      <HintDialog puzzle={puzzle} href={href} />
+      <HintDialog
+        puzzle={puzzle}
+        href={href}
+        hideMinMoves={!props.data.hasSolved}
+      />
       <SolveDialog puzzle={puzzle} href={href} />
 
       <SolutionDialog
