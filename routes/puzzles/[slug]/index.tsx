@@ -13,7 +13,7 @@ import { getPuzzleStats } from "#/db/stats.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
-import { isTodaysPuzzle } from "#/game/date.ts";
+import { getDayOfYear, isTodaysPuzzle } from "#/game/date.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
@@ -29,7 +29,7 @@ import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
-import { isDev } from "#/lib/env.ts";
+import { isBuilder, isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
 import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
@@ -39,6 +39,7 @@ type PageData = {
   hintCount: number;
   savedName: string | null;
   hasSolved: boolean;
+  showEdit: boolean;
 };
 
 export const handler = define.handlers<PageData>({
@@ -84,7 +85,8 @@ export const handler = define.handlers<PageData>({
       }
     }
 
-    return page({ puzzle, hintCount, savedName, hasSolved });
+    const showEdit = isBuilder && (puzzle.number ?? 0) > getDayOfYear();
+    return page({ puzzle, hintCount, savedName, hasSolved, showEdit });
   },
   async POST(ctx) {
     const { slug } = ctx.params;
@@ -216,6 +218,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         hintCount={props.data.hintCount}
         isDev={isDev}
+        showEdit={props.data.showEdit}
         skillLevel={props.state.user.skillLevel}
         className="print:hidden"
       />

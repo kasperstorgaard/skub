@@ -14,6 +14,7 @@ import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getAvailableEntries, getPuzzleByDate } from "#/game/loader.ts";
 import { Difficulty, Puzzle, PuzzleManifestEntry } from "#/game/types.ts";
 import { getArchiveDate } from "#/game/url.ts";
+import { isBuilder } from "#/lib/env.ts";
 
 type PageData = {
   today: Temporal.PlainDate;
@@ -118,7 +119,12 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           className="grid gap-fl-3 content-start lg:grid-cols-2"
         >
           <div className="grid grid-cols-subgrid place-content-start items-start gap-fl-2">
-            <MonthStrip href={href} selectedDate={selectedDate} today={today} />
+            <MonthStrip
+              href={href}
+              selectedDate={selectedDate}
+              today={today}
+              isBuilder={isBuilder}
+            />
 
             <CalendarGrid
               href={href}
