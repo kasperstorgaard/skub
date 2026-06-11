@@ -8,6 +8,7 @@ import {
   ArrowArcRight,
   Download,
   Icon,
+  Pencil,
   Printer,
   Ranking,
 } from "#/components/icons.tsx";
@@ -26,6 +27,7 @@ type ControlsPanelProps = {
   puzzle: Signal<Puzzle>;
   href: Signal<string>;
   isDev: boolean;
+  showEdit?: boolean;
   hintCount?: number;
   isPreview?: boolean;
   skillLevel?: SkillLevel | null;
@@ -37,6 +39,7 @@ export function ControlsPanel(
     puzzle,
     href,
     isDev,
+    showEdit,
     hintCount,
     isPreview,
     skillLevel = "intermediate",
@@ -208,6 +211,15 @@ export function ControlsPanel(
             <a href="/api/export" download className="btn">
               <Icon icon={Download} />
               Download
+            </a>
+          )}
+
+          {showEdit && (
+            <a
+              href={`/puzzles/${puzzle.value.slug}/clone`}
+              className="btn"
+            >
+              <Icon icon={Pencil} /> Edit
             </a>
           )}
         </div>

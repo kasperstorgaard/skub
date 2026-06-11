@@ -7,6 +7,7 @@ import {
   Puzzle,
   PuzzleManifestEntry,
 } from "#/game/types.ts";
+import { isBuilder } from "#/lib/env.ts";
 import { sortList } from "#/lib/list.ts";
 
 // Resolve from cwd — always the project root locally and on Deno Deploy.
@@ -41,7 +42,7 @@ export async function getAvailableEntries() {
 
   return manifest
     .filter((entry) => !entry.hidden)
-    .filter((entry) => (entry.number ?? 0) <= dayOfYear);
+    .filter((entry) => isBuilder || (entry.number ?? 0) <= dayOfYear);
 }
 
 /**
