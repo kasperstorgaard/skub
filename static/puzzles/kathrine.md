@@ -2,7 +2,7 @@
 name: Kathrine
 slug: kathrine
 createdAt: 2026-07-12T19:47:02.103Z
-difficulty: medium
+difficulty: hard
 minMoves: 10
 number: 201
 ---
