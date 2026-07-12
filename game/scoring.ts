@@ -709,49 +709,84 @@ const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
 const bounded = (value: number, max: number): number =>
   max > 0 ? clamp01(value / max) : 0;
 
+/** Context a bound may depend on (some metrics scale with move/piece count). */
+type BoundCtx = { minMoves: number; blockers: number };
+type Bound = (ctx: BoundCtx) => number;
+
+/**
+ * Score calibration — the per-metric max bounds the composite normalizes against,
+ * split into positive and negative terms. This is the single tunable source of
+ * truth; bump `version` on every change so a corpus report is traceable to the
+ * calibration that produced it (see `scoring/reports/calibration-<version>.md`).
+ *
+ * v1 uses theoretical maxes and squashes the whole corpus into ~[0.25, 0.35];
+ * later versions replace these with corpus-calibrated values so scores spread.
+ */
+export const CALIBRATION: {
+  version: number;
+  positive: Record<string, Bound>;
+  negative: Record<string, Bound>;
+} = {
+  version: 1,
+  positive: {
+    setupRatio: () => 1,
+    pieceUsage: ({ minMoves: m, blockers: p }) =>
+      p * Math.log2(1 + m) + Math.log2(1 + p),
+    deception: ({ minMoves: m }) => 7 * m,
+    reversals: ({ minMoves: m }) => Math.max(1, m - 1),
+    crossTrailOverlap: () => COLS * ROWS,
+    totalDistance: ({ minMoves: m }) => 7 * m * 2,
+    firstMovePrecision: () => 1,
+    searchProfile: () => 1,
+    coverage: () => 1,
+    stopWeighted: ({ minMoves: m }) => 3 * m,
+  },
+  negative: {
+    pointlessClearance: ({ minMoves: m }) => Math.max(1, m),
+    sameDirectionRepeat: () => COLS * ROWS,
+  },
+};
+
 /**
  * Composite quality score for a single route in `[-1, 1]`. Each metric is divided
- * by a deterministic per-board max so it lands in `[0,1]`, then positives are
- * averaged and the two negatives subtracted — equal footing, no metric dominating
- * by range or count.
- *
- * TODO(tuning): the max bounds and equal weights are a provisional v1; tune once
- * there is a scored corpus to calibrate against.
+ * by its `CALIBRATION` max so it lands in `[0,1]`, then positives are averaged and
+ * the two negatives subtracted — equal footing, no metric dominating by range.
  */
 function compositeScore(
   metrics: Metrics,
   board: Board,
   minMoves: number,
 ): number {
-  const m = minMoves;
-  const p = board.pieces.filter((piece) => piece.type === "blocker").length;
-  const stopWeighted = metrics.stopTypes.piece * 3 +
-    metrics.stopTypes.wall * 2 +
-    metrics.stopTypes.edge;
+  const ctx: BoundCtx = {
+    minMoves,
+    blockers: board.pieces.filter((piece) => piece.type === "blocker").length,
+  };
+  const values: Record<string, number> = {
+    setupRatio: metrics.setupRatio,
+    pieceUsage: metrics.pieceUsage,
+    deception: metrics.deception,
+    reversals: metrics.reversals,
+    crossTrailOverlap: metrics.crossTrailOverlap,
+    totalDistance: metrics.totalDistance.puck + metrics.totalDistance.blocker,
+    firstMovePrecision: metrics.firstMovePrecision,
+    searchProfile: metrics.searchProfile,
+    coverage: metrics.coverage,
+    stopWeighted: metrics.stopTypes.piece * 3 + metrics.stopTypes.wall * 2 +
+      metrics.stopTypes.edge,
+    pointlessClearance: metrics.pointlessClearance,
+    sameDirectionRepeat: metrics.sameDirectionRepeat,
+  };
 
-  const positives = [
-    bounded(metrics.setupRatio, 1),
-    bounded(metrics.pieceUsage, p * Math.log2(1 + m) + Math.log2(1 + p)),
-    bounded(metrics.deception, 7 * m),
-    bounded(metrics.reversals, Math.max(1, m - 1)),
-    bounded(metrics.crossTrailOverlap, COLS * ROWS),
-    bounded(
-      metrics.totalDistance.puck + metrics.totalDistance.blocker,
-      7 * m * 2,
-    ),
-    bounded(metrics.firstMovePrecision, 1),
-    bounded(metrics.searchProfile, 1),
-    bounded(metrics.coverage, 1),
-    bounded(stopWeighted, 3 * m),
-  ];
-  const negatives = [
-    bounded(metrics.pointlessClearance, Math.max(1, m)),
-    bounded(metrics.sameDirectionRepeat, COLS * ROWS),
-  ];
+  const mean = (terms: Record<string, Bound>) => {
+    const keys = Object.keys(terms);
+    const sum = keys.reduce(
+      (acc, k) => acc + bounded(values[k], terms[k](ctx)),
+      0,
+    );
+    return keys.length ? sum / keys.length : 0;
+  };
 
-  const positive = positives.reduce((a, b) => a + b, 0) / positives.length;
-  const negative = negatives.reduce((a, b) => a + b, 0) / negatives.length;
-  return positive - negative;
+  return mean(CALIBRATION.positive) - mean(CALIBRATION.negative);
 }
 
 /**

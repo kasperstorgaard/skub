@@ -8,11 +8,11 @@
  * orchestrator sees a non-zero exit and skips it (listed under "Skipped").
  *
  * Usage: `deno task score-corpus [outfile] [--floor=0.5] [--only=<slug>] [--timeout=30000]`
- * Defaults to writing `corpus-score.md`.
+ * Defaults to writing `scoring/reports/calibration-<version>.md`.
  */
 import { parsePuzzle } from "#/game/parser.ts";
 import { solveExhaustiveSync } from "#/game/solver.ts";
-import { type Metrics, scoreBoard } from "#/game/scoring.ts";
+import { CALIBRATION, type Metrics, scoreBoard } from "#/game/scoring.ts";
 
 const PUZZLE_DIR = "static/puzzles";
 const flag = (name: string) =>
@@ -61,6 +61,7 @@ type PuzzleRow = {
   routes: number;
   score: number;
   worst: number;
+  ms: number; // solve + score wall-clock time (spots heavy puzzles)
   /** metric → { mean, min } across the puzzle's routes */
   metrics: Record<string, { mean: number; min: number }>;
 };
@@ -68,7 +69,9 @@ type PuzzleRow = {
 /** Worker mode: score one puzzle file and emit its row as JSON on stdout. */
 function scoreFile(path: string): PuzzleRow {
   const puzzle = parsePuzzle(Deno.readTextFileSync(path));
+  const t0 = performance.now();
   const scored = scoreBoard(puzzle.board, solveExhaustiveSync(puzzle.board));
+  const ms = Math.round(performance.now() - t0);
 
   const perRoute = scored.perSolution.map((s) => scalarMetrics(s.metrics));
   const metrics: PuzzleRow["metrics"] = {};
@@ -87,6 +90,7 @@ function scoreFile(path: string): PuzzleRow {
     routes: scored.perSolution.length,
     score: scored.score,
     worst: scored.min,
+    ms,
     metrics,
   };
 }
@@ -100,7 +104,8 @@ if (workerFile) {
 
 // ---- orchestrator ----
 
-const outFile = Deno.args.find((a) => !a.startsWith("--")) ?? "corpus-score.md";
+const outFile = Deno.args.find((a) => !a.startsWith("--")) ??
+  `scoring/reports/calibration-${CALIBRATION.version}.md`;
 const floor = Number(flag("--floor=") ?? "0.5");
 const only = flag("--only=");
 const timeoutMs = Number(flag("--timeout=") ?? "30000");
@@ -165,6 +170,7 @@ const headers = [
   "diff",
   "mM",
   "routes",
+  "ms",
   "score",
   "worst",
   ...METRICS.map((m) => `${m} (mean/min)`),
@@ -175,18 +181,40 @@ const toRow = (r: PuzzleRow): string[] => [
   r.difficulty,
   String(r.minMoves),
   String(r.routes),
+  String(r.ms),
   f(r.score),
   f(r.worst),
   ...METRICS.map((m) => `${f(r.metrics[m].mean)}/${f(r.metrics[m].min)}`),
 ];
 
+const scores = rows.map((r) => r.score).sort((a, b) => a - b);
+const dist = scores.length === 0
+  ? "n/a"
+  : `min ${f(scores[0])}, median ${
+    f(scores[Math.floor(scores.length / 2)])
+  }, mean ${f(scores.reduce((a, b) => a + b, 0) / scores.length)}, max ${
+    f(scores[scores.length - 1])
+  }`;
+const slowest = [...rows].sort((a, b) => b.ms - a.ms).slice(0, 10);
+
 const md = [
   `# Corpus score report`,
   ``,
-  `${rows.length} scored, ${skipped.length} skipped.`,
+  `**Calibration v${CALIBRATION.version}** — ${rows.length} scored, ${skipped.length} skipped.`,
+  `Score distribution: ${dist}.`,
+  ``,
   `Each metric cell is \`mean/min\` across the puzzle's distinct solutions;`,
-  `\`score\` is the mean route score, \`worst\` the lowest route. Rows are sorted`,
-  `by slug so tuning re-runs produce clean value-only diffs.`,
+  `\`score\` is the mean route score, \`worst\` the lowest route, \`ms\` the`,
+  `solve+score time. Rows are sorted by slug so tuning re-runs diff cleanly`,
+  `(the \`ms\` column is inherently a little noisy).`,
+  ``,
+  `## Slowest puzzles (top 10 by ms)`,
+  ``,
+  slowest.length === 0
+    ? `_none_`
+    : slowest.map((r) =>
+      `- ${r.slug} — ${r.ms} ms (${r.minMoves} moves, ${r.routes} routes)`
+    ).join("\n"),
   ``,
   `## Skipped — too branchy to score exhaustively (${skipped.length})`,
   ``,
@@ -202,6 +230,11 @@ const md = [
   ``,
 ].join("\n");
 
+if (outFile.includes("/")) {
+  await Deno.mkdir(outFile.slice(0, outFile.lastIndexOf("/")), {
+    recursive: true,
+  });
+}
 await Deno.writeTextFile(outFile, md);
 console.log(
   `Scored ${rows.length} puzzles (${skipped.length} skipped, ${outliers.length} outliers < ${floor}) → ${outFile}`,
