@@ -4,6 +4,7 @@ import {
   isPositionSame,
   resolveMoves,
   rotateBoard,
+  ROWS,
 } from "#/game/board.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import type { Board, Direction, Move, Position } from "#/game/types.ts";
@@ -207,4 +208,43 @@ export function deduplicateSolutions(solutions: Move[][]): Move[][] {
   }
 
   return representatives;
+}
+
+/** The role of the piece that moves in each move (found by re-resolving). */
+function moveRoles(board: Board, moves: Move[]): ("puck" | "blocker")[] {
+  return moves.map((move, i) =>
+    resolveMoves(board, moves.slice(0, i))
+      .pieces.find((p) => isPositionSame(p, move[0]))!.type
+  );
+}
+
+/**
+ * Setup ratio — fraction of moves that reposition a blocker rather than the puck,
+ * maxed across the distinct solutions (more setup ⇒ harder).
+ */
+export function setupRatio(board: Board, solutions: Move[][]): number {
+  return Math.max(
+    0,
+    ...solutions.map((moves) =>
+      moves.length === 0
+        ? 0
+        : moveRoles(board, moves).filter((r) => r === "blocker").length /
+          moves.length
+    ),
+  );
+}
+
+/**
+ * Coverage — distinct cells the puck sweeps, as a fraction of the 64-cell board,
+ * maxed across the distinct solutions.
+ */
+export function coverage(board: Board, solutions: Move[][]): number {
+  return Math.max(
+    0,
+    ...computeTrails(board, solutions).map((trail) =>
+      new Set(
+        trail.filter((c) => c.pieceRole === "puck").map((c) => c.pos),
+      ).size / (COLS * ROWS)
+    ),
+  );
 }

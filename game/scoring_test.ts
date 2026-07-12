@@ -5,7 +5,9 @@ import {
   boardCanonicalHash,
   boardSelfSymmetries,
   computeTrails,
+  coverage,
   deduplicateSolutions,
+  setupRatio,
 } from "./scoring.ts";
 import { enumerateSolutions, solveExhaustiveSync } from "./solver.ts";
 import type { Board } from "#/game/types.ts";
@@ -135,4 +137,25 @@ Deno.test("deduplicateSolutions() groups the ingrid solutions as the product doe
     { raw: solutions.length, classes: deduplicateSolutions(solutions).length },
     { raw: 26, classes: 4 },
   );
+});
+
+Deno.test("setupRatio() is zero when only the puck moves", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  assertEquals(setupRatio(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), 0);
+});
+
+Deno.test("coverage() counts the puck's swept cells over 64", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  // Puck sweeps A1..H1 = 8 cells.
+  assertEquals(coverage(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), 8 / 64);
 });
