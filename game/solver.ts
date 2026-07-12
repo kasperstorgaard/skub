@@ -24,15 +24,32 @@ export class SolverDepthExceededError extends Error {
 }
 
 /**
- * Result of a solve. Single-solution mode returns exactly one entry in
- * `solutions`; exhaustive mode returns every optimal solution.
- * `statesPerDepth[d]` counts states first reached at depth `d` (index 0 is the
- * initial state), so it spans depth 0..minMoves.
+ * Result of an exhaustive solve. Exposes the shortest-path DAG rather than a
+ * materialized solution list: every optimal move sequence can be walked out of
+ * `dag`, but the (possibly exponential) raw set is never built unless a consumer
+ * asks for it via `enumerateSolutions`. `statesPerDepth[d]` counts states first
+ * reached at depth `d` (index 0 is the initial state), spanning depth 0..minMoves.
  */
 export type SolverResult = {
   minMoves: number;
-  solutions: Move[][];
   statesPerDepth: number[];
+  dag: SolutionDag;
+};
+
+/** An optimal move into a state from one of its predecessors. */
+export type SolutionEdge = { from: number; move: Move };
+
+/**
+ * Shortest-path DAG of a solved board. Nodes are opaque integer ids; `root` is
+ * the start state and `goals` are the states with the puck on the destination.
+ * `predecessors` maps each optimal state to the moves that reach it optimally —
+ * the tree parent plus any same-depth alternatives. Walk backward from `goals`
+ * to enumerate or canonicalize solutions without materializing the raw path set.
+ */
+export type SolutionDag = {
+  root: number;
+  goals: number[];
+  predecessors: Map<number, SolutionEdge[]>;
 };
 
 export type SolverProgress = { depth: number };
@@ -95,14 +112,14 @@ export function* solve(
     yield { type: "progress", depth: result.value };
     result = solver.next();
   }
-  yield { type: "solution", moves: result.value.solutions[0] };
+  yield { type: "solution", moves: firstSolution(result.value.dag) };
 }
 
 /**
  * Solves a puzzle synchronously, returning the first optimal solution's moves.
  * Shares the exhaustive solver's machinery (`bfsExplore`) but stops at the first
- * optimal path; the richer `SolverResult` (all solutions, search shape) is
- * available via `solveAllSync`.
+ * optimal path; the full shortest-path DAG (all solutions, search shape) is
+ * available via `solveExhaustiveSync`.
  */
 export function solveSync(
   puzzleOrBoard: Puzzle | Board,
@@ -112,18 +129,19 @@ export function solveSync(
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
 
   const result = runToCompletion(bfsExplore(board, maxDepth, false));
-  return result.solutions[0];
+  return firstSolution(result.dag);
 }
 
 /**
- * Solves a puzzle exhaustively — enumerates every optimal solution and records
- * the search shape (`statesPerDepth`). Used by the scoring pipeline, not the
- * gameplay path (which stays on the faster single-solution `solveSync`).
+ * Solves a puzzle exhaustively, returning the shortest-path DAG plus the search
+ * shape (`statesPerDepth`). Used by the scoring pipeline, not the gameplay path
+ * (which stays on the faster single-solution `solveSync`). The DAG is bounded by
+ * the states explored; consumers canonicalize or enumerate off it as needed.
  *
  * Throws SolverDepthExceededError / "Unsolvable puzzle" with the same semantics
  * as `solveSync`.
  */
-export function solveAllSync(
+export function solveExhaustiveSync(
   puzzleOrBoard: Puzzle | Board,
   options: SolverOptions = {},
 ): SolverResult {
@@ -143,19 +161,83 @@ function runToCompletion(
 }
 
 /**
- * Unified BFS core for both the single-solution gameplay path and the
- * exhaustive scoring path. Visits each unique board state once using flat typed
- * arrays (statePool + parallel metadata) to avoid per-state heap allocation, and
- * yields the depth whenever the frontier advances (drives the "searching depth
- * N" progress UI).
+ * Materializes every optimal move sequence from a solution DAG by walking
+ * backward from each goal through its predecessors. Worst-case exponential (a
+ * board with many independent moves has combinatorially many equivalent orderings)
+ * — the scoring pipeline canonicalizes off the DAG instead. Use this for tests,
+ * verification, or small solution sets.
+ */
+export function enumerateSolutions(dag: SolutionDag): Move[][] {
+  const solutions: Move[][] = [];
+  const reversed: Move[] = [];
+
+  const walk = (node: number): void => {
+    const edges = dag.predecessors.get(node);
+    if (!edges) {
+      solutions.push(reversed.slice().reverse());
+      return;
+    }
+    for (const edge of edges) {
+      reversed.push(edge.move);
+      walk(edge.from);
+      reversed.pop();
+    }
+  };
+
+  for (const goal of dag.goals) walk(goal);
+  return solutions;
+}
+
+/**
+ * The distinct first moves that keep the puzzle on an optimal path — every root
+ * out-edge of the DAG. A DAG-derived scalar (no path materialization) measuring
+ * how forced the opening is. Counts raw openings, not canonical routes: one route
+ * that can legally open two ways contributes two distinct first moves.
+ */
+export function optimalFirstMoves(dag: SolutionDag): Move[] {
+  const seen = new Set<number>();
+  const moves: Move[] = [];
+
+  for (const edges of dag.predecessors.values()) {
+    for (const edge of edges) {
+      if (edge.from !== dag.root) continue;
+      const [from, to] = edge.move;
+      const key = (from.y * COLS + from.x) * 64 + (to.y * COLS + to.x);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      moves.push(edge.move);
+    }
+  }
+
+  return moves;
+}
+
+/** Walks one optimal path, following the first predecessor at each step. */
+function firstSolution(dag: SolutionDag): Move[] {
+  const moves: Move[] = [];
+  let edges = dag.predecessors.get(dag.goals[0]);
+  while (edges) {
+    const [edge] = edges;
+    moves.push(edge.move);
+    edges = dag.predecessors.get(edge.from);
+  }
+  moves.reverse();
+  return moves;
+}
+
+/**
+ * Unified BFS core for both the single-solution gameplay path and the exhaustive
+ * scoring path. Visits each unique board state once using flat typed arrays
+ * (statePool + parallel metadata) to avoid per-state heap allocation, and yields
+ * the depth whenever the frontier advances (drives the "searching depth N" UI).
  *
  * `exhaustive` selects between two behaviours over the same machinery:
- *  - `false` → stop at the first goal and return that single optimal path. Uses
- *    a `CompactSet` for the visited check (membership only) to stay lean for the
- *    interactive solver worker.
+ *  - `false` → stop at the first goal. Uses a `CompactSet` for the visited check
+ *    (membership only) to stay lean for the interactive solver worker; the DAG is
+ *    the single parent chain to that goal.
  *  - `true` → keep going until the whole optimal depth is drained, recording
  *    `statesPerDepth` and same-depth alternative arrivals (`extraParents`) so the
- *    full shortest-path DAG — every optimal solution — can be walked out.
+ *    full shortest-path DAG — every optimal solution — can be reconstructed.
  *
  * Throws SolverDepthExceededError if maxDepth or BFS_STATE_LIMIT is reached
  * without a solution, or "Unsolvable puzzle" when the queue drains with no goal.
@@ -170,7 +252,11 @@ function* bfsExplore(
   const statesPerDepth: number[] = [1];
 
   if (initialState[0] === destPos) {
-    return { minMoves: 0, solutions: [[]], statesPerDepth };
+    return {
+      minMoves: 0,
+      statesPerDepth,
+      dag: { root: 0, goals: [0], predecessors: new Map() },
+    };
   }
 
   const config: Config = {
@@ -202,6 +288,12 @@ function* bfsExplore(
   const rootKey = stateKeyAt(statePool, config, 0);
   if (visitedIndex) visitedIndex.set(rootKey, 0);
   else visited!.add(rootKey);
+
+  const toResult = (minMoves: number): SolverResult => ({
+    minMoves,
+    statesPerDepth,
+    dag: buildDag(metadata, extraParents, goalIndices),
+  });
 
   let tail = 1; // next free slot (write end of the queue)
   let head = 0; // next state to process (read end of the queue)
@@ -273,16 +365,10 @@ function* bfsExplore(
       statesPerDepth[childDepth] = (statesPerDepth[childDepth] ?? 0) + 1;
 
       if (statePool[tailOffset] === destPos) {
-        // Single-solution mode: the first goal reached is an optimal path.
-        if (!exhaustive) {
-          return {
-            minMoves: childDepth,
-            solutions: enumerateOptimalPaths(metadata, extraParents, [tail]),
-            statesPerDepth,
-          };
-        }
-        if (goalDepth === -1) goalDepth = childDepth;
         goalIndices.push(tail);
+        // Single-solution mode: the first goal reached is an optimal path.
+        if (!exhaustive) return toResult(childDepth);
+        if (goalDepth === -1) goalDepth = childDepth;
       }
 
       tail++;
@@ -294,57 +380,53 @@ function* bfsExplore(
     throw new Error("Unsolvable puzzle");
   }
 
-  return {
-    minMoves: goalDepth,
-    solutions: enumerateOptimalPaths(metadata, extraParents, goalIndices),
-    statesPerDepth,
-  };
+  return toResult(goalDepth);
 }
 
 /**
- * Walks the shortest-path DAG backward from every goal state, following the
- * primary parent pointer plus any recorded same-depth alternatives, to produce
- * every optimal move sequence. Each distinct sequence of edges yields a distinct
- * solution (the move sequence uniquely determines the state it reaches).
- *
- * With a single goal and no `extraParents` (single-solution mode) this walks the
- * one parent chain and returns exactly one path.
+ * Builds the shortest-path DAG from the BFS metadata: walks backward from every
+ * goal, recording each optimal state's predecessors (primary parent + any
+ * same-depth alternatives). Bounded by the optimal subgraph — never materializes
+ * paths. In single-solution mode `extraParents` is empty, so this is one chain.
  */
-function enumerateOptimalPaths(
+function buildDag(
   metadata: Metadata,
   extraParents: Map<number, ParentEdge[]>,
   goalIndices: number[],
-): Move[][] {
-  const solutions: Move[][] = [];
-  const reversed: Array<[number, number]> = [];
+): SolutionDag {
+  const predecessors = new Map<number, SolutionEdge[]>();
+  const stack = [...goalIndices];
+  const seen = new Set<number>();
 
-  const walk = (idx: number): void => {
-    const primaryParent = metadata.parentIndexes[idx];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    if (seen.has(node)) continue;
+    seen.add(node);
 
-    if (primaryParent === -1) {
-      const path = reversed.map(([from, to]): Move => [
-        { x: from % COLS, y: (from / COLS) | 0 },
-        { x: to % COLS, y: (to / COLS) | 0 },
-      ]);
-      path.reverse();
-      solutions.push(path);
-      return;
+    const primary = metadata.parentIndexes[node];
+    if (primary === -1) continue; // root has no incoming edges
+
+    const edges: SolutionEdge[] = [{
+      from: primary,
+      move: toMove(metadata.fromPositions[node], metadata.toPositions[node]),
+    }];
+    for (const extra of extraParents.get(node) ?? []) {
+      edges.push({ from: extra.parent, move: toMove(extra.from, extra.to) });
     }
 
-    reversed.push([metadata.fromPositions[idx], metadata.toPositions[idx]]);
-    walk(primaryParent);
-    reversed.pop();
+    predecessors.set(node, edges);
+    for (const edge of edges) stack.push(edge.from);
+  }
 
-    for (const edge of extraParents.get(idx) ?? []) {
-      reversed.push([edge.from, edge.to]);
-      walk(edge.parent);
-      reversed.pop();
-    }
-  };
+  return { root: 0, goals: goalIndices, predecessors };
+}
 
-  for (const goalIdx of goalIndices) walk(goalIdx);
-
-  return solutions;
+/** Decodes a packed [fromPos, toPos] edge into a Move. */
+function toMove(fromPos: number, toPos: number): Move {
+  return [
+    { x: fromPos % COLS, y: (fromPos / COLS) | 0 },
+    { x: toPos % COLS, y: (toPos / COLS) | 0 },
+  ];
 }
 
 /**

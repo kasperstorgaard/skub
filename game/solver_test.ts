@@ -8,12 +8,44 @@ import { assertExists } from "@std/assert/exists";
 
 import { isValidSolution, resolveMoves } from "./board.ts";
 import {
+  enumerateSolutions,
+  optimalFirstMoves,
   solve,
-  solveAllSync,
+  solveExhaustiveSync,
   SolverDepthExceededError,
   solveSync,
 } from "./solver.ts";
 import type { Board, Puzzle } from "#/game/types.ts";
+
+// Real puzzle fixture (static/puzzles/ingrid.md, 7 moves) for exhaustive-solver
+// tests — a realistic board rather than a hand-crafted one.
+const ingridBoard: Board = {
+  destination: { x: 5, y: 2 },
+  pieces: [
+    { x: 3, y: 0, type: "blocker" },
+    { x: 7, y: 2, type: "blocker" },
+    { x: 0, y: 4, type: "blocker" },
+    { x: 5, y: 6, type: "puck" },
+    { x: 6, y: 6, type: "blocker" },
+    { x: 3, y: 7, type: "blocker" },
+  ],
+  walls: [
+    { x: 1, y: 1, orientation: "horizontal" },
+    { x: 3, y: 1, orientation: "horizontal" },
+    { x: 5, y: 2, orientation: "horizontal" },
+    { x: 2, y: 3, orientation: "horizontal" },
+    { x: 5, y: 2, orientation: "vertical" },
+    { x: 7, y: 3, orientation: "horizontal" },
+    { x: 0, y: 4, orientation: "horizontal" },
+    { x: 2, y: 3, orientation: "vertical" },
+    { x: 3, y: 5, orientation: "horizontal" },
+    { x: 7, y: 4, orientation: "vertical" },
+    { x: 3, y: 5, orientation: "vertical" },
+    { x: 5, y: 6, orientation: "horizontal" },
+    { x: 2, y: 6, orientation: "vertical" },
+    { x: 6, y: 6, orientation: "vertical" },
+  ],
+};
 
 Deno.test("solveSync() finds 1-move solution (puck slides to destination)", () => {
   // Puck at A1 (0,0) slides right to H1 (7,0) where destination is
@@ -232,7 +264,7 @@ Deno.test("solveSync() finds 8-move solution for sara puzzle", () => {
   assertEquals(isValidSolution(resolveMoves(board, result)), true);
 });
 
-Deno.test("solveAllSync() returns the single optimal solution for a unique board", () => {
+Deno.test("solveExhaustiveSync() returns the single optimal solution for a unique board", () => {
   // Puck at A1 (0,0) has exactly one 1-move path to the destination at H1 (7,0).
   const board: Board = {
     destination: { x: 7, y: 0 },
@@ -240,18 +272,15 @@ Deno.test("solveAllSync() returns the single optimal solution for a unique board
     walls: [],
   };
 
-  const result = solveAllSync(board);
+  const result = solveExhaustiveSync(board);
 
-  assertEquals({
-    minMoves: result.minMoves,
-    solutions: result.solutions,
-  }, {
-    minMoves: 1,
-    solutions: [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]],
-  });
+  assertEquals(
+    { minMoves: result.minMoves, solutions: enumerateSolutions(result.dag) },
+    { minMoves: 1, solutions: [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]] },
+  );
 });
 
-Deno.test("solveAllSync() records new states discovered per depth", () => {
+Deno.test("solveExhaustiveSync() records new states discovered per depth", () => {
   // Empty board, A1 -> H8: depth 0 is the start, depth 1 adds the right/down
   // slides, depth 2 adds the goal corner.
   const board: Board = {
@@ -260,12 +289,12 @@ Deno.test("solveAllSync() records new states discovered per depth", () => {
     walls: [],
   };
 
-  const result = solveAllSync(board);
+  const result = solveExhaustiveSync(board);
 
   assertEquals(result.statesPerDepth, [1, 2, 1]);
 });
 
-Deno.test("solveAllSync() enumerates both optimal paths on an open board", () => {
+Deno.test("solveExhaustiveSync() enumerates both optimal paths on an open board", () => {
   // Empty board: A1 -> H8 is 2 moves via two symmetric L-shaped paths.
   const board: Board = {
     destination: { x: 7, y: 7 },
@@ -273,99 +302,58 @@ Deno.test("solveAllSync() enumerates both optimal paths on an open board", () =>
     walls: [],
   };
 
-  const result = solveAllSync(board);
+  const result = solveExhaustiveSync(board);
 
-  assertEquals({
-    minMoves: result.minMoves,
-    count: result.solutions.length,
-  }, {
-    minMoves: 2,
-    count: 2,
-  });
+  assertEquals(
+    { minMoves: result.minMoves, count: enumerateSolutions(result.dag).length },
+    { minMoves: 2, count: 2 },
+  );
 });
 
-Deno.test("solveAllSync() returns distinct solutions", () => {
+Deno.test("solveExhaustiveSync() returns distinct solutions", () => {
   const board: Board = {
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
   };
 
-  const result = solveAllSync(board);
-  const [first, second] = result.solutions;
+  const [first, second] = enumerateSolutions(solveExhaustiveSync(board).dag);
 
   assertNotEquals(first, second);
 });
 
-Deno.test("solveAllSync() matches solveSync minMoves on a complex board", () => {
-  const board: Board = {
-    destination: { x: 4, y: 5 },
-    pieces: [
-      { x: 1, y: 1, type: "blocker" },
-      { x: 6, y: 1, type: "puck" },
-      { x: 1, y: 6, type: "blocker" },
-      { x: 6, y: 6, type: "blocker" },
-    ],
-    walls: [
-      { x: 2, y: 2, orientation: "horizontal" },
-      { x: 3, y: 2, orientation: "horizontal" },
-      { x: 4, y: 2, orientation: "horizontal" },
-      { x: 5, y: 2, orientation: "horizontal" },
-      { x: 2, y: 2, orientation: "vertical" },
-      { x: 6, y: 2, orientation: "vertical" },
-      { x: 6, y: 3, orientation: "vertical" },
-      { x: 6, y: 4, orientation: "vertical" },
-      { x: 2, y: 5, orientation: "vertical" },
-      { x: 2, y: 6, orientation: "horizontal" },
-      { x: 3, y: 6, orientation: "horizontal" },
-      { x: 4, y: 6, orientation: "horizontal" },
-      { x: 6, y: 5, orientation: "vertical" },
-      { x: 5, y: 6, orientation: "horizontal" },
-    ],
-  };
-
-  const exhaustive = solveAllSync(board);
-  const reference = solveSync(board);
-
-  assertEquals(exhaustive.minMoves, reference.length);
-});
-
-Deno.test("solveAllSync() returns only minimal-length, valid solutions on a complex board", () => {
-  const board: Board = {
-    destination: { x: 4, y: 5 },
-    pieces: [
-      { x: 1, y: 1, type: "blocker" },
-      { x: 6, y: 1, type: "puck" },
-      { x: 1, y: 6, type: "blocker" },
-      { x: 6, y: 6, type: "blocker" },
-    ],
-    walls: [
-      { x: 2, y: 2, orientation: "horizontal" },
-      { x: 3, y: 2, orientation: "horizontal" },
-      { x: 4, y: 2, orientation: "horizontal" },
-      { x: 5, y: 2, orientation: "horizontal" },
-      { x: 2, y: 2, orientation: "vertical" },
-      { x: 6, y: 2, orientation: "vertical" },
-      { x: 6, y: 3, orientation: "vertical" },
-      { x: 6, y: 4, orientation: "vertical" },
-      { x: 2, y: 5, orientation: "vertical" },
-      { x: 2, y: 6, orientation: "horizontal" },
-      { x: 3, y: 6, orientation: "horizontal" },
-      { x: 4, y: 6, orientation: "horizontal" },
-      { x: 6, y: 5, orientation: "vertical" },
-      { x: 5, y: 6, orientation: "horizontal" },
-    ],
-  };
-
-  const result = solveAllSync(board);
-  const allOptimalAndValid = result.solutions.every((s) =>
-    s.length === result.minMoves && isValidSolution(resolveMoves(board, s))
+Deno.test("solveExhaustiveSync() matches solveSync minMoves on the ingrid puzzle", () => {
+  assertEquals(
+    solveExhaustiveSync(ingridBoard).minMoves,
+    solveSync(ingridBoard).length,
   );
-
-  assertEquals(allOptimalAndValid, true);
 });
 
-Deno.test("solveAllSync() throws for an unsolvable puzzle", () => {
+Deno.test("solveExhaustiveSync() enumerates every optimal solution on the ingrid puzzle", () => {
+  // Fixed expected output for a real 7-move puzzle: 26 optimal move sequences
+  // (pre-canonicalization — independent-move orderings and interchangeable
+  // blockers inflate the count), 6 distinct optimal openings, and the per-depth
+  // frontier sizes. Pins the exhaustive search to known-good data instead of
+  // re-validating each solution at runtime.
+  const result = solveExhaustiveSync(ingridBoard);
+
+  assertEquals(
+    {
+      minMoves: result.minMoves,
+      solutions: enumerateSolutions(result.dag).length,
+      firstMoves: optimalFirstMoves(result.dag).length,
+      statesPerDepth: result.statesPerDepth,
+    },
+    {
+      minMoves: 7,
+      solutions: 26,
+      firstMoves: 6,
+      statesPerDepth: [1, 14, 106, 565, 2377, 8356, 25569, 70139],
+    },
+  );
+});
+
+Deno.test("solveExhaustiveSync() throws for an unsolvable puzzle", () => {
   // Puck can never stop on the destination row/column.
   const board: Board = {
     destination: { x: 5, y: 5 },
@@ -373,5 +361,5 @@ Deno.test("solveAllSync() throws for an unsolvable puzzle", () => {
     walls: [],
   };
 
-  assertThrows(() => solveAllSync(board));
+  assertThrows(() => solveExhaustiveSync(board));
 });
