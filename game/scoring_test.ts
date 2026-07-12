@@ -6,8 +6,14 @@ import {
   boardSelfSymmetries,
   computeTrails,
   coverage,
+  crossTrailOverlap,
+  deception,
   deduplicateSolutions,
+  firstMovePrecision,
+  reversals,
+  searchProfile,
   setupRatio,
+  totalDistance,
 } from "./scoring.ts";
 import { enumerateSolutions, solveExhaustiveSync } from "./solver.ts";
 import type { Board } from "#/game/types.ts";
@@ -158,4 +164,72 @@ Deno.test("coverage() counts the puck's swept cells over 64", () => {
 
   // Puck sweeps A1..H1 = 8 cells.
   assertEquals(coverage(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), 8 / 64);
+});
+
+Deno.test("totalDistance() sums slide length split by role", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  assertEquals(totalDistance(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), {
+    puck: 7,
+    blocker: 0,
+  });
+});
+
+Deno.test("deception() sums how far the puck slides away from the destination", () => {
+  const board: Board = {
+    destination: { x: 0, y: 0 },
+    pieces: [{ x: 3, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  // Puck slides from x=3 to x=7, away from dest x=0: 7-3 = 4.
+  assertEquals(deception(board, [[[{ x: 3, y: 0 }, { x: 7, y: 0 }]]]), 4);
+});
+
+Deno.test("reversals() counts a piece moving in opposite directions", () => {
+  const board: Board = {
+    destination: { x: 3, y: 3 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  assertEquals(
+    reversals(board, [[
+      [{ x: 0, y: 0 }, { x: 7, y: 0 }],
+      [{ x: 7, y: 0 }, { x: 0, y: 0 }],
+    ]]),
+    1,
+  );
+});
+
+Deno.test("crossTrailOverlap() counts cells two pieces both sweep", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 3, type: "puck" },
+      { x: 3, y: 0, type: "blocker" },
+    ],
+    walls: [],
+  };
+
+  // Blocker sweeps column 3, puck sweeps row 3 — they cross at (3,3).
+  assertEquals(
+    crossTrailOverlap(board, [[
+      [{ x: 3, y: 0 }, { x: 3, y: 7 }],
+      [{ x: 0, y: 3 }, { x: 7, y: 3 }],
+    ]]),
+    1,
+  );
+});
+
+Deno.test("searchProfile() is the last-third share of explored states", () => {
+  assertEquals(searchProfile([1, 2, 1]), 1 / 4);
+});
+
+Deno.test("firstMovePrecision() is the reciprocal of distinct openings", () => {
+  assertEquals(firstMovePrecision(4), 1 / 4);
 });

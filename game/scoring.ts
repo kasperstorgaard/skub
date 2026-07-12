@@ -248,3 +248,138 @@ export function coverage(board: Board, solutions: Move[][]): number {
     ),
   );
 }
+
+const posOf = (p: Position): number => p.y * COLS + p.x;
+
+const OPPOSITE: Record<Direction, Direction> = {
+  up: "down",
+  down: "up",
+  left: "right",
+  right: "left",
+};
+
+/** A stable id (index into the initial pieces) for the piece that moves each move. */
+function movePieceIds(board: Board, moves: Move[]): number[] {
+  const current = board.pieces.map(posOf);
+  return moves.map(([from, to]) => {
+    const id = current.indexOf(posOf(from));
+    current[id] = posOf(to);
+    return id;
+  });
+}
+
+/**
+ * Total slide distance per role, from the solution with the greatest combined
+ * travel. Manhattan distance summed over moves, split into puck vs blocker.
+ */
+export function totalDistance(
+  board: Board,
+  solutions: Move[][],
+): { puck: number; blocker: number } {
+  let best = { puck: 0, blocker: 0 };
+  for (const moves of solutions) {
+    const roles = moveRoles(board, moves);
+    const d = { puck: 0, blocker: 0 };
+    moves.forEach(([from, to], i) => {
+      const dist = Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
+      if (roles[i] === "puck") d.puck += dist;
+      else d.blocker += dist;
+    });
+    if (d.puck + d.blocker > best.puck + best.blocker) best = d;
+  }
+  return best;
+}
+
+/**
+ * Deception — how far the puck slides *away* from the destination, summed over a
+ * solution's puck moves (per-axis, net non-negative). Pure geometry; maxed across
+ * the distinct solutions. This is what actually misleads a human solver.
+ */
+export function deception(board: Board, solutions: Move[][]): number {
+  const d = board.destination;
+  return Math.max(
+    0,
+    ...solutions.map((moves) => {
+      const roles = moveRoles(board, moves);
+      let sum = 0;
+      moves.forEach(([from, to], i) => {
+        if (roles[i] !== "puck") return;
+        const onX = from.y === to.y;
+        const before = onX ? Math.abs(from.x - d.x) : Math.abs(from.y - d.y);
+        const after = onX ? Math.abs(to.x - d.x) : Math.abs(to.y - d.y);
+        sum += Math.max(0, after - before);
+      });
+      return sum;
+    }),
+  );
+}
+
+/**
+ * Reversals — consecutive moves of the *same* piece in opposite directions
+ * (other pieces may move in between). Maxed across the distinct solutions.
+ */
+export function reversals(board: Board, solutions: Move[][]): number {
+  return Math.max(
+    0,
+    ...solutions.map((moves) => {
+      const ids = movePieceIds(board, moves);
+      const dirs = new Map<number, Direction[]>();
+      moves.forEach(([from, to], i) => {
+        const list = dirs.get(ids[i]) ?? [];
+        list.push(moveDirection(from, to));
+        dirs.set(ids[i], list);
+      });
+      let count = 0;
+      for (const list of dirs.values()) {
+        for (let k = 1; k < list.length; k++) {
+          if (OPPOSITE[list[k - 1]] === list[k]) count++;
+        }
+      }
+      return count;
+    }),
+  );
+}
+
+/**
+ * Cross-trail overlap — cells swept by two or more *different* pieces (a piece
+ * crossing another's path). Self-overlap is excluded. Maxed across solutions.
+ */
+export function crossTrailOverlap(board: Board, solutions: Move[][]): number {
+  return Math.max(
+    0,
+    ...solutions.map((moves) => {
+      const ids = movePieceIds(board, moves);
+      const cellPieces = new Map<number, Set<number>>();
+      for (const cell of computeTrails(board, [moves])[0]) {
+        const set = cellPieces.get(cell.pos) ?? new Set();
+        set.add(ids[cell.moveIndex]);
+        cellPieces.set(cell.pos, set);
+      }
+      let count = 0;
+      for (const set of cellPieces.values()) if (set.size >= 2) count++;
+      return count;
+    }),
+  );
+}
+
+/**
+ * Search profile — the fraction of BFS states first reached in the last third of
+ * the depth range (from `statesPerDepth`). Higher means the difficulty is
+ * back-loaded — most of the tree fans out near the solution depth.
+ */
+export function searchProfile(statesPerDepth: number[]): number {
+  const total = statesPerDepth.reduce((a, b) => a + b, 0);
+  if (total === 0) return 0;
+  const start = Math.ceil((statesPerDepth.length * 2) / 3);
+  const lastThird = statesPerDepth.slice(start).reduce((a, b) => a + b, 0);
+  return lastThird / total;
+}
+
+/**
+ * First-move precision — `1 / (distinct optimal first moves)`. 1 when the opening
+ * is forced; smaller when many first moves stay on an optimal path. Feed the count
+ * from `optimalFirstMoves(dag)`.
+ */
+export function firstMovePrecision(distinctFirstMoves: number): number {
+  return distinctFirstMoves === 0 ? 0 : 1 / distinctFirstMoves;
+}
