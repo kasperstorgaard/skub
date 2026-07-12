@@ -353,8 +353,22 @@ Deno.test("checkGates() fails G3 when the board is already in the corpus", () =>
   );
 });
 
-Deno.test("scoreBoard() produces a composite within [-1, 1]", () => {
-  const { score } = scoreBoard(ingridBoard, solveExhaustiveSync(ingridBoard));
+Deno.test("scoreBoard() scores each route and aggregates with the mean", () => {
+  const scored = scoreBoard(ingridBoard, solveExhaustiveSync(ingridBoard));
+  const routeScores = scored.perSolution.map((s) => s.score);
 
-  assertEquals(score >= -1 && score <= 1, true);
+  assertEquals(
+    {
+      routes: scored.perSolution.length,
+      scoreIsMean: scored.score === scored.mean,
+      minIsWorstRoute: scored.min === Math.min(...routeScores),
+      allRoutesInRange: routeScores.every((s) => s >= -1 && s <= 1),
+    },
+    {
+      routes: 4,
+      scoreIsMean: true,
+      minIsWorstRoute: true,
+      allRoutesInRange: true,
+    },
+  );
 });

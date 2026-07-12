@@ -694,24 +694,36 @@ export function checkGates(
   return { passed: true };
 }
 
-export type ScoredBoard = { metrics: Metrics; score: number };
+/** A single distinct solution with its own metrics and composite score. */
+export type SolutionScore = { moves: Move[]; metrics: Metrics; score: number };
+
+export type ScoredBoard = {
+  score: number; // headline aggregate — the mean route score
+  mean: number;
+  min: number; // worst route — the outlier detector for curation filters
+  stddev: number;
+  perSolution: SolutionScore[];
+};
 
 const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
 const bounded = (value: number, max: number): number =>
   max > 0 ? clamp01(value / max) : 0;
 
 /**
- * Composite quality score in `[-1, 1]`. Each metric is divided by a
- * deterministic per-board max so it lands in `[0,1]`, then positives are averaged
- * (weight `1/k`) and the two negatives subtracted (weight `1/j`) — true equal
- * footing, no metric dominating by range or count.
+ * Composite quality score for a single route in `[-1, 1]`. Each metric is divided
+ * by a deterministic per-board max so it lands in `[0,1]`, then positives are
+ * averaged and the two negatives subtracted — equal footing, no metric dominating
+ * by range or count.
  *
  * TODO(tuning): the max bounds and equal weights are a provisional v1; tune once
  * there is a scored corpus to calibrate against.
  */
-export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
-  const metrics = computeMetrics(board, result);
-  const m = result.minMoves;
+function compositeScore(
+  metrics: Metrics,
+  board: Board,
+  minMoves: number,
+): number {
+  const m = minMoves;
   const p = board.pieces.filter((piece) => piece.type === "blocker").length;
   const stopWeighted = metrics.stopTypes.piece * 3 +
     metrics.stopTypes.wall * 2 +
@@ -739,6 +751,74 @@ export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
 
   const positive = positives.reduce((a, b) => a + b, 0) / positives.length;
   const negative = negatives.reduce((a, b) => a + b, 0) / negatives.length;
+  return positive - negative;
+}
 
-  return { metrics, score: positive - negative };
+/**
+ * Full metrics for a single route: its per-solution metrics (each metric called
+ * with just this route) plus the shared board-level metrics (`uniqueSolutions`,
+ * `firstMovePrecision`, `searchProfile`), which are constant across routes.
+ */
+function routeMetrics(
+  board: Board,
+  route: Move[],
+  shared: Pick<
+    Metrics,
+    "uniqueSolutions" | "firstMovePrecision" | "searchProfile"
+  >,
+): Metrics {
+  const one = [route];
+  return {
+    setupRatio: setupRatio(board, one),
+    pieceUsage: pieceUsage(board, one),
+    deception: deception(board, one),
+    reversals: reversals(board, one),
+    crossTrailOverlap: crossTrailOverlap(board, one),
+    totalDistance: totalDistance(board, one),
+    coverage: coverage(board, one),
+    stopTypes: stopTypes(board, one),
+    pointlessClearance: pointlessClearance(board, one),
+    sameDirectionRepeat: sameDirectionRepeat(board, one),
+    ...shared,
+  };
+}
+
+/**
+ * Scores a board by scoring each distinct (canonical) solution on its own, then
+ * aggregating. `score` is the mean route score; `min`/`stddev`/`perSolution` are
+ * carried along so curation can reason about outliers — e.g. reject a board whose
+ * worst route falls below a threshold — instead of one strong route masking a
+ * weak one inside a pre-aggregated metric set.
+ */
+export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
+  const routes = deduplicateSolutions(enumerateSolutions(result.dag));
+  const shared = {
+    uniqueSolutions: routes.length,
+    firstMovePrecision: firstMovePrecision(
+      optimalFirstMoves(result.dag).length,
+    ),
+    searchProfile: searchProfile(result.statesPerDepth),
+  };
+
+  const perSolution: SolutionScore[] = routes.map((route) => {
+    const metrics = routeMetrics(board, route, shared);
+    return {
+      moves: route,
+      metrics,
+      score: compositeScore(metrics, board, result.minMoves),
+    };
+  });
+
+  const scores = perSolution.map((s) => s.score);
+  const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const variance = scores.reduce((a, s) => a + (s - mean) ** 2, 0) /
+    scores.length;
+
+  return {
+    score: mean,
+    mean,
+    min: Math.min(...scores),
+    stddev: Math.sqrt(variance),
+    perSolution,
+  };
 }
