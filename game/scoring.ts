@@ -383,3 +383,179 @@ export function searchProfile(statesPerDepth: number[]): number {
 export function firstMovePrecision(distinctFirstMoves: number): number {
   return distinctFirstMoves === 0 ? 0 : 1 / distinctFirstMoves;
 }
+
+const inBounds = (p: Position): boolean =>
+  p.x >= 0 && p.x < COLS && p.y >= 0 && p.y < ROWS;
+
+/** The cell one step beyond a position in a direction. */
+function beyondCell(pos: Position, direction: Direction): Position {
+  if (direction === "up") return { x: pos.x, y: pos.y - 1 };
+  if (direction === "down") return { x: pos.x, y: pos.y + 1 };
+  if (direction === "left") return { x: pos.x - 1, y: pos.y };
+  return { x: pos.x + 1, y: pos.y };
+}
+
+/** Whether a wall sits between `to` and the next cell in `direction`. */
+function wallBeyond(walls: Board["walls"], to: Position, direction: Direction) {
+  return walls.some((w) => {
+    if (direction === "right") {
+      return w.orientation === "vertical" && w.y === to.y && w.x === to.x + 1;
+    }
+    if (direction === "left") {
+      return w.orientation === "vertical" && w.y === to.y && w.x === to.x;
+    }
+    if (direction === "down") {
+      return w.orientation === "horizontal" && w.x === to.x && w.y === to.y + 1;
+    }
+    return w.orientation === "horizontal" && w.x === to.x && w.y === to.y;
+  });
+}
+
+type MoveAnalysis = {
+  moverId: number;
+  cause: "edge" | "wall" | "piece";
+  stoppingId: number | null;
+};
+
+/**
+ * Per-move analysis of a solution: which piece moved (`moverId`, a stable index
+ * into the initial pieces), why the slide stopped (`edge`/`wall`/`piece`), and —
+ * for piece stops — which piece stopped it (`stoppingId`). Simulates piece
+ * positions itself (no board re-resolve), so the whole solution is one pass.
+ */
+function analyzeMoves(board: Board, moves: Move[]): MoveAnalysis[] {
+  const posToId = new Map<number, number>();
+  board.pieces.forEach((p, i) => posToId.set(posOf(p), i));
+
+  return moves.map(([from, to]) => {
+    const moverId = posToId.get(posOf(from))!;
+    const direction = moveDirection(from, to);
+    const beyond = beyondCell(to, direction);
+
+    let cause: MoveAnalysis["cause"] = "edge";
+    let stoppingId: number | null = null;
+    if (inBounds(beyond)) {
+      if (wallBeyond(board.walls, to, direction)) cause = "wall";
+      else if (posToId.has(posOf(beyond))) {
+        cause = "piece";
+        stoppingId = posToId.get(posOf(beyond))!;
+      }
+    }
+
+    posToId.delete(posOf(from));
+    posToId.set(posOf(to), moverId);
+    return { moverId, cause, stoppingId };
+  });
+}
+
+const minAcross = (values: number[]): number =>
+  values.length === 0 ? 0 : Math.min(...values);
+
+export type StopTypes = {
+  edge: number;
+  wall: number;
+  piece: number;
+  blockerOnPuck: number;
+};
+
+/**
+ * Stop causes across a solution's moves — how each slide ends (board edge, wall,
+ * or another piece), with `blockerOnPuck` sub-counting blocker slides halted by
+ * the puck. Returns the counts from the solution with the most "interesting"
+ * stops (piece > wall > edge).
+ */
+export function stopTypes(board: Board, solutions: Move[][]): StopTypes {
+  let best: StopTypes = { edge: 0, wall: 0, piece: 0, blockerOnPuck: 0 };
+  let bestScore = -1;
+  for (const moves of solutions) {
+    const counts: StopTypes = { edge: 0, wall: 0, piece: 0, blockerOnPuck: 0 };
+    for (const a of analyzeMoves(board, moves)) {
+      counts[a.cause]++;
+      if (
+        a.cause === "piece" &&
+        board.pieces[a.moverId].type === "blocker" &&
+        a.stoppingId !== null && board.pieces[a.stoppingId].type === "puck"
+      ) counts.blockerOnPuck++;
+    }
+    const score = counts.piece * 3 + counts.wall * 2 + counts.edge;
+    if (score > bestScore) {
+      bestScore = score;
+      best = counts;
+    }
+  }
+  return best;
+}
+
+/**
+ * Piece usage — `Σ_p log2(1 + uses(p)) + log2(1 + U)` over non-puck pieces, where
+ * `uses(p)` counts moves in which blocker `p` moves or is the stopping piece, and
+ * `U` is how many blockers are used at all. Maxed across the distinct solutions.
+ */
+export function pieceUsage(board: Board, solutions: Move[][]): number {
+  const blockerIds = board.pieces
+    .map((p, i) => (p.type === "blocker" ? i : -1))
+    .filter((i) => i >= 0);
+
+  return Math.max(
+    0,
+    ...solutions.map((moves) => {
+      const uses = new Map<number, number>();
+      const bump = (id: number) => uses.set(id, (uses.get(id) ?? 0) + 1);
+      for (const a of analyzeMoves(board, moves)) {
+        if (board.pieces[a.moverId].type === "blocker") bump(a.moverId);
+        if (
+          a.cause === "piece" && a.stoppingId !== null &&
+          board.pieces[a.stoppingId].type === "blocker"
+        ) bump(a.stoppingId);
+      }
+      let sum = 0;
+      let used = 0;
+      for (const id of blockerIds) {
+        const u = uses.get(id) ?? 0;
+        sum += Math.log2(1 + u);
+        if (u > 0) used++;
+      }
+      return sum + Math.log2(1 + used);
+    }),
+  );
+}
+
+/**
+ * Pointless clearance (N1, negative) — blocker moves after which that blocker
+ * never interacts again (never moves, never stops another piece). Per occurrence;
+ * minimized across solutions (the cleanest route defines the board).
+ */
+export function pointlessClearance(board: Board, solutions: Move[][]): number {
+  return minAcross(solutions.map((moves) => {
+    const analysis = analyzeMoves(board, moves);
+    let count = 0;
+    analysis.forEach((a, i) => {
+      if (board.pieces[a.moverId].type !== "blocker") return;
+      const interactsLater = analysis.slice(i + 1).some((later) =>
+        later.moverId === a.moverId || later.stoppingId === a.moverId
+      );
+      if (!interactsLater) count++;
+    });
+    return count;
+  }));
+}
+
+/**
+ * Same-direction repeat (N2, negative) — cells a single piece re-traverses in the
+ * same direction. Per extra traversal; minimized across solutions.
+ */
+export function sameDirectionRepeat(board: Board, solutions: Move[][]): number {
+  return minAcross(solutions.map((moves) => {
+    const analysis = analyzeMoves(board, moves);
+    const counts = new Map<string, number>();
+    for (const cell of computeTrails(board, [moves])[0]) {
+      const key = `${
+        analysis[cell.moveIndex].moverId
+      }:${cell.pos}:${cell.direction}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    let repeats = 0;
+    for (const c of counts.values()) if (c > 1) repeats += c - 1;
+    return repeats;
+  }));
+}

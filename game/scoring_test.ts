@@ -10,9 +10,13 @@ import {
   deception,
   deduplicateSolutions,
   firstMovePrecision,
+  pieceUsage,
+  pointlessClearance,
   reversals,
+  sameDirectionRepeat,
   searchProfile,
   setupRatio,
+  stopTypes,
   totalDistance,
 } from "./scoring.ts";
 import { enumerateSolutions, solveExhaustiveSync } from "./solver.ts";
@@ -232,4 +236,67 @@ Deno.test("searchProfile() is the last-third share of explored states", () => {
 
 Deno.test("firstMovePrecision() is the reciprocal of distinct openings", () => {
   assertEquals(firstMovePrecision(4), 1 / 4);
+});
+
+Deno.test("stopTypes() classifies a slide into the wall as an edge stop", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  assertEquals(stopTypes(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), {
+    edge: 1,
+    wall: 0,
+    piece: 0,
+    blockerOnPuck: 0,
+  });
+});
+
+Deno.test("pieceUsage() is zero when no blocker is used", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  assertEquals(pieceUsage(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), 0);
+});
+
+Deno.test("pointlessClearance() counts a blocker that never interacts again", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 3, y: 3, type: "blocker" },
+    ],
+    walls: [],
+  };
+
+  // Blocker slides away and is never touched again; puck finishes on its own.
+  assertEquals(
+    pointlessClearance(board, [[
+      [{ x: 3, y: 3 }, { x: 3, y: 7 }],
+      [{ x: 0, y: 0 }, { x: 7, y: 0 }],
+    ]]),
+    1,
+  );
+});
+
+Deno.test("sameDirectionRepeat() counts cells re-crossed in the same direction", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  // Right, back left, right again — the 8 row-0 cells are crossed rightward twice.
+  assertEquals(
+    sameDirectionRepeat(board, [[
+      [{ x: 0, y: 0 }, { x: 7, y: 0 }],
+      [{ x: 7, y: 0 }, { x: 0, y: 0 }],
+      [{ x: 0, y: 0 }, { x: 7, y: 0 }],
+    ]]),
+    8,
+  );
 });
