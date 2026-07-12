@@ -1,9 +1,51 @@
-import { assertEquals, assertObjectMatch, assertThrows } from "@std/assert";
+import {
+  assertEquals,
+  assertNotEquals,
+  assertObjectMatch,
+  assertThrows,
+} from "@std/assert";
 import { assertExists } from "@std/assert/exists";
 
 import { isValidSolution, resolveMoves } from "./board.ts";
-import { solve, SolverDepthExceededError, solveSync } from "./solver.ts";
+import {
+  enumerateSolutions,
+  optimalFirstMoves,
+  solve,
+  solveExhaustiveSync,
+  SolverDepthExceededError,
+  solveSync,
+} from "./solver.ts";
 import type { Board, Puzzle } from "#/game/types.ts";
+
+// Real puzzle fixture (static/puzzles/ingrid.md, 7 moves) for exhaustive-solver
+// tests — a realistic board rather than a hand-crafted one.
+const ingridBoard: Board = {
+  destination: { x: 5, y: 2 },
+  pieces: [
+    { x: 3, y: 0, type: "blocker" },
+    { x: 7, y: 2, type: "blocker" },
+    { x: 0, y: 4, type: "blocker" },
+    { x: 5, y: 6, type: "puck" },
+    { x: 6, y: 6, type: "blocker" },
+    { x: 3, y: 7, type: "blocker" },
+  ],
+  walls: [
+    { x: 1, y: 1, orientation: "horizontal" },
+    { x: 3, y: 1, orientation: "horizontal" },
+    { x: 5, y: 2, orientation: "horizontal" },
+    { x: 2, y: 3, orientation: "horizontal" },
+    { x: 5, y: 2, orientation: "vertical" },
+    { x: 7, y: 3, orientation: "horizontal" },
+    { x: 0, y: 4, orientation: "horizontal" },
+    { x: 2, y: 3, orientation: "vertical" },
+    { x: 3, y: 5, orientation: "horizontal" },
+    { x: 7, y: 4, orientation: "vertical" },
+    { x: 3, y: 5, orientation: "vertical" },
+    { x: 5, y: 6, orientation: "horizontal" },
+    { x: 2, y: 6, orientation: "vertical" },
+    { x: 6, y: 6, orientation: "vertical" },
+  ],
+};
 
 Deno.test("solveSync() finds 1-move solution (puck slides to destination)", () => {
   // Puck at A1 (0,0) slides right to H1 (7,0) where destination is
@@ -220,4 +262,104 @@ Deno.test("solveSync() finds 8-move solution for sara puzzle", () => {
 
   assertEquals(result.length, 8);
   assertEquals(isValidSolution(resolveMoves(board, result)), true);
+});
+
+Deno.test("solveExhaustiveSync() returns the single optimal solution for a unique board", () => {
+  // Puck at A1 (0,0) has exactly one 1-move path to the destination at H1 (7,0).
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  const result = solveExhaustiveSync(board);
+
+  assertEquals(
+    { minMoves: result.minMoves, solutions: enumerateSolutions(result.dag) },
+    { minMoves: 1, solutions: [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]] },
+  );
+});
+
+Deno.test("solveExhaustiveSync() records new states discovered per depth", () => {
+  // Empty board, A1 -> H8: depth 0 is the start, depth 1 adds the right/down
+  // slides, depth 2 adds the goal corner.
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  const result = solveExhaustiveSync(board);
+
+  assertEquals(result.statesPerDepth, [1, 2, 1]);
+});
+
+Deno.test("solveExhaustiveSync() enumerates both optimal paths on an open board", () => {
+  // Empty board: A1 -> H8 is 2 moves via two symmetric L-shaped paths.
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  const result = solveExhaustiveSync(board);
+
+  assertEquals(
+    { minMoves: result.minMoves, count: enumerateSolutions(result.dag).length },
+    { minMoves: 2, count: 2 },
+  );
+});
+
+Deno.test("solveExhaustiveSync() returns distinct solutions", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  const [first, second] = enumerateSolutions(solveExhaustiveSync(board).dag);
+
+  assertNotEquals(first, second);
+});
+
+Deno.test("solveExhaustiveSync() matches solveSync minMoves on the ingrid puzzle", () => {
+  assertEquals(
+    solveExhaustiveSync(ingridBoard).minMoves,
+    solveSync(ingridBoard).length,
+  );
+});
+
+Deno.test("solveExhaustiveSync() enumerates every optimal solution on the ingrid puzzle", () => {
+  // Fixed expected output for a real 7-move puzzle: 26 optimal move sequences
+  // (pre-canonicalization — independent-move orderings and interchangeable
+  // blockers inflate the count), 6 distinct optimal openings, and the per-depth
+  // frontier sizes. Pins the exhaustive search to known-good data instead of
+  // re-validating each solution at runtime.
+  const result = solveExhaustiveSync(ingridBoard);
+
+  assertEquals(
+    {
+      minMoves: result.minMoves,
+      solutions: enumerateSolutions(result.dag).length,
+      firstMoves: optimalFirstMoves(result.dag).length,
+      statesPerDepth: result.statesPerDepth,
+    },
+    {
+      minMoves: 7,
+      solutions: 26,
+      firstMoves: 6,
+      statesPerDepth: [1, 14, 106, 565, 2377, 8356, 25569, 70139],
+    },
+  );
+});
+
+Deno.test("solveExhaustiveSync() throws for an unsolvable puzzle", () => {
+  // Puck can never stop on the destination row/column.
+  const board: Board = {
+    destination: { x: 5, y: 5 },
+    pieces: [{ x: 1, y: 1, type: "puck" }],
+    walls: [],
+  };
+
+  assertThrows(() => solveExhaustiveSync(board));
 });
