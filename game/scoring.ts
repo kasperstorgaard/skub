@@ -6,6 +6,11 @@ import {
   rotateBoard,
   ROWS,
 } from "#/game/board.ts";
+import {
+  enumerateSolutions,
+  optimalFirstMoves,
+  type SolverResult,
+} from "#/game/solver.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import type { Board, Direction, Move, Position } from "#/game/types.ts";
 
@@ -558,4 +563,49 @@ export function sameDirectionRepeat(board: Board, solutions: Move[][]): number {
     for (const c of counts.values()) if (c > 1) repeats += c - 1;
     return repeats;
   }));
+}
+
+/** All puzzle metrics for a board, aggregated over its distinct solutions. */
+export type Metrics = {
+  setupRatio: number;
+  pieceUsage: number;
+  deception: number;
+  reversals: number;
+  crossTrailOverlap: number;
+  totalDistance: { puck: number; blocker: number };
+  uniqueSolutions: number;
+  firstMovePrecision: number;
+  searchProfile: number;
+  coverage: number;
+  stopTypes: StopTypes;
+  pointlessClearance: number;
+  sameDirectionRepeat: number;
+};
+
+/**
+ * Computes every metric for a board from its exhaustive solve. Enumerates the
+ * DAG's optimal solutions, dedupes them to distinct solutions, and measures over
+ * those — except `firstMovePrecision` (distinct optimal openings, pre-dedup, off
+ * the DAG) and `searchProfile` (from `statesPerDepth`).
+ */
+export function computeMetrics(board: Board, result: SolverResult): Metrics {
+  const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
+
+  return {
+    setupRatio: setupRatio(board, solutions),
+    pieceUsage: pieceUsage(board, solutions),
+    deception: deception(board, solutions),
+    reversals: reversals(board, solutions),
+    crossTrailOverlap: crossTrailOverlap(board, solutions),
+    totalDistance: totalDistance(board, solutions),
+    uniqueSolutions: solutions.length,
+    firstMovePrecision: firstMovePrecision(
+      optimalFirstMoves(result.dag).length,
+    ),
+    searchProfile: searchProfile(result.statesPerDepth),
+    coverage: coverage(board, solutions),
+    stopTypes: stopTypes(board, solutions),
+    pointlessClearance: pointlessClearance(board, solutions),
+    sameDirectionRepeat: sameDirectionRepeat(board, solutions),
+  };
 }

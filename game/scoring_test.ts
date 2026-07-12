@@ -4,6 +4,7 @@ import { flipBoard } from "./board.ts";
 import {
   boardCanonicalHash,
   boardSelfSymmetries,
+  computeMetrics,
   computeTrails,
   coverage,
   crossTrailOverlap,
@@ -299,4 +300,24 @@ Deno.test("sameDirectionRepeat() counts cells re-crossed in the same direction",
     ]]),
     8,
   );
+});
+
+Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", () => {
+  const metrics = computeMetrics(ingridBoard, solveExhaustiveSync(ingridBoard));
+
+  assertEquals(metrics, {
+    setupRatio: 0.42857142857142855,
+    pieceUsage: 5.169925001442312,
+    deception: 6,
+    reversals: 1,
+    crossTrailOverlap: 9,
+    totalDistance: { puck: 16, blocker: 10 },
+    uniqueSolutions: 4,
+    firstMovePrecision: 0.16666666666666666,
+    searchProfile: 0.8934068908865179,
+    coverage: 0.265625,
+    stopTypes: { edge: 1, wall: 4, piece: 2, blockerOnPuck: 0 },
+    pointlessClearance: 0,
+    sameDirectionRepeat: 0,
+  });
 });
