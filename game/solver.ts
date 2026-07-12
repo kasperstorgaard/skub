@@ -23,6 +23,17 @@ export class SolverDepthExceededError extends Error {
   }
 }
 
+/**
+ * Result of an exhaustive solve — every optimal solution plus search shape.
+ * `statesPerDepth[d]` counts states first reached at depth `d` (index 0 is the
+ * initial state), so it spans depth 0..minMoves.
+ */
+export type SolverResult = {
+  minMoves: number;
+  solutions: Move[][];
+  statesPerDepth: number[];
+};
+
 export type SolverProgress = { depth: number };
 export type SolverEvent =
   | { type: "progress" } & SolverProgress
@@ -89,6 +100,24 @@ export function solveSync(
   }
 
   throw new Error("Unsolvable puzzle");
+}
+
+/**
+ * Solves a puzzle exhaustively — enumerates every optimal solution and records
+ * the search shape (`statesPerDepth`). Used by the scoring pipeline, not the
+ * gameplay path (which stays on the faster single-solution `solveSync`).
+ *
+ * Throws SolverDepthExceededError / "Unsolvable puzzle" with the same semantics
+ * as `solveSync`.
+ */
+export function solveAllSync(
+  puzzleOrBoard: Puzzle | Board,
+  options: SolverOptions = {},
+): SolverResult {
+  const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
+  const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
+
+  return bfsSolveAll(board, maxDepth);
 }
 
 /**
@@ -188,6 +217,176 @@ function* bfsSolve(board: Board, maxDepth: number): Generator<number, Move[]> {
 
   if (hitMaxDepth) throw new SolverDepthExceededError(maxDepth);
   throw new Error("Unsolvable puzzle");
+}
+
+/** An alternative optimal-length arrival into a state: which parent and move. */
+type ParentEdge = { parent: number; from: number; to: number };
+
+/**
+ * Exhaustive BFS — enumerates every optimal solution instead of returning the
+ * first one, and records how many new states appear at each depth.
+ *
+ * Same flat typed-array machinery as `bfsSolve`, with three additions:
+ *  - `statesPerDepth[d]` counts states first reached at depth d (seed = 1).
+ *  - `extraParents` records same-depth alternative arrivals into a state, so the
+ *    shortest-path DAG (not just a tree) is captured.
+ *  - Once the optimal depth is known, states at that depth are collected as goals
+ *    but never expanded; all optimal paths are then walked out backward.
+ */
+function bfsSolveAll(board: Board, maxDepth: number): SolverResult {
+  const destPos = board.destination.y * COLS + board.destination.x;
+  const initialState = initState(board);
+  const statesPerDepth: number[] = [1];
+
+  if (initialState[0] === destPos) {
+    return { minMoves: 0, solutions: [[]], statesPerDepth };
+  }
+
+  const config: Config = {
+    ...buildWallLookup(board.walls),
+    pieceCount: initialState.length,
+  };
+
+  const statePool = new Uint8Array(BFS_STATE_LIMIT * config.pieceCount);
+  statePool.set(initialState, 0);
+
+  const metadata = {
+    parentIndexes: new Int32Array(BFS_STATE_LIMIT).fill(-1),
+    fromPositions: new Uint8Array(BFS_STATE_LIMIT),
+    toPositions: new Uint8Array(BFS_STATE_LIMIT),
+    depths: new Uint8Array(BFS_STATE_LIMIT),
+  };
+
+  const buffer = new Uint8Array(config.pieceCount * 8);
+
+  // stateKey -> stateIndex; membership doubles as the visited check.
+  const visitedIndex = new Map<number, number>();
+  const extraParents = new Map<number, ParentEdge[]>();
+  visitedIndex.set(stateKeyAt(statePool, config, 0), 0);
+
+  let tail = 1;
+  let head = 0;
+  let goalDepth = -1;
+  let hitMaxDepth = false;
+  const goalIndices: number[] = [];
+
+  while (head < tail) {
+    const headOffset = head * config.pieceCount;
+    const depth = metadata.depths[head];
+    const parentIdx = head;
+    head++;
+
+    // Below the optimal depth we expand normally; once it's known we stop
+    // expanding (goal states carry no useful children), letting the queue drain.
+    if (goalDepth !== -1) {
+      if (depth >= goalDepth) continue;
+    } else if (depth >= maxDepth) {
+      hitMaxDepth = true;
+      continue;
+    }
+
+    const moveCount = getMoves(statePool, config, headOffset, buffer);
+
+    for (let idx = 0; idx < moveCount; idx += 2) {
+      const fromPos = buffer[idx];
+      const toPos = buffer[idx + 1];
+      const childDepth = depth + 1;
+
+      if (tail >= BFS_STATE_LIMIT) {
+        throw new SolverDepthExceededError(maxDepth);
+      }
+
+      // Write the candidate child into the tail scratch slot to compute its key.
+      const tailOffset = tail * config.pieceCount;
+      applyMove(statePool, config, headOffset, tailOffset, fromPos, toPos);
+      const key = stateKeyAt(statePool, config, tailOffset);
+
+      const existing = visitedIndex.get(key);
+      if (existing !== undefined) {
+        // Same-depth rediscovery is an alternative optimal arrival; deeper
+        // rediscovery is never on a shortest path and is ignored.
+        if (metadata.depths[existing] === childDepth) {
+          const edge = { parent: parentIdx, from: fromPos, to: toPos };
+          const edges = extraParents.get(existing);
+          if (edges) edges.push(edge);
+          else extraParents.set(existing, [edge]);
+        }
+        continue;
+      }
+
+      visitedIndex.set(key, tail);
+      metadata.parentIndexes[tail] = parentIdx;
+      metadata.fromPositions[tail] = fromPos;
+      metadata.toPositions[tail] = toPos;
+      metadata.depths[tail] = childDepth;
+      statesPerDepth[childDepth] = (statesPerDepth[childDepth] ?? 0) + 1;
+
+      if (statePool[tailOffset] === destPos) {
+        if (goalDepth === -1) goalDepth = childDepth;
+        goalIndices.push(tail);
+      }
+
+      tail++;
+    }
+  }
+
+  if (goalDepth === -1) {
+    if (hitMaxDepth) throw new SolverDepthExceededError(maxDepth);
+    throw new Error("Unsolvable puzzle");
+  }
+
+  return {
+    minMoves: goalDepth,
+    solutions: enumerateOptimalPaths(metadata, extraParents, goalIndices),
+    statesPerDepth,
+  };
+}
+
+/**
+ * Walks the shortest-path DAG backward from every goal state, following the
+ * primary parent pointer plus any recorded same-depth alternatives, to produce
+ * every optimal move sequence. Each distinct sequence of edges yields a distinct
+ * solution (the move sequence uniquely determines the state it reaches).
+ */
+function enumerateOptimalPaths(
+  metadata: {
+    parentIndexes: Int32Array;
+    fromPositions: Uint8Array;
+    toPositions: Uint8Array;
+  },
+  extraParents: Map<number, ParentEdge[]>,
+  goalIndices: number[],
+): Move[][] {
+  const solutions: Move[][] = [];
+  const reversed: Array<[number, number]> = [];
+
+  const walk = (idx: number): void => {
+    const primaryParent = metadata.parentIndexes[idx];
+
+    if (primaryParent === -1) {
+      const path = reversed.map(([from, to]): Move => [
+        { x: from % COLS, y: (from / COLS) | 0 },
+        { x: to % COLS, y: (to / COLS) | 0 },
+      ]);
+      path.reverse();
+      solutions.push(path);
+      return;
+    }
+
+    reversed.push([metadata.fromPositions[idx], metadata.toPositions[idx]]);
+    walk(primaryParent);
+    reversed.pop();
+
+    for (const edge of extraParents.get(idx) ?? []) {
+      reversed.push([edge.from, edge.to]);
+      walk(edge.parent);
+      reversed.pop();
+    }
+  };
+
+  for (const goalIdx of goalIndices) walk(goalIdx);
+
+  return solutions;
 }
 
 /**
