@@ -9,10 +9,17 @@ import {
 import {
   enumerateSolutions,
   optimalFirstMoves,
+  solveExhaustiveSync,
   type SolverResult,
 } from "#/game/solver.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
-import type { Board, Direction, Move, Position } from "#/game/types.ts";
+import type {
+  Board,
+  Difficulty,
+  Direction,
+  Move,
+  Position,
+} from "#/game/types.ts";
 
 /**
  * Puzzle scoring — gates and scores a board from its exhaustive solve.
@@ -608,4 +615,130 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
     pointlessClearance: pointlessClearance(board, solutions),
     sameDirectionRepeat: sameDirectionRepeat(board, solutions),
   };
+}
+
+export type GateResult = {
+  passed: boolean;
+  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5";
+};
+
+/** Inclusive minMoves band per difficulty. `ultra` is excluded from generation. */
+const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
+  easy: [4, 7],
+  medium: [6, 9],
+  hard: [9, 13],
+};
+
+/** Whether a blocker (by initial-piece id) is used in a solution — moves or stops. */
+function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
+  const used = new Set<number>();
+  for (const a of analyzeMoves(board, moves)) {
+    if (board.pieces[a.moverId].type === "blocker") used.add(a.moverId);
+    if (
+      a.cause === "piece" && a.stoppingId !== null &&
+      board.pieces[a.stoppingId].type === "blocker"
+    ) used.add(a.stoppingId);
+  }
+  return used;
+}
+
+/**
+ * Runs the acceptance gates, cheapest-first, short-circuiting on the first fail:
+ *  - G1 solvable within maxDepth 15
+ *  - G2 minMoves inside the difficulty band (`ultra` has none → always fails)
+ *  - G3 canonical hash not already in the corpus or this batch
+ *  - G4 every optimal solution moves at least one blocker (blockers matter)
+ *  - G5 at most two blockers go entirely unused across all solutions
+ */
+export function checkGates(
+  board: Board,
+  options: {
+    difficulty: Difficulty;
+    corpus: Set<string>;
+    batchHashes: Set<string>;
+  },
+): GateResult {
+  let result: SolverResult;
+  try {
+    result = solveExhaustiveSync(board, { maxDepth: 15 });
+  } catch {
+    return { passed: false, failedGate: "G1" };
+  }
+
+  const band = DIFFICULTY_BANDS[options.difficulty];
+  if (!band || result.minMoves < band[0] || result.minMoves > band[1]) {
+    return { passed: false, failedGate: "G2" };
+  }
+
+  const hash = boardCanonicalHash(board);
+  if (options.corpus.has(hash) || options.batchHashes.has(hash)) {
+    return { passed: false, failedGate: "G3" };
+  }
+
+  const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
+
+  const everyUsesBlocker = solutions.every((moves) =>
+    moveRoles(board, moves).some((r) => r === "blocker")
+  );
+  if (!everyUsesBlocker) return { passed: false, failedGate: "G4" };
+
+  const used = new Set<number>();
+  for (const moves of solutions) {
+    for (const id of usedBlockerIds(board, moves)) used.add(id);
+  }
+  const unused = board.pieces
+    .filter((p, i) => p.type === "blocker" && !used.has(i))
+    .length;
+  if (unused > 2) return { passed: false, failedGate: "G5" };
+
+  return { passed: true };
+}
+
+export type ScoredBoard = { metrics: Metrics; score: number };
+
+const clamp01 = (x: number): number => Math.max(0, Math.min(1, x));
+const bounded = (value: number, max: number): number =>
+  max > 0 ? clamp01(value / max) : 0;
+
+/**
+ * Composite quality score in `[-1, 1]`. Each metric is divided by a
+ * deterministic per-board max so it lands in `[0,1]`, then positives are averaged
+ * (weight `1/k`) and the two negatives subtracted (weight `1/j`) — true equal
+ * footing, no metric dominating by range or count.
+ *
+ * TODO(tuning): the max bounds and equal weights are a provisional v1; tune once
+ * there is a scored corpus to calibrate against.
+ */
+export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
+  const metrics = computeMetrics(board, result);
+  const m = result.minMoves;
+  const p = board.pieces.filter((piece) => piece.type === "blocker").length;
+  const stopWeighted = metrics.stopTypes.piece * 3 +
+    metrics.stopTypes.wall * 2 +
+    metrics.stopTypes.edge;
+
+  const positives = [
+    bounded(metrics.setupRatio, 1),
+    bounded(metrics.pieceUsage, p * Math.log2(1 + m) + Math.log2(1 + p)),
+    bounded(metrics.deception, 7 * m),
+    bounded(metrics.reversals, Math.max(1, m - 1)),
+    bounded(metrics.crossTrailOverlap, COLS * ROWS),
+    bounded(
+      metrics.totalDistance.puck + metrics.totalDistance.blocker,
+      7 * m * 2,
+    ),
+    bounded(metrics.firstMovePrecision, 1),
+    bounded(metrics.searchProfile, 1),
+    bounded(metrics.coverage, 1),
+    bounded(stopWeighted, 3 * m),
+  ];
+  const negatives = [
+    bounded(metrics.pointlessClearance, Math.max(1, m)),
+    bounded(metrics.sameDirectionRepeat, COLS * ROWS),
+  ];
+
+  const positive = positives.reduce((a, b) => a + b, 0) / positives.length;
+  const negative = negatives.reduce((a, b) => a + b, 0) / negatives.length;
+
+  return { metrics, score: positive - negative };
 }

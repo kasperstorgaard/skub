@@ -4,6 +4,7 @@ import { flipBoard } from "./board.ts";
 import {
   boardCanonicalHash,
   boardSelfSymmetries,
+  checkGates,
   computeMetrics,
   computeTrails,
   coverage,
@@ -15,6 +16,7 @@ import {
   pointlessClearance,
   reversals,
   sameDirectionRepeat,
+  scoreBoard,
   searchProfile,
   setupRatio,
   stopTypes,
@@ -320,4 +322,39 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
     pointlessClearance: 0,
     sameDirectionRepeat: 0,
   });
+});
+
+const noCorpus = { corpus: new Set<string>(), batchHashes: new Set<string>() };
+
+Deno.test("checkGates() passes the ingrid puzzle as a medium board", () => {
+  assertEquals(
+    checkGates(ingridBoard, { difficulty: "medium", ...noCorpus }),
+    { passed: true },
+  );
+});
+
+Deno.test("checkGates() fails G2 when minMoves is outside the band", () => {
+  assertEquals(
+    checkGates(ingridBoard, { difficulty: "hard", ...noCorpus }),
+    { passed: false, failedGate: "G2" },
+  );
+});
+
+Deno.test("checkGates() fails G3 when the board is already in the corpus", () => {
+  const corpus = new Set([boardCanonicalHash(ingridBoard)]);
+
+  assertEquals(
+    checkGates(ingridBoard, {
+      difficulty: "medium",
+      corpus,
+      batchHashes: new Set(),
+    }),
+    { passed: false, failedGate: "G3" },
+  );
+});
+
+Deno.test("scoreBoard() produces a composite within [-1, 1]", () => {
+  const { score } = scoreBoard(ingridBoard, solveExhaustiveSync(ingridBoard));
+
+  assertEquals(score >= -1 && score <= 1, true);
 });
