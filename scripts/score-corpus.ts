@@ -1,10 +1,13 @@
 /**
  * Scores every puzzle in static/puzzles and writes a markdown report: one row per
  * puzzle, with the mean and min (worst route) of each metric across that puzzle's
- * distinct solutions, plus the composite score / worst route. The worst-route
- * outliers (boards a `min`-score curation filter would reject) are listed first.
+ * distinct solutions, plus the composite score / worst route.
  *
- * Usage: `deno task score-corpus [outfile] [--floor=0.5]`
+ * Each puzzle is scored in its own subprocess, so a pathologically branchy board
+ * whose raw optimal-solution set OOMs only crashes its own worker — the
+ * orchestrator sees a non-zero exit and skips it (listed under "Skipped").
+ *
+ * Usage: `deno task score-corpus [outfile] [--floor=0.5] [--only=<slug>] [--timeout=30000]`
  * Defaults to writing `corpus-score.md`.
  */
 import { parsePuzzle } from "#/game/parser.ts";
@@ -12,31 +15,8 @@ import { solveExhaustiveSync } from "#/game/solver.ts";
 import { type Metrics, scoreBoard } from "#/game/scoring.ts";
 
 const PUZZLE_DIR = "static/puzzles";
-const outFile = Deno.args.find((a) => !a.startsWith("--")) ?? "corpus-score.md";
-const floor = Number(
-  Deno.args.find((a) => a.startsWith("--floor="))?.slice("--floor=".length) ??
-    "0.5",
-);
-// Restrict to a single puzzle by slug — useful while the hard-puzzle enumeration
-// blowup is unresolved (a large raw optimal-solution set can OOM the process).
-const only = Deno.args.find((a) => a.startsWith("--only="))?.slice(
-  "--only=".length,
-);
-
-/** Slugs reviewed and accepted despite a low worst route — kept out of outliers. */
-async function loadExcludes(): Promise<Set<string>> {
-  try {
-    const text = await Deno.readTextFile("scripts/corpus-excludes.txt");
-    return new Set(
-      text.split("\n").map((l) => l.trim()).filter((l) =>
-        l !== "" && !l.startsWith("#")
-      ),
-    );
-  } catch {
-    return new Set();
-  }
-}
-const excludes = await loadExcludes();
+const flag = (name: string) =>
+  Deno.args.find((a) => a.startsWith(name))?.slice(name.length);
 
 /** The scalar metrics reported per puzzle, in column order. */
 const METRICS = [
@@ -74,16 +54,6 @@ function scalarMetrics(m: Metrics): Record<string, number> {
   };
 }
 
-const f = (n: number) => n.toFixed(3);
-
-function table(headers: string[], rows: string[][]): string {
-  return [
-    `| ${headers.join(" | ")} |`,
-    `| ${headers.map(() => "---").join(" | ")} |`,
-    ...rows.map((r) => `| ${r.join(" | ")} |`),
-  ].join("\n");
-}
-
 type PuzzleRow = {
   slug: string;
   difficulty: string;
@@ -95,30 +65,10 @@ type PuzzleRow = {
   metrics: Record<string, { mean: number; min: number }>;
 };
 
-const rows: PuzzleRow[] = [];
-let skipped = 0;
-
-for await (const entry of Deno.readDir(PUZZLE_DIR)) {
-  if (!entry.name.endsWith(".md")) continue;
-  const content = await Deno.readTextFile(`${PUZZLE_DIR}/${entry.name}`);
-
-  let puzzle;
-  try {
-    puzzle = parsePuzzle(content);
-  } catch {
-    skipped++;
-    continue;
-  }
-  if (only && puzzle.slug !== only) continue;
-
-  let scored;
-  try {
-    scored = scoreBoard(puzzle.board, solveExhaustiveSync(puzzle.board));
-  } catch (err) {
-    console.error(`skip ${puzzle.slug}: ${(err as Error).message}`);
-    skipped++;
-    continue;
-  }
+/** Worker mode: score one puzzle file and emit its row as JSON on stdout. */
+function scoreFile(path: string): PuzzleRow {
+  const puzzle = parsePuzzle(Deno.readTextFileSync(path));
+  const scored = scoreBoard(puzzle.board, solveExhaustiveSync(puzzle.board));
 
   const perRoute = scored.perSolution.map((s) => scalarMetrics(s.metrics));
   const metrics: PuzzleRow["metrics"] = {};
@@ -130,7 +80,7 @@ for await (const entry of Deno.readDir(PUZZLE_DIR)) {
     };
   }
 
-  rows.push({
+  return {
     slug: puzzle.slug,
     difficulty: puzzle.difficulty,
     minMoves: puzzle.minMoves,
@@ -138,13 +88,77 @@ for await (const entry of Deno.readDir(PUZZLE_DIR)) {
     score: scored.score,
     worst: scored.min,
     metrics,
-  });
+  };
 }
 
-// Stable slug ordering so tuning re-runs diff cleanly — only cell values change,
-// rows never move. (Sort in a viewer if you want a ranked view.)
+const workerFile = flag("--file=");
+if (workerFile) {
+  // Any failure (parse error, solver limit, OOM) exits non-zero → parent skips.
+  console.log(JSON.stringify(scoreFile(workerFile)));
+  Deno.exit(0);
+}
+
+// ---- orchestrator ----
+
+const outFile = Deno.args.find((a) => !a.startsWith("--")) ?? "corpus-score.md";
+const floor = Number(flag("--floor=") ?? "0.5");
+const only = flag("--only=");
+const timeoutMs = Number(flag("--timeout=") ?? "30000");
+
+async function loadExcludes(): Promise<Set<string>> {
+  try {
+    const text = await Deno.readTextFile("scripts/corpus-excludes.txt");
+    return new Set(
+      text.split("\n").map((l) => l.trim()).filter((l) =>
+        l !== "" && !l.startsWith("#")
+      ),
+    );
+  } catch {
+    return new Set();
+  }
+}
+const excludes = await loadExcludes();
+
+/** Scores one puzzle file in a subprocess; null if it crashed or timed out. */
+async function scoreInSubprocess(path: string): Promise<PuzzleRow | null> {
+  try {
+    const { code, stdout } = await new Deno.Command(Deno.execPath(), {
+      args: ["run", "-A", "scripts/score-corpus.ts", `--file=${path}`],
+      stdout: "piped",
+      stderr: "null",
+      signal: AbortSignal.timeout(timeoutMs),
+    }).output();
+    if (code !== 0) return null;
+    return JSON.parse(new TextDecoder().decode(stdout)) as PuzzleRow;
+  } catch {
+    return null;
+  }
+}
+
+const rows: PuzzleRow[] = [];
+const skipped: string[] = [];
+
+for await (const entry of Deno.readDir(PUZZLE_DIR)) {
+  if (!entry.name.endsWith(".md")) continue;
+  if (only && entry.name !== `${only}.md`) continue;
+  const row = await scoreInSubprocess(`${PUZZLE_DIR}/${entry.name}`);
+  if (row) rows.push(row);
+  else skipped.push(entry.name.replace(/\.md$/, ""));
+}
+
 rows.sort((a, b) => a.slug.localeCompare(b.slug));
+skipped.sort((a, b) => a.localeCompare(b));
 const outliers = rows.filter((r) => r.worst < floor && !excludes.has(r.slug));
+
+const f = (n: number) => n.toFixed(3);
+
+function table(headers: string[], tableRows: string[][]): string {
+  return [
+    `| ${headers.join(" | ")} |`,
+    `| ${headers.map(() => "---").join(" | ")} |`,
+    ...tableRows.map((r) => `| ${r.join(" | ")} |`),
+  ].join("\n");
+}
 
 const headers = [
   "slug",
@@ -169,10 +183,14 @@ const toRow = (r: PuzzleRow): string[] => [
 const md = [
   `# Corpus score report`,
   ``,
-  `${rows.length} puzzles, ${skipped} skipped.`,
+  `${rows.length} scored, ${skipped.length} skipped.`,
   `Each metric cell is \`mean/min\` across the puzzle's distinct solutions;`,
   `\`score\` is the mean route score, \`worst\` the lowest route. Rows are sorted`,
   `by slug so tuning re-runs produce clean value-only diffs.`,
+  ``,
+  `## Skipped — too branchy to score exhaustively (${skipped.length})`,
+  ``,
+  skipped.length === 0 ? `_none_` : skipped.map((s) => `- ${s}`).join("\n"),
   ``,
   `## Outliers — worst route below ${floor}, excluding ${excludes.size} listed (${outliers.length})`,
   ``,
@@ -186,5 +204,5 @@ const md = [
 
 await Deno.writeTextFile(outFile, md);
 console.log(
-  `Scored ${rows.length} puzzles (${skipped} skipped, ${outliers.length} outliers < ${floor}) → ${outFile}`,
+  `Scored ${rows.length} puzzles (${skipped.length} skipped, ${outliers.length} outliers < ${floor}) → ${outFile}`,
 );
