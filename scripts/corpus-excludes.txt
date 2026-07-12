@@ -1,0 +1,4 @@
+# Puzzles excluded from the corpus-score outlier list.
+# One slug per line; blank lines and lines starting with # are ignored.
+# Add a puzzle here once its low worst-route score has been reviewed and accepted,
+# so it stops showing up as an outlier on every tuning run.
