@@ -24,7 +24,8 @@ export class SolverDepthExceededError extends Error {
 }
 
 /**
- * Result of an exhaustive solve — every optimal solution plus search shape.
+ * Result of a solve. Single-solution mode returns exactly one entry in
+ * `solutions`; exhaustive mode returns every optimal solution.
  * `statesPerDepth[d]` counts states first reached at depth `d` (index 0 is the
  * initial state), so it spans depth 0..minMoves.
  */
@@ -59,6 +60,17 @@ type SolverOptions = {
   maxDepth?: number;
 };
 
+/** Parallel per-state metadata for the flat BFS queue, indexed by state index. */
+type Metadata = {
+  parentIndexes: Int32Array;
+  fromPositions: Uint8Array;
+  toPositions: Uint8Array;
+  depths: Uint8Array;
+};
+
+/** An alternative optimal-length arrival into a state: which parent and move. */
+type ParentEdge = { parent: number; from: number; to: number };
+
 /**
  * Solves a board using BFS, yielding a progress event then the solution.
  *
@@ -77,29 +89,30 @@ export function* solve(
   const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
 
-  const solver = bfsSolve(board, maxDepth);
+  const solver = bfsExplore(board, maxDepth, false);
   let result = solver.next();
   while (!result.done) {
     yield { type: "progress", depth: result.value };
     result = solver.next();
   }
-  yield { type: "solution", moves: result.value };
+  yield { type: "solution", moves: result.value.solutions[0] };
 }
 
 /**
- * Solves a puzzle synchronously using BFS to find the minimum move solution.
+ * Solves a puzzle synchronously, returning the first optimal solution's moves.
+ * Shares the exhaustive solver's machinery (`bfsExplore`) but stops at the first
+ * optimal path; the richer `SolverResult` (all solutions, search shape) is
+ * available via `solveAllSync`.
  */
 export function solveSync(
   puzzleOrBoard: Puzzle | Board,
   options: SolverOptions = {},
 ): Move[] {
   const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
+  const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
 
-  for (const event of solve(board, options)) {
-    if (event.type === "solution") return event.moves;
-  }
-
-  throw new Error("Unsolvable puzzle");
+  const result = runToCompletion(bfsExplore(board, maxDepth, false));
+  return result.solutions[0];
 }
 
 /**
@@ -117,123 +130,41 @@ export function solveAllSync(
   const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
 
-  return bfsSolveAll(board, maxDepth);
+  return runToCompletion(bfsExplore(board, maxDepth, true));
+}
+
+/** Drives a `bfsExplore` generator to completion, discarding progress yields. */
+function runToCompletion(
+  search: Generator<number, SolverResult>,
+): SolverResult {
+  let result = search.next();
+  while (!result.done) result = search.next();
+  return result.value;
 }
 
 /**
- * BFS solver — visits each unique state exactly once, guarantees optimal solution.
+ * Unified BFS core for both the single-solution gameplay path and the
+ * exhaustive scoring path. Visits each unique board state once using flat typed
+ * arrays (statePool + parallel metadata) to avoid per-state heap allocation, and
+ * yields the depth whenever the frontier advances (drives the "searching depth
+ * N" progress UI).
  *
- * Uses flat typed arrays for the BFS queue (statePool + parallel metadata arrays)
- * to eliminate heap object allocation per state. Path is reconstructed via parent
- * pointers rather than storing full histories.
+ * `exhaustive` selects between two behaviours over the same machinery:
+ *  - `false` → stop at the first goal and return that single optimal path. Uses
+ *    a `CompactSet` for the visited check (membership only) to stay lean for the
+ *    interactive solver worker.
+ *  - `true` → keep going until the whole optimal depth is drained, recording
+ *    `statesPerDepth` and same-depth alternative arrivals (`extraParents`) so the
+ *    full shortest-path DAG — every optimal solution — can be walked out.
  *
- * Throws SolverDepthExceededError if the state count exceeds BFS_STATE_LIMIT
- * (very deep or wall-sparse boards) or if maxDepth is reached without solution.
+ * Throws SolverDepthExceededError if maxDepth or BFS_STATE_LIMIT is reached
+ * without a solution, or "Unsolvable puzzle" when the queue drains with no goal.
  */
-function* bfsSolve(board: Board, maxDepth: number): Generator<number, Move[]> {
-  const destPos = board.destination.y * COLS + board.destination.x;
-  const initialState = initState(board);
-
-  if (initialState[0] === destPos) return [];
-
-  const config: Config = {
-    ...buildWallLookup(board.walls),
-    pieceCount: initialState.length,
-  };
-
-  // State pool: all states packed flat — no heap object per state
-  const statePool = new Uint8Array(BFS_STATE_LIMIT * config.pieceCount);
-  statePool.set(initialState, 0);
-
-  // Parallel arrays for entry metadata
-  const metadata = {
-    parentIndexes: new Int32Array(BFS_STATE_LIMIT).fill(-1),
-    fromPositions: new Uint8Array(BFS_STATE_LIMIT),
-    toPositions: new Uint8Array(BFS_STATE_LIMIT),
-    depths: new Uint8Array(BFS_STATE_LIMIT), // max depth 15 fits in u8
-  };
-
-  // Pre-allocated moves buffer: 4 directions × n pieces × 2 values (from + to)
-  const buffer = new Uint8Array(config.pieceCount * 8);
-
-  const visited = new CompactSet();
-  const stateKey = stateKeyAt(statePool, config, 0);
-  visited.add(stateKey);
-
-  let tail = 1; // next free slot (write end of the queue)
-  let head = 0; // next state to process (read end of the queue)
-  let lastDepth = 0;
-  let hitMaxDepth = false;
-
-  while (head < tail) {
-    if (tail >= BFS_STATE_LIMIT) {
-      throw new SolverDepthExceededError(maxDepth);
-    }
-
-    const headOffset = head * config.pieceCount;
-    const depth = metadata.depths[head];
-    const parentIdx = head;
-    head++;
-
-    if (depth > lastDepth) {
-      lastDepth = depth;
-      yield depth;
-    }
-
-    if (depth >= maxDepth) {
-      hitMaxDepth = true;
-      continue;
-    }
-
-    const moveCount = getMoves(statePool, config, headOffset, buffer);
-
-    // Each move is a [fromPos, toPos] pair packed consecutively in buffer
-    for (let idx = 0; idx < moveCount; idx += 2) {
-      const fromPos = buffer[idx];
-      const toPos = buffer[idx + 1];
-
-      // Write next state directly into statePool at tail offset
-      const tailOffset = tail * config.pieceCount;
-
-      applyMove(statePool, config, headOffset, tailOffset, fromPos, toPos);
-
-      const stateKey = stateKeyAt(statePool, config, tailOffset);
-
-      if (visited.has(stateKey)) continue;
-      visited.add(stateKey);
-
-      metadata.parentIndexes[tail] = parentIdx;
-      metadata.fromPositions[tail] = fromPos;
-      metadata.toPositions[tail] = toPos;
-      metadata.depths[tail] = depth + 1;
-
-      if (statePool[tailOffset] === destPos) {
-        return reconstructPath(metadata, tail);
-      }
-
-      tail++;
-    }
-  }
-
-  if (hitMaxDepth) throw new SolverDepthExceededError(maxDepth);
-  throw new Error("Unsolvable puzzle");
-}
-
-/** An alternative optimal-length arrival into a state: which parent and move. */
-type ParentEdge = { parent: number; from: number; to: number };
-
-/**
- * Exhaustive BFS — enumerates every optimal solution instead of returning the
- * first one, and records how many new states appear at each depth.
- *
- * Same flat typed-array machinery as `bfsSolve`, with three additions:
- *  - `statesPerDepth[d]` counts states first reached at depth d (seed = 1).
- *  - `extraParents` records same-depth alternative arrivals into a state, so the
- *    shortest-path DAG (not just a tree) is captured.
- *  - Once the optimal depth is known, states at that depth are collected as goals
- *    but never expanded; all optimal paths are then walked out backward.
- */
-function bfsSolveAll(board: Board, maxDepth: number): SolverResult {
+function* bfsExplore(
+  board: Board,
+  maxDepth: number,
+  exhaustive: boolean,
+): Generator<number, SolverResult> {
   const destPos = board.destination.y * COLS + board.destination.x;
   const initialState = initState(board);
   const statesPerDepth: number[] = [1];
@@ -247,28 +178,36 @@ function bfsSolveAll(board: Board, maxDepth: number): SolverResult {
     pieceCount: initialState.length,
   };
 
+  // State pool: all states packed flat — no heap object per state
   const statePool = new Uint8Array(BFS_STATE_LIMIT * config.pieceCount);
   statePool.set(initialState, 0);
 
-  const metadata = {
+  const metadata: Metadata = {
     parentIndexes: new Int32Array(BFS_STATE_LIMIT).fill(-1),
     fromPositions: new Uint8Array(BFS_STATE_LIMIT),
     toPositions: new Uint8Array(BFS_STATE_LIMIT),
-    depths: new Uint8Array(BFS_STATE_LIMIT),
+    depths: new Uint8Array(BFS_STATE_LIMIT), // max depth 15 fits in u8
   };
 
+  // Pre-allocated moves buffer: 4 directions × n pieces × 2 values (from + to)
   const buffer = new Uint8Array(config.pieceCount * 8);
 
-  // stateKey -> stateIndex; membership doubles as the visited check.
-  const visitedIndex = new Map<number, number>();
+  // Single-solution mode only needs membership (CompactSet); exhaustive mode
+  // needs stateKey → index so same-depth alternative arrivals can be attached.
+  const visited = exhaustive ? null : new CompactSet();
+  const visitedIndex = exhaustive ? new Map<number, number>() : null;
   const extraParents = new Map<number, ParentEdge[]>();
-  visitedIndex.set(stateKeyAt(statePool, config, 0), 0);
+  const goalIndices: number[] = [];
 
-  let tail = 1;
-  let head = 0;
+  const rootKey = stateKeyAt(statePool, config, 0);
+  if (visitedIndex) visitedIndex.set(rootKey, 0);
+  else visited!.add(rootKey);
+
+  let tail = 1; // next free slot (write end of the queue)
+  let head = 0; // next state to process (read end of the queue)
+  let lastDepth = 0;
   let goalDepth = -1;
   let hitMaxDepth = false;
-  const goalIndices: number[] = [];
 
   while (head < tail) {
     const headOffset = head * config.pieceCount;
@@ -276,8 +215,14 @@ function bfsSolveAll(board: Board, maxDepth: number): SolverResult {
     const parentIdx = head;
     head++;
 
-    // Below the optimal depth we expand normally; once it's known we stop
-    // expanding (goal states carry no useful children), letting the queue drain.
+    if (depth > lastDepth) {
+      lastDepth = depth;
+      yield depth;
+    }
+
+    // Below the optimal depth we expand normally; once the goal depth is known
+    // (exhaustive mode) we stop expanding but let the queue drain so every
+    // depth-`goalDepth` goal state is still collected and multi-parent-tracked.
     if (goalDepth !== -1) {
       if (depth >= goalDepth) continue;
     } else if (depth >= maxDepth) {
@@ -287,34 +232,40 @@ function bfsSolveAll(board: Board, maxDepth: number): SolverResult {
 
     const moveCount = getMoves(statePool, config, headOffset, buffer);
 
+    // Each move is a [fromPos, toPos] pair packed consecutively in buffer.
     for (let idx = 0; idx < moveCount; idx += 2) {
-      const fromPos = buffer[idx];
-      const toPos = buffer[idx + 1];
-      const childDepth = depth + 1;
-
       if (tail >= BFS_STATE_LIMIT) {
         throw new SolverDepthExceededError(maxDepth);
       }
 
-      // Write the candidate child into the tail scratch slot to compute its key.
+      const fromPos = buffer[idx];
+      const toPos = buffer[idx + 1];
+      const childDepth = depth + 1;
+
+      // Write the candidate child into the tail slot so it can be keyed.
       const tailOffset = tail * config.pieceCount;
       applyMove(statePool, config, headOffset, tailOffset, fromPos, toPos);
       const key = stateKeyAt(statePool, config, tailOffset);
 
-      const existing = visitedIndex.get(key);
-      if (existing !== undefined) {
-        // Same-depth rediscovery is an alternative optimal arrival; deeper
-        // rediscovery is never on a shortest path and is ignored.
-        if (metadata.depths[existing] === childDepth) {
-          const edge = { parent: parentIdx, from: fromPos, to: toPos };
-          const edges = extraParents.get(existing);
-          if (edges) edges.push(edge);
-          else extraParents.set(existing, [edge]);
+      if (visitedIndex) {
+        const existing = visitedIndex.get(key);
+        if (existing !== undefined) {
+          // Same-depth rediscovery is an alternative optimal arrival; a deeper
+          // rediscovery is never on a shortest path and is ignored.
+          if (metadata.depths[existing] === childDepth) {
+            const edge = { parent: parentIdx, from: fromPos, to: toPos };
+            const edges = extraParents.get(existing);
+            if (edges) edges.push(edge);
+            else extraParents.set(existing, [edge]);
+          }
+          continue;
         }
-        continue;
+        visitedIndex.set(key, tail);
+      } else {
+        if (visited!.has(key)) continue;
+        visited!.add(key);
       }
 
-      visitedIndex.set(key, tail);
       metadata.parentIndexes[tail] = parentIdx;
       metadata.fromPositions[tail] = fromPos;
       metadata.toPositions[tail] = toPos;
@@ -322,6 +273,14 @@ function bfsSolveAll(board: Board, maxDepth: number): SolverResult {
       statesPerDepth[childDepth] = (statesPerDepth[childDepth] ?? 0) + 1;
 
       if (statePool[tailOffset] === destPos) {
+        // Single-solution mode: the first goal reached is an optimal path.
+        if (!exhaustive) {
+          return {
+            minMoves: childDepth,
+            solutions: enumerateOptimalPaths(metadata, extraParents, [tail]),
+            statesPerDepth,
+          };
+        }
         if (goalDepth === -1) goalDepth = childDepth;
         goalIndices.push(tail);
       }
@@ -347,13 +306,12 @@ function bfsSolveAll(board: Board, maxDepth: number): SolverResult {
  * primary parent pointer plus any recorded same-depth alternatives, to produce
  * every optimal move sequence. Each distinct sequence of edges yields a distinct
  * solution (the move sequence uniquely determines the state it reaches).
+ *
+ * With a single goal and no `extraParents` (single-solution mode) this walks the
+ * one parent chain and returns exactly one path.
  */
 function enumerateOptimalPaths(
-  metadata: {
-    parentIndexes: Int32Array;
-    fromPositions: Uint8Array;
-    toPositions: Uint8Array;
-  },
+  metadata: Metadata,
   extraParents: Map<number, ParentEdge[]>,
   goalIndices: number[],
 ): Move[][] {
@@ -547,30 +505,6 @@ function initState(board: Board): Uint8Array {
     .map((piece) => piece.y * COLS + piece.x)
     .sort((a, b) => a - b);
   return new Uint8Array([puck.y * COLS + puck.x, ...blockers]);
-}
-
-function reconstructPath(
-  metadata: {
-    parentIndexes: Int32Array;
-    fromPositions: Uint8Array;
-    toPositions: Uint8Array;
-  },
-  goalIdx: number,
-): Move[] {
-  const path: Array<[number, number]> = [];
-  let idx = goalIdx;
-
-  while (metadata.parentIndexes[idx] !== -1) {
-    path.push([metadata.fromPositions[idx], metadata.toPositions[idx]]);
-    idx = metadata.parentIndexes[idx];
-  }
-
-  path.reverse();
-
-  return path.map(([from, to]) => [
-    { x: from % COLS, y: (from / COLS) | 0 },
-    { x: to % COLS, y: (to / COLS) | 0 },
-  ]);
 }
 
 /**
