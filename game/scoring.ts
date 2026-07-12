@@ -619,7 +619,7 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
 
 export type GateResult = {
   passed: boolean;
-  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5";
+  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5" | "G6";
 };
 
 /** Inclusive minMoves band per difficulty. `ultra` is excluded from generation. */
@@ -628,6 +628,14 @@ const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
   medium: [6, 9],
   hard: [9, 13],
 };
+
+/**
+ * G6 length gate: every route must travel at least `minMoves * LENGTH_FACTOR`
+ * cells. A deliberately conservative floor — it rejects only genuinely cramped,
+ * short-slide boards and leaves good/varied puzzles well clear (their worst route
+ * may be legitimately shorter). Tunable.
+ */
+const LENGTH_FACTOR = 2;
 
 /** Whether a blocker (by initial-piece id) is used in a solution — moves or stops. */
 function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
@@ -649,6 +657,7 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
  *  - G3 canonical hash not already in the corpus or this batch
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
  *  - G5 at most two blockers go entirely unused across all solutions
+ *  - G6 every route travels >= minMoves * LENGTH_FACTOR cells (not cramped/trivial)
  */
 export function checkGates(
   board: Board,
@@ -690,6 +699,15 @@ export function checkGates(
     .filter((p, i) => p.type === "blocker" && !used.has(i))
     .length;
   if (unused > 2) return { passed: false, failedGate: "G5" };
+
+  let minTravel = Infinity;
+  for (const moves of solutions) {
+    const d = totalDistance(board, [moves]);
+    minTravel = Math.min(minTravel, d.puck + d.blocker);
+  }
+  if (minTravel < result.minMoves * LENGTH_FACTOR) {
+    return { passed: false, failedGate: "G6" };
+  }
 
   return { passed: true };
 }

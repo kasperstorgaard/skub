@@ -2,3 +2,7 @@
 # One slug per line; blank lines and lines starting with # are ignored.
 # Add a puzzle here once its low worst-route score has been reviewed and accepted,
 # so it stops showing up as an outlier on every tuning run.
+
+# Heavy/degenerate BFS cases (single-solution, very slow) — ignored during tuning.
+mons
+aegir
