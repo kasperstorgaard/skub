@@ -1,5 +1,13 @@
 import { generate, type GenerateOptions } from "#/game/generator.ts";
-import { boardCanonicalHash, checkGates } from "#/game/scoring.ts";
+import {
+  boardCanonicalHash,
+  checkGates,
+  computeMetrics,
+  type Metrics,
+  scoreBoard,
+  type ScoredBoard,
+} from "#/game/scoring.ts";
+import { solveExhaustiveSync } from "#/game/solver.ts";
 import type { Board, Difficulty } from "#/game/types.ts";
 
 /** What the /api/generate route posts to the worker to start a gated run. */
@@ -14,7 +22,16 @@ export type GenerateRequest = GenerateOptions & {
 /** Streamed as SSE to the client, one per line. */
 export type GenerateEvent =
   | { type: "progress"; attempts: number; failedGate?: string }
-  | { type: "result"; board: Board; attempts: number }
+  | {
+    type: "result";
+    board: Board;
+    attempts: number;
+    minMoves: number;
+    /** Advisory composite for the winning board — surfaced, not gated on. */
+    scored: ScoredBoard;
+    /** Board-level metrics (over all solutions) for the score breakdown. */
+    metrics: Metrics;
+  }
   | { type: "exhausted"; attempts: number }
   | { type: "error"; message: string };
 
@@ -57,8 +74,18 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
       });
       if (gate.passed) {
         batchHashes.add(boardCanonicalHash(board));
+        // Score the winner once for the advisory panel (re-solves the passing
+        // board — cheap, happens only on success, not per attempt).
+        const result = solveExhaustiveSync(board, { maxDepth: 15 });
         self.postMessage(
-          { type: "result", board, attempts } satisfies GenerateEvent,
+          {
+            type: "result",
+            board,
+            attempts,
+            minMoves: result.minMoves,
+            scored: scoreBoard(board, result),
+            metrics: computeMetrics(board, result),
+          } satisfies GenerateEvent,
         );
         return;
       }

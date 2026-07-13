@@ -112,12 +112,33 @@ just-generated) board and make small local mutations — move a wall, add/remove
 blocker, nudge the destination — re-checking gates and score after each. A
 guided-search / hill-climb curation mode rather than reroll-until-lucky.
 
+Concretely, a **"Tweak" CTA** on a board that applies minor gated changes to the
+*current* board (keeping most of it) rather than regenerating wholesale — the
+lightweight, on-ramp version of the hill-climb idea.
+
+### Future ideas (unscheduled)
+
+- **Generation controls.** Surface the currently-hardcoded `GENERATE_OPTIONS`
+  (walls range, blockers range, wall spread) as UI controls in the panel, so the
+  curator can steer the candidate distribution before generating — not just the
+  difficulty band.
+- **"Intersection" / crossover.** Combine two boards semi-randomly into a new
+  candidate (e.g. one random corpus puzzle × one freshly generated board), then
+  run it through the gates. A genetic-crossover flavour of generation that could
+  inherit structure from good hand-built puzzles.
+- **Trim the editor CTAs.** The generator/editor panel has drifted toward a full
+  file-manager (download, import). For the curation flow, collapse to just
+  **Save** — drop Download/Import — so the panel reads as "generate → curate →
+  save," not "manage files."
+
 ## Status
 
 - Done: corpus scoring, gates G1–G6, calibration v1 report (all landed on this
   branch, un-tuned).
 - Done: G7 (wall utilization) + G8 (dead space) economy gates; gated generation
   loop in a worker with SSE progress + difficulty in `/api/generate`.
+- Done: editor UI — difficulty selector, live attempt count, and the advisory
+  candidate score in the right-side panel (hidden on first manual edit).
 - G7/G8 thresholds calibrated against the 196-puzzle corpus (`deno task
   gate-corpus`): G8 `deadSpace <= 0.8` fails ~1%; G7 `wallUtilization >= 0.2`
   fails ~44% of hand-built puzzles — kept as-is intentionally, since generated
