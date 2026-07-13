@@ -130,6 +130,10 @@ lightweight, on-ramp version of the hill-climb idea.
   file-manager (download, import). For the curation flow, collapse to just
   **Save** — drop Download/Import — so the panel reads as "generate → curate →
   save," not "manage files."
+- **Dead-space / dead-wall overlay on the board.** Visualise what G7/G8 measure
+  directly on the board — highlight the dead cells (no trail, no piece/goal) and
+  the dead walls (never stop a piece) — so the curator sees *why* a candidate
+  scores as it does and where to tweak, instead of reading it off a number.
 
 ## Status
 
