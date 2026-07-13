@@ -1,0 +1,113 @@
+# Puzzle scoring → gated generation + human curation
+
+## Problem
+
+We built a scoring composite (`game/scoring.ts`) to rank generated puzzles by
+quality. Building the corpus report exposed that most of the metrics
+(coverage, deception, isolation, variety, etc.) are **not simple, objective
+indicators of quality** — they're proxies for a judgement that's inherently
+subjective. The v1 calibration is squashed and inverted (see
+`scoring/reports/calibration-1.md`): erik (easy) outscores torstein (hard).
+Tuning the weights to fix one anchor pair tends to break another.
+
+So we're **changing the role of scoring**. Instead of trusting a composite
+number to accept/rank puzzles, we lean on:
+
+1. **Gates** — cheap, defensible, mostly binary acceptance criteria — to reject
+   the clearly-bad before a human ever sees it.
+2. **A human** — the generator page becomes a curation surface: generate a
+   gate-passing candidate, then hand-adjust.
+
+The composite score is **demoted from gatekeeper to advisory** — a signal we
+*show* the curator, not a filter that decides. But it is **not abandoned**: we
+keep surfacing it so it stays tunable. The original goal — *picking the best
+candidates, not merely gate-passing ones* — is still live; a well-tuned score is
+also how we discover which future gates are worth promoting.
+
+## Approach — phased
+
+### Phase 1 (this PR): gated generation loop + board-quality gates
+
+Make the generator page produce a candidate that **already passes all gates at
+the requested difficulty**, so the human starts from something plausible instead
+of pure random noise.
+
+- **Generation loop.** Server-side, in `/api/generate`: repeatedly
+  `generate()` → `checkGates()` until a board passes, or the budget is spent.
+  Today the endpoint does a single unverified `generate()`; it moves to a
+  gate-verified loop. `checkGates` needs `difficulty`, the existing-puzzle
+  `corpus` hash set, and per-request `batchHashes` — the endpoint must load /
+  accept these.
+
+- **Gates are hard on generation, overridable when handcrafting.** During the
+  generate loop, *every* gate is a hard reject — the loop never returns a
+  board that fails one. But gates do **not** block manual editing: once a human
+  is hand-adjusting a board in the editor, they can knowingly craft something
+  that fails a gate. Gates constrain the machine; the human can override.
+
+- **Difficulty control (new UI).** Add an easy/medium/hard selector to the
+  generator panel. The loop gates the result against that band (G2). This
+  widens the `/api/generate` request contract to carry `difficulty`.
+
+- **Progress: a simple count.** The gated loop can burn many attempts (each runs
+  the exhaustive solver, `maxDepth 15`), so don't block on a silent request —
+  surface a **simple, increasing generation-attempt count** to the UI while it
+  works, and keep a hard budget cap as a backstop so it can't run forever. No
+  per-gate near-miss breakdown; just the count. Mechanism TBD — pick the
+  lightest thing Fresh 2 supports cleanly (SSE / chunked / incremental).
+
+- **Board-quality gates (new, hard).** Current gates G1–G6 are almost all
+  *solution*-derived (solvable, minMoves band, dedup vs corpus, blockers matter,
+  travel length). Add **static-board** gates (G7+) that reject on the board
+  itself, before/independent of the full solve:
+  - **Wall utilization** — reject boards with too many walls that never stop any
+    piece in any solution (decorative clutter). (New signal; the memory notes
+    `wallUtilization` was diagnosed but not yet implemented.)
+  - **Dead space** — reject boards where too large a region is never entered by
+    any trail (wasted board). (New `deadSpace` signal.)
+  - Candidate further gates: destination placement (not trivially cornered),
+    blocker distribution. Exact signals + thresholds are TBD and tunable; land
+    the clear-cut ones first.
+
+  Thresholds are conservative — a gate should reject only the *clearly* bad and
+  leave good/varied boards well clear, matching the existing G6 philosophy.
+
+- **Surface the candidate's score (right-side panel).** Show the advisory
+  composite + per-metric breakdown for the *just-generated* candidate in the
+  generator's right side. It stays shown **until the first manual edit**, at
+  which point it's dismissed/stale (the displayed score belonged to the
+  generated board, and re-scoring on every hand-edit is Phase 3's job). This is
+  deliberately in Phase 1, not deferred: seeing the score on every generated
+  candidate is how we keep tuning the composite toward best-candidate selection
+  and learn which signals deserve to become gates.
+
+**Non-goals for Phase 1:** re-tuning the composite weights (the composite stays
+advisory), and any auto-relaxing of constraints — if the loop can't find a
+passing board within budget it stops and the human retries/loosens.
+
+### Phase 2 (next): re-tune the composite toward best-candidate selection
+
+Phase 1 already *shows* the generated candidate's score; Phase 2 acts on the
+feedback that surfacing produces — re-calibrate the composite (weights / bounds)
+against the ground-truth anchors so the number actually tracks quality, and
+promote whichever advisory signals prove reliable into hard gates. This is the
+path back to the original goal: *picking the best candidates, not just
+gate-passing ones.*
+
+### Phase 3 (future): micro-adjustment from a board
+
+Instead of always generating from scratch, start from an existing (or
+just-generated) board and make small local mutations — move a wall, add/remove a
+blocker, nudge the destination — re-checking gates and score after each. A
+guided-search / hill-climb curation mode rather than reroll-until-lucky.
+
+## Status
+
+- Done: corpus scoring, gates G1–G6, calibration v1 report (all landed on this
+  branch, un-tuned).
+- Scratch to clean up before merge: `_tmp_genrate.ts`, the `tmp` commit.
+
+## Ground-truth anchors
+
+Calibration anchors for judging any scoring changes: **torstein ≳ malene ≫
+erik > kim** (see the scoring-calibration-anchors memory).
