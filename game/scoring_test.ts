@@ -9,6 +9,7 @@ import {
   computeTrails,
   coverage,
   crossTrailOverlap,
+  deadSpace,
   deception,
   deduplicateSolutions,
   firstMovePrecision,
@@ -21,6 +22,7 @@ import {
   setupRatio,
   stopTypes,
   totalDistance,
+  wallUtilization,
 } from "./scoring.ts";
 import { enumerateSolutions, solveExhaustiveSync } from "./solver.ts";
 import type { Board } from "#/game/types.ts";
@@ -321,7 +323,29 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
     stopTypes: { edge: 1, wall: 4, piece: 2, blockerOnPuck: 0 },
     pointlessClearance: 0,
     sameDirectionRepeat: 0,
+    wallUtilization: 0.42857142857142855,
+    deadSpace: 0.4375,
   });
+});
+
+Deno.test("wallUtilization() is the fraction of walls that stop a piece", () => {
+  const solutions = deduplicateSolutions(
+    enumerateSolutions(solveExhaustiveSync(ingridBoard).dag),
+  );
+  // ingrid: 6 of its 14 interior walls are ever a stop cause.
+  assertEquals(wallUtilization(ingridBoard, solutions), 6 / 14);
+});
+
+Deno.test("wallUtilization() is vacuously 1 when the board has no walls", () => {
+  assertEquals(wallUtilization({ ...ingridBoard, walls: [] }, []), 1);
+});
+
+Deno.test("deadSpace() is the fraction of cells no trail, piece, or goal touches", () => {
+  const solutions = deduplicateSolutions(
+    enumerateSolutions(solveExhaustiveSync(ingridBoard).dag),
+  );
+  // ingrid: 36 of 64 cells carry structure or action ⇒ 28/64 dead.
+  assertEquals(deadSpace(ingridBoard, solutions), 0.4375);
 });
 
 const noCorpus = { corpus: new Set<string>(), batchHashes: new Set<string>() };

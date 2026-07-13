@@ -56,21 +56,32 @@ of pure random noise.
   per-gate near-miss breakdown; just the count. Mechanism TBD — pick the
   lightest thing Fresh 2 supports cleanly (SSE / chunked / incremental).
 
-- **Board-quality gates (new, hard).** Current gates G1–G6 are almost all
-  *solution*-derived (solvable, minMoves band, dedup vs corpus, blockers matter,
-  travel length). Add **static-board** gates (G7+) that reject on the board
-  itself, before/independent of the full solve:
-  - **Wall utilization** — reject boards with too many walls that never stop any
-    piece in any solution (decorative clutter). (New signal; the memory notes
-    `wallUtilization` was diagnosed but not yet implemented.)
-  - **Dead space** — reject boards where too large a region is never entered by
-    any trail (wasted board). (New `deadSpace` signal.)
+- **Board-economy gates (new, hard).** Existing gates G1–G6 target the *solution*
+  (solvable, minMoves band, dedup vs corpus, blockers matter, travel length).
+  Add gates (G7+) that target **board economy** — clutter and wasted space.
+  These are still *measured across the puzzle's solutions* (checkGates already
+  has them), not from the static layout alone — they're board-quality in what
+  they judge, not pre-solve:
+  - **Wall utilization (G7)** — reject boards where too few of the interior walls
+    ever stop a piece across the solutions (decorative clutter). (New
+    `wallUtilization` signal; the memory noted it as diagnosed-not-implemented.)
+  - **Dead space (G8)** — reject boards where too large a region is never entered
+    by any trail and holds no piece/destination (wasted board). (New `deadSpace`
+    signal.)
   - Candidate further gates: destination placement (not trivially cornered),
     blocker distribution. Exact signals + thresholds are TBD and tunable; land
     the clear-cut ones first.
 
   Thresholds are conservative — a gate should reject only the *clearly* bad and
   leave good/varied boards well clear, matching the existing G6 philosophy.
+  Calibrated against the corpus: if a large share of hand-built puzzles fail a
+  threshold, the threshold is wrong, not the puzzles.
+
+  *Future:* genuinely static, pre-solve board gates (e.g. wall clustering / a
+  slide-reachability flood-fill that needs no solutions) are desirable but not
+  yet designed — the clean formulation isn't obvious (wall clustering especially).
+  Deferred until we know how; the G7/G8 solution-derived economy gates stand in
+  for now.
 
 - **Surface the candidate's score (right-side panel).** Show the advisory
   composite + per-metric breakdown for the *just-generated* candidate in the
@@ -105,7 +116,15 @@ guided-search / hill-climb curation mode rather than reroll-until-lucky.
 
 - Done: corpus scoring, gates G1–G6, calibration v1 report (all landed on this
   branch, un-tuned).
-- Scratch to clean up before merge: `_tmp_genrate.ts`, the `tmp` commit.
+- Done: G7 (wall utilization) + G8 (dead space) economy gates; gated generation
+  loop in a worker with SSE progress + difficulty in `/api/generate`.
+- G7/G8 thresholds calibrated against the 196-puzzle corpus (`deno task
+  gate-corpus`): G8 `deadSpace <= 0.8` fails ~1%; G7 `wallUtilization >= 0.2`
+  fails ~44% of hand-built puzzles — kept as-is intentionally, since generated
+  candidates should be cleaner than the decorative-wall corpus average and manual
+  editing bypasses gates anyway. Revisit once scores are surfaced (Phase 2).
+- Scratch removed: `_tmp_genrate.ts`. The `tmp` commit is still in history —
+  squash before merge.
 
 ## Ground-truth anchors
 

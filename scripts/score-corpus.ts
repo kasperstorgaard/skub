@@ -11,8 +11,8 @@
  * Defaults to writing `scoring/reports/calibration-<version>.md`.
  */
 import { parsePuzzle } from "#/game/parser.ts";
-import { solveExhaustiveSync } from "#/game/solver.ts";
 import { CALIBRATION, type Metrics, scoreBoard } from "#/game/scoring.ts";
+import { solveExhaustiveSync } from "#/game/solver.ts";
 
 const PUZZLE_DIR = "static/puzzles";
 const flag = (name: string) =>

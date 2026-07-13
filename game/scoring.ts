@@ -19,6 +19,7 @@ import type {
   Direction,
   Move,
   Position,
+  Wall,
 } from "#/game/types.ts";
 
 /**
@@ -572,6 +573,63 @@ export function sameDirectionRepeat(board: Board, solutions: Move[][]): number {
   }));
 }
 
+/** Wall key `x,y,orientation`, for stop-cause set membership. */
+const wallKey = (w: Wall): string => `${w.x},${w.y},${w.orientation}`;
+
+/** The wall responsible for a wall-caused stop at `to` moving `direction`. */
+function stoppingWallKey(to: Position, direction: Direction): string {
+  if (direction === "right") return `${to.x + 1},${to.y},vertical`;
+  if (direction === "left") return `${to.x},${to.y},vertical`;
+  if (direction === "down") return `${to.x},${to.y + 1},horizontal`;
+  return `${to.x},${to.y},horizontal`;
+}
+
+/**
+ * Wall utilization — fraction of the board's interior walls that stop at least
+ * one slide across the union of all distinct solutions. Walls that never stop a
+ * piece are decorative clutter. Vacuously 1 when the board has no walls.
+ *
+ * Caveat: a wall can shape a puzzle by preventing a shortcut without ever being
+ * the *stopping* cause of an optimal move; such walls read as unused here. The
+ * G7 threshold is deliberately loose to tolerate this.
+ */
+export function wallUtilization(board: Board, solutions: Move[][]): number {
+  if (board.walls.length === 0) return 1;
+  const used = new Set<string>();
+  for (const moves of solutions) {
+    const analysis = analyzeMoves(board, moves);
+    moves.forEach(([from, to], i) => {
+      if (analysis[i].cause !== "wall") return;
+      used.add(stoppingWallKey(to, moveDirection(from, to)));
+    });
+  }
+  const boardKeys = new Set(board.walls.map(wallKey));
+  let hit = 0;
+  for (const k of used) if (boardKeys.has(k)) hit++;
+  return hit / board.walls.length;
+}
+
+/** Cells carrying structure or action: trails + initial pieces + destination. */
+function visitedCells(board: Board, solutions: Move[][]): Set<number> {
+  const visited = new Set<number>();
+  visited.add(posOf(board.destination));
+  for (const p of board.pieces) visited.add(posOf(p));
+  for (const trail of computeTrails(board, solutions)) {
+    for (const c of trail) visited.add(c.pos);
+  }
+  return visited;
+}
+
+/**
+ * Dead space — fraction of the board's cells that no trail ever enters and that
+ * hold no piece or the destination. High dead space means the puzzle huddles in
+ * one region and wastes the board (cf. the `kim` anchor).
+ */
+export function deadSpace(board: Board, solutions: Move[][]): number {
+  const cells = COLS * ROWS;
+  return (cells - visitedCells(board, solutions).size) / cells;
+}
+
 /** All puzzle metrics for a board, aggregated over its distinct solutions. */
 export type Metrics = {
   setupRatio: number;
@@ -587,6 +645,8 @@ export type Metrics = {
   stopTypes: StopTypes;
   pointlessClearance: number;
   sameDirectionRepeat: number;
+  wallUtilization: number;
+  deadSpace: number;
 };
 
 /**
@@ -614,12 +674,14 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
     stopTypes: stopTypes(board, solutions),
     pointlessClearance: pointlessClearance(board, solutions),
     sameDirectionRepeat: sameDirectionRepeat(board, solutions),
+    wallUtilization: wallUtilization(board, solutions),
+    deadSpace: deadSpace(board, solutions),
   };
 }
 
 export type GateResult = {
   passed: boolean;
-  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5" | "G6";
+  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7" | "G8";
 };
 
 /** Inclusive minMoves band per difficulty. `ultra` is excluded from generation. */
@@ -636,6 +698,22 @@ const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
  * may be legitimately shorter). Tunable.
  */
 const LENGTH_FACTOR = 2;
+
+/**
+ * G7 economy gate: at least this fraction of interior walls must stop a piece in
+ * some solution. Deliberately loose — walls can legitimately shape reachability
+ * without being an optimal-move stop cause (see `wallUtilization`). Tunable.
+ */
+const MIN_WALL_UTILIZATION = 0.2;
+
+/**
+ * G8 economy gate: at most this fraction of the board may be dead — cells no
+ * trail enters that hold no piece or destination. Equivalently a 20% *live*
+ * floor (mirrors G7's 0.2). Very conservative: the hand-built corpus runs
+ * 0.44–0.81 dead, so this rejects only boards that touch under a fifth of the
+ * grid. A placeholder until scores are surfaced in the generator for tuning.
+ */
+const MAX_DEAD_SPACE = 0.8;
 
 /** Whether a blocker (by initial-piece id) is used in a solution — moves or stops. */
 function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
@@ -658,6 +736,14 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
  *  - G5 at most two blockers go entirely unused across all solutions
  *  - G6 every route travels >= minMoves * LENGTH_FACTOR cells (not cramped/trivial)
+ *  - G7 >= MIN_WALL_UTILIZATION of walls stop a piece (no decorative clutter)
+ *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
+ *
+ * G7–G8 gate on board *economy* — clutter and wasted space — but, like G1–G6,
+ * are measured across the puzzle's solutions (which cells trails enter, which
+ * walls actually stop a piece), not from the static layout alone. All gates are
+ * hard rejects during generation, but do not constrain manual editing — a human
+ * curator may knowingly hand-craft a board that fails a gate.
  */
 export function checkGates(
   board: Board,
@@ -707,6 +793,14 @@ export function checkGates(
   }
   if (minTravel < result.minMoves * LENGTH_FACTOR) {
     return { passed: false, failedGate: "G6" };
+  }
+
+  if (wallUtilization(board, solutions) < MIN_WALL_UTILIZATION) {
+    return { passed: false, failedGate: "G7" };
+  }
+
+  if (deadSpace(board, solutions) > MAX_DEAD_SPACE) {
+    return { passed: false, failedGate: "G8" };
   }
 
   return { passed: true };
@@ -832,6 +926,8 @@ function routeMetrics(
     stopTypes: stopTypes(board, one),
     pointlessClearance: pointlessClearance(board, one),
     sameDirectionRepeat: sameDirectionRepeat(board, one),
+    wallUtilization: wallUtilization(board, one),
+    deadSpace: deadSpace(board, one),
     ...shared,
   };
 }

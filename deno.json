@@ -7,6 +7,7 @@
     "build": "vite build",
     "dev": "vite",
     "e2e": "deno test -A --no-check --env e2e/ routes/",
+    "gate-corpus": "deno run -A ./scripts/gate-corpus.ts",
     "preview": "deno serve -A _fresh/server.js",
     "score-corpus": "deno run -A ./scripts/score-corpus.ts",
     "screenshots": "deno run -A ./scripts/screenshots.ts",

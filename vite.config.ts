@@ -4,11 +4,12 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 import { puzzleManifest } from "./plugins/puzzle-manifest.ts";
-import { solverWorker } from "./plugins/solver-worker.ts";
+import { workerBundle } from "./plugins/worker-bundle.ts";
 
 export default defineConfig({
   plugins: [
-    solverWorker(),
+    workerBundle("solver-worker"),
+    workerBundle("generate-worker"),
     puzzleManifest(),
     tailwindcss(),
     fresh(),
