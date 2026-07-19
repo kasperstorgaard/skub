@@ -210,7 +210,7 @@ export default function Board(
             href={getActiveHref(piece, { ...state, href: href.value })}
             id={getPieceId(piece, idx)}
             isActive={state.active && isPositionSame(piece, state.active)}
-            isReadonly={mode.value === "replay" || mode.value === "editor"}
+            isReadonly={mode.value !== "solve"}
             isReplay={mode.value === "replay"}
             wiggle={mode.value === "solve" && wiggle[piece.type]}
             onFocus={(event) => {

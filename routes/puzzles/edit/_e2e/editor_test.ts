@@ -24,7 +24,7 @@ class EditorPage {
   }
 
   async goto() {
-    await this.page.goto(`${BASE_URL}/puzzles/new`);
+    await this.page.goto(`${BASE_URL}/puzzles/edit`);
     return this;
   }
 }

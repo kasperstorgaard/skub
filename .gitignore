@@ -22,3 +22,4 @@ test-results/
 # Generated manifest file for puzzles
 static/puzzles/manifest.json
 static/solver-worker.js
+static/generate-worker.js

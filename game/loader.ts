@@ -1,5 +1,6 @@
 import { getDayOfYear } from "#/game/date.ts";
 import { parsePuzzle } from "#/game/parser.ts";
+import { boardCanonicalHash } from "#/game/scoring.ts";
 import {
   Difficulty,
   PaginatedData,
@@ -30,6 +31,28 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
   manifestCache = JSON.parse(text);
 
   return manifestCache!;
+}
+
+let corpusHashCache: Set<string> | null = null;
+
+/**
+ * Canonical hashes of every puzzle board in the corpus, for the generator's G3
+ * novelty gate. Reads and parses each markdown once (the manifest is a
+ * lightweight index without boards), then caches — the corpus is static between
+ * requests.
+ */
+export async function getCorpusHashes(): Promise<Set<string>> {
+  if (corpusHashCache) return corpusHashCache;
+
+  const manifest = await getPuzzleManifest();
+  const hashes = new Set<string>();
+  for (const entry of manifest) {
+    const puzzle = await getPuzzle(entry.slug);
+    if (puzzle) hashes.add(boardCanonicalHash(puzzle.board));
+  }
+
+  corpusHashCache = hashes;
+  return hashes;
 }
 
 /**

@@ -53,12 +53,14 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
           <h1 className="text-6 text-brand leading-tight">
-            {props.data.puzzle.number && (
-              <span className="font-4 tracking-wide">
-                #{props.data.puzzle.number}
-                {" "}
-              </span>
-            )}
+            {props.data.puzzle.number
+              ? (
+                <span className="font-4 tracking-wide">
+                  #{props.data.puzzle.number}
+                  {" "}
+                </span>
+              )
+              : null}
             <span className="font-5">{props.data.puzzle.name}</span>
           </h1>
 

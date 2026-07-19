@@ -23,7 +23,7 @@ export const handler = define.handlers({
 
     try {
       const puzzle = parsePuzzle(markdown);
-      const redirect = ctx.req.headers.get("Referer") ?? "/puzzles/new";
+      const redirect = ctx.req.headers.get("Referer") ?? "/puzzles/edit";
 
       await setUserPuzzleDraft(ctx.state.userId, puzzle);
 

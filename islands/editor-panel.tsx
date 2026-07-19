@@ -1,4 +1,4 @@
-import type { Signal } from "@preact/signals";
+import { type Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useCallback, useMemo } from "preact/hooks";
 
@@ -18,7 +18,7 @@ import {
 import { Panel } from "#/components/panel.tsx";
 import { flipBoard, resolveMoves, rotateBoard } from "#/game/board.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
-import { Puzzle } from "#/game/types.ts";
+import type { Puzzle } from "#/game/types.ts";
 import { decodeState, encodeState } from "#/game/url.ts";
 import { useRouter } from "#/islands/router.tsx";
 
@@ -28,16 +28,11 @@ type EditorPanelProps = {
   isDev: boolean;
 };
 
-const GENERATE_OPTIONS = {
-  wallsRange: [5, 15],
-  blockersRange: [3, 5],
-  wallSpread: "balanced",
-};
-
 /**
  * Side panel for the puzzle editor.
- * Provides board transform actions (rotate, flip), puzzle generation,
- * and a save button (dev only) that writes directly to static puzzles.
+ * Provides board transform actions (rotate, flip), a clear action, and — in
+ * dev — a save button that writes directly to static puzzles. Generation lives
+ * on the separate generator route (`/puzzles/new`).
  */
 export function EditorPanel(
   { puzzle, href, isDev }: EditorPanelProps,
@@ -86,24 +81,6 @@ export function EditorPanel(
       updateLocation(url.href);
     }
   }, [href.value, puzzle.value.slug, formatted]);
-
-  const onGenerate = useCallback(async () => {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(GENERATE_OPTIONS),
-    });
-
-    if (!res.ok) throw new Error("Generation failed");
-
-    const { board: newBoard } = await res.json();
-
-    puzzle.value = {
-      ...puzzle.value,
-      board: newBoard,
-      minMoves: 0,
-    };
-  }, [puzzle]);
 
   const onClear = useCallback(() => {
     puzzle.value = {
@@ -178,63 +155,63 @@ export function EditorPanel(
           <button
             type="button"
             className="btn"
-            onClick={onGenerate}
-          >
-            <Icon icon={Shuffle} />
-            Generate
-          </button>
-
-          <button
-            type="button"
-            className="btn"
             onClick={onClear}
           >
             <Icon icon={Trash} />
             Clear
           </button>
+
+          <a href="/puzzles/new" className="btn">
+            <Icon icon={Shuffle} />
+            Generate
+          </a>
         </div>
 
         <div className="flex flex-col flex-wrap gap-fl-1">
-          {isDev && (
-            <button
-              type="button"
-              className="btn"
-              onClick={onSave}
-            >
-              <Icon icon={FloppyDisk} />Save
-            </button>
-          )}
-
-          <a
-            href="/api/export"
-            download
-            className="btn"
-          >
-            <Icon icon={DownloadSimple} />Download
-          </a>
-
-          <form
-            action="/api/import"
-            method="post"
-            enctype="multipart/form-data"
-            className="flex flex-row gap-1"
-          >
-            <label className="btn cursor-pointer flex-1">
-              <Icon icon={ArrowSquareIn} />Import
-              <input
-                type="file"
-                name="file"
-                accept=".md"
-                className="sr-only"
-                onChange={(e) => e.currentTarget.form?.submit()}
-              />
-            </label>
-            <noscript>
-              <button className="icon-btn" type="submit" data-size="sm">
-                <Icon icon={ArrowRight} />
+          {isDev
+            ? (
+              <button
+                type="button"
+                className="btn"
+                onClick={onSave}
+              >
+                <Icon icon={FloppyDisk} />Save
               </button>
-            </noscript>
-          </form>
+            )
+            : (
+              <>
+                <a
+                  href="/api/export"
+                  download
+                  className="btn"
+                >
+                  <Icon icon={DownloadSimple} />Download
+                </a>
+
+                <form
+                  action="/api/import"
+                  method="post"
+                  enctype="multipart/form-data"
+                  className="flex flex-row gap-1"
+                >
+                  <label className="btn cursor-pointer flex-1">
+                    <Icon icon={ArrowSquareIn} />Import
+                    <input
+                      type="file"
+                      name="file"
+                      accept=".md"
+                      className="sr-only"
+                      onChange={(e) => e.currentTarget.form?.submit()}
+                    />
+                  </label>
+                  <noscript>
+                    <button className="icon-btn" type="submit" data-size="sm">
+                      <Icon icon={ArrowRight} />
+                    </button>
+                  </noscript>
+                </form>
+              </>
+            )}
 
           <a
             href="/puzzles/preview"
