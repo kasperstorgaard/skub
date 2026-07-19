@@ -3,7 +3,8 @@ name: Lene
 slug: lene
 createdAt: 2026-07-19T10:25:40.192Z
 difficulty: medium
-minMoves: 0
+minMoves: 9
+number: 204
 ---
 
 ```
