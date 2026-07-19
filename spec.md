@@ -134,6 +134,14 @@ lightweight, on-ramp version of the hill-climb idea.
   directly on the board — highlight the dead cells (no trail, no piece/goal) and
   the dead walls (never stop a piece) — so the curator sees *why* a candidate
   scores as it does and where to tweak, instead of reading it off a number.
+- **Generation feedback capture (label the ground truth).** Now that generation
+  is its own route, add lightweight feedback CTAs next to a generated candidate
+  that persist the board **plus a quick qualitative label** to markdown — e.g.
+  "too easy", "too ugly", "clumped together" (labels TBD). This builds a labeled
+  corpus of *why* a gate-passing candidate is still bad, which is exactly the
+  human signal Phase 2 needs to re-calibrate the composite from advisory toward
+  predictive (and to discover which labels deserve to become gates). Cheaper than
+  full curation: one tap files a rejection with a reason, no editing required.
 
 ## Status
 
@@ -141,8 +149,33 @@ lightweight, on-ramp version of the hill-climb idea.
   branch, un-tuned).
 - Done: G7 (wall utilization) + G8 (dead space) economy gates; gated generation
   loop in a worker with SSE progress + difficulty in `/api/generate`.
-- Done: editor UI — difficulty selector, live attempt count, and the advisory
-  candidate score in the right-side panel (hidden on first manual edit).
+- Done: generator/editor split into two routes for a clean separation of
+  responsibility — `/puzzles/new` is the **generator** (read-only board,
+  difficulty selector, live attempt count, Generate → Regenerate, and the
+  advisory candidate score in a single-column readout), `/puzzles/edit` is the
+  **editor** (direct manipulation, transforms, autosave, Save/Preview). The
+  generator has no editing islands mounted at all — so "editing stays active in
+  generation mode" is structurally impossible rather than conditionally
+  disabled. Handoff: **Edit** / **Preview** store the candidate as the user
+  draft (`/api/store`, overwriting freely — the prior draft isn't precious) and
+  navigate to `/puzzles/edit` / `/puzzles/preview`. `clone` and `import`
+  redirects now land on `/puzzles/edit`.
+- Done: candidate score readout in the generator — a headline (Score / Weakest
+  route / Solutions) plus a collapsible **Details** disclosure with every
+  remaining metric, each row tooltip-documented from its `scoring.ts` definition.
+- Done: `game/scoring.ts` metrics **regrouped by the data each acts on**, with a
+  uniform signature per group so the set is easy to extend:
+  - *single-solution* `(board, moves) => number` — reduced across the distinct
+    solutions inside `computeMetrics` (max, or min for the two penalties), rather
+    than each metric reducing internally;
+  - *multiple-solution* `(board, solutions) => number` — `uniqueSolutions`,
+    `wallUtilization`, `deadSpace`;
+  - *search-space* `(result) => number` — `firstMovePrecision`, `searchProfile`.
+  `totalDistance` and `stopTypes` flattened to plain numbers (the only consumer
+  ever used their weighted/summed scalar); behaviour-preserving (scoring_test
+  unchanged in expectations bar the flattened shapes).
+- Difficulty bands (G2) retuned to a clean partition: easy 5–6, medium 7–9,
+  hard 10–13.
 - G7/G8 thresholds calibrated against the 196-puzzle corpus (`deno task
   gate-corpus`): G8 `deadSpace <= 0.8` fails ~1%; G7 `wallUtilization >= 0.2`
   fails ~44% of hand-built puzzles — kept as-is intentionally, since generated

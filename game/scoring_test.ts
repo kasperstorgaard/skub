@@ -20,11 +20,15 @@ import {
   scoreBoard,
   searchProfile,
   setupRatio,
-  stopTypes,
+  stopWeighted,
   totalDistance,
   wallUtilization,
 } from "./scoring.ts";
-import { enumerateSolutions, solveExhaustiveSync } from "./solver.ts";
+import {
+  enumerateSolutions,
+  solveExhaustiveSync,
+  type SolverResult,
+} from "./solver.ts";
 import type { Board } from "#/game/types.ts";
 
 // Real puzzle fixture (static/puzzles/ingrid.md, 7 moves; 26 raw optimal sequences).
@@ -161,7 +165,7 @@ Deno.test("setupRatio() is zero when only the puck moves", () => {
     walls: [],
   };
 
-  assertEquals(setupRatio(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), 0);
+  assertEquals(setupRatio(board, [[{ x: 0, y: 0 }, { x: 7, y: 0 }]]), 0);
 });
 
 Deno.test("coverage() counts the puck's swept cells over 64", () => {
@@ -172,20 +176,17 @@ Deno.test("coverage() counts the puck's swept cells over 64", () => {
   };
 
   // Puck sweeps A1..H1 = 8 cells.
-  assertEquals(coverage(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), 8 / 64);
+  assertEquals(coverage(board, [[{ x: 0, y: 0 }, { x: 7, y: 0 }]]), 8 / 64);
 });
 
-Deno.test("totalDistance() sums slide length split by role", () => {
+Deno.test("totalDistance() sums a solution's total slide length", () => {
   const board: Board = {
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
   };
 
-  assertEquals(totalDistance(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), {
-    puck: 7,
-    blocker: 0,
-  });
+  assertEquals(totalDistance(board, [[{ x: 0, y: 0 }, { x: 7, y: 0 }]]), 7);
 });
 
 Deno.test("deception() sums how far the puck slides away from the destination", () => {
@@ -196,7 +197,7 @@ Deno.test("deception() sums how far the puck slides away from the destination", 
   };
 
   // Puck slides from x=3 to x=7, away from dest x=0: 7-3 = 4.
-  assertEquals(deception(board, [[[{ x: 3, y: 0 }, { x: 7, y: 0 }]]]), 4);
+  assertEquals(deception(board, [[{ x: 3, y: 0 }, { x: 7, y: 0 }]]), 4);
 });
 
 Deno.test("reversals() counts a piece moving in opposite directions", () => {
@@ -207,10 +208,10 @@ Deno.test("reversals() counts a piece moving in opposite directions", () => {
   };
 
   assertEquals(
-    reversals(board, [[
+    reversals(board, [
       [{ x: 0, y: 0 }, { x: 7, y: 0 }],
       [{ x: 7, y: 0 }, { x: 0, y: 0 }],
-    ]]),
+    ]),
     1,
   );
 });
@@ -227,35 +228,37 @@ Deno.test("crossTrailOverlap() counts cells two pieces both sweep", () => {
 
   // Blocker sweeps column 3, puck sweeps row 3 — they cross at (3,3).
   assertEquals(
-    crossTrailOverlap(board, [[
+    crossTrailOverlap(board, [
       [{ x: 3, y: 0 }, { x: 3, y: 7 }],
       [{ x: 0, y: 3 }, { x: 7, y: 3 }],
-    ]]),
+    ]),
     1,
   );
 });
 
 Deno.test("searchProfile() is the last-third share of explored states", () => {
-  assertEquals(searchProfile([1, 2, 1]), 1 / 4);
+  const result: SolverResult = {
+    minMoves: 0,
+    statesPerDepth: [1, 2, 1],
+    dag: { root: 0, goals: [], predecessors: new Map() },
+  };
+  assertEquals(searchProfile(result), 1 / 4);
 });
 
-Deno.test("firstMovePrecision() is the reciprocal of distinct openings", () => {
-  assertEquals(firstMovePrecision(4), 1 / 4);
+Deno.test("firstMovePrecision() is the reciprocal of distinct optimal openings", () => {
+  // ingrid has 6 distinct optimal first moves.
+  assertEquals(firstMovePrecision(solveExhaustiveSync(ingridBoard)), 1 / 6);
 });
 
-Deno.test("stopTypes() classifies a slide into the wall as an edge stop", () => {
+Deno.test("stopWeighted() scores a slide into the edge as weight 1", () => {
   const board: Board = {
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
   };
 
-  assertEquals(stopTypes(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), {
-    edge: 1,
-    wall: 0,
-    piece: 0,
-    blockerOnPuck: 0,
-  });
+  // One edge stop: piece×3 + wall×2 + edge = 1.
+  assertEquals(stopWeighted(board, [[{ x: 0, y: 0 }, { x: 7, y: 0 }]]), 1);
 });
 
 Deno.test("pieceUsage() is zero when no blocker is used", () => {
@@ -265,7 +268,7 @@ Deno.test("pieceUsage() is zero when no blocker is used", () => {
     walls: [],
   };
 
-  assertEquals(pieceUsage(board, [[[{ x: 0, y: 0 }, { x: 7, y: 0 }]]]), 0);
+  assertEquals(pieceUsage(board, [[{ x: 0, y: 0 }, { x: 7, y: 0 }]]), 0);
 });
 
 Deno.test("pointlessClearance() counts a blocker that never interacts again", () => {
@@ -280,10 +283,10 @@ Deno.test("pointlessClearance() counts a blocker that never interacts again", ()
 
   // Blocker slides away and is never touched again; puck finishes on its own.
   assertEquals(
-    pointlessClearance(board, [[
+    pointlessClearance(board, [
       [{ x: 3, y: 3 }, { x: 3, y: 7 }],
       [{ x: 0, y: 0 }, { x: 7, y: 0 }],
-    ]]),
+    ]),
     1,
   );
 });
@@ -297,11 +300,11 @@ Deno.test("sameDirectionRepeat() counts cells re-crossed in the same direction",
 
   // Right, back left, right again — the 8 row-0 cells are crossed rightward twice.
   assertEquals(
-    sameDirectionRepeat(board, [[
+    sameDirectionRepeat(board, [
       [{ x: 0, y: 0 }, { x: 7, y: 0 }],
       [{ x: 7, y: 0 }, { x: 0, y: 0 }],
       [{ x: 0, y: 0 }, { x: 7, y: 0 }],
-    ]]),
+    ]),
     8,
   );
 });
@@ -311,20 +314,20 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
 
   assertEquals(metrics, {
     setupRatio: 0.42857142857142855,
-    pieceUsage: 5.169925001442312,
+    coverage: 0.265625,
     deception: 6,
     reversals: 1,
     crossTrailOverlap: 9,
-    totalDistance: { puck: 16, blocker: 10 },
-    uniqueSolutions: 4,
-    firstMovePrecision: 0.16666666666666666,
-    searchProfile: 0.8934068908865179,
-    coverage: 0.265625,
-    stopTypes: { edge: 1, wall: 4, piece: 2, blockerOnPuck: 0 },
+    totalDistance: 26,
+    pieceUsage: 5.169925001442312,
+    stopWeighted: 15,
     pointlessClearance: 0,
     sameDirectionRepeat: 0,
+    uniqueSolutions: 4,
     wallUtilization: 0.42857142857142855,
     deadSpace: 0.4375,
+    firstMovePrecision: 0.16666666666666666,
+    searchProfile: 0.8934068908865179,
   });
 });
 

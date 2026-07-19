@@ -14,7 +14,7 @@ export const handler = define.handlers({
     await setUserPuzzleDraft(ctx.state.userId, puzzle);
 
     return new Response("", {
-      headers: { Location: "/puzzles/new" },
+      headers: { Location: "/puzzles/edit" },
       status: 303,
     });
   },

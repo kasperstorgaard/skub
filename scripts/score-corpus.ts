@@ -42,13 +42,12 @@ function scalarMetrics(m: Metrics): Record<string, number> {
     deception: m.deception,
     reversals: m.reversals,
     crossTrailOverlap: m.crossTrailOverlap,
-    totalDistance: m.totalDistance.puck + m.totalDistance.blocker,
+    totalDistance: m.totalDistance,
     coverage: m.coverage,
     firstMovePrecision: m.firstMovePrecision,
     searchProfile: m.searchProfile,
     uniqueSolutions: m.uniqueSolutions,
-    stopWeighted: m.stopTypes.piece * 3 + m.stopTypes.wall * 2 +
-      m.stopTypes.edge,
+    stopWeighted: m.stopWeighted,
     pointlessClearance: m.pointlessClearance,
     sameDirectionRepeat: m.sameDirectionRepeat,
   };

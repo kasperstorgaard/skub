@@ -231,35 +231,29 @@ function moveRoles(board: Board, moves: Move[]): ("puck" | "blocker")[] {
   );
 }
 
+// ── Single-solution metrics ──────────────────────────────────────────────
+// Each measures one solution `(board, moves) => number`; computeMetrics reduces
+// across the distinct solutions (max, or min for the two penalties).
+
 /**
- * Setup ratio — fraction of moves that reposition a blocker rather than the puck,
- * maxed across the distinct solutions (more setup ⇒ harder).
+ * Setup ratio — fraction of a solution's moves that reposition a blocker rather
+ * than the puck (more setup ⇒ harder).
  */
-export function setupRatio(board: Board, solutions: Move[][]): number {
-  return Math.max(
-    0,
-    ...solutions.map((moves) =>
-      moves.length === 0
-        ? 0
-        : moveRoles(board, moves).filter((r) => r === "blocker").length /
-          moves.length
-    ),
-  );
+export function setupRatio(board: Board, moves: Move[]): number {
+  if (moves.length === 0) return 0;
+  return moveRoles(board, moves).filter((r) => r === "blocker").length /
+    moves.length;
 }
 
 /**
- * Coverage — distinct cells the puck sweeps, as a fraction of the 64-cell board,
- * maxed across the distinct solutions.
+ * Coverage — distinct cells the puck sweeps in a solution, as a fraction of the
+ * 64-cell board.
  */
-export function coverage(board: Board, solutions: Move[][]): number {
-  return Math.max(
-    0,
-    ...computeTrails(board, solutions).map((trail) =>
-      new Set(
-        trail.filter((c) => c.pieceRole === "puck").map((c) => c.pos),
-      ).size / (COLS * ROWS)
-    ),
-  );
+export function coverage(board: Board, moves: Move[]): number {
+  const trail = computeTrails(board, [moves])[0];
+  return new Set(
+    trail.filter((c) => c.pieceRole === "puck").map((c) => c.pos),
+  ).size / (COLS * ROWS);
 }
 
 const posOf = (p: Position): number => p.y * COLS + p.x;
@@ -282,119 +276,74 @@ function movePieceIds(board: Board, moves: Move[]): number[] {
 }
 
 /**
- * Total slide distance per role, from the solution with the greatest combined
- * travel. Manhattan distance summed over moves, split into puck vs blocker.
+ * Total slide distance in a solution — Manhattan distance summed over every move
+ * (puck and blocker alike).
  */
-export function totalDistance(
-  board: Board,
-  solutions: Move[][],
-): { puck: number; blocker: number } {
-  let best = { puck: 0, blocker: 0 };
-  for (const moves of solutions) {
-    const roles = moveRoles(board, moves);
-    const d = { puck: 0, blocker: 0 };
-    moves.forEach(([from, to], i) => {
-      const dist = Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
-      if (roles[i] === "puck") d.puck += dist;
-      else d.blocker += dist;
-    });
-    if (d.puck + d.blocker > best.puck + best.blocker) best = d;
+export function totalDistance(_board: Board, moves: Move[]): number {
+  let total = 0;
+  for (const [from, to] of moves) {
+    total += Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
   }
-  return best;
+  return total;
 }
 
 /**
- * Deception — how far the puck slides *away* from the destination, summed over a
- * solution's puck moves (per-axis, net non-negative). Pure geometry; maxed across
- * the distinct solutions. This is what actually misleads a human solver.
+ * Deception — how far the puck slides *away* from the destination in a solution,
+ * summed over its puck moves (per-axis, net non-negative). This is what actually
+ * misleads a human solver.
  */
-export function deception(board: Board, solutions: Move[][]): number {
+export function deception(board: Board, moves: Move[]): number {
   const d = board.destination;
-  return Math.max(
-    0,
-    ...solutions.map((moves) => {
-      const roles = moveRoles(board, moves);
-      let sum = 0;
-      moves.forEach(([from, to], i) => {
-        if (roles[i] !== "puck") return;
-        const onX = from.y === to.y;
-        const before = onX ? Math.abs(from.x - d.x) : Math.abs(from.y - d.y);
-        const after = onX ? Math.abs(to.x - d.x) : Math.abs(to.y - d.y);
-        sum += Math.max(0, after - before);
-      });
-      return sum;
-    }),
-  );
+  const roles = moveRoles(board, moves);
+  let sum = 0;
+  for (let i = 0; i < moves.length; i++) {
+    if (roles[i] !== "puck") continue;
+    const [from, to] = moves[i];
+    const onX = from.y === to.y;
+    const before = onX ? Math.abs(from.x - d.x) : Math.abs(from.y - d.y);
+    const after = onX ? Math.abs(to.x - d.x) : Math.abs(to.y - d.y);
+    sum += Math.max(0, after - before);
+  }
+  return sum;
 }
 
 /**
- * Reversals — consecutive moves of the *same* piece in opposite directions
- * (other pieces may move in between). Maxed across the distinct solutions.
+ * Reversals — consecutive moves of the *same* piece in opposite directions within
+ * a solution (other pieces may move in between).
  */
-export function reversals(board: Board, solutions: Move[][]): number {
-  return Math.max(
-    0,
-    ...solutions.map((moves) => {
-      const ids = movePieceIds(board, moves);
-      const dirs = new Map<number, Direction[]>();
-      moves.forEach(([from, to], i) => {
-        const list = dirs.get(ids[i]) ?? [];
-        list.push(moveDirection(from, to));
-        dirs.set(ids[i], list);
-      });
-      let count = 0;
-      for (const list of dirs.values()) {
-        for (let k = 1; k < list.length; k++) {
-          if (OPPOSITE[list[k - 1]] === list[k]) count++;
-        }
-      }
-      return count;
-    }),
-  );
+export function reversals(board: Board, moves: Move[]): number {
+  const ids = movePieceIds(board, moves);
+  const dirs = new Map<number, Direction[]>();
+  for (let i = 0; i < moves.length; i++) {
+    const [from, to] = moves[i];
+    const list = dirs.get(ids[i]) ?? [];
+    list.push(moveDirection(from, to));
+    dirs.set(ids[i], list);
+  }
+  let count = 0;
+  for (const list of dirs.values()) {
+    for (let k = 1; k < list.length; k++) {
+      if (OPPOSITE[list[k - 1]] === list[k]) count++;
+    }
+  }
+  return count;
 }
 
 /**
- * Cross-trail overlap — cells swept by two or more *different* pieces (a piece
- * crossing another's path). Self-overlap is excluded. Maxed across solutions.
+ * Cross-trail overlap — cells in a solution swept by two or more *different*
+ * pieces (a piece crossing another's path). Self-overlap is excluded.
  */
-export function crossTrailOverlap(board: Board, solutions: Move[][]): number {
-  return Math.max(
-    0,
-    ...solutions.map((moves) => {
-      const ids = movePieceIds(board, moves);
-      const cellPieces = new Map<number, Set<number>>();
-      for (const cell of computeTrails(board, [moves])[0]) {
-        const set = cellPieces.get(cell.pos) ?? new Set();
-        set.add(ids[cell.moveIndex]);
-        cellPieces.set(cell.pos, set);
-      }
-      let count = 0;
-      for (const set of cellPieces.values()) if (set.size >= 2) count++;
-      return count;
-    }),
-  );
-}
-
-/**
- * Search profile — the fraction of BFS states first reached in the last third of
- * the depth range (from `statesPerDepth`). Higher means the difficulty is
- * back-loaded — most of the tree fans out near the solution depth.
- */
-export function searchProfile(statesPerDepth: number[]): number {
-  const total = statesPerDepth.reduce((a, b) => a + b, 0);
-  if (total === 0) return 0;
-  const start = Math.ceil((statesPerDepth.length * 2) / 3);
-  const lastThird = statesPerDepth.slice(start).reduce((a, b) => a + b, 0);
-  return lastThird / total;
-}
-
-/**
- * First-move precision — `1 / (distinct optimal first moves)`. 1 when the opening
- * is forced; smaller when many first moves stay on an optimal path. Feed the count
- * from `optimalFirstMoves(dag)`.
- */
-export function firstMovePrecision(distinctFirstMoves: number): number {
-  return distinctFirstMoves === 0 ? 0 : 1 / distinctFirstMoves;
+export function crossTrailOverlap(board: Board, moves: Move[]): number {
+  const ids = movePieceIds(board, moves);
+  const cellPieces = new Map<number, Set<number>>();
+  for (const cell of computeTrails(board, [moves])[0]) {
+    const set = cellPieces.get(cell.pos) ?? new Set();
+    set.add(ids[cell.moveIndex]);
+    cellPieces.set(cell.pos, set);
+  }
+  let count = 0;
+  for (const set of cellPieces.values()) if (set.size >= 2) count++;
+  return count;
 }
 
 const inBounds = (p: Position): boolean =>
@@ -438,7 +387,9 @@ type MoveAnalysis = {
  */
 function analyzeMoves(board: Board, moves: Move[]): MoveAnalysis[] {
   const posToId = new Map<number, number>();
-  board.pieces.forEach((p, i) => posToId.set(posOf(p), i));
+  for (let i = 0; i < board.pieces.length; i++) {
+    posToId.set(posOf(board.pieces[i]), i);
+  }
 
   return moves.map(([from, to]) => {
     const moverId = posToId.get(posOf(from))!;
@@ -461,116 +412,93 @@ function analyzeMoves(board: Board, moves: Move[]): MoveAnalysis[] {
   });
 }
 
-const minAcross = (values: number[]): number =>
-  values.length === 0 ? 0 : Math.min(...values);
-
-export type StopTypes = {
-  edge: number;
-  wall: number;
-  piece: number;
-  blockerOnPuck: number;
-};
-
 /**
- * Stop causes across a solution's moves — how each slide ends (board edge, wall,
- * or another piece), with `blockerOnPuck` sub-counting blocker slides halted by
- * the puck. Returns the counts from the solution with the most "interesting"
- * stops (piece > wall > edge).
+ * Stop weight — how a solution's slides end, scored `piece×3 + wall×2 + edge`.
+ * Piece stops are the most interesting to solve around, edges the least.
  */
-export function stopTypes(board: Board, solutions: Move[][]): StopTypes {
-  let best: StopTypes = { edge: 0, wall: 0, piece: 0, blockerOnPuck: 0 };
-  let bestScore = -1;
-  for (const moves of solutions) {
-    const counts: StopTypes = { edge: 0, wall: 0, piece: 0, blockerOnPuck: 0 };
-    for (const a of analyzeMoves(board, moves)) {
-      counts[a.cause]++;
-      if (
-        a.cause === "piece" &&
-        board.pieces[a.moverId].type === "blocker" &&
-        a.stoppingId !== null && board.pieces[a.stoppingId].type === "puck"
-      ) counts.blockerOnPuck++;
-    }
-    const score = counts.piece * 3 + counts.wall * 2 + counts.edge;
-    if (score > bestScore) {
-      bestScore = score;
-      best = counts;
-    }
+export function stopWeighted(board: Board, moves: Move[]): number {
+  let edge = 0;
+  let wall = 0;
+  let piece = 0;
+  for (const a of analyzeMoves(board, moves)) {
+    if (a.cause === "edge") edge++;
+    else if (a.cause === "wall") wall++;
+    else piece++;
   }
-  return best;
+  return piece * 3 + wall * 2 + edge;
 }
 
 /**
- * Piece usage — `Σ_p log2(1 + uses(p)) + log2(1 + U)` over non-puck pieces, where
- * `uses(p)` counts moves in which blocker `p` moves or is the stopping piece, and
- * `U` is how many blockers are used at all. Maxed across the distinct solutions.
+ * Piece usage — `Σ_p log2(1 + uses(p)) + log2(1 + U)` over non-puck pieces in a
+ * solution, where `uses(p)` counts moves in which blocker `p` moves or is the
+ * stopping piece, and `U` is how many blockers are used at all.
  */
-export function pieceUsage(board: Board, solutions: Move[][]): number {
+export function pieceUsage(board: Board, moves: Move[]): number {
   const blockerIds = board.pieces
     .map((p, i) => (p.type === "blocker" ? i : -1))
     .filter((i) => i >= 0);
 
-  return Math.max(
-    0,
-    ...solutions.map((moves) => {
-      const uses = new Map<number, number>();
-      const bump = (id: number) => uses.set(id, (uses.get(id) ?? 0) + 1);
-      for (const a of analyzeMoves(board, moves)) {
-        if (board.pieces[a.moverId].type === "blocker") bump(a.moverId);
-        if (
-          a.cause === "piece" && a.stoppingId !== null &&
-          board.pieces[a.stoppingId].type === "blocker"
-        ) bump(a.stoppingId);
-      }
-      let sum = 0;
-      let used = 0;
-      for (const id of blockerIds) {
-        const u = uses.get(id) ?? 0;
-        sum += Math.log2(1 + u);
-        if (u > 0) used++;
-      }
-      return sum + Math.log2(1 + used);
-    }),
-  );
+  const uses = new Map<number, number>();
+  const bump = (id: number) => uses.set(id, (uses.get(id) ?? 0) + 1);
+  for (const a of analyzeMoves(board, moves)) {
+    if (board.pieces[a.moverId].type === "blocker") bump(a.moverId);
+    if (
+      a.cause === "piece" && a.stoppingId !== null &&
+      board.pieces[a.stoppingId].type === "blocker"
+    ) bump(a.stoppingId);
+  }
+  let sum = 0;
+  let used = 0;
+  for (const id of blockerIds) {
+    const u = uses.get(id) ?? 0;
+    sum += Math.log2(1 + u);
+    if (u > 0) used++;
+  }
+  return sum + Math.log2(1 + used);
 }
 
 /**
- * Pointless clearance (N1, negative) — blocker moves after which that blocker
- * never interacts again (never moves, never stops another piece). Per occurrence;
- * minimized across solutions (the cleanest route defines the board).
+ * Pointless clearance (N1, negative) — blocker moves in a solution after which
+ * that blocker never interacts again (never moves, never stops another piece).
  */
-export function pointlessClearance(board: Board, solutions: Move[][]): number {
-  return minAcross(solutions.map((moves) => {
-    const analysis = analyzeMoves(board, moves);
-    let count = 0;
-    analysis.forEach((a, i) => {
-      if (board.pieces[a.moverId].type !== "blocker") return;
-      const interactsLater = analysis.slice(i + 1).some((later) =>
-        later.moverId === a.moverId || later.stoppingId === a.moverId
-      );
-      if (!interactsLater) count++;
-    });
-    return count;
-  }));
+export function pointlessClearance(board: Board, moves: Move[]): number {
+  const analysis = analyzeMoves(board, moves);
+  let count = 0;
+  for (let i = 0; i < analysis.length; i++) {
+    const a = analysis[i];
+    if (board.pieces[a.moverId].type !== "blocker") continue;
+    const interactsLater = analysis.slice(i + 1).some((later) =>
+      later.moverId === a.moverId || later.stoppingId === a.moverId
+    );
+    if (!interactsLater) count++;
+  }
+  return count;
 }
 
 /**
  * Same-direction repeat (N2, negative) — cells a single piece re-traverses in the
- * same direction. Per extra traversal; minimized across solutions.
+ * same direction within a solution. Per extra traversal.
  */
-export function sameDirectionRepeat(board: Board, solutions: Move[][]): number {
-  return minAcross(solutions.map((moves) => {
-    const analysis = analyzeMoves(board, moves);
-    const counts = new Map<string, number>();
-    for (const cell of computeTrails(board, [moves])[0]) {
-      const key = `${
-        analysis[cell.moveIndex].moverId
-      }:${cell.pos}:${cell.direction}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-    let repeats = 0;
-    for (const c of counts.values()) if (c > 1) repeats += c - 1;
-    return repeats;
-  }));
+export function sameDirectionRepeat(board: Board, moves: Move[]): number {
+  const analysis = analyzeMoves(board, moves);
+  const counts = new Map<string, number>();
+  for (const cell of computeTrails(board, [moves])[0]) {
+    const key = `${
+      analysis[cell.moveIndex].moverId
+    }:${cell.pos}:${cell.direction}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  let repeats = 0;
+  for (const c of counts.values()) if (c > 1) repeats += c - 1;
+  return repeats;
+}
+
+// ── Multiple-solution metrics ────────────────────────────────────────────
+// Measure the set / union of the distinct solutions `(board, solutions) => number`.
+
+/** Distinct optimal solutions — how many genuinely different winning routes exist. */
+export function uniqueSolutions(_board: Board, solutions: Move[][]): number {
+  return solutions.length;
 }
 
 /** Wall key `x,y,orientation`, for stop-cause set membership. */
@@ -598,10 +526,11 @@ export function wallUtilization(board: Board, solutions: Move[][]): number {
   const used = new Set<string>();
   for (const moves of solutions) {
     const analysis = analyzeMoves(board, moves);
-    moves.forEach(([from, to], i) => {
-      if (analysis[i].cause !== "wall") return;
+    for (let i = 0; i < moves.length; i++) {
+      if (analysis[i].cause !== "wall") continue;
+      const [from, to] = moves[i];
       used.add(stoppingWallKey(to, moveDirection(from, to)));
-    });
+    }
   }
   const boardKeys = new Set(board.walls.map(wallKey));
   let hit = 0;
@@ -630,52 +559,105 @@ export function deadSpace(board: Board, solutions: Move[][]): number {
   return (cells - visitedCells(board, solutions).size) / cells;
 }
 
-/** All puzzle metrics for a board, aggregated over its distinct solutions. */
+// ── Search-space metrics ─────────────────────────────────────────────────
+// Measure the solver's exploration structure `(result) => number`, reaching
+// beyond the winning paths into the DAG and its per-depth state counts.
+
+/**
+ * First-move precision — `1 / (distinct optimal first moves)`. 1 when the opening
+ * is forced; smaller when many first moves stay on an optimal path. Reads the
+ * distinct optimal openings straight off the search DAG (pre-dedup).
+ */
+export function firstMovePrecision(result: SolverResult): number {
+  const distinct = optimalFirstMoves(result.dag).length;
+  return distinct === 0 ? 0 : 1 / distinct;
+}
+
+/**
+ * Search profile — the fraction of BFS states first reached in the last third of
+ * the depth range (from `statesPerDepth`). Higher means the difficulty is
+ * back-loaded — most of the tree fans out near the solution depth.
+ */
+export function searchProfile(result: SolverResult): number {
+  const { statesPerDepth } = result;
+  let total = 0;
+  for (const n of statesPerDepth) total += n;
+  if (total === 0) return 0;
+
+  const start = Math.ceil((statesPerDepth.length * 2) / 3);
+  let lastThird = 0;
+  for (let i = start; i < statesPerDepth.length; i++) {
+    lastThird += statesPerDepth[i];
+  }
+  return lastThird / total;
+}
+
+/**
+ * All puzzle metrics for a board, grouped by the data each acts on. Single-
+ * solution metrics are reduced across the distinct solutions (max, or min for the
+ * negatives); multiple-solution and search-space metrics are computed once.
+ */
 export type Metrics = {
+  // single solution
   setupRatio: number;
-  pieceUsage: number;
+  coverage: number;
   deception: number;
   reversals: number;
   crossTrailOverlap: number;
-  totalDistance: { puck: number; blocker: number };
-  uniqueSolutions: number;
-  firstMovePrecision: number;
-  searchProfile: number;
-  coverage: number;
-  stopTypes: StopTypes;
+  totalDistance: number;
+  pieceUsage: number;
+  stopWeighted: number;
   pointlessClearance: number;
   sameDirectionRepeat: number;
+  // multiple solutions
+  uniqueSolutions: number;
   wallUtilization: number;
   deadSpace: number;
+  // search space
+  firstMovePrecision: number;
+  searchProfile: number;
 };
 
 /**
  * Computes every metric for a board from its exhaustive solve. Enumerates the
- * DAG's optimal solutions, dedupes them to distinct solutions, and measures over
- * those — except `firstMovePrecision` (distinct optimal openings, pre-dedup, off
- * the DAG) and `searchProfile` (from `statesPerDepth`).
+ * DAG's optimal solutions and dedupes them to distinct solutions. Single-solution
+ * metrics are reduced across those (max for signals, min for the two penalties);
+ * multiple-solution and search-space metrics are computed once.
  */
 export function computeMetrics(board: Board, result: SolverResult): Metrics {
   const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
 
+  const maxOver = (metric: (board: Board, moves: Move[]) => number): number => {
+    let best = 0;
+    for (const moves of solutions) best = Math.max(best, metric(board, moves));
+    return best;
+  };
+  const minOver = (metric: (board: Board, moves: Move[]) => number): number => {
+    if (solutions.length === 0) return 0;
+    let best = Infinity;
+    for (const moves of solutions) best = Math.min(best, metric(board, moves));
+    return best;
+  };
+
   return {
-    setupRatio: setupRatio(board, solutions),
-    pieceUsage: pieceUsage(board, solutions),
-    deception: deception(board, solutions),
-    reversals: reversals(board, solutions),
-    crossTrailOverlap: crossTrailOverlap(board, solutions),
-    totalDistance: totalDistance(board, solutions),
-    uniqueSolutions: solutions.length,
-    firstMovePrecision: firstMovePrecision(
-      optimalFirstMoves(result.dag).length,
-    ),
-    searchProfile: searchProfile(result.statesPerDepth),
-    coverage: coverage(board, solutions),
-    stopTypes: stopTypes(board, solutions),
-    pointlessClearance: pointlessClearance(board, solutions),
-    sameDirectionRepeat: sameDirectionRepeat(board, solutions),
+    // single solution
+    setupRatio: maxOver(setupRatio),
+    coverage: maxOver(coverage),
+    deception: maxOver(deception),
+    reversals: maxOver(reversals),
+    crossTrailOverlap: maxOver(crossTrailOverlap),
+    totalDistance: maxOver(totalDistance),
+    pieceUsage: maxOver(pieceUsage),
+    stopWeighted: maxOver(stopWeighted),
+    pointlessClearance: minOver(pointlessClearance),
+    sameDirectionRepeat: minOver(sameDirectionRepeat),
+    // multiple solutions
+    uniqueSolutions: uniqueSolutions(board, solutions),
     wallUtilization: wallUtilization(board, solutions),
     deadSpace: deadSpace(board, solutions),
+    // search space
+    firstMovePrecision: firstMovePrecision(result),
+    searchProfile: searchProfile(result),
   };
 }
 
@@ -686,9 +668,9 @@ export type GateResult = {
 
 /** Inclusive minMoves band per difficulty. `ultra` is excluded from generation. */
 const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
-  easy: [4, 7],
-  medium: [6, 9],
-  hard: [9, 13],
+  easy: [5, 6],
+  medium: [7, 9],
+  hard: [10, 13],
 };
 
 /**
@@ -788,8 +770,7 @@ export function checkGates(
 
   let minTravel = Infinity;
   for (const moves of solutions) {
-    const d = totalDistance(board, [moves]);
-    minTravel = Math.min(minTravel, d.puck + d.blocker);
+    minTravel = Math.min(minTravel, totalDistance(board, moves));
   }
   if (minTravel < result.minMoves * LENGTH_FACTOR) {
     return { passed: false, failedGate: "G6" };
@@ -879,55 +860,54 @@ function compositeScore(
     deception: metrics.deception,
     reversals: metrics.reversals,
     crossTrailOverlap: metrics.crossTrailOverlap,
-    totalDistance: metrics.totalDistance.puck + metrics.totalDistance.blocker,
+    totalDistance: metrics.totalDistance,
     firstMovePrecision: metrics.firstMovePrecision,
     searchProfile: metrics.searchProfile,
     coverage: metrics.coverage,
-    stopWeighted: metrics.stopTypes.piece * 3 + metrics.stopTypes.wall * 2 +
-      metrics.stopTypes.edge,
+    stopWeighted: metrics.stopWeighted,
     pointlessClearance: metrics.pointlessClearance,
     sameDirectionRepeat: metrics.sameDirectionRepeat,
   };
 
   const mean = (terms: Record<string, Bound>) => {
     const keys = Object.keys(terms);
-    const sum = keys.reduce(
-      (acc, k) => acc + bounded(values[k], terms[k](ctx)),
-      0,
-    );
-    return keys.length ? sum / keys.length : 0;
+    if (keys.length === 0) return 0;
+    let sum = 0;
+    for (const k of keys) sum += bounded(values[k], terms[k](ctx));
+    return sum / keys.length;
   };
 
   return mean(CALIBRATION.positive) - mean(CALIBRATION.negative);
 }
 
 /**
- * Full metrics for a single route: its per-solution metrics (each metric called
- * with just this route) plus the shared board-level metrics (`uniqueSolutions`,
- * `firstMovePrecision`, `searchProfile`), which are constant across routes.
+ * Full metrics for a single route: its single-solution metrics plus the shared
+ * board-level metrics (multiple-solution + search-space) that are constant across
+ * every route of the board.
  */
 function routeMetrics(
   board: Board,
   route: Move[],
   shared: Pick<
     Metrics,
-    "uniqueSolutions" | "firstMovePrecision" | "searchProfile"
+    | "uniqueSolutions"
+    | "wallUtilization"
+    | "deadSpace"
+    | "firstMovePrecision"
+    | "searchProfile"
   >,
 ): Metrics {
-  const one = [route];
   return {
-    setupRatio: setupRatio(board, one),
-    pieceUsage: pieceUsage(board, one),
-    deception: deception(board, one),
-    reversals: reversals(board, one),
-    crossTrailOverlap: crossTrailOverlap(board, one),
-    totalDistance: totalDistance(board, one),
-    coverage: coverage(board, one),
-    stopTypes: stopTypes(board, one),
-    pointlessClearance: pointlessClearance(board, one),
-    sameDirectionRepeat: sameDirectionRepeat(board, one),
-    wallUtilization: wallUtilization(board, one),
-    deadSpace: deadSpace(board, one),
+    setupRatio: setupRatio(board, route),
+    coverage: coverage(board, route),
+    deception: deception(board, route),
+    reversals: reversals(board, route),
+    crossTrailOverlap: crossTrailOverlap(board, route),
+    totalDistance: totalDistance(board, route),
+    pieceUsage: pieceUsage(board, route),
+    stopWeighted: stopWeighted(board, route),
+    pointlessClearance: pointlessClearance(board, route),
+    sameDirectionRepeat: sameDirectionRepeat(board, route),
     ...shared,
   };
 }
@@ -942,31 +922,38 @@ function routeMetrics(
 export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
   const routes = deduplicateSolutions(enumerateSolutions(result.dag));
   const shared = {
-    uniqueSolutions: routes.length,
-    firstMovePrecision: firstMovePrecision(
-      optimalFirstMoves(result.dag).length,
-    ),
-    searchProfile: searchProfile(result.statesPerDepth),
+    uniqueSolutions: uniqueSolutions(board, routes),
+    wallUtilization: wallUtilization(board, routes),
+    deadSpace: deadSpace(board, routes),
+    firstMovePrecision: firstMovePrecision(result),
+    searchProfile: searchProfile(result),
   };
 
-  const perSolution: SolutionScore[] = routes.map((route) => {
+  const perSolution: SolutionScore[] = [];
+  for (const route of routes) {
     const metrics = routeMetrics(board, route, shared);
-    return {
+    perSolution.push({
       moves: route,
       metrics,
       score: compositeScore(metrics, board, result.minMoves),
-    };
-  });
+    });
+  }
 
-  const scores = perSolution.map((s) => s.score);
-  const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
-  const variance = scores.reduce((a, s) => a + (s - mean) ** 2, 0) /
-    scores.length;
+  let sum = 0;
+  for (const s of perSolution) sum += s.score;
+  const mean = sum / perSolution.length;
+
+  let variance = 0;
+  for (const s of perSolution) variance += (s.score - mean) ** 2;
+  variance /= perSolution.length;
+
+  let min = Infinity;
+  for (const s of perSolution) min = Math.min(min, s.score);
 
   return {
     score: mean,
     mean,
-    min: Math.min(...scores),
+    min,
     stddev: Math.sqrt(variance),
     perSolution,
   };
