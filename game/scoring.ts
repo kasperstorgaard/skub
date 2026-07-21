@@ -733,11 +733,20 @@ export function checkGates(
     difficulty: Difficulty;
     corpus: Set<string>;
     batchHashes: Set<string>;
+    /**
+     * BFS state budget for the gate solve. The generation loop passes a tight
+     * cap so pathologically branchy candidates reject fast (G1) instead of
+     * blocking the loop for seconds; omitted elsewhere for the full solver limit.
+     */
+    maxStates?: number;
   },
 ): GateResult {
   let result: SolverResult;
   try {
-    result = solveExhaustiveSync(board, { maxDepth: 15 });
+    result = solveExhaustiveSync(board, {
+      maxDepth: 15,
+      maxStates: options.maxStates,
+    });
   } catch {
     return { passed: false, failedGate: "G1" };
   }
@@ -812,15 +821,26 @@ type Bound = (ctx: BoundCtx) => number;
  * truth; bump `version` on every change so a corpus report is traceable to the
  * calibration that produced it (see `scoring/reports/calibration-<version>.md`).
  *
- * v1 uses theoretical maxes and squashes the whole corpus into ~[0.25, 0.35];
- * later versions replace these with corpus-calibrated values so scores spread.
+ * v1 used theoretical maxes and came out *anti-correlated* with human judgement
+ * — both the corpus anchors (erik > torstein > kim > malene) and the first
+ * labeled generated set (a 2★ board scored top, a 5★ board bottom) inverted.
+ *
+ * v2 is a deliberately conservative structural correction — only changes both
+ * datasets independently support, no fitted constants (the labeled set is still
+ * small):
+ *  - dropped `firstMovePrecision` (rewarded forced openings — the "too-easy"
+ *    profile; "nice" boards averaged 0.19, "too-easy" 0.39);
+ *  - added `wallUtilization` as a positive and `deadSpace` as a negative (the
+ *    two strongest human-aligned signals; previously gate/advisory only);
+ *  - added a shaped `variety` term over distinct solutions (see
+ *    {@link varietyScore}) — many routes is good only up to a point.
  */
 export const CALIBRATION: {
   version: number;
   positive: Record<string, Bound>;
   negative: Record<string, Bound>;
 } = {
-  version: 1,
+  version: 2,
   positive: {
     setupRatio: () => 1,
     pieceUsage: ({ minMoves: m, blockers: p }) =>
@@ -829,16 +849,34 @@ export const CALIBRATION: {
     reversals: ({ minMoves: m }) => Math.max(1, m - 1),
     crossTrailOverlap: () => COLS * ROWS,
     totalDistance: ({ minMoves: m }) => 7 * m * 2,
-    firstMovePrecision: () => 1,
     searchProfile: () => 1,
     coverage: () => 1,
     stopWeighted: ({ minMoves: m }) => 3 * m,
+    wallUtilization: () => 1,
+    variety: () => 1,
   },
   negative: {
     pointlessClearance: ({ minMoves: m }) => Math.max(1, m),
     sameDirectionRepeat: () => COLS * ROWS,
+    deadSpace: () => 1,
   },
 };
+
+/**
+ * Shaped variety term over the distinct-solution count, in [0, 1]. Quality is
+ * not monotonic in route count (labeled data): 2–8 varied routes is the sweet
+ * band ("wow, you could also solve it like *that*"), a single route is neutral
+ * — it can be brilliant (torstein) or linear (the too-easy profile); the count
+ * alone can't tell, other terms must — and double-digit counts fade toward 0
+ * (a 49-route board rated "too-easy": when everything works, nothing is
+ * clever). The fade is gentle (zero at 32) because canonicalization currently
+ * over-counts some varied boards (malene: 20 counted, 4 by human count).
+ */
+export function varietyScore(uniqueSolutions: number): number {
+  if (uniqueSolutions <= 1) return 0.5;
+  if (uniqueSolutions <= 8) return 1;
+  return Math.max(0, 1 - (uniqueSolutions - 8) / 24);
+}
 
 /**
  * Composite quality score for a single route in `[-1, 1]`. Each metric is divided
@@ -861,12 +899,14 @@ function compositeScore(
     reversals: metrics.reversals,
     crossTrailOverlap: metrics.crossTrailOverlap,
     totalDistance: metrics.totalDistance,
-    firstMovePrecision: metrics.firstMovePrecision,
     searchProfile: metrics.searchProfile,
     coverage: metrics.coverage,
     stopWeighted: metrics.stopWeighted,
+    wallUtilization: metrics.wallUtilization,
+    variety: varietyScore(metrics.uniqueSolutions),
     pointlessClearance: metrics.pointlessClearance,
     sameDirectionRepeat: metrics.sameDirectionRepeat,
+    deadSpace: metrics.deadSpace,
   };
 
   const mean = (terms: Record<string, Bound>) => {

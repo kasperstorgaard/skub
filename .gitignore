@@ -16,6 +16,12 @@ node_modules/
 # Screenshots
 screenshots/
 
+# Local generator candidate store (curation dataset)
+generated/
+
+# Corpus score cache for compare-generated
+scoring/.cache/
+
 # E2E
 test-results/
 

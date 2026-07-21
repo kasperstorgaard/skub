@@ -1,7 +1,15 @@
-import { getGrid, validateBoard } from "#/game/board.ts";
-import type { Board, Piece, Wall } from "#/game/types.ts";
+import { flipBoard, getGrid, validateBoard } from "#/game/board.ts";
+import type { Board, Piece, Position, Wall } from "#/game/types.ts";
 
 const MAX_ATTEMPTS = 500;
+
+/**
+ * Generator algorithm version, stamped onto every stored candidate so the
+ * curation set records which generator produced a board. Bump on any change to
+ * the placement/symmetry logic that alters the candidate distribution, so
+ * `compare-generated` can bucket feedback by generator vintage.
+ */
+export const GENERATOR_VERSION = "0.5";
 
 /**
  * How walls are distributed across the board.
@@ -13,6 +21,14 @@ export type GenerateOptions = {
   wallsRange: [number, number];
   blockersRange: [number, number];
   wallSpread: WallSpread;
+  /**
+   * How mirror-symmetric the **wall layout** is, 0..1. Each placed wall gets a
+   * mirror partner across each centre axis with this probability, so 0 is
+   * free-form and 1 is fully symmetric on both axes. Blockers, puck and
+   * destination are unaffected — symmetry shapes structure, not pieces.
+   * Defaults to 0.
+   */
+  symmetry?: number;
   maxAttempts?: number;
 };
 
@@ -38,6 +54,7 @@ export function generate({
   wallsRange,
   blockersRange,
   wallSpread,
+  symmetry = 0,
   maxAttempts = MAX_ATTEMPTS,
 }: GenerateOptions) {
   for (
@@ -45,7 +62,12 @@ export function generate({
     attempt < maxAttempts;
     attempt++
   ) {
-    const board = generateBoard({ wallsRange, blockersRange, wallSpread });
+    const board = generateBoard({
+      wallsRange,
+      blockersRange,
+      wallSpread,
+      symmetry,
+    });
 
     try {
       validateBoard(board);
@@ -67,32 +89,75 @@ function generateBoard({
   wallsRange,
   blockersRange,
   wallSpread,
+  symmetry = 0,
 }: Pick<
   GenerateOptions,
-  "wallsRange" | "blockersRange" | "wallSpread"
+  "wallsRange" | "blockersRange" | "wallSpread" | "symmetry"
 >): Board {
-  const wallCount = randomInt(wallsRange);
+  // Symmetry mirrors each wall up to 4-fold, so scale the *base wall count* down
+  // by the expected expansion (≈1 + 3·symmetry) — this keeps the final symmetric
+  // wall layout inside the requested range instead of quadrupling it into an
+  // overcrowded, unsolvable mess. Blockers are honoured at their requested count
+  // and placed freely: symmetry shapes the wall structure, not the pieces.
+  const expansion = 1 + 3 * symmetry;
+  const wallCount = Math.max(1, Math.round(randomInt(wallsRange) / expansion));
   const blockerCount = randomInt(blockersRange);
 
-  const walls = placeWalls(wallCount, wallSpread);
+  const walls = symmetrizeWalls(placeWalls(wallCount, wallSpread), symmetry);
 
   // Build full grid of available positions for pieces
   const pieceSpots = getGrid().flatMap((row) => row);
 
   const pieces: Piece[] = [];
-
-  // Place blockers
   for (let i = 0; i < blockerCount; i++) {
     pieces.push({ ...takeRandom(pieceSpots), type: "blocker" });
   }
-
-  // Place puck
   pieces.push({ ...takeRandom(pieceSpots), type: "puck" });
 
-  // Place destination (not on any piece)
   const destination = takeRandom(pieceSpots);
 
   return { destination, pieces, walls };
+}
+
+const ORIGIN: Position = { x: 0, y: 0 };
+
+/**
+ * Whether two walls occupy the same slot. Positions/walls are unique by
+ * `x,y,orientation`.
+ */
+const sameWall = (a: Wall, b: Wall): boolean =>
+  a.x === b.x && a.y === b.y && a.orientation === b.orientation;
+
+/**
+ * Reflects walls across a centre axis, reusing `flipBoard`'s coordinate math
+ * (which keeps the vertical-wall `x` / horizontal-wall `y` edge alignment).
+ */
+const mirrorWalls = (walls: Wall[], axis: "horizontal" | "vertical"): Wall[] =>
+  flipBoard({ destination: ORIGIN, pieces: [], walls }, axis).walls;
+
+/**
+ * Grows a wall set toward mirror symmetry: each base wall gets its horizontal,
+ * vertical and both-axis reflection added with probability `symmetry`. At 1 the
+ * set is invariant under both flips (fully symmetric); at 0 it's unchanged.
+ * Reflections that duplicate an existing wall are dropped.
+ */
+function symmetrizeWalls(base: Wall[], symmetry: number): Wall[] {
+  if (symmetry <= 0) return base;
+
+  const walls = [...base];
+  const add = (candidate: Wall) => {
+    if (!walls.some((w) => sameWall(w, candidate))) walls.push(candidate);
+  };
+
+  for (const wall of base) {
+    if (Math.random() < symmetry) add(mirrorWalls([wall], "horizontal")[0]);
+    if (Math.random() < symmetry) add(mirrorWalls([wall], "vertical")[0]);
+    if (Math.random() < symmetry) {
+      add(mirrorWalls(mirrorWalls([wall], "horizontal"), "vertical")[0]);
+    }
+  }
+
+  return walls;
 }
 
 /**

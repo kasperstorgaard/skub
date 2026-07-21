@@ -38,6 +38,15 @@ export type GenerateEvent =
 const DEFAULT_MAX_GATE_ATTEMPTS = 500;
 
 /**
+ * BFS state budget for each gate solve. Bounds worst-case solve time so a single
+ * pathological (e.g. highly symmetric, branchy) candidate can't grind for
+ * seconds and freeze the progress count. Generous for the generator's ≤6-piece
+ * boards within the difficulty bands; branchier boards reject as G1 and the loop
+ * moves on. (The full solver limit is 10M, used when solving real puzzles.)
+ */
+const GATE_MAX_STATES = 2_000_000;
+
+/**
  * Loops `generate()` → `checkGates()` until a board passes every gate at the
  * requested difficulty, or the attempt budget is spent. Emits a `progress`
  * event per attempt (a simple rising count for the UI), then a terminal
@@ -71,12 +80,19 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
         difficulty,
         corpus: corpusSet,
         batchHashes,
+        // Reject branchy candidates fast so a single slow solve can't freeze the
+        // attempt counter — well above what a ≤6-piece board needs to depth 15.
+        maxStates: GATE_MAX_STATES,
       });
       if (gate.passed) {
         batchHashes.add(boardCanonicalHash(board));
-        // Score the winner once for the advisory panel (re-solves the passing
-        // board — cheap, happens only on success, not per attempt).
-        const result = solveExhaustiveSync(board, { maxDepth: 15 });
+        // Score the winner once for the advisory panel. Same state cap as the
+        // gate solve — the board just solved within it, and the cap also sizes
+        // the solver's pre-allocated buffers (default 10M ⇒ ~120 MB for nothing).
+        const result = solveExhaustiveSync(board, {
+          maxDepth: 15,
+          maxStates: GATE_MAX_STATES,
+        });
         self.postMessage(
           {
             type: "result",

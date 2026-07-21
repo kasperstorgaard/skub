@@ -75,6 +75,11 @@ type Config = {
 type SolverOptions = {
   // Maximum search depth in moves (default: 15)
   maxDepth?: number;
+  // Hard cap on BFS states before bailing with SolverDepthExceededError
+  // (default: BFS_STATE_LIMIT). A tighter budget also shrinks the pre-allocated
+  // typed arrays — the generation gate check passes a small value so branchy
+  // boards reject fast instead of grinding through millions of states.
+  maxStates?: number;
 };
 
 /** Parallel per-state metadata for the flat BFS queue, indexed by state index. */
@@ -147,8 +152,9 @@ export function solveExhaustiveSync(
 ): SolverResult {
   const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
+  const maxStates = options.maxStates ?? BFS_STATE_LIMIT;
 
-  return runToCompletion(bfsExplore(board, maxDepth, true));
+  return runToCompletion(bfsExplore(board, maxDepth, true, maxStates));
 }
 
 /** Drives a `bfsExplore` generator to completion, discarding progress yields. */
@@ -246,6 +252,7 @@ function* bfsExplore(
   board: Board,
   maxDepth: number,
   exhaustive: boolean,
+  stateLimit: number = BFS_STATE_LIMIT,
 ): Generator<number, SolverResult> {
   const destPos = board.destination.y * COLS + board.destination.x;
   const initialState = initState(board);
@@ -265,14 +272,14 @@ function* bfsExplore(
   };
 
   // State pool: all states packed flat — no heap object per state
-  const statePool = new Uint8Array(BFS_STATE_LIMIT * config.pieceCount);
+  const statePool = new Uint8Array(stateLimit * config.pieceCount);
   statePool.set(initialState, 0);
 
   const metadata: Metadata = {
-    parentIndexes: new Int32Array(BFS_STATE_LIMIT).fill(-1),
-    fromPositions: new Uint8Array(BFS_STATE_LIMIT),
-    toPositions: new Uint8Array(BFS_STATE_LIMIT),
-    depths: new Uint8Array(BFS_STATE_LIMIT), // max depth 15 fits in u8
+    parentIndexes: new Int32Array(stateLimit).fill(-1),
+    fromPositions: new Uint8Array(stateLimit),
+    toPositions: new Uint8Array(stateLimit),
+    depths: new Uint8Array(stateLimit), // max depth 15 fits in u8
   };
 
   // Pre-allocated moves buffer: 4 directions × n pieces × 2 values (from + to)
@@ -326,7 +333,7 @@ function* bfsExplore(
 
     // Each move is a [fromPos, toPos] pair packed consecutively in buffer.
     for (let idx = 0; idx < moveCount; idx += 2) {
-      if (tail >= BFS_STATE_LIMIT) {
+      if (tail >= stateLimit) {
         throw new SolverDepthExceededError(maxDepth);
       }
 
