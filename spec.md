@@ -208,11 +208,22 @@ and read the ρ table again. Hypothesis to test: torstein/Vebjørn clean at +1,
 
 ## Still open
 
+- **Incorporate the corpus as weak labels** (curator-stated prior,
+  2026-07-22: shipped corpus boards are nearly all 3★+, mostly 4★, some 5★ —
+  1–2★ are rare outliers like the kim/erik anchors; and the only *generated*
+  puzzles ever promoted to the corpus were rated 4–5★, some after hand
+  adjustments). That makes the 207-board corpus usable beyond a distribution
+  reference / G3 novelty source:
+  - a separation tripwire alongside ρ: the corpus (as a weak ≥3★ class)
+    should collectively outscore the low-rated generated candidates — cheap,
+    uses all 207 boards, no rating sitting needed;
+  - promotion status is itself a label: promoted generated boards are
+    known 4–5★;
+  - exact labels still come from rating a ~15–20 corpus slice (espec. the
+    tails — the handful of boards the curator considers fillers or
+    masterpieces), which also anchors the scale across difficulty bands.
 - Weighted composite terms once the labeled set grows (~100 labels = weight
   fitting; ~45–50 = detect ρ 0.3 effects; currently 39).
-- Rate a ~15–20 corpus slice for cross-band ground truth (the 4 anchors are a
-  tripwire, not a target; the unrated 207-board corpus only serves as a
-  distribution reference and G3 novelty source until it has ratings).
 - Half-star ratings in the feedback UI — the curator already writes "3.5" in
   notes; the star widget rounds that information away.
 
