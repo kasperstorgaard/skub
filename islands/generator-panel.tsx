@@ -109,6 +109,26 @@ function CandidateScore(
         "Largest region never entered by any trail and holding no piece or goal (gate G8).",
     },
     {
+      label: "Clumping",
+      value: metrics.clumping,
+      percent: true,
+      hint:
+        "Share of wall/blocker pairs bunched within one cell of each other (the 'clumped' complaint).",
+    },
+    {
+      label: "Isolation",
+      value: metrics.isolationGap,
+      hint:
+        "Moves past optimal to the nearest suboptimal solution — higher means the optimal route stands alone (0 = not measured).",
+    },
+    {
+      label: "Near misses",
+      value: metrics.nearMissDensity,
+      percent: true,
+      hint:
+        "Share of goal states in the searched window that are suboptimal — high when being sloppy still works.",
+    },
+    {
       label: "Coverage",
       value: metrics.coverage,
       hint: "Distinct cells the puck sweeps, as a fraction of the 64 cells.",

@@ -16,10 +16,9 @@ type CandidateFeedbackProps = {
 
 /**
  * Board-adjacent curation feedback for a freshly generated candidate. Shows a
- * star rating; once rated, reveals reason tags and an optional note. Every
- * change is patched onto the candidate's file in the gitignored `generated/`
- * store (dev-only; a 403 in production is swallowed). Rating gates the
- * qualitative detail, so an un-rated candidate stays a single row of stars.
+ * star rating and an always-available note; once rated, reveals reason tags.
+ * Every change is patched onto the candidate's file in the gitignored
+ * `generated/` store (dev-only; a 403 in production is swallowed).
  *
  * State is per-candidate: it resets whenever the shared `candidate` signal
  * points at a new slug (a reroll), so feedback never bleeds between boards.
@@ -82,7 +81,6 @@ export function CandidateFeedback({ className }: CandidateFeedbackProps) {
   if (!candidate.value) return null;
 
   const rated = rating.value !== undefined;
-  const hasReason = reasons.value.length > 0;
 
   return (
     <div
@@ -100,45 +98,36 @@ export function CandidateFeedback({ className }: CandidateFeedbackProps) {
       />
 
       {rated && (
-        <>
-          <div className="flex flex-wrap justify-center gap-1">
-            {REASON_TAGS.map((tag) => {
-              const active = reasons.value.includes(tag.value);
-              return (
-                <button
-                  key={tag.value}
-                  type="button"
-                  aria-pressed={active}
-                  className={clsx(
-                    "text-fl-0 rounded-1 px-fl-1 py-1 cursor-pointer",
-                    active
-                      ? "bg-brand text-surface-1 font-weight-7"
-                      : "bg-surface-1 text-text-2 hover:bg-surface-3",
-                  )}
-                  onClick={() => toggleReason(tag.value)}
-                >
-                  {tag.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {hasReason && (
-            <>
-              <p className="text-fl-0 text-text-3 leading-tight">
-                Thanks — saved to the curation set.
-              </p>
-              <textarea
-                className="text-1 bg-surface-1 rounded-1 p-fl-1 resize-y min-h-[3lh] w-full max-w-2xs text-start"
-                placeholder="Note (optional)"
-                value={note.value}
-                onInput={(e) => (note.value = e.currentTarget.value)}
-                onBlur={onNoteBlur}
-              />
-            </>
-          )}
-        </>
+        <div className="flex flex-wrap justify-center gap-1">
+          {REASON_TAGS.map((tag) => {
+            const active = reasons.value.includes(tag.value);
+            return (
+              <button
+                key={tag.value}
+                type="button"
+                aria-pressed={active}
+                className={clsx(
+                  "text-fl-0 rounded-1 px-fl-1 py-1 cursor-pointer",
+                  active
+                    ? "bg-brand text-surface-1 font-weight-7"
+                    : "bg-surface-1 text-text-2 hover:bg-surface-3",
+                )}
+                onClick={() => toggleReason(tag.value)}
+              >
+                {tag.label}
+              </button>
+            );
+          })}
+        </div>
       )}
+
+      <textarea
+        className="text-1 bg-surface-1 rounded-1 p-fl-1 resize-y min-h-[3lh] w-full max-w-2xs text-start"
+        placeholder="Note (optional)"
+        value={note.value}
+        onInput={(e) => (note.value = e.currentTarget.value)}
+        onBlur={onNoteBlur}
+      />
     </div>
   );
 }

@@ -39,6 +39,27 @@ Deno.test("generate() with symmetry 1 yields flip-invariant walls", () => {
   }
 });
 
+Deno.test("generate() honours the wall-range floor under high symmetry", () => {
+  // Symmetry scales the base wall count down by the expected mirror expansion;
+  // rounding plus dropped duplicate reflections used to land the final layout
+  // below the requested minimum (a 1★ board shipped that way). The top-up
+  // pass must restore the floor.
+  for (let run = 0; run < 10; run++) {
+    const { board } = generate({
+      wallsRange: [10, 14],
+      blockersRange: [2, 3],
+      wallSpread: "spread",
+      symmetry: 1,
+    });
+
+    assertEquals(
+      board.walls.length >= 10,
+      true,
+      `run ${run}: expected >= 10 walls, got ${board.walls.length}`,
+    );
+  }
+});
+
 Deno.test("generate() with symmetry 0 leaves the layout free-form", () => {
   // Smoke test that the default path is unaffected and still valid.
   const { board } = generate({

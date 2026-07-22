@@ -20,7 +20,13 @@ import {
   type ReasonTag,
 } from "#/game/generated.ts";
 import { parsePuzzle } from "#/game/parser.ts";
-import { CALIBRATION, computeMetrics, scoreBoard } from "#/game/scoring.ts";
+import {
+  type BoundCtx,
+  CALIBRATION,
+  computeMetrics,
+  type Metrics,
+  scoreBoard,
+} from "#/game/scoring.ts";
 import { solveExhaustiveSync } from "#/game/solver.ts";
 
 const CORPUS_DIR = "static/puzzles";
@@ -39,6 +45,9 @@ const METRICS = [
   "uniqueSolutions",
   "deadSpace",
   "wallUtilization",
+  "clumping",
+  "isolationGap",
+  "nearMissDensity",
 ] as const;
 
 type Values = Record<(typeof METRICS)[number], number>;
@@ -46,14 +55,37 @@ type Values = Record<(typeof METRICS)[number], number>;
 const flag = (name: string) =>
   Deno.args.find((a) => a.startsWith(name))?.slice(name.length);
 
+/**
+ * Full solve output for one board: the report `values` plus the raw per-route
+ * metrics and bound context, which are calibration-independent — tooling (e.g.
+ * `check-anchors`) caches `ctx`/`routes` and recomputes composites in-process
+ * so calibration changes don't force a re-solve.
+ */
+export type WorkerOutput = {
+  slug: string;
+  values: Values;
+  ctx: BoundCtx;
+  routes: Metrics[];
+};
+
 /** Worker mode: score one puzzle file and emit its metric values as JSON. */
-function scoreFile(path: string): { slug: string; values: Values } {
+function scoreFile(path: string): WorkerOutput {
   const puzzle = parsePuzzle(Deno.readTextFileSync(path));
-  const result = solveExhaustiveSync(puzzle.board, { maxDepth: 15 });
+  // Overshoot powers the isolation metrics; offline scoring only — the
+  // gameplay and generation-gate solves never pay for it.
+  const result = solveExhaustiveSync(puzzle.board, {
+    maxDepth: 15,
+    overshoot: 2,
+  });
   const m = computeMetrics(puzzle.board, result);
   const scored = scoreBoard(puzzle.board, result);
   return {
     slug: puzzle.slug,
+    ctx: {
+      minMoves: result.minMoves,
+      blockers: puzzle.board.pieces.filter((p) => p.type === "blocker").length,
+    },
+    routes: scored.perSolution.map((s) => s.metrics),
     values: {
       score: scored.score,
       worst: scored.min,
@@ -64,6 +96,9 @@ function scoreFile(path: string): { slug: string; values: Values } {
       uniqueSolutions: m.uniqueSolutions,
       deadSpace: m.deadSpace,
       wallUtilization: m.wallUtilization,
+      clumping: m.clumping,
+      isolationGap: m.isolationGap,
+      nearMissDensity: m.nearMissDensity,
     },
   };
 }

@@ -5,11 +5,14 @@ const MAX_ATTEMPTS = 500;
 
 /**
  * Generator algorithm version, stamped onto every stored candidate so the
- * curation set records which generator produced a board. Bump on any change to
- * the placement/symmetry logic that alters the candidate distribution, so
- * `compare-generated` can bucket feedback by generator vintage.
+ * curation set records which generator produced a board. Semver: patch =
+ * behaviour-preserving fixes, minor = additive knobs/defaults, major (or the
+ * 0.x minor) = placement/symmetry changes that alter the candidate
+ * distribution — anything that means feedback buckets aren't comparable
+ * across the bump (`compare-generated` buckets by vintage).
+ * Candidates stored before 2026-07-22 carry the pre-semver forms "0.4"/"0.5".
  */
-export const GENERATOR_VERSION = "0.5";
+export const GENERATOR_VERSION = "0.6.0";
 
 /**
  * How walls are distributed across the board.
@@ -104,6 +107,22 @@ function generateBoard({
   const blockerCount = randomInt(blockersRange);
 
   const walls = symmetrizeWalls(placeWalls(wallCount, wallSpread), symmetry);
+
+  // The expansion scaling above is only right in expectation — rounding plus
+  // dropped duplicate reflections can land the symmetrized layout under the
+  // requested minimum (a rated 1★ board shipped with fewer walls than the
+  // range floor). Top up until the floor is met, symmetrizing the extras so a
+  // fully symmetric layout stays flip-invariant.
+  for (let retry = 0; retry < 5 && walls.length < wallsRange[0]; retry++) {
+    const missing = wallsRange[0] - walls.length;
+    const extras = symmetrizeWalls(
+      placeWalls(Math.max(1, Math.ceil(missing / expansion)), wallSpread),
+      symmetry,
+    );
+    for (const extra of extras) {
+      if (!walls.some((wall) => sameWall(wall, extra))) walls.push(extra);
+    }
+  }
 
   // Build full grid of available positions for pieces
   const pieceSpots = getGrid().flatMap((row) => row);

@@ -559,6 +559,39 @@ export function deadSpace(board: Board, solutions: Move[][]): number {
   return (cells - visitedCells(board, solutions).size) / cells;
 }
 
+// ── Static-layout metrics ────────────────────────────────────────────────
+
+/** Chebyshev (chessboard) distance between two positions. */
+const chebyshev = (a: Position, b: Position): number =>
+  Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+
+/**
+ * Clumping — the fraction of same-kind structure pairs (wall–wall,
+ * blocker–blocker) within Chebyshev distance 1 of each other, pooled across
+ * both kinds. High clumping means the board's structure piles up in tight
+ * knots instead of spreading out — "clumped" is the most common human
+ * complaint tag with no metric behind it. Advisory for now (not in the
+ * composite, not gated) until its correlation with ratings is established.
+ * 0 when no kind has two members.
+ */
+export function clumping(board: Board): number {
+  const groups: Position[][] = [
+    board.walls,
+    board.pieces.filter((piece) => piece.type === "blocker"),
+  ];
+  let close = 0;
+  let total = 0;
+  for (const group of groups) {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        total++;
+        if (chebyshev(group[i], group[j]) <= 1) close++;
+      }
+    }
+  }
+  return total === 0 ? 0 : close / total;
+}
+
 // ── Search-space metrics ─────────────────────────────────────────────────
 // Measure the solver's exploration structure `(result) => number`, reaching
 // beyond the winning paths into the DAG and its per-depth state counts.
@@ -593,9 +626,46 @@ export function searchProfile(result: SolverResult): number {
 }
 
 /**
+ * Isolation gap — how far past optimal the nearest suboptimal solution sits:
+ * the smallest `d > minMoves` with a goal arrival, minus `minMoves`. A clean
+ * gap means the optimal solution stands alone (the torstein profile: optimal
+ * 10, next-best 12); gap 1 means near-misses crowd right behind it. When no
+ * suboptimal goal exists within the searched window the full window + 1 is
+ * reported (a lower bound: "at least this isolated"). 0 when the solve didn't
+ * search past optimal (no overshoot) — unmeasured, not un-isolated.
+ */
+export function isolationGap(result: SolverResult): number {
+  const window = result.searchedDepth - result.minMoves;
+  if (window <= 0) return 0;
+  for (let d = result.minMoves + 1; d <= result.searchedDepth; d++) {
+    if (result.goalsPerDepth[d] > 0) return d - result.minMoves;
+  }
+  return window + 1;
+}
+
+/**
+ * Near-miss density — the share of goal states in the searched window that are
+ * suboptimal. High density means slightly-longer routes abound around the
+ * optimum (the "obvious solution" profile — being a couple moves sloppy still
+ * works); low density means the optimal routes are all there is. 0 when
+ * unmeasured (no overshoot).
+ */
+export function nearMissDensity(result: SolverResult): number {
+  let optimal = 0;
+  let near = 0;
+  for (let d = 0; d <= result.searchedDepth; d++) {
+    if (d <= result.minMoves) optimal += result.goalsPerDepth[d];
+    else near += result.goalsPerDepth[d];
+  }
+  const total = optimal + near;
+  return total === 0 ? 0 : near / total;
+}
+
+/**
  * All puzzle metrics for a board, grouped by the data each acts on. Single-
  * solution metrics are reduced across the distinct solutions (max, or min for the
- * negatives); multiple-solution and search-space metrics are computed once.
+ * negatives); multiple-solution, layout, and search-space metrics are computed
+ * once.
  */
 export type Metrics = {
   // single solution
@@ -613,9 +683,13 @@ export type Metrics = {
   uniqueSolutions: number;
   wallUtilization: number;
   deadSpace: number;
+  // static layout
+  clumping: number;
   // search space
   firstMovePrecision: number;
   searchProfile: number;
+  isolationGap: number;
+  nearMissDensity: number;
 };
 
 /**
@@ -655,23 +729,48 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
     uniqueSolutions: uniqueSolutions(board, solutions),
     wallUtilization: wallUtilization(board, solutions),
     deadSpace: deadSpace(board, solutions),
+    // static layout
+    clumping: clumping(board),
     // search space
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
+    isolationGap: isolationGap(result),
+    nearMissDensity: nearMissDensity(result),
   };
 }
 
 export type GateResult = {
   passed: boolean;
-  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7" | "G8";
+  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7" | "G8" | "G9";
 };
 
-/** Inclusive minMoves band per difficulty. `ultra` is excluded from generation. */
-const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
+/**
+ * Inclusive minMoves band per difficulty. `ultra` is excluded from generation.
+ * Exported so the generation loop can raise the G2 floor within the band
+ * (band-floor boards dominate the "too easy" ratings).
+ */
+export const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
   easy: [5, 6],
   medium: [7, 9],
   hard: [10, 13],
 };
+
+/**
+ * G9: whether any blocker is boxed in on all four sides by walls or the board
+ * edge. Pieces are ignored — they can move away, walls can't. A permanently
+ * immobile blocker reads as a wall wearing a blocker's costume; curation
+ * flagged it as a gimmick.
+ */
+function hasTrappedBlocker(board: Board): boolean {
+  const directions: Direction[] = ["up", "down", "left", "right"];
+  return board.pieces.some((piece) =>
+    piece.type === "blocker" &&
+    directions.every((direction) => {
+      const beyond = beyondCell(piece, direction);
+      return !inBounds(beyond) || wallBeyond(board.walls, piece, direction);
+    })
+  );
+}
 
 /**
  * G6 length gate: every route must travel at least `minMoves * LENGTH_FACTOR`
@@ -712,8 +811,10 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
 
 /**
  * Runs the acceptance gates, cheapest-first, short-circuiting on the first fail:
+ *  - G9 no trapped blocker (walled in on all four sides — static, so first)
  *  - G1 solvable within maxDepth 15
- *  - G2 minMoves inside the difficulty band (`ultra` has none → always fails)
+ *  - G2 minMoves inside the difficulty band (`ultra` has none → always fails);
+ *    `minMovesFloor` can raise the band floor (band-top preference)
  *  - G3 canonical hash not already in the corpus or this batch
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
  *  - G5 at most two blockers go entirely unused across all solutions
@@ -721,11 +822,12 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
  *  - G7 >= MIN_WALL_UTILIZATION of walls stop a piece (no decorative clutter)
  *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
  *
- * G7–G8 gate on board *economy* — clutter and wasted space — but, like G1–G6,
- * are measured across the puzzle's solutions (which cells trails enter, which
- * walls actually stop a piece), not from the static layout alone. All gates are
- * hard rejects during generation, but do not constrain manual editing — a human
- * curator may knowingly hand-craft a board that fails a gate.
+ * Gate numbers are historical, order is by cost. G7–G8 gate on board *economy*
+ * — clutter and wasted space — but, like G1–G6, are measured across the
+ * puzzle's solutions (which cells trails enter, which walls actually stop a
+ * piece), not from the static layout alone. All gates are hard rejects during
+ * generation, but do not constrain manual editing — a human curator may
+ * knowingly hand-craft a board that fails a gate.
  */
 export function checkGates(
   board: Board,
@@ -739,8 +841,16 @@ export function checkGates(
      * blocking the loop for seconds; omitted elsewhere for the full solver limit.
      */
     maxStates?: number;
+    /**
+     * Raises the G2 lower bound within the difficulty band (never widens it).
+     * The generation loop passes `band floor + 1` early in its attempt budget
+     * to steer away from floor-minMoves boards, then relaxes.
+     */
+    minMovesFloor?: number;
   },
 ): GateResult {
+  if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
+
   let result: SolverResult;
   try {
     result = solveExhaustiveSync(board, {
@@ -752,7 +862,8 @@ export function checkGates(
   }
 
   const band = DIFFICULTY_BANDS[options.difficulty];
-  if (!band || result.minMoves < band[0] || result.minMoves > band[1]) {
+  const floor = Math.max(band?.[0] ?? 0, options.minMovesFloor ?? 0);
+  if (!band || result.minMoves < floor || result.minMoves > band[1]) {
     return { passed: false, failedGate: "G2" };
   }
 
@@ -812,7 +923,7 @@ const bounded = (value: number, max: number): number =>
   max > 0 ? clamp01(value / max) : 0;
 
 /** Context a bound may depend on (some metrics scale with move/piece count). */
-type BoundCtx = { minMoves: number; blockers: number };
+export type BoundCtx = { minMoves: number; blockers: number };
 type Bound = (ctx: BoundCtx) => number;
 
 /**
@@ -825,32 +936,47 @@ type Bound = (ctx: BoundCtx) => number;
  * — both the corpus anchors (erik > torstein > kim > malene) and the first
  * labeled generated set (a 2★ board scored top, a 5★ board bottom) inverted.
  *
- * v2 is a deliberately conservative structural correction — only changes both
- * datasets independently support, no fitted constants (the labeled set is still
- * small):
- *  - dropped `firstMovePrecision` (rewarded forced openings — the "too-easy"
- *    profile; "nice" boards averaged 0.19, "too-easy" 0.39);
- *  - added `wallUtilization` as a positive and `deadSpace` as a negative (the
- *    two strongest human-aligned signals; previously gate/advisory only);
- *  - added a shaped `variety` term over distinct solutions (see
- *    {@link varietyScore}) — many routes is good only up to a point.
+ * v2 was a conservative structural correction (dropped `firstMovePrecision`,
+ * promoted `wallUtilization`/`deadSpace`, added shaped `variety`) tuned on 11
+ * labels; the 35-label batch showed it still carried no rank signal (pooled
+ * ρ = 0.07).
+ *
+ * v3 prunes the composite down to the metrics the 39-board labeled set showed
+ * actually track ratings (per-metric ρ from `check-anchors`):
+ *  - kept: `stopWeighted` (+0.38), `pieceUsage` (+0.27), `wallUtilization`
+ *    (+0.19), `reversals` (+0.18), `searchProfile` (+0.12) — the "blockers and
+ *    walls actually matter" cluster, matching the dominant human complaints
+ *    (obvious solutions, useless blockers, decorative walls);
+ *  - kept `variety` on corpus ground truth (the malene profile) despite a flat
+ *    ρ in this batch — the generated set barely exercises it;
+ *  - dropped `coverage` (−0.22), `crossTrailOverlap` (−0.19), `deception`
+ *    (−0.07), `totalDistance` and `setupRatio` (~0) — anti-signal or noise
+ *    that diluted the composite as equal-weight positives;
+ *  - dropped `deadSpace` from the negatives (raw ρ +0.01 — board economy is
+ *    gate territory, G8 keeps it); kept the two zero-variance penalties as
+ *    safety rails against degenerate routes.
+ *
+ * v4 promoted `clumping` into the negatives: measured on the same labeled set
+ * it came out the second-strongest signal overall (ρ = −0.35), confirming the
+ * most common human complaint tag.
  */
 export const CALIBRATION: {
-  version: number;
+  /**
+   * Semver. Major = composite membership/bounds change (scores not comparable
+   * across it — report and cache files are keyed to this); minor = additive
+   * advisory metrics that don't enter the composite; patch = docs/refactors.
+   * Pre-semver reports used bare integers (v1, v2).
+   */
+  version: string;
   positive: Record<string, Bound>;
   negative: Record<string, Bound>;
 } = {
-  version: 2,
+  version: "4.0.0",
   positive: {
-    setupRatio: () => 1,
     pieceUsage: ({ minMoves: m, blockers: p }) =>
       p * Math.log2(1 + m) + Math.log2(1 + p),
-    deception: ({ minMoves: m }) => 7 * m,
     reversals: ({ minMoves: m }) => Math.max(1, m - 1),
-    crossTrailOverlap: () => COLS * ROWS,
-    totalDistance: ({ minMoves: m }) => 7 * m * 2,
     searchProfile: () => 1,
-    coverage: () => 1,
     stopWeighted: ({ minMoves: m }) => 3 * m,
     wallUtilization: () => 1,
     variety: () => 1,
@@ -858,7 +984,7 @@ export const CALIBRATION: {
   negative: {
     pointlessClearance: ({ minMoves: m }) => Math.max(1, m),
     sameDirectionRepeat: () => COLS * ROWS,
-    deadSpace: () => 1,
+    clumping: () => 1,
   },
 };
 
@@ -882,31 +1008,16 @@ export function varietyScore(uniqueSolutions: number): number {
  * Composite quality score for a single route in `[-1, 1]`. Each metric is divided
  * by its `CALIBRATION` max so it lands in `[0,1]`, then positives are averaged and
  * the two negatives subtracted — equal footing, no metric dominating by range.
+ *
+ * Exported (with `BoundCtx`) so calibration tooling can recompute composites
+ * from cached route metrics without re-solving the board.
  */
-function compositeScore(
-  metrics: Metrics,
-  board: Board,
-  minMoves: number,
-): number {
-  const ctx: BoundCtx = {
-    minMoves,
-    blockers: board.pieces.filter((piece) => piece.type === "blocker").length,
-  };
+export function compositeScore(metrics: Metrics, ctx: BoundCtx): number {
+  // Every metric is addressable by CALIBRATION under its own name; `variety`
+  // is the one synthetic term (shaped from uniqueSolutions).
   const values: Record<string, number> = {
-    setupRatio: metrics.setupRatio,
-    pieceUsage: metrics.pieceUsage,
-    deception: metrics.deception,
-    reversals: metrics.reversals,
-    crossTrailOverlap: metrics.crossTrailOverlap,
-    totalDistance: metrics.totalDistance,
-    searchProfile: metrics.searchProfile,
-    coverage: metrics.coverage,
-    stopWeighted: metrics.stopWeighted,
-    wallUtilization: metrics.wallUtilization,
+    ...metrics,
     variety: varietyScore(metrics.uniqueSolutions),
-    pointlessClearance: metrics.pointlessClearance,
-    sameDirectionRepeat: metrics.sameDirectionRepeat,
-    deadSpace: metrics.deadSpace,
   };
 
   const mean = (terms: Record<string, Bound>) => {
@@ -933,8 +1044,11 @@ function routeMetrics(
     | "uniqueSolutions"
     | "wallUtilization"
     | "deadSpace"
+    | "clumping"
     | "firstMovePrecision"
     | "searchProfile"
+    | "isolationGap"
+    | "nearMissDensity"
   >,
 ): Metrics {
   return {
@@ -965,17 +1079,24 @@ export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
     uniqueSolutions: uniqueSolutions(board, routes),
     wallUtilization: wallUtilization(board, routes),
     deadSpace: deadSpace(board, routes),
+    clumping: clumping(board),
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
+    isolationGap: isolationGap(result),
+    nearMissDensity: nearMissDensity(result),
   };
 
+  const ctx: BoundCtx = {
+    minMoves: result.minMoves,
+    blockers: board.pieces.filter((piece) => piece.type === "blocker").length,
+  };
   const perSolution: SolutionScore[] = [];
   for (const route of routes) {
     const metrics = routeMetrics(board, route, shared);
     perSolution.push({
       moves: route,
       metrics,
-      score: compositeScore(metrics, board, result.minMoves),
+      score: compositeScore(metrics, ctx),
     });
   }
 

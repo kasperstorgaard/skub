@@ -30,7 +30,7 @@ export const REASON_TAGS = [
   { value: "too-easy", label: "Too easy" },
   { value: "too-hard", label: "Too hard" },
   { value: "meh", label: "Meh" },
-  { value: "boring", label: "Boring" },
+  { value: "pretty", label: "Pretty" },
   { value: "nice", label: "Nice" },
 ] as const;
 

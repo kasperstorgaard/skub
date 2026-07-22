@@ -5,6 +5,7 @@ import {
   boardCanonicalHash,
   boardSelfSymmetries,
   checkGates,
+  clumping,
   computeMetrics,
   computeTrails,
   coverage,
@@ -13,6 +14,8 @@ import {
   deception,
   deduplicateSolutions,
   firstMovePrecision,
+  isolationGap,
+  nearMissDensity,
   pieceUsage,
   pointlessClearance,
   reversals,
@@ -59,6 +62,9 @@ const ingridBoard: Board = {
     { x: 6, y: 6, orientation: "vertical" },
   ],
 };
+
+/** Dummy DAG for synthetic SolverResults (isolation metrics never read it). */
+const emptyDag = { root: 0, goals: [], predecessors: new Map() };
 
 const asymmetricBoard: Board = {
   destination: { x: 5, y: 2 },
@@ -240,7 +246,10 @@ Deno.test("searchProfile() is the last-third share of explored states", () => {
   const result: SolverResult = {
     minMoves: 0,
     statesPerDepth: [1, 2, 1],
-    dag: { root: 0, goals: [], predecessors: new Map() },
+    goalsPerDepth: [],
+    searchedDepth: 0,
+    dag: emptyDag,
+    nearDag: emptyDag,
   };
   assertEquals(searchProfile(result), 1 / 4);
 });
@@ -326,9 +335,82 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
     uniqueSolutions: 4,
     wallUtilization: 0.42857142857142855,
     deadSpace: 0.4375,
+    clumping: 0.06930693069306931,
     firstMovePrecision: 0.16666666666666666,
     searchProfile: 0.8934068908865179,
+    // no overshoot on this solve — the isolation pair reads unmeasured
+    isolationGap: 0,
+    nearMissDensity: 0,
   });
+});
+
+Deno.test("clumping() is the share of same-kind pairs within Chebyshev 1", () => {
+  const clumped: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 4, y: 4, type: "blocker" },
+      { x: 5, y: 4, type: "blocker" },
+      { x: 5, y: 5, type: "blocker" },
+    ],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      { x: 2, y: 2, orientation: "vertical" },
+    ],
+  };
+
+  // All 3 blocker pairs and the 1 wall pair are adjacent: 4 close / 4 total.
+  assertEquals(clumping(clumped), 1);
+});
+
+Deno.test("clumping() is low when structure is spread out", () => {
+  // asymmetricBoard: two walls at (2,2)/(6,4) and two blockers at
+  // (1,1)/(1,6) — no pair within Chebyshev distance 1.
+  assertEquals(clumping(asymmetricBoard), 0);
+});
+
+Deno.test("isolationGap() is the distance to the nearest suboptimal goal", () => {
+  const base = { statesPerDepth: [], dag: emptyDag, nearDag: emptyDag };
+
+  assertEquals(
+    {
+      nearMissAtPlusOne: isolationGap({
+        ...base,
+        minMoves: 7,
+        searchedDepth: 9,
+        goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2, 5, 0],
+      }),
+      cleanWindow: isolationGap({
+        ...base,
+        minMoves: 7,
+        searchedDepth: 9,
+        goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
+      }),
+      unmeasured: isolationGap({
+        ...base,
+        minMoves: 7,
+        searchedDepth: 7,
+        goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2],
+      }),
+    },
+    // A goal one past optimal → gap 1; an empty 2-deep window → lower bound 3;
+    // no overshoot → 0 (unmeasured, not un-isolated).
+    { nearMissAtPlusOne: 1, cleanWindow: 3, unmeasured: 0 },
+  );
+});
+
+Deno.test("nearMissDensity() is the suboptimal share of searched goals", () => {
+  const base = { statesPerDepth: [], dag: emptyDag, nearDag: emptyDag };
+
+  assertEquals(
+    nearMissDensity({
+      ...base,
+      minMoves: 7,
+      searchedDepth: 9,
+      goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2, 5, 1],
+    }),
+    0.75, // 6 suboptimal of 8 total
+  );
 });
 
 Deno.test("wallUtilization() is the fraction of walls that stop a piece", () => {
@@ -364,6 +446,38 @@ Deno.test("checkGates() fails G2 when minMoves is outside the band", () => {
   assertEquals(
     checkGates(ingridBoard, { difficulty: "hard", ...noCorpus }),
     { passed: false, failedGate: "G2" },
+  );
+});
+
+Deno.test("checkGates() fails G2 when minMovesFloor raises the band floor", () => {
+  // ingrid is a 7-move medium board; a floor of 8 rejects it without touching
+  // the band's upper bound.
+  assertEquals(
+    checkGates(ingridBoard, {
+      difficulty: "medium",
+      ...noCorpus,
+      minMovesFloor: 8,
+    }),
+    { passed: false, failedGate: "G2" },
+  );
+});
+
+Deno.test("checkGates() fails G9 for a blocker walled in on all four sides", () => {
+  const trapped: Board = {
+    ...ingridBoard,
+    pieces: [...ingridBoard.pieces, { x: 3, y: 3, type: "blocker" }],
+    walls: [
+      ...ingridBoard.walls,
+      { x: 3, y: 3, orientation: "horizontal" }, // above
+      { x: 3, y: 4, orientation: "horizontal" }, // below
+      { x: 3, y: 3, orientation: "vertical" }, // left
+      { x: 4, y: 3, orientation: "vertical" }, // right
+    ],
+  };
+
+  assertEquals(
+    checkGates(trapped, { difficulty: "medium", ...noCorpus }),
+    { passed: false, failedGate: "G9" },
   );
 });
 

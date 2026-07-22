@@ -6,13 +6,26 @@
  * visible. Run after any `CALIBRATION` change — the goal is ρ trending to +1
  * (v1 was negative: the composite was anti-correlated).
  *
- * Each board is scored in its own subprocess (crash/OOM isolation), reusing
- * `compare-generated.ts`'s worker mode so there's exactly one scoring path.
+ * Also reports per-metric ρ — which individual metrics track the ratings —
+ * the evidence base for promoting/demoting composite terms.
+ *
+ * Boards are solved in a subprocess (crash/OOM isolation, one scoring path via
+ * `compare-generated.ts`'s worker mode), but the solve-derived route metrics
+ * are cached content-hashed and calibration-independent: composites are
+ * recomputed in-process from the cache, so calibration iterations don't pay
+ * for re-solving.
  *
  * Usage: `deno task check-anchors [--timeout=60000]`
  */
 import { GENERATED_DIR, parseGenerated } from "#/game/generated.ts";
-import { CALIBRATION } from "#/game/scoring.ts";
+import {
+  type BoundCtx,
+  CALIBRATION,
+  compositeScore,
+  type Metrics,
+  varietyScore,
+} from "#/game/scoring.ts";
+import type { WorkerOutput } from "#/scripts/compare-generated.ts";
 
 /**
  * Corpus ground-truth anchors (see the scoring-calibration-anchors memory):
@@ -25,12 +38,25 @@ const ANCHORS: Record<string, number> = {
   kim: 1,
 };
 
+const CACHE_FILE = "scoring/.cache/route-metrics.json";
+
 const flag = (name: string) =>
   Deno.args.find((a) => a.startsWith(name))?.slice(name.length);
 const timeoutMs = Number(flag("--timeout=") ?? "60000");
 
-/** Scores one file via compare-generated's worker mode; null on crash/timeout. */
-async function scoreFile(path: string): Promise<number | null> {
+type CacheEntry = { hash: string; ctx: BoundCtx; routes: Metrics[] };
+
+async function contentHash(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-1",
+    new TextEncoder().encode(text),
+  );
+  return [...new Uint8Array(digest)]
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Solves one file via compare-generated's worker mode; null on crash/timeout. */
+async function solveFile(path: string): Promise<WorkerOutput | null> {
   try {
     const { code, stdout } = await new Deno.Command(Deno.execPath(), {
       args: ["run", "-A", "scripts/compare-generated.ts", `--file=${path}`],
@@ -39,22 +65,111 @@ async function scoreFile(path: string): Promise<number | null> {
       signal: AbortSignal.timeout(timeoutMs),
     }).output();
     if (code !== 0) return null;
-    const { values } = JSON.parse(new TextDecoder().decode(stdout));
-    return values.score as number;
+    return JSON.parse(new TextDecoder().decode(stdout));
   } catch {
     return null;
   }
 }
 
-type Row = { name: string; rating: number; score: number; source: string };
+let cache: Record<string, CacheEntry> = {};
+try {
+  cache = JSON.parse(await Deno.readTextFile(CACHE_FILE));
+} catch {
+  // no cache yet
+}
+
+/**
+ * The metric keys aggregated per board (max across routes unless noted).
+ * Doubles as the cache staleness check: an entry solved before a metric
+ * existed lacks its key and must be re-solved.
+ */
+const MAX_KEYS = [
+  "setupRatio",
+  "coverage",
+  "deception",
+  "reversals",
+  "crossTrailOverlap",
+  "totalDistance",
+  "pieceUsage",
+  "stopWeighted",
+  "uniqueSolutions",
+  "wallUtilization",
+  "deadSpace",
+  "clumping",
+  "firstMovePrecision",
+  "searchProfile",
+  "isolationGap",
+  "nearMissDensity",
+] as const satisfies readonly (keyof Metrics)[];
+const MIN_KEYS = [
+  "pointlessClearance",
+  "sameDirectionRepeat",
+] as const satisfies readonly (keyof Metrics)[];
+
+/** Route metrics for a file — from the cache when its content is unchanged. */
+async function routeMetrics(
+  path: string,
+): Promise<Pick<CacheEntry, "ctx" | "routes"> | null> {
+  const hash = await contentHash(await Deno.readTextFile(path));
+  const cached = cache[path];
+  const complete = cached &&
+    [...MAX_KEYS, ...MIN_KEYS].every((key) => key in cached.routes[0]);
+  if (cached && cached.hash === hash && complete) return cached;
+
+  const solved = await solveFile(path);
+  if (!solved) return null;
+  cache[path] = { hash, ctx: solved.ctx, routes: solved.routes };
+  return cache[path];
+}
+
+type Row = {
+  name: string;
+  rating: number;
+  score: number;
+  metrics: Record<string, number>;
+  source: string;
+};
+
+/**
+ * Board-level metric aggregates, mirroring `computeMetrics`' reduction: max
+ * across routes for signals, min for the two penalties (shared metrics are
+ * route-constant, so max is a no-op) — plus the shaped `variety` term.
+ */
+function aggregateMetrics(routes: Metrics[]): Record<string, number> {
+  const agg = (key: keyof Metrics, reduce: "max" | "min") => {
+    let out = reduce === "max" ? -Infinity : Infinity;
+    for (const m of routes) out = Math[reduce](out, m[key]);
+    return out;
+  };
+  const out: Record<string, number> = {};
+  for (const key of MAX_KEYS) out[key] = agg(key, "max");
+  for (const key of MIN_KEYS) out[key] = agg(key, "min");
+  out.variety = varietyScore(out.uniqueSolutions);
+  return out;
+}
 
 const rows: Row[] = [];
 const skipped: string[] = [];
 
+async function addRow(path: string, name: string, rating: number, src: string) {
+  const entry = await routeMetrics(path);
+  if (!entry) {
+    skipped.push(name);
+    return;
+  }
+  let sum = 0;
+  for (const m of entry.routes) sum += compositeScore(m, entry.ctx);
+  rows.push({
+    name,
+    rating,
+    score: sum / entry.routes.length,
+    metrics: aggregateMetrics(entry.routes),
+    source: src,
+  });
+}
+
 for (const [slug, rating] of Object.entries(ANCHORS)) {
-  const score = await scoreFile(`static/puzzles/${slug}.md`);
-  if (score === null) skipped.push(slug);
-  else rows.push({ name: slug, rating, score, source: "anchor" });
+  await addRow(`static/puzzles/${slug}.md`, slug, rating, "anchor");
 }
 
 try {
@@ -72,13 +187,16 @@ try {
     }
     if (rating === undefined) continue; // unrated — no ground truth
 
-    const score = await scoreFile(path);
-    if (score === null) skipped.push(name);
-    else rows.push({ name, rating, score, source: "generated" });
+    await addRow(path, name, rating, "generated");
   }
 } catch {
   // no generated store — anchors alone still work
 }
+
+await Deno.mkdir(CACHE_FILE.slice(0, CACHE_FILE.lastIndexOf("/")), {
+  recursive: true,
+});
+await Deno.writeTextFile(CACHE_FILE, JSON.stringify(cache));
 
 /** Ranks with ties averaged (standard for Spearman). */
 function ranks(values: number[]): number[] {
@@ -126,7 +244,8 @@ for (const r of rows) {
   );
 }
 
-const rho = spearman(rows.map((r) => r.rating), rows.map((r) => r.score));
+const ratings = rows.map((r) => r.rating);
+const rho = spearman(ratings, rows.map((r) => r.score));
 console.log(
   `\nSpearman ρ = ${rho.toFixed(3)} over ${rows.length} boards ` +
     `(${rows.filter((r) => r.source === "anchor").length} anchors + ` +
@@ -136,3 +255,25 @@ console.log(
 console.log(
   "Target: ρ → +1. The table above shows which boards sit out of order.",
 );
+
+const inComposite = new Set([
+  ...Object.keys(CALIBRATION.positive),
+  ...Object.keys(CALIBRATION.negative),
+]);
+const metricRhos = Object.keys(rows[0].metrics)
+  .map((key) => ({
+    key,
+    rho: spearman(ratings, rows.map((r) => r.metrics[key])),
+  }))
+  .sort((a, b) => Math.abs(b.rho) - Math.abs(a.rho));
+
+console.log("\nPer-metric ρ vs rating (composite terms marked ●):\n");
+for (const { key, rho: r } of metricRhos) {
+  const mark = inComposite.has(key) ? "●" : " ";
+  const bar = "█".repeat(Math.round(Math.abs(r) * 20));
+  console.log(
+    `${mark} ${key.padEnd(20)} ${r >= 0 ? "+" : "-"}${
+      Math.abs(r).toFixed(3)
+    }  ${bar}`,
+  );
+}
