@@ -221,7 +221,13 @@ and read the ρ table again. Hypothesis to test: torstein/Vebjørn clean at +1,
     known 4–5★;
   - exact labels still come from rating a ~15–20 corpus slice (espec. the
     tails — the handful of boards the curator considers fillers or
-    masterpieces), which also anchors the scale across difficulty bands.
+    masterpieces), which also anchors the scale across difficulty bands;
+  - **PostHog solve tracking** (curator offer, 2026-07-22): pull per-puzzle
+    behavioural data for the shipped corpus — e.g. solve/abandon rates,
+    attempts, solve time, player moves vs `minMoves` — as another label
+    source. Behavioural difficulty ≠ curated quality (a pretty 4★ can be
+    easy; a grindy board can be unfun), so treat it as a third signal to
+    correlate against the metrics, not a replacement for ratings.
 - Weighted composite terms once the labeled set grows (~100 labels = weight
   fitting; ~45–50 = detect ρ 0.3 effects; currently 39).
 - Half-star ratings in the feedback UI — the curator already writes "3.5" in
