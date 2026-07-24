@@ -119,14 +119,13 @@ function CandidateScore(
       label: "Isolation",
       value: metrics.isolationGap,
       hint:
-        "Moves past optimal to the nearest suboptimal solution — higher means the optimal route stands alone (0 = not measured).",
+        "Moves past optimal to the nearest genuine near-miss — 2 means the optimal route stands alone at +1 (torstein profile); 1 means a real alternative sits right behind it (0 = not measured).",
     },
     {
       label: "Near misses",
-      value: metrics.nearMissDensity,
-      percent: true,
+      value: metrics.nearMissCount,
       hint:
-        "Share of goal states in the searched window that are suboptimal — high when being sloppy still works.",
+        "Count of genuine alternative solutions at optimal + 1 (padded routes — an optimal path plus one idle move — excluded). Higher means being a move sloppy still finds a real route.",
     },
     {
       label: "Coverage",

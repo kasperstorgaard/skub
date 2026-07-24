@@ -8,6 +8,7 @@ import {
 } from "#/game/board.ts";
 import {
   enumerateSolutions,
+  firstSolutionFrom,
   optimalFirstMoves,
   solveExhaustiveSync,
   type SolverResult,
@@ -626,39 +627,57 @@ export function searchProfile(result: SolverResult): number {
 }
 
 /**
- * Isolation gap — how far past optimal the nearest suboptimal solution sits:
- * the smallest `d > minMoves` with a goal arrival, minus `minMoves`. A clean
- * gap means the optimal solution stands alone (the torstein profile: optimal
- * 10, next-best 12); gap 1 means near-misses crowd right behind it. When no
- * suboptimal goal exists within the searched window the full window + 1 is
- * reported (a lower bound: "at least this isolated"). 0 when the solve didn't
- * search past optimal (no overshoot) — unmeasured, not un-isolated.
+ * A suboptimal route is *padded* — a fake near-miss — when removing a single
+ * move from it yields an optimal route's canonical move-multiset. That means the
+ * route is just an optimal solution plus one inconsequential extra move (shuffle
+ * a blocker, then run the optimal path), which every board has and which made
+ * the old state-level `isolationGap` flat at 1 everywhere.
  */
-export function isolationGap(result: SolverResult): number {
-  const window = result.searchedDepth - result.minMoves;
-  if (window <= 0) return 0;
-  for (let d = result.minMoves + 1; d <= result.searchedDepth; d++) {
-    if (result.goalsPerDepth[d] > 0) return d - result.minMoves;
+function isPaddedOptimal(route: Move[], optimalKeys: Set<string>): boolean {
+  for (let i = 0; i < route.length; i++) {
+    const trimmed = route.slice(0, i).concat(route.slice(i + 1));
+    if (optimalKeys.has(getCanonicalMoveKey(trimmed))) return true;
   }
-  return window + 1;
+  return false;
 }
 
 /**
- * Near-miss density — the share of goal states in the searched window that are
- * suboptimal. High density means slightly-longer routes abound around the
- * optimum (the "obvious solution" profile — being a couple moves sloppy still
- * works); low density means the optimal routes are all there is. 0 when
- * unmeasured (no overshoot).
+ * Genuine near-miss isolation. Walks one route per suboptimal goal one move past
+ * optimal (`nearDag`), canonical-dedupes them, and drops the *padded* ones (an
+ * optimal route plus one inconsequential move). What survives are genuine
+ * alternative solutions at optimal + 1.
+ *
+ * Returns:
+ *  - `count` — distinct genuine near-misses at optimal + 1 (the "obvious
+ *    solution" profile has several; a board whose next real route is far out has
+ *    none).
+ *  - `gap` — moves past optimal to the nearest *genuine* near-miss: 1 when any
+ *    survives, else 2 (the optimal stands alone at +1 — the torstein profile:
+ *    optimal 10, next distinct route 12). 0 when the solve didn't overshoot
+ *    (unmeasured, not un-isolated).
  */
-export function nearMissDensity(result: SolverResult): number {
-  let optimal = 0;
-  let near = 0;
-  for (let d = 0; d <= result.searchedDepth; d++) {
-    if (d <= result.minMoves) optimal += result.goalsPerDepth[d];
-    else near += result.goalsPerDepth[d];
+export function genuineNearMisses(
+  result: SolverResult,
+  optimalSolutions: Move[][],
+): { count: number; gap: number } {
+  if (result.searchedDepth <= result.minMoves) return { count: 0, gap: 0 };
+
+  const optimalKeys = new Set(optimalSolutions.map(getCanonicalMoveKey));
+  const targetLength = result.minMoves + 1;
+  const seen = new Set<string>();
+  let count = 0;
+
+  for (const goal of result.nearDag.goals) {
+    const route = firstSolutionFrom(result.nearDag, goal);
+    if (route.length !== targetLength) continue; // only optimal + 1
+    const key = getCanonicalMoveKey(route);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (isPaddedOptimal(route, optimalKeys)) continue;
+    count++;
   }
-  const total = optimal + near;
-  return total === 0 ? 0 : near / total;
+
+  return { count, gap: count > 0 ? 1 : 2 };
 }
 
 /**
@@ -689,7 +708,7 @@ export type Metrics = {
   firstMovePrecision: number;
   searchProfile: number;
   isolationGap: number;
-  nearMissDensity: number;
+  nearMissCount: number;
 };
 
 /**
@@ -700,6 +719,7 @@ export type Metrics = {
  */
 export function computeMetrics(board: Board, result: SolverResult): Metrics {
   const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
+  const nearMiss = genuineNearMisses(result, solutions);
 
   const maxOver = (metric: (board: Board, moves: Move[]) => number): number => {
     let best = 0;
@@ -734,8 +754,8 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
     // search space
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
-    isolationGap: isolationGap(result),
-    nearMissDensity: nearMissDensity(result),
+    isolationGap: nearMiss.gap,
+    nearMissCount: nearMiss.count,
   };
 }
 
@@ -959,6 +979,18 @@ type Bound = (ctx: BoundCtx) => number;
  * v4 promoted `clumping` into the negatives: measured on the same labeled set
  * it came out the second-strongest signal overall (ρ = −0.35), confirming the
  * most common human complaint tag.
+ *
+ * v5 dropped `variety`. Two independent lines condemned it: its rating ρ was ~0
+ * (kept in v3 only on the corpus-ground-truth hunch), and PostHog behaviour
+ * (player-adjusted optimal-solve rate over 192 corpus boards) showed
+ * `uniqueSolutions` tracks *easiness* (ρ +0.18) — so variety was a positive that
+ * rewarded easy multi-solution boards while penalising the isolated-brilliant
+ * profile (torstein, few solutions). Removing it lifted pooled ρ 0.373 → 0.488
+ * and restored the anchor order (malene ≈ torstein ≫ erik > kim). Quality is
+ * non-monotonic in solution count (both varied-malene and isolated-torstein are
+ * 5★), so the varied side wants a difficulty-gated / U-shaped term, not a naive
+ * "more solutions = better" — deferred until such a term is designed and earns
+ * its ρ (`nearMissCount`/`isolationGap`, both advisory, are the raw material).
  */
 export const CALIBRATION: {
   /**
@@ -971,7 +1003,7 @@ export const CALIBRATION: {
   positive: Record<string, Bound>;
   negative: Record<string, Bound>;
 } = {
-  version: "4.0.0",
+  version: "5.0.0",
   positive: {
     pieceUsage: ({ minMoves: m, blockers: p }) =>
       p * Math.log2(1 + m) + Math.log2(1 + p),
@@ -979,7 +1011,6 @@ export const CALIBRATION: {
     searchProfile: () => 1,
     stopWeighted: ({ minMoves: m }) => 3 * m,
     wallUtilization: () => 1,
-    variety: () => 1,
   },
   negative: {
     pointlessClearance: ({ minMoves: m }) => Math.max(1, m),
@@ -987,22 +1018,6 @@ export const CALIBRATION: {
     clumping: () => 1,
   },
 };
-
-/**
- * Shaped variety term over the distinct-solution count, in [0, 1]. Quality is
- * not monotonic in route count (labeled data): 2–8 varied routes is the sweet
- * band ("wow, you could also solve it like *that*"), a single route is neutral
- * — it can be brilliant (torstein) or linear (the too-easy profile); the count
- * alone can't tell, other terms must — and double-digit counts fade toward 0
- * (a 49-route board rated "too-easy": when everything works, nothing is
- * clever). The fade is gentle (zero at 32) because canonicalization currently
- * over-counts some varied boards (malene: 20 counted, 4 by human count).
- */
-export function varietyScore(uniqueSolutions: number): number {
-  if (uniqueSolutions <= 1) return 0.5;
-  if (uniqueSolutions <= 8) return 1;
-  return Math.max(0, 1 - (uniqueSolutions - 8) / 24);
-}
 
 /**
  * Composite quality score for a single route in `[-1, 1]`. Each metric is divided
@@ -1013,12 +1028,9 @@ export function varietyScore(uniqueSolutions: number): number {
  * from cached route metrics without re-solving the board.
  */
 export function compositeScore(metrics: Metrics, ctx: BoundCtx): number {
-  // Every metric is addressable by CALIBRATION under its own name; `variety`
-  // is the one synthetic term (shaped from uniqueSolutions).
-  const values: Record<string, number> = {
-    ...metrics,
-    variety: varietyScore(metrics.uniqueSolutions),
-  };
+  // Every CALIBRATION term maps to a metric by name (no synthetic terms since
+  // v5 dropped the shaped `variety`); a Record keeps that indirection open.
+  const values: Record<string, number> = { ...metrics };
 
   const mean = (terms: Record<string, Bound>) => {
     const keys = Object.keys(terms);
@@ -1048,7 +1060,7 @@ function routeMetrics(
     | "firstMovePrecision"
     | "searchProfile"
     | "isolationGap"
-    | "nearMissDensity"
+    | "nearMissCount"
   >,
 ): Metrics {
   return {
@@ -1075,6 +1087,7 @@ function routeMetrics(
  */
 export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
   const routes = deduplicateSolutions(enumerateSolutions(result.dag));
+  const nearMiss = genuineNearMisses(result, routes);
   const shared = {
     uniqueSolutions: uniqueSolutions(board, routes),
     wallUtilization: wallUtilization(board, routes),
@@ -1082,8 +1095,8 @@ export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
     clumping: clumping(board),
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
-    isolationGap: isolationGap(result),
-    nearMissDensity: nearMissDensity(result),
+    isolationGap: nearMiss.gap,
+    nearMissCount: nearMiss.count,
   };
 
   const ctx: BoundCtx = {

@@ -47,7 +47,15 @@ const METRICS = [
   "wallUtilization",
   "clumping",
   "isolationGap",
-  "nearMissDensity",
+  "nearMissCount",
+  // composite-strong members, captured so behavioural correlation (Tier 2) can
+  // read them per corpus board without a second re-solve.
+  "stopWeighted",
+  "pieceUsage",
+  "coverage",
+  "searchProfile",
+  "crossTrailOverlap",
+  "totalDistance",
 ] as const;
 
 type Values = Record<(typeof METRICS)[number], number>;
@@ -98,7 +106,13 @@ function scoreFile(path: string): WorkerOutput {
       wallUtilization: m.wallUtilization,
       clumping: m.clumping,
       isolationGap: m.isolationGap,
-      nearMissDensity: m.nearMissDensity,
+      nearMissCount: m.nearMissCount,
+      stopWeighted: m.stopWeighted,
+      pieceUsage: m.pieceUsage,
+      coverage: m.coverage,
+      searchProfile: m.searchProfile,
+      crossTrailOverlap: m.crossTrailOverlap,
+      totalDistance: m.totalDistance,
     },
   };
 }

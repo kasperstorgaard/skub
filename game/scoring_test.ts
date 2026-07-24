@@ -14,8 +14,7 @@ import {
   deception,
   deduplicateSolutions,
   firstMovePrecision,
-  isolationGap,
-  nearMissDensity,
+  genuineNearMisses,
   pieceUsage,
   pointlessClearance,
   reversals,
@@ -29,10 +28,11 @@ import {
 } from "./scoring.ts";
 import {
   enumerateSolutions,
+  type SolutionDag,
   solveExhaustiveSync,
   type SolverResult,
 } from "./solver.ts";
-import type { Board } from "#/game/types.ts";
+import type { Board, Move } from "#/game/types.ts";
 
 // Real puzzle fixture (static/puzzles/ingrid.md, 7 moves; 26 raw optimal sequences).
 const ingridBoard: Board = {
@@ -340,7 +340,7 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
     searchProfile: 0.8934068908865179,
     // no overshoot on this solve — the isolation pair reads unmeasured
     isolationGap: 0,
-    nearMissDensity: 0,
+    nearMissCount: 0,
   });
 });
 
@@ -369,47 +369,68 @@ Deno.test("clumping() is low when structure is spread out", () => {
   assertEquals(clumping(asymmetricBoard), 0);
 });
 
-Deno.test("isolationGap() is the distance to the nearest suboptimal goal", () => {
-  const base = { statesPerDepth: [], dag: emptyDag, nearDag: emptyDag };
+Deno.test("genuineNearMisses() counts real +1 routes and drops padded optimals", () => {
+  // One optimal route of length 2.
+  const o1: Move = [{ x: 0, y: 0 }, { x: 0, y: 3 }];
+  const o2: Move = [{ x: 0, y: 3 }, { x: 3, y: 3 }];
+  const optimal = [[o1, o2]];
 
+  // A padded near-miss: the optimal route plus one idle move — removing that
+  // move recovers the optimal multiset, so it must NOT count.
+  const idle: Move = [{ x: 5, y: 5 }, { x: 5, y: 7 }];
+  // A genuine near-miss: a distinct 3-move route sharing no optimal subset.
+  const g1: Move = [{ x: 7, y: 7 }, { x: 7, y: 4 }];
+  const g2: Move = [{ x: 7, y: 4 }, { x: 4, y: 4 }];
+  const g3: Move = [{ x: 4, y: 4 }, { x: 4, y: 2 }];
+
+  // nearDag: goal 10 walks to the padded route, goal 20 to the genuine one.
+  // firstSolutionFrom follows the first edge back to root (0), so each chain is
+  // laid out last-move-first.
+  const nearDag: SolutionDag = {
+    root: 0,
+    goals: [10, 20],
+    predecessors: new Map<number, { from: number; move: Move }[]>([
+      [10, [{ from: 11, move: idle }]],
+      [11, [{ from: 12, move: o2 }]],
+      [12, [{ from: 0, move: o1 }]],
+      [20, [{ from: 21, move: g3 }]],
+      [21, [{ from: 22, move: g2 }]],
+      [22, [{ from: 0, move: g1 }]],
+    ]),
+  };
+  const base = { statesPerDepth: [], goalsPerDepth: [], dag: emptyDag };
+
+  // 1 genuine + 1 padded (excluded) → count 1, so a real route sits at +1 (gap 1).
   assertEquals(
-    {
-      nearMissAtPlusOne: isolationGap({
-        ...base,
-        minMoves: 7,
-        searchedDepth: 9,
-        goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2, 5, 0],
-      }),
-      cleanWindow: isolationGap({
-        ...base,
-        minMoves: 7,
-        searchedDepth: 9,
-        goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
-      }),
-      unmeasured: isolationGap({
-        ...base,
-        minMoves: 7,
-        searchedDepth: 7,
-        goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2],
-      }),
-    },
-    // A goal one past optimal → gap 1; an empty 2-deep window → lower bound 3;
-    // no overshoot → 0 (unmeasured, not un-isolated).
-    { nearMissAtPlusOne: 1, cleanWindow: 3, unmeasured: 0 },
+    genuineNearMisses(
+      { ...base, minMoves: 2, searchedDepth: 4, nearDag },
+      optimal,
+    ),
+    { count: 1, gap: 1 },
   );
-});
 
-Deno.test("nearMissDensity() is the suboptimal share of searched goals", () => {
-  const base = { statesPerDepth: [], dag: emptyDag, nearDag: emptyDag };
-
+  // Drop the genuine goal: only the padded route remains → nothing genuine at
+  // +1, so the optimal stands alone (gap 2).
   assertEquals(
-    nearMissDensity({
-      ...base,
-      minMoves: 7,
-      searchedDepth: 9,
-      goalsPerDepth: [0, 0, 0, 0, 0, 0, 0, 2, 5, 1],
-    }),
-    0.75, // 6 suboptimal of 8 total
+    genuineNearMisses(
+      {
+        ...base,
+        minMoves: 2,
+        searchedDepth: 4,
+        nearDag: { ...nearDag, goals: [10] },
+      },
+      optimal,
+    ),
+    { count: 0, gap: 2 },
+  );
+
+  // No overshoot searched → unmeasured.
+  assertEquals(
+    genuineNearMisses(
+      { ...base, minMoves: 2, searchedDepth: 2, nearDag: emptyDag },
+      optimal,
+    ),
+    { count: 0, gap: 0 },
   );
 });
 

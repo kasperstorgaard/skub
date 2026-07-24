@@ -187,24 +187,137 @@ and anchors must be re-checked after it lands.
 - `compositeScore` now derives its value map from `Metrics` directly (a
   hand-maintained copy silently NaN'd the first v4 run).
 
-## In progress: genuine near-miss isolation (solver side landed)
+## Genuine near-miss isolation (landed)
 
 The fix for the flat isolation signal: count only *genuine* near-miss routes —
 suboptimal routes that are not an optimal route padded with one inconsequential
-extra move. Landed so far: `SolverResult.nearDag` (a second DAG over the
+extra move. Solver side (earlier): `SolverResult.nearDag` (a second DAG over the
 suboptimal goal states in the searched window; the primary `dag` stays
 optimal-only) and `firstSolutionFrom(dag, goal)` to walk one route per goal
 without materializing the combinatorial set.
 
-Next session: in `game/scoring.ts`, replace `isolationGap`/`nearMissDensity`
-with padded-aware versions — walk one route per `nearDag` goal at depth
-minMoves+1, canonical-dedupe, drop routes where removing any single move
-yields an optimal route's canonical multiset (`getCanonicalMoveKey`), count
-the rest (`nearMissCount`; gap = 1 if any genuine, else 2). Then rename
-plumbing (worker values, check-anchors `MAX_KEYS`, panel entry — the key
-rename doubles as cache invalidation), rebuild the cache (~10 min background)
-and read the ρ table again. Hypothesis to test: torstein/Vebjørn clean at +1,
-"obvious" boards not.
+Scoring side (this session): `game/scoring.ts` `genuineNearMisses(result,
+optimalSolutions)` replaces the dud `isolationGap`/`nearMissDensity`. It walks
+one route per `nearDag` goal at depth minMoves+1, canonical-dedupes
+(`getCanonicalMoveKey`), and drops *padded* routes — those where removing a
+single move yields an optimal route's canonical multiset. Returns `count`
+(genuine +1 near-misses) and `gap` (1 if any genuine, else 2; 0 unmeasured).
+`Metrics` now carries `isolationGap` (= gap) and `nearMissCount` (= count,
+renamed from `nearMissDensity`). Plumbing renamed across `computeMetrics`,
+`scoreBoard`, `routeMetrics`, compare-generated `METRICS`/worker values,
+check-anchors `MAX_KEYS`, and the generator panel; the `nearMissCount` rename
+doubles as cache invalidation. Unit test in `scoring_test.ts` builds a synthetic
+`nearDag` (one genuine + one padded route) and asserts count/gap. All advisory
+still — not in the composite until the ρ table earns it.
+
+Outcome (ρ re-read, check-anchors 39 boards): the fix is *correct* — torstein
+reads `isolationGap=2` (isolated at +1) and malene `nearMissCount=25` (varied),
+both 5★, both now measured right. But **neither earns linear composite entry**
+(isolationGap ρ −0.02, nearMissCount ρ −0.10): quality is non-monotonic in
+near-miss count, and `gap=2` conflates isolated-brilliant (torstein) with
+isolated-trivial (kim). The behaviour-informed calibration pass that followed is
+the v5 section below (it dropped `variety`); the isolation signals stay advisory
+until a difficulty-gated / U-shaped term is designed around them.
+
+## Behavioural corpus data (PostHog, this session)
+
+Pulled per-corpus-board behaviour from PostHog `puzzle_solved` events as a third,
+*difficulty* axis (not quality — behaviour ≠ curated quality; malene is 5★ yet
+behaves easy). Artifacts in `scoring/.cache/` (gitignored, regenerable): raw
+`.psv` pulls, `behavioral.json` (slug-keyed clean cache), and reports
+(`behavioral-too-easy-*`, `behavioral-mislabel-*`, `behavioral-tripwire-*`,
+`behavioral-metric-correlation-*`). Generator scripts are in session scratchpad,
+not committed — promote to a `deno task` if we want reproducibility.
+
+Key findings (full detail in the `scoring-calibration-anchors` memory):
+- Only usable signal is **player-adjusted optimal-solve rate** (`optAdj`)
+  + `ratioAdj` — player fixed-effects (board vs its own players' baseline on
+  *other* boards). solve-rate (cookie/consent asymmetry) and hints (historical
+  bots, since Cloudflare-fixed) are unusable.
+- De-confounded difficulty tracks the labels (median behav-pctile easy 33 /
+  medium 48 / hard 80; partialling out `minMoves` leaves ρ −0.24, so it carries
+  signal beyond board length) → a **difficulty mislabel review** shortlist.
+  Section sizes are percentile cuts and are populated by construction — the
+  length of a list is not evidence of that many mislabels. Blind spot:
+  underrates isolated-brilliant-optimal boards (torstein, `optAdj` +1.0).
+
+## Behavioural adjustment: dilution fix (landed)
+
+The first cut of the adjustment gave solves by single-board players a difference
+of 0 and **kept them in the average**, which scaled every board's signal by its
+share of linkable solves (10%–70% across the corpus). Verified as an identity on
+40 boards: reported ≈ true × linkable-share, mean error 0.71 pp. That is the
+traffic-mix confound the adjustment exists to remove, reintroduced through the
+denominator — and it hit hardest exactly where it mattered, on the high-traffic
+entry boards. `alf` (91.5% optimal, the corpus's most trivially-solved board)
+scored an unremarkable +7.1; `karla` +3.1 was written up as proof the method
+worked.
+
+Now `deno task behavioral-reports` (promoted out of session scratchpad, SQL
+documented in the script): leave-board-out baseline over linkable solves only,
+`feN` recorded per board, and empirical-Bayes shrinkage so a board resting on 9
+solves is not ranked against one resting on 118. Reports print `feN` alongside
+`solves`. Shortlist churn vs the buggy version: 16/20 kept on the too-easy list,
+15/24 on the mislabel list.
+
+**Interpretation limit (curator, 2026-07-24): anonymous sessions are allowed, so
+returning players are frequently issued a fresh `person_id`.** The 236 linkable
+ids are therefore *ids that happened to persist*, not "regulars" — the excluded
+mass mixes genuine newcomers with returning players (it solves optimally 41.1% vs
+33.7% for linkable ids, the wrong way round for a newcomer pool). Consequences:
+- The signal is still a valid within-id comparison and reliable at the board
+  level (78% of the observed spread is true between-board variance; player-split
+  reliability 0.66, Spearman-Brown ≈ 0.79).
+- It has no defensible population coverage → **review shortlist, never an
+  autorelabel**.
+- Replay inflation was the obvious worry and is ruled out: repeat solves of the
+  same board are *less* optimal, not more (36.1% → 36.0% → 30.3% → 19.6% by
+  attempt), so the too-easy list is not a replay artifact.
+- Per-player learning drift cannot be measured at all — fragmented histories look
+  flat by construction. Any future claim resting on player tenure needs a
+  stable identifier first.
+- **Tier-1 metric correlation** (n=198, only the stale-v2 partial corpus cache
+  available): `uniqueSolutions`/variety tracks behavioural easiness (ρ +0.16 on
+  the corrected signal, was +0.195 on the diluted one — the dilution fix barely
+  moves Tier 1, since it preserves rank order at ρ 0.98) → the one too-easy lever
+  surfaced so far. Worth noting `variety` also earns nothing on the quality axis
+  (ρ −0.03 vs the 39 ratings), so both axes now point the same way on tempering
+  it. The composite's strong members
+  (stopWeighted/pieceUsage/clumping/searchProfile) aren't in any corpus cache →
+  **Tier 2 needs the full corpus re-solve** (`corpus-scores-v4.0.0.json`, now
+  regenerating) before a behaviour-driven calibration bump is justified.
+
+New corpus uses this unlocks: (1) control for difficulty when correlating metrics
+vs quality (partial correlations separate length-trackers from quality-trackers);
+(2) a within-corpus separation tripwire (composite should rank the behavioural
+fillers below the rest); (3) a real-play regression set for the too-easy failure
+mode; (4) a nominator for scarce low-end quality labels (confirm by hand).
+
+## Calibration v5.0.0: drop `variety` (landed)
+
+Tier 2 finished (full corpus re-solve → `corpus-scores-v4.0.0.json`, n=192).
+Correlated against the corrected shrunk behavioural signal (`optAdjShrunk` /
+`ratioAdjShrunk`): the composite's strong members (`stopWeighted` −0.28,
+`reversals` −0.24, `searchProfile` −0.21, `pieceUsage` −0.17 vs easiness) all
+track *difficulty* — pulling the right way. `uniqueSolutions`/`variety` is the
+lone composite positive that tracks *easiness* (ρ +0.18) — and its quality ρ is
+≈ 0 (39 ratings). The v4 composite `score` is ~orthogonal to easiness (−0.02).
+
+So `variety` was a positive that rewarded easy multi-solution boards, earned
+nothing on quality, and *penalised* the isolated-brilliant profile (torstein,
+few solutions). Dropping it (removed the CALIBRATION term + the now-dead
+`varietyScore`/`values.variety`): **pooled ρ 0.373 → 0.488** and the anchor order
+is restored (malene 0.556 ≈ torstein 0.468 ≫ erik 0.422 > kim 0.385 — the v3/v4
+tripwire regression, fixed). Major bump (composite membership) → cache re-keys to
+`corpus-scores-v5.0.0.json` (next `compare-generated` re-solves, ~30 min).
+
+Quality is non-monotonic in solution count (varied-malene *and* isolated-torstein
+both 5★), so the varied side wants a **difficulty-gated / U-shaped** term, not a
+naive "more solutions = better". Raw material: `nearMissCount` / `isolationGap`
+(genuine near-miss isolation, now landed but advisory — neither earns linear
+composite entry: `gap=2` conflates isolated-brilliant torstein with
+isolated-trivial kim, so isolation must be gated by difficulty — where the
+behavioural signal earns its keep). Deferred until such a term is designed.
 
 ## Still open
 

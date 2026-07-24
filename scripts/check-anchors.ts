@@ -23,7 +23,6 @@ import {
   CALIBRATION,
   compositeScore,
   type Metrics,
-  varietyScore,
 } from "#/game/scoring.ts";
 import type { WorkerOutput } from "#/scripts/compare-generated.ts";
 
@@ -99,7 +98,7 @@ const MAX_KEYS = [
   "firstMovePrecision",
   "searchProfile",
   "isolationGap",
-  "nearMissDensity",
+  "nearMissCount",
 ] as const satisfies readonly (keyof Metrics)[];
 const MIN_KEYS = [
   "pointlessClearance",
@@ -133,7 +132,7 @@ type Row = {
 /**
  * Board-level metric aggregates, mirroring `computeMetrics`' reduction: max
  * across routes for signals, min for the two penalties (shared metrics are
- * route-constant, so max is a no-op) — plus the shaped `variety` term.
+ * route-constant, so max is a no-op).
  */
 function aggregateMetrics(routes: Metrics[]): Record<string, number> {
   const agg = (key: keyof Metrics, reduce: "max" | "min") => {
@@ -144,7 +143,6 @@ function aggregateMetrics(routes: Metrics[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const key of MAX_KEYS) out[key] = agg(key, "max");
   for (const key of MIN_KEYS) out[key] = agg(key, "min");
-  out.variety = varietyScore(out.uniqueSolutions);
   return out;
 }
 
