@@ -6,6 +6,7 @@
   "tasks": {
     "build": "vite build",
     "dev": "vite",
+    "behavioral-reports": "deno run -A ./scripts/behavioral-reports.ts",
     "check-anchors": "deno run -A ./scripts/check-anchors.ts",
     "compare-generated": "deno run -A ./scripts/compare-generated.ts",
     "e2e": "deno test -A --no-check --env e2e/ routes/",
