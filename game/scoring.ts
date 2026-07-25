@@ -761,7 +761,17 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
 
 export type GateResult = {
   passed: boolean;
-  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7" | "G8" | "G9";
+  failedGate?:
+    | "G1"
+    | "G2"
+    | "G3"
+    | "G4"
+    | "G5"
+    | "G6"
+    | "G7"
+    | "G8"
+    | "G9"
+    | "G10";
 };
 
 /**
@@ -808,6 +818,37 @@ const LENGTH_FACTOR = 2;
 const MIN_WALL_UTILIZATION = 0.2;
 
 /**
+ * Floor on the *number* of walls that must stop a piece, used by G7 for
+ * wall-heavy requests. 0.2 × the default wallsRange top (15) = 3, so the fraction
+ * and the count agree at the default and only diverge (looser) beyond it.
+ */
+const MIN_USEFUL_WALLS = 3;
+
+/**
+ * G5 unused-blocker allowance, conditional on the board's blocker count. The
+ * gate's intent is "blockers should matter", but asking for a denser board
+ * legitimately places more of them, so the fixed ≤2 over-rejects dense requests.
+ * The allowance scales to keep at least half the blockers in use: fixed 2 for the
+ * default counts (≤5), then 6→3, 8→4, … Conservative — never below 2, so it only
+ * ever loosens.
+ */
+export function maxUnusedBlockers(blockerCount: number): number {
+  return Math.max(2, Math.floor(blockerCount / 2));
+}
+
+/**
+ * G7 wall-utilization floor, conditional on the board's wall count. A request for
+ * many walls inevitably makes some decorative, dragging the utilization *fraction*
+ * down even when plenty of walls do real work — so past the default wallsRange top
+ * the floor relaxes from a fixed 0.2 fraction to "at least `MIN_USEFUL_WALLS`
+ * walls stop a piece". Unchanged (0.2) up to 15 walls; looser beyond. Never
+ * tighter, so it only ever loosens.
+ */
+export function minWallUtilization(wallCount: number): number {
+  return Math.min(MIN_WALL_UTILIZATION, MIN_USEFUL_WALLS / wallCount);
+}
+
+/**
  * G8 economy gate: at most this fraction of the board may be dead — cells no
  * trail enters that hold no piece or destination. Equivalently a 20% *live*
  * floor (mirrors G7's 0.2). Very conservative: the hand-built corpus runs
@@ -815,6 +856,18 @@ const MIN_WALL_UTILIZATION = 0.2;
  * grid. A placeholder until scores are surfaced in the generator for tuning.
  */
 const MAX_DEAD_SPACE = 0.8;
+
+/**
+ * G10 clutter gate: reject boards whose `clumping` (share of same-kind
+ * wall/blocker pairs bunched within one cell) exceeds this. Static, so it runs
+ * before the solve. Deliberately a *tail-catcher*, not the main clutter lever —
+ * clumping is the strongest human-complaint signal (calibration ρ −0.35, the
+ * "clumped" tag) but bad and good boards overlap heavily on it, so mild clutter
+ * is shaped softly by the composite negative; only egregious cases are hard
+ * rejected. At 0.25 the hand-built corpus loses ~1% (its p99 is 0.23; one
+ * outlier `pil` at 0.41). Tunable.
+ */
+const MAX_CLUMPING = 0.25;
 
 /** Whether a blocker (by initial-piece id) is used in a solution — moves or stops. */
 function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
@@ -832,14 +885,15 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
 /**
  * Runs the acceptance gates, cheapest-first, short-circuiting on the first fail:
  *  - G9 no trapped blocker (walled in on all four sides — static, so first)
+ *  - G10 clumping <= MAX_CLUMPING (egregious clutter — static, so before the solve)
  *  - G1 solvable within maxDepth 15
  *  - G2 minMoves inside the difficulty band (`ultra` has none → always fails);
  *    `minMovesFloor` can raise the band floor (band-top preference)
  *  - G3 canonical hash not already in the corpus or this batch
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
- *  - G5 at most two blockers go entirely unused across all solutions
+ *  - G5 unused blockers <= maxUnusedBlockers(count) (dense requests allowed more)
  *  - G6 every route travels >= minMoves * LENGTH_FACTOR cells (not cramped/trivial)
- *  - G7 >= MIN_WALL_UTILIZATION of walls stop a piece (no decorative clutter)
+ *  - G7 wall utilization >= minWallUtilization(count) (wall-heavy requests looser)
  *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
  *
  * Gate numbers are historical, order is by cost. G7–G8 gate on board *economy*
@@ -870,6 +924,10 @@ export function checkGates(
   },
 ): GateResult {
   if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
+
+  if (clumping(board) > MAX_CLUMPING) {
+    return { passed: false, failedGate: "G10" };
+  }
 
   let result: SolverResult;
   try {
@@ -903,10 +961,13 @@ export function checkGates(
   for (const moves of solutions) {
     for (const id of usedBlockerIds(board, moves)) used.add(id);
   }
+  const blockerCount = board.pieces.filter((p) => p.type === "blocker").length;
   const unused = board.pieces
     .filter((p, i) => p.type === "blocker" && !used.has(i))
     .length;
-  if (unused > 2) return { passed: false, failedGate: "G5" };
+  if (unused > maxUnusedBlockers(blockerCount)) {
+    return { passed: false, failedGate: "G5" };
+  }
 
   let minTravel = Infinity;
   for (const moves of solutions) {
@@ -916,7 +977,9 @@ export function checkGates(
     return { passed: false, failedGate: "G6" };
   }
 
-  if (wallUtilization(board, solutions) < MIN_WALL_UTILIZATION) {
+  if (
+    wallUtilization(board, solutions) < minWallUtilization(board.walls.length)
+  ) {
     return { passed: false, failedGate: "G7" };
   }
 

@@ -15,6 +15,8 @@ import {
   deduplicateSolutions,
   firstMovePrecision,
   genuineNearMisses,
+  maxUnusedBlockers,
+  minWallUtilization,
   pieceUsage,
   pointlessClearance,
   reversals,
@@ -499,6 +501,45 @@ Deno.test("checkGates() fails G9 for a blocker walled in on all four sides", () 
   assertEquals(
     checkGates(trapped, { difficulty: "medium", ...noCorpus }),
     { passed: false, failedGate: "G9" },
+  );
+});
+
+Deno.test("maxUnusedBlockers() holds at 2 for default counts, loosens past them", () => {
+  // <=5 blockers (the default blockersRange top) keep the fixed allowance of 2;
+  // denser requests scale to keep at least half the blockers in use.
+  assertEquals([3, 4, 5, 6, 7, 8].map(maxUnusedBlockers), [2, 2, 2, 3, 3, 4]);
+});
+
+Deno.test("minWallUtilization() holds at 0.2 up to 15 walls, relaxes beyond", () => {
+  // 0.2 fraction up to the default wallsRange top (15); past it the floor
+  // relaxes toward "at least 3 walls stop a piece".
+  assertEquals(minWallUtilization(5), 0.2);
+  assertEquals(minWallUtilization(15), 0.2);
+  assertEquals(minWallUtilization(20), 0.15);
+  assertEquals(minWallUtilization(30), 0.1);
+});
+
+Deno.test("checkGates() fails G10 for an egregiously clumped board", () => {
+  // Three mutually adjacent blockers + an adjacent wall pair → clumping 1.0,
+  // well past MAX_CLUMPING 0.25. None is walled in on four sides (G9 passes),
+  // so the static G10 check rejects it before the solve.
+  const clumped: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 4, y: 4, type: "blocker" },
+      { x: 5, y: 4, type: "blocker" },
+      { x: 5, y: 5, type: "blocker" },
+    ],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      { x: 2, y: 2, orientation: "vertical" },
+    ],
+  };
+
+  assertEquals(
+    checkGates(clumped, { difficulty: "medium", ...noCorpus }),
+    { passed: false, failedGate: "G10" },
   );
 });
 

@@ -319,6 +319,35 @@ composite entry: `gap=2` conflates isolated-brilliant torstein with
 isolated-trivial kim, so isolation must be gated by difficulty — where the
 behavioural signal earns its keep). Deferred until such a term is designed.
 
+## Gate adjustments (landed)
+
+Two changes to the generation gates, grounded in the labeled/behavioural analysis
+(the earlier "gates untouched" stance is superseded — the floor stays clean, these
+either add a tail-catcher or *loosen* to match the request):
+
+- **G10 clumping cap (new, static, flat).** Reject `clumping > 0.25` before the
+  solve. Clumping is the top human-complaint tag and the strongest composite
+  negative (ρ −0.35), but bad and good boards overlap heavily on it, so this is a
+  *tail-catcher* for egregious clutter (corpus loses ~1%: `pil` 0.41, `ragnar`
+  0.26); mild clutter stays shaped by the composite. Empirically flat: corpus
+  clumping is difficulty-invariant (median ~0.10 across easy/medium/hard), and
+  the symmetry knob only weakly inflates it (>0.25 reject 2%→5% from sym 0→1), so
+  no conditional threshold is warranted.
+
+- **Config-conditional G5 & G7 (loosen for dense requests).** The fixed
+  thresholds mechanically over-rejected boards whose knobs asked for density.
+  Both now scale with the board's realized counts (which reflect the request), so
+  no generator config leaks into the scorer, and both use `min`/`max` forms that
+  reduce to the old thresholds for default counts — they only ever loosen:
+  - **G5** unused-blocker allowance `maxUnusedBlockers(n) = max(2, floor(n/2))` —
+    fixed 2 up to the default blockersRange top (5), then 6→3, 8→4 (keep ≥ half
+    the blockers in use).
+  - **G7** wall-utilization floor `minWallUtilization(n) = min(0.2, 3/n)` —
+    fixed 0.2 up to the default wallsRange top (15), then relaxes toward "≥ 3
+    walls stop a piece" for wall-heavy boards.
+  Both helpers are pure/exported and unit-tested at their boundaries; the gate
+  tests still pass unchanged (default-count boards are unaffected).
+
 ## Still open
 
 - **Incorporate the corpus as weak labels** (curator-stated prior,
@@ -348,7 +377,8 @@ behavioural signal earns its keep). Deferred until such a term is designed.
 
 ## Non-goals
 
-Gate-threshold changes (the floor is already clean — quality shaping belongs
-in the composite and generator); promotion tooling for `generated/` →
-`static/puzzles/` (manual by design); any in-app corpus-comparison panel
-(offline report only).
+Gate changes as *quality* shaping (that belongs in the composite — the gates
+stay a clean structural floor; the G10/G5/G7 adjustments above are clutter
+rejection and request-aware loosening, not quality tuning); promotion tooling for
+`generated/` → `static/puzzles/` (manual by design); any in-app corpus-comparison
+panel (offline report only).
