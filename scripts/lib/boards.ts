@@ -89,7 +89,6 @@ export async function solveFiles(
 
   const boards = new Map<string, SolvedBoard>();
   const skipped: string[] = [];
-  let solvedAny = false;
 
   for (const path of paths) {
     const slug = path.slice(path.lastIndexOf("/") + 1).replace(/\.md$/, "");
@@ -106,12 +105,14 @@ export async function solveFiles(
       skipped.push(slug);
       continue;
     }
+
     cache[path] = { hash, board: solved };
     boards.set(slug, solved);
-    solvedAny = true;
+    // Flushed per board, not per batch: a full corpus run takes long enough
+    // that losing it to an interrupt would be painful.
+    await writeCache(cache);
   }
 
-  if (solvedAny) await writeCache(cache);
   return { boards, skipped };
 }
 

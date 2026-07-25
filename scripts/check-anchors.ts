@@ -13,7 +13,12 @@
 import { GENERATED_DIR, parseGenerated } from "#/game/generated.ts";
 import { aggregateMetrics, METRIC_CATALOG } from "#/game/metric-catalog.ts";
 import { CALIBRATION } from "#/game/scoring.ts";
-import { boardScore, flag, solveDir, solveFiles } from "#/scripts/lib/boards.ts";
+import {
+  boardScore,
+  flag,
+  solveDir,
+  solveFiles,
+} from "#/scripts/lib/boards.ts";
 import { spearman } from "#/scripts/lib/report.ts";
 import type { SolvedBoard } from "#/scripts/lib/score-worker.ts";
 
@@ -86,7 +91,9 @@ console.log(
     `(${anchorCount} anchors + ${rows.length - anchorCount} rated candidates)` +
     (skipped.length ? `; skipped: ${skipped.join(", ")}` : ""),
 );
-console.log("Target: ρ → +1. The table above shows which boards sit out of order.");
+console.log(
+  "Target: ρ → +1. The table above shows which boards sit out of order.",
+);
 
 const inComposite = new Set([
   ...Object.keys(CALIBRATION.positive),

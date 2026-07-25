@@ -98,7 +98,11 @@ ${distributions}
 
 ## Per-reason-tag metric means
 
-${reasonRows.length ? table(["reason", "n", ...COLUMNS], reasonRows) : "_no tagged candidates yet_"}
+${
+    reasonRows.length
+      ? table(["reason", "n", ...COLUMNS], reasonRows)
+      : "_no tagged candidates yet_"
+  }
 `,
 );
 

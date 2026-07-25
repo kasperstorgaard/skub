@@ -109,14 +109,20 @@ solve+score time. Rows are sorted by slug so tuning re-runs diff cleanly.
 ## Slowest puzzles (top 10 by ms)
 
 ${
-    slowest.length === 0 ? "_none_" : slowest.map((row) =>
-      `- ${row.slug} — ${row.board.ms} ms (${row.board.minMoves} moves, ${row.board.routes.length} routes)`
-    ).join("\n")
+    slowest.length === 0
+      ? "_none_"
+      : slowest.map((row) =>
+        `- ${row.slug} — ${row.board.ms} ms (${row.board.minMoves} moves, ${row.board.routes.length} routes)`
+      ).join("\n")
   }
 
 ## Skipped — too branchy to score exhaustively (${skipped.length})
 
-${skipped.length === 0 ? "_none_" : skipped.map((slug) => `- ${slug}`).join("\n")}
+${
+    skipped.length === 0
+      ? "_none_"
+      : skipped.map((slug) => `- ${slug}`).join("\n")
+  }
 
 ## Outliers — worst route below ${floor}, excluding ${excludes.size} listed (${outliers.length})
 

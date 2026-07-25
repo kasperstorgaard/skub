@@ -1013,7 +1013,8 @@ type Bound = (ctx: BoundCtx) => number;
  * Score calibration — the per-metric max bounds the composite normalizes against,
  * split into positive and negative terms. This is the single tunable source of
  * truth; bump `version` on every change so a corpus report is traceable to the
- * calibration that produced it (see `scoring/reports/calibration-<version>.md`).
+ * calibration that produced it — `deno task score-corpus` stamps this version
+ * into both the report body and its filename.
  *
  * v1 used theoretical maxes and came out *anti-correlated* with human judgement
  * — both the corpus anchors (erik > torstein > kim > malene) and the first

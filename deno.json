@@ -6,11 +6,9 @@
   "tasks": {
     "build": "vite build",
     "dev": "vite",
-    "behavioral-reports": "deno run -A ./scripts/behavioral-reports.ts",
     "check-anchors": "deno run -A ./scripts/check-anchors.ts",
     "compare-generated": "deno run -A ./scripts/compare-generated.ts",
     "e2e": "deno test -A --no-check --env e2e/ routes/",
-    "gate-corpus": "deno run -A ./scripts/gate-corpus.ts",
     "list-generated": "deno run -A ./scripts/list-generated.ts",
     "preview": "deno serve -A _fresh/server.js",
     "score-corpus": "deno run -A ./scripts/score-corpus.ts",
@@ -40,7 +38,6 @@
       "static/*",
       "specs/*",
       "generated/*",
-      "scoring/reports/*",
       "routes/api/solver-worker.js"
     ]
   },
