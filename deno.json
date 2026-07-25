@@ -40,6 +40,7 @@
       "static/*",
       "specs/*",
       "generated/*",
+      "scoring/reports/*",
       "routes/api/solver-worker.js"
     ]
   },
