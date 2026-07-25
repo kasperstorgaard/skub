@@ -4,7 +4,15 @@ import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import { candidate } from "#/client/generator-signals.ts";
 import { useGenerateStream } from "#/client/use-generate-stream.ts";
-import { Eye, Icon, Pencil, Repeat, Shuffle, X } from "#/components/icons.tsx";
+import {
+  CaretRight,
+  Eye,
+  Icon,
+  Pencil,
+  Repeat,
+  Shuffle,
+  X,
+} from "#/components/icons.tsx";
 import { NumberRange } from "#/components/number-range.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { RangeSlider } from "#/components/range-slider.tsx";
@@ -102,11 +110,19 @@ function CandidateScore(
         />
       </dl>
 
-      <details className="p-0 bg-none">
-        <summary className="list-none py-2 bg-none cursor-pointer">
+      {
+        /* `group-open:mb-0` drops normalize's `details[open] > summary` margin,
+          which would otherwise show a surface-2 seam between bar and content. */
+      }
+      <details className="group p-0 bg-none">
+        <summary className="flex items-center gap-1 list-none bg-surface-3 cursor-pointer -mx-5 px-5 rounded-none group-open:mb-0">
+          <Icon
+            icon={CaretRight}
+            className="transition-transform group-open:rotate-90"
+          />
           Details
         </summary>
-        <dl className="flex flex-col">
+        <dl className="flex flex-col bg-surface-3 -mx-5 px-5 pb-2">
           <ScoreStat
             label="Mean"
             value={scored.mean}
@@ -331,11 +347,15 @@ export function GeneratorPanel(
             }}
           />
 
-          <details className="p-0 bg-none my-fl-1">
-            <summary className="list-none py-fl-1 bg-none cursor-pointer text-text-2">
+          <details className="group p-0 bg-none my-fl-1">
+            <summary className="flex items-center gap-1 list-none bg-surface-3 cursor-pointer text-text-2 -mx-5 px-5 rounded-none group-open:mb-0">
+              <Icon
+                icon={CaretRight}
+                className="transition-transform group-open:rotate-90"
+              />
               Options
             </summary>
-            <div className="flex flex-col gap-fl-1">
+            <div className="flex flex-col gap-fl-1 bg-surface-3 -mx-5 px-5 pb-2">
               <NumberRange
                 label="Walls"
                 name="gen-walls"
