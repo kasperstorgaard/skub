@@ -248,7 +248,6 @@ Deno.test("searchProfile() is the last-third share of explored states", () => {
   const result: SolverResult = {
     minMoves: 0,
     statesPerDepth: [1, 2, 1],
-    goalsPerDepth: [],
     searchedDepth: 0,
     dag: emptyDag,
     nearDag: emptyDag,
@@ -400,7 +399,7 @@ Deno.test("genuineNearMisses() counts real +1 routes and drops padded optimals",
       [22, [{ from: 0, move: g1 }]],
     ]),
   };
-  const base = { statesPerDepth: [], goalsPerDepth: [], dag: emptyDag };
+  const base = { statesPerDepth: [], dag: emptyDag };
 
   // 1 genuine + 1 padded (excluded) → count 1, so a real route sits at +1 (gap 1).
   assertEquals(

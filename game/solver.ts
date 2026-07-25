@@ -31,17 +31,14 @@ export class SolverDepthExceededError extends Error {
  * reached at depth `d` (index 0 is the initial state), spanning depth 0..minMoves
  * regardless of overshoot.
  *
- * `goalsPerDepth[d]` counts goal states (puck on destination) first reached at
- * depth `d`, spanning 0..`searchedDepth`. Without overshoot `searchedDepth`
- * equals `minMoves`; with it, entries past `minMoves` are the suboptimal
- * near-misses the isolation metrics read. `searchedDepth` is the deepest depth
- * whose counts are complete (overshoot may truncate at the state cap instead
- * of failing the solve).
+ * `searchedDepth` is the deepest depth explored to completion — `minMoves`
+ * without overshoot, and with it the end of the near-miss window (overshoot may
+ * truncate at the state cap rather than failing the solve, and `searchedDepth`
+ * reflects that).
  */
 export type SolverResult = {
   minMoves: number;
   statesPerDepth: number[];
-  goalsPerDepth: number[];
   searchedDepth: number;
   dag: SolutionDag;
   /**
@@ -298,7 +295,6 @@ function* bfsExplore(
     return {
       minMoves: 0,
       statesPerDepth,
-      goalsPerDepth: [1],
       searchedDepth: 0,
       dag: { root: 0, goals: [0], predecessors: new Map() },
       nearDag: { root: 0, goals: [], predecessors: new Map() },
@@ -341,23 +337,17 @@ function* bfsExplore(
   let goalDepth = -1;
   let hitMaxDepth = false;
   let truncated = false;
-  const goalCounts: number[] = [];
 
   const toResult = (minMoves: number): SolverResult => {
-    // Counts at a depth are complete once a state of that depth starts
-    // processing (all shallower states were expanded first), so a truncated
-    // overshoot is still trustworthy up to `lastDepth`.
+    // A depth is complete once a state of that depth starts processing (all
+    // shallower states were expanded first), so a truncated overshoot is still
+    // trustworthy up to `lastDepth`.
     const searchedDepth = truncated
       ? lastDepth
       : Math.min(goalDepth + overshoot, maxDepth);
-    const goalsPerDepth: number[] = [];
-    for (let d = 0; d <= searchedDepth; d++) {
-      goalsPerDepth.push(goalCounts[d] ?? 0);
-    }
     return {
       minMoves,
       statesPerDepth,
-      goalsPerDepth,
       searchedDepth,
       // Overshoot collects deeper goal states, but the primary DAG stays the
       // *optimal* shortest-path DAG; near-misses get their own.
@@ -446,15 +436,14 @@ function* bfsExplore(
       metadata.fromPositions[tail] = fromPos;
       metadata.toPositions[tail] = toPos;
       metadata.depths[tail] = childDepth;
-      // statesPerDepth keeps its 0..minMoves span — overshoot states are the
-      // solver's own business; only `goalsPerDepth` reaches past the optimum.
+      // statesPerDepth keeps its 0..minMoves span — states found past the
+      // optimum during overshoot are the solver's own business.
       if (goalDepth === -1 || childDepth <= goalDepth) {
         statesPerDepth[childDepth] = (statesPerDepth[childDepth] ?? 0) + 1;
       }
 
       if (statePool[tailOffset] === destPos) {
         goalIndices.push(tail);
-        goalCounts[childDepth] = (goalCounts[childDepth] ?? 0) + 1;
         if (goalDepth === -1) goalDepth = childDepth;
         // Single-solution mode: the first goal reached is an optimal path.
         if (!exhaustive) return toResult(childDepth);

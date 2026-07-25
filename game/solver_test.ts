@@ -335,9 +335,10 @@ Deno.test("solveExhaustiveSync() without overshoot searches only to the optimal 
     {
       minMoves: result.minMoves,
       searchedDepth: result.searchedDepth,
-      goalsPerDepth: result.goalsPerDepth,
+      optimalGoals: result.dag.goals.length,
+      nearGoals: result.nearDag.goals.length,
     },
-    { minMoves: 1, searchedDepth: 1, goalsPerDepth: [0, 1] },
+    { minMoves: 1, searchedDepth: 1, optimalGoals: 1, nearGoals: 0 },
   );
 });
 
@@ -356,8 +357,8 @@ Deno.test("solveExhaustiveSync() overshoot records suboptimal goal arrivals", ()
     {
       minMoves: result.minMoves,
       searchedDepth: result.searchedDepth,
-      optimalGoals: result.goalsPerDepth[1],
-      hasNearMisses: result.goalsPerDepth[2] > 0,
+      optimalGoals: result.dag.goals.length,
+      hasNearMisses: result.nearDag.goals.length > 0,
     },
     { minMoves: 1, searchedDepth: 3, optimalGoals: 1, hasNearMisses: true },
   );

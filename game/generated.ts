@@ -4,17 +4,20 @@ import { parsePuzzle } from "#/game/parser.ts";
 import type { Difficulty, Puzzle } from "#/game/types.ts";
 
 /**
- * A generated puzzle candidate persisted to the local (gitignored) `generated/`
- * store for curation. It's a `Puzzle` plus the human feedback that labels it and
- * the generation options that produced it — the raw material the
+ * A generated puzzle candidate persisted to the `generated/` store for
+ * curation. It's a `Puzzle` plus the human feedback that labels it and the
+ * generation options that produced it — the raw material the
  * `compare-generated` script diffs against the hand-built corpus. Not a real
- * corpus puzzle: it never enters the manifest or the game.
+ * corpus puzzle: it never enters the manifest or the game until a curator
+ * promotes it by hand into `static/puzzles`.
  */
 
 /**
- * The local candidate store, relative to the project root (cwd). Gitignored and
- * kept out of `static/puzzles` so the manifest/corpus loader never picks
- * candidates up; also excluded from Vite's dev watcher (see vite.config.ts).
+ * The candidate store, relative to the project root (cwd). Tracked in git — the
+ * ratings here are the ground truth the scoring calibration is tuned against.
+ * Kept out of `static/puzzles` so the manifest/corpus loader never picks
+ * candidates up, and excluded from Vite's dev watcher (see vite.config.ts)
+ * because the running app writes to it.
  */
 export const GENERATED_DIR = "generated";
 

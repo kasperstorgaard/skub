@@ -45,8 +45,7 @@
     ]
   },
   "exclude": [
-    "**/_fresh/*",
-    "generated/*"
+    "**/_fresh/*"
   ],
   "imports": {
     "#/": "./",

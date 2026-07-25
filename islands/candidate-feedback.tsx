@@ -17,8 +17,8 @@ type CandidateFeedbackProps = {
 /**
  * Board-adjacent curation feedback for a freshly generated candidate. Shows a
  * star rating and an always-available note; once rated, reveals reason tags.
- * Every change is patched onto the candidate's file in the gitignored
- * `generated/` store (dev-only; a 403 in production is swallowed).
+ * Every change is patched onto the candidate's file in the `generated/` store
+ * (dev-only; a 403 in production is swallowed).
  *
  * State is per-candidate: it resets whenever the shared `candidate` signal
  * points at a new slug (a reroll), so feedback never bleeds between boards.

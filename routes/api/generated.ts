@@ -148,7 +148,7 @@ async function saveFeedback(payload: FeedbackPayload): Promise<Response> {
 /**
  * Localhost-only API for the generator's curation store. Auto-saves every
  * generated candidate (`create`) and records the curator's rating/tags/note
- * (`feedback`) into the same gitignored markdown file. Forbidden in production
+ * (`feedback`) into the same markdown file. Forbidden in production
  * (Deno Deploy's filesystem is read-only); the generator panel degrades to a
  * non-persisted preview.
  */

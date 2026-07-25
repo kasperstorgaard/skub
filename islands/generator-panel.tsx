@@ -16,6 +16,7 @@ import {
   type StoredCandidate,
 } from "#/game/generated.ts";
 import { GENERATOR_VERSION, type WallSpread } from "#/game/generator.ts";
+import { METRIC_CATALOG } from "#/game/metric-catalog.ts";
 import type { Metrics, ScoredBoard } from "#/game/scoring.ts";
 import type { Difficulty, Puzzle } from "#/game/types.ts";
 
@@ -67,134 +68,19 @@ function ScoreStat(
   );
 }
 
+/** Headline metric, shown above the fold rather than in the details list. */
+const HEADLINE_METRIC = "uniqueSolutions";
+
 /**
- * The advisory score for a generated candidate: a headline of the curated
- * signals (composite, weakest route, and the economy-gate metrics) plus a
- * collapsible breakdown of every remaining metric — the full view kept around
- * for tuning the composite (spec Phase 2). Detail metrics mirror the corpus
- * report's flattening (`scripts/score-corpus.ts`): totalDistance summed, stop
- * types weighted.
+ * The advisory score for a generated candidate: a headline (composite score,
+ * weakest route, solution count) over a collapsible breakdown of every metric,
+ * the full view kept around for tuning the composite. Detail rows come from
+ * `METRIC_CATALOG`, so the panel can never drift out of sync with the metrics
+ * the reports and calibration tooling measure.
  */
 function CandidateScore(
   { scored, metrics }: { scored: ScoredBoard; metrics: Metrics },
 ) {
-  const details: {
-    label: string;
-    value: number;
-    hint: string;
-    percent?: boolean;
-  }[] = [
-    {
-      label: "Mean",
-      value: scored.mean,
-      hint: "Mean route score across the distinct solutions.",
-    },
-    {
-      label: "Std dev",
-      value: scored.stddev,
-      hint: "Spread of route scores across solutions.",
-    },
-    {
-      label: "Wall use",
-      value: metrics.wallUtilization,
-      percent: true,
-      hint:
-        "Share of interior walls that ever stop a piece across solutions (gate G7).",
-    },
-    {
-      label: "Dead space",
-      value: metrics.deadSpace,
-      percent: true,
-      hint:
-        "Largest region never entered by any trail and holding no piece or goal (gate G8).",
-    },
-    {
-      label: "Clumping",
-      value: metrics.clumping,
-      percent: true,
-      hint:
-        "Share of wall/blocker pairs bunched within one cell of each other (the 'clumped' complaint).",
-    },
-    {
-      label: "Isolation",
-      value: metrics.isolationGap,
-      hint:
-        "Moves past optimal to the nearest genuine near-miss — 2 means the optimal route stands alone at +1 (torstein profile); 1 means a real alternative sits right behind it (0 = not measured).",
-    },
-    {
-      label: "Near misses",
-      value: metrics.nearMissCount,
-      hint:
-        "Count of genuine alternative solutions at optimal + 1 (padded routes — an optimal path plus one idle move — excluded). Higher means being a move sloppy still finds a real route.",
-    },
-    {
-      label: "Coverage",
-      value: metrics.coverage,
-      hint: "Distinct cells the puck sweeps, as a fraction of the 64 cells.",
-    },
-    {
-      label: "Setup ratio",
-      value: metrics.setupRatio,
-      hint:
-        "Fraction of moves that reposition a blocker rather than the puck (more setup ⇒ harder).",
-    },
-    {
-      label: "Piece usage",
-      value: metrics.pieceUsage,
-      hint:
-        "Log-weighted blocker involvement — sums each blocker's moves and stops; grows with reuse, so it can exceed the piece count (not a count).",
-    },
-    {
-      label: "Deception",
-      value: metrics.deception,
-      hint:
-        "How far the puck slides away from the goal — what misleads a solver.",
-    },
-    {
-      label: "Reversals",
-      value: metrics.reversals,
-      hint: "Moves of the same piece in opposite directions (back-and-forth).",
-    },
-    {
-      label: "Cross-trail",
-      value: metrics.crossTrailOverlap,
-      hint: "How much one piece's path crosses another's.",
-    },
-    {
-      label: "Distance",
-      value: metrics.totalDistance,
-      hint: "Total slide distance travelled (puck + blocker).",
-    },
-    {
-      label: "First move",
-      value: metrics.firstMovePrecision,
-      hint: "1 / distinct optimal openings — 1 when the first move is forced.",
-    },
-    {
-      label: "Search",
-      value: metrics.searchProfile,
-      hint:
-        "Share of search states reached near the solution depth (back-loaded difficulty).",
-    },
-    {
-      label: "Stops (wtd)",
-      value: metrics.stopWeighted,
-      hint: "Weighted count of how slides stop: piece×3 + wall×2 + edge.",
-    },
-    {
-      label: "Pointless",
-      value: metrics.pointlessClearance,
-      hint:
-        "Blocker moves after which that blocker never matters again (negative signal).",
-    },
-    {
-      label: "Same dir",
-      value: metrics.sameDirectionRepeat,
-      hint:
-        "Cells a piece re-traverses in the same direction (negative signal).",
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-fl-1 text-1">
       <dl className="flex flex-col">
@@ -210,7 +96,7 @@ function CandidateScore(
         />
         <ScoreStat
           label="Solutions"
-          value={metrics.uniqueSolutions}
+          value={metrics[HEADLINE_METRIC]}
           whole
           hint="Number of distinct optimal solutions."
         />
@@ -221,15 +107,28 @@ function CandidateScore(
           Details
         </summary>
         <dl className="flex flex-col">
-          {details.map((stat) => (
-            <ScoreStat
-              key={stat.label}
-              label={stat.label}
-              value={stat.value}
-              hint={stat.hint}
-              percent={stat.percent}
-            />
-          ))}
+          <ScoreStat
+            label="Mean"
+            value={scored.mean}
+            hint="Mean route score across the distinct solutions."
+          />
+          <ScoreStat
+            label="Std dev"
+            value={scored.stddev}
+            hint="Spread of route scores across solutions."
+          />
+          {METRIC_CATALOG
+            .filter((spec) => spec.key !== HEADLINE_METRIC)
+            .map((spec) => (
+              <ScoreStat
+                key={spec.key}
+                label={spec.label}
+                value={metrics[spec.key]}
+                hint={spec.hint}
+                percent={"percent" in spec ? spec.percent : undefined}
+                whole={"whole" in spec ? spec.whole : undefined}
+              />
+            ))}
         </dl>
       </details>
     </div>
@@ -287,8 +186,8 @@ export function GeneratorPanel(
     status.value = "preview";
   }, []);
 
-  // Auto-persists the just-generated candidate to the gitignored `generated/`
-  // store and shares its slug with the feedback island. Dev-only endpoint —
+  // Auto-persists the just-generated candidate to the `generated/` store and
+  // shares its slug with the feedback island. Dev-only endpoint —
   // failures (e.g. production's read-only fs) leave `candidate` null so the
   // feedback UI simply doesn't appear.
   const saveGenerated = useCallback(async (generated: Puzzle, run: number) => {
