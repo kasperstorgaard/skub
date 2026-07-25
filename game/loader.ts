@@ -56,6 +56,15 @@ export async function getCorpusHashes(): Promise<Set<string>> {
 }
 
 /**
+ * Every puzzle name in the corpus (from the cached manifest), for de-duping
+ * auto-assigned candidate names against existing puzzles.
+ */
+export async function getCorpusNames(): Promise<Set<string>> {
+  const manifest = await getPuzzleManifest();
+  return new Set(manifest.map((entry) => entry.name));
+}
+
+/**
  * Manifest entries available today: number <= day-of-year, onboarding excluded.
  */
 export async function getAvailableEntries() {

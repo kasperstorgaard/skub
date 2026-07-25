@@ -16,6 +16,9 @@ node_modules/
 # Screenshots
 screenshots/
 
+# Solve cache and tuning reports — regenerable from the puzzle files
+scoring/
+
 # E2E
 test-results/
 

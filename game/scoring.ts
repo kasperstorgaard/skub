@@ -8,6 +8,7 @@ import {
 } from "#/game/board.ts";
 import {
   enumerateSolutions,
+  firstSolutionFrom,
   optimalFirstMoves,
   solveExhaustiveSync,
   type SolverResult,
@@ -559,6 +560,39 @@ export function deadSpace(board: Board, solutions: Move[][]): number {
   return (cells - visitedCells(board, solutions).size) / cells;
 }
 
+// ── Static-layout metrics ────────────────────────────────────────────────
+
+/** Chebyshev (chessboard) distance between two positions. */
+const chebyshev = (a: Position, b: Position): number =>
+  Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+
+/**
+ * Clumping — the fraction of same-kind structure pairs (wall–wall,
+ * blocker–blocker) within Chebyshev distance 1 of each other, pooled across
+ * both kinds. High clumping means the board's structure piles up in tight
+ * knots instead of spreading out — "clumped" is the most common human
+ * complaint tag with no metric behind it. Advisory for now (not in the
+ * composite, not gated) until its correlation with ratings is established.
+ * 0 when no kind has two members.
+ */
+export function clumping(board: Board): number {
+  const groups: Position[][] = [
+    board.walls,
+    board.pieces.filter((piece) => piece.type === "blocker"),
+  ];
+  let close = 0;
+  let total = 0;
+  for (const group of groups) {
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        total++;
+        if (chebyshev(group[i], group[j]) <= 1) close++;
+      }
+    }
+  }
+  return total === 0 ? 0 : close / total;
+}
+
 // ── Search-space metrics ─────────────────────────────────────────────────
 // Measure the solver's exploration structure `(result) => number`, reaching
 // beyond the winning paths into the DAG and its per-depth state counts.
@@ -593,9 +627,64 @@ export function searchProfile(result: SolverResult): number {
 }
 
 /**
+ * A suboptimal route is *padded* — a fake near-miss — when removing a single
+ * move from it yields an optimal route's canonical move-multiset. That means the
+ * route is just an optimal solution plus one inconsequential extra move (shuffle
+ * a blocker, then run the optimal path), which every board has and which made
+ * the old state-level `isolationGap` flat at 1 everywhere.
+ */
+function isPaddedOptimal(route: Move[], optimalKeys: Set<string>): boolean {
+  for (let i = 0; i < route.length; i++) {
+    const trimmed = route.slice(0, i).concat(route.slice(i + 1));
+    if (optimalKeys.has(getCanonicalMoveKey(trimmed))) return true;
+  }
+  return false;
+}
+
+/**
+ * Genuine near-miss isolation. Walks one route per suboptimal goal one move past
+ * optimal (`nearDag`), canonical-dedupes them, and drops the *padded* ones (an
+ * optimal route plus one inconsequential move). What survives are genuine
+ * alternative solutions at optimal + 1.
+ *
+ * Returns:
+ *  - `count` — distinct genuine near-misses at optimal + 1 (the "obvious
+ *    solution" profile has several; a board whose next real route is far out has
+ *    none).
+ *  - `gap` — moves past optimal to the nearest *genuine* near-miss: 1 when any
+ *    survives, else 2 (the optimal stands alone at +1 — the torstein profile:
+ *    optimal 10, next distinct route 12). 0 when the solve didn't overshoot
+ *    (unmeasured, not un-isolated).
+ */
+export function genuineNearMisses(
+  result: SolverResult,
+  optimalSolutions: Move[][],
+): { count: number; gap: number } {
+  if (result.searchedDepth <= result.minMoves) return { count: 0, gap: 0 };
+
+  const optimalKeys = new Set(optimalSolutions.map(getCanonicalMoveKey));
+  const targetLength = result.minMoves + 1;
+  const seen = new Set<string>();
+  let count = 0;
+
+  for (const goal of result.nearDag.goals) {
+    const route = firstSolutionFrom(result.nearDag, goal);
+    if (route.length !== targetLength) continue; // only optimal + 1
+    const key = getCanonicalMoveKey(route);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (isPaddedOptimal(route, optimalKeys)) continue;
+    count++;
+  }
+
+  return { count, gap: count > 0 ? 1 : 2 };
+}
+
+/**
  * All puzzle metrics for a board, grouped by the data each acts on. Single-
  * solution metrics are reduced across the distinct solutions (max, or min for the
- * negatives); multiple-solution and search-space metrics are computed once.
+ * negatives); multiple-solution, layout, and search-space metrics are computed
+ * once.
  */
 export type Metrics = {
   // single solution
@@ -613,9 +702,13 @@ export type Metrics = {
   uniqueSolutions: number;
   wallUtilization: number;
   deadSpace: number;
+  // static layout
+  clumping: number;
   // search space
   firstMovePrecision: number;
   searchProfile: number;
+  isolationGap: number;
+  nearMissCount: number;
 };
 
 /**
@@ -626,6 +719,7 @@ export type Metrics = {
  */
 export function computeMetrics(board: Board, result: SolverResult): Metrics {
   const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
+  const nearMiss = genuineNearMisses(result, solutions);
 
   const maxOver = (metric: (board: Board, moves: Move[]) => number): number => {
     let best = 0;
@@ -655,23 +749,58 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
     uniqueSolutions: uniqueSolutions(board, solutions),
     wallUtilization: wallUtilization(board, solutions),
     deadSpace: deadSpace(board, solutions),
+    // static layout
+    clumping: clumping(board),
     // search space
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
+    isolationGap: nearMiss.gap,
+    nearMissCount: nearMiss.count,
   };
 }
 
 export type GateResult = {
   passed: boolean;
-  failedGate?: "G1" | "G2" | "G3" | "G4" | "G5" | "G6" | "G7" | "G8";
+  failedGate?:
+    | "G1"
+    | "G2"
+    | "G3"
+    | "G4"
+    | "G5"
+    | "G6"
+    | "G7"
+    | "G8"
+    | "G9"
+    | "G10";
 };
 
-/** Inclusive minMoves band per difficulty. `ultra` is excluded from generation. */
-const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
+/**
+ * Inclusive minMoves band per difficulty. `ultra` is excluded from generation.
+ * Exported so the generation loop can raise the G2 floor within the band
+ * (band-floor boards dominate the "too easy" ratings).
+ */
+export const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
   easy: [5, 6],
   medium: [7, 9],
   hard: [10, 13],
 };
+
+/**
+ * G9: whether any blocker is boxed in on all four sides by walls or the board
+ * edge. Pieces are ignored — they can move away, walls can't. A permanently
+ * immobile blocker reads as a wall wearing a blocker's costume; curation
+ * flagged it as a gimmick.
+ */
+function hasTrappedBlocker(board: Board): boolean {
+  const directions: Direction[] = ["up", "down", "left", "right"];
+  return board.pieces.some((piece) =>
+    piece.type === "blocker" &&
+    directions.every((direction) => {
+      const beyond = beyondCell(piece, direction);
+      return !inBounds(beyond) || wallBeyond(board.walls, piece, direction);
+    })
+  );
+}
 
 /**
  * G6 length gate: every route must travel at least `minMoves * LENGTH_FACTOR`
@@ -689,6 +818,37 @@ const LENGTH_FACTOR = 2;
 const MIN_WALL_UTILIZATION = 0.2;
 
 /**
+ * Floor on the *number* of walls that must stop a piece, used by G7 for
+ * wall-heavy requests. 0.2 × the default wallsRange top (15) = 3, so the fraction
+ * and the count agree at the default and only diverge (looser) beyond it.
+ */
+const MIN_USEFUL_WALLS = 3;
+
+/**
+ * G5 unused-blocker allowance, conditional on the board's blocker count. The
+ * gate's intent is "blockers should matter", but asking for a denser board
+ * legitimately places more of them, so the fixed ≤2 over-rejects dense requests.
+ * The allowance scales to keep at least half the blockers in use: fixed 2 for the
+ * default counts (≤5), then 6→3, 8→4, … Conservative — never below 2, so it only
+ * ever loosens.
+ */
+export function maxUnusedBlockers(blockerCount: number): number {
+  return Math.max(2, Math.floor(blockerCount / 2));
+}
+
+/**
+ * G7 wall-utilization floor, conditional on the board's wall count. A request for
+ * many walls inevitably makes some decorative, dragging the utilization *fraction*
+ * down even when plenty of walls do real work — so past the default wallsRange top
+ * the floor relaxes from a fixed 0.2 fraction to "at least `MIN_USEFUL_WALLS`
+ * walls stop a piece". Unchanged (0.2) up to 15 walls; looser beyond. Never
+ * tighter, so it only ever loosens.
+ */
+export function minWallUtilization(wallCount: number): number {
+  return Math.min(MIN_WALL_UTILIZATION, MIN_USEFUL_WALLS / wallCount);
+}
+
+/**
  * G8 economy gate: at most this fraction of the board may be dead — cells no
  * trail enters that hold no piece or destination. Equivalently a 20% *live*
  * floor (mirrors G7's 0.2). Very conservative: the hand-built corpus runs
@@ -696,6 +856,18 @@ const MIN_WALL_UTILIZATION = 0.2;
  * grid. A placeholder until scores are surfaced in the generator for tuning.
  */
 const MAX_DEAD_SPACE = 0.8;
+
+/**
+ * G10 clutter gate: reject boards whose `clumping` (share of same-kind
+ * wall/blocker pairs bunched within one cell) exceeds this. Static, so it runs
+ * before the solve. Deliberately a *tail-catcher*, not the main clutter lever —
+ * clumping is the strongest human-complaint signal (calibration ρ −0.35, the
+ * "clumped" tag) but bad and good boards overlap heavily on it, so mild clutter
+ * is shaped softly by the composite negative; only egregious cases are hard
+ * rejected. At 0.25 the hand-built corpus loses ~1% (its p99 is 0.23; one
+ * outlier `pil` at 0.41). Tunable.
+ */
+const MAX_CLUMPING = 0.25;
 
 /** Whether a blocker (by initial-piece id) is used in a solution — moves or stops. */
 function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
@@ -712,20 +884,24 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
 
 /**
  * Runs the acceptance gates, cheapest-first, short-circuiting on the first fail:
+ *  - G9 no trapped blocker (walled in on all four sides — static, so first)
+ *  - G10 clumping <= MAX_CLUMPING (egregious clutter — static, so before the solve)
  *  - G1 solvable within maxDepth 15
- *  - G2 minMoves inside the difficulty band (`ultra` has none → always fails)
+ *  - G2 minMoves inside the difficulty band (`ultra` has none → always fails);
+ *    `minMovesFloor` can raise the band floor (band-top preference)
  *  - G3 canonical hash not already in the corpus or this batch
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
- *  - G5 at most two blockers go entirely unused across all solutions
+ *  - G5 unused blockers <= maxUnusedBlockers(count) (dense requests allowed more)
  *  - G6 every route travels >= minMoves * LENGTH_FACTOR cells (not cramped/trivial)
- *  - G7 >= MIN_WALL_UTILIZATION of walls stop a piece (no decorative clutter)
+ *  - G7 wall utilization >= minWallUtilization(count) (wall-heavy requests looser)
  *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
  *
- * G7–G8 gate on board *economy* — clutter and wasted space — but, like G1–G6,
- * are measured across the puzzle's solutions (which cells trails enter, which
- * walls actually stop a piece), not from the static layout alone. All gates are
- * hard rejects during generation, but do not constrain manual editing — a human
- * curator may knowingly hand-craft a board that fails a gate.
+ * Gate numbers are historical, order is by cost. G7–G8 gate on board *economy*
+ * — clutter and wasted space — but, like G1–G6, are measured across the
+ * puzzle's solutions (which cells trails enter, which walls actually stop a
+ * piece), not from the static layout alone. All gates are hard rejects during
+ * generation, but do not constrain manual editing — a human curator may
+ * knowingly hand-craft a board that fails a gate.
  */
 export function checkGates(
   board: Board,
@@ -733,17 +909,39 @@ export function checkGates(
     difficulty: Difficulty;
     corpus: Set<string>;
     batchHashes: Set<string>;
+    /**
+     * BFS state budget for the gate solve. The generation loop passes a tight
+     * cap so pathologically branchy candidates reject fast (G1) instead of
+     * blocking the loop for seconds; omitted elsewhere for the full solver limit.
+     */
+    maxStates?: number;
+    /**
+     * Raises the G2 lower bound within the difficulty band (never widens it).
+     * The generation loop passes `band floor + 1` early in its attempt budget
+     * to steer away from floor-minMoves boards, then relaxes.
+     */
+    minMovesFloor?: number;
   },
 ): GateResult {
+  if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
+
+  if (clumping(board) > MAX_CLUMPING) {
+    return { passed: false, failedGate: "G10" };
+  }
+
   let result: SolverResult;
   try {
-    result = solveExhaustiveSync(board, { maxDepth: 15 });
+    result = solveExhaustiveSync(board, {
+      maxDepth: 15,
+      maxStates: options.maxStates,
+    });
   } catch {
     return { passed: false, failedGate: "G1" };
   }
 
   const band = DIFFICULTY_BANDS[options.difficulty];
-  if (!band || result.minMoves < band[0] || result.minMoves > band[1]) {
+  const floor = Math.max(band?.[0] ?? 0, options.minMovesFloor ?? 0);
+  if (!band || result.minMoves < floor || result.minMoves > band[1]) {
     return { passed: false, failedGate: "G2" };
   }
 
@@ -763,10 +961,13 @@ export function checkGates(
   for (const moves of solutions) {
     for (const id of usedBlockerIds(board, moves)) used.add(id);
   }
+  const blockerCount = board.pieces.filter((p) => p.type === "blocker").length;
   const unused = board.pieces
     .filter((p, i) => p.type === "blocker" && !used.has(i))
     .length;
-  if (unused > 2) return { passed: false, failedGate: "G5" };
+  if (unused > maxUnusedBlockers(blockerCount)) {
+    return { passed: false, failedGate: "G5" };
+  }
 
   let minTravel = Infinity;
   for (const moves of solutions) {
@@ -776,7 +977,9 @@ export function checkGates(
     return { passed: false, failedGate: "G6" };
   }
 
-  if (wallUtilization(board, solutions) < MIN_WALL_UTILIZATION) {
+  if (
+    wallUtilization(board, solutions) < minWallUtilization(board.walls.length)
+  ) {
     return { passed: false, failedGate: "G7" };
   }
 
@@ -803,40 +1006,80 @@ const bounded = (value: number, max: number): number =>
   max > 0 ? clamp01(value / max) : 0;
 
 /** Context a bound may depend on (some metrics scale with move/piece count). */
-type BoundCtx = { minMoves: number; blockers: number };
+export type BoundCtx = { minMoves: number; blockers: number };
 type Bound = (ctx: BoundCtx) => number;
 
 /**
  * Score calibration — the per-metric max bounds the composite normalizes against,
  * split into positive and negative terms. This is the single tunable source of
  * truth; bump `version` on every change so a corpus report is traceable to the
- * calibration that produced it (see `scoring/reports/calibration-<version>.md`).
+ * calibration that produced it — `deno task score-corpus` stamps this version
+ * into both the report body and its filename.
  *
- * v1 uses theoretical maxes and squashes the whole corpus into ~[0.25, 0.35];
- * later versions replace these with corpus-calibrated values so scores spread.
+ * v1 used theoretical maxes and came out *anti-correlated* with human judgement
+ * — both the corpus anchors (erik > torstein > kim > malene) and the first
+ * labeled generated set (a 2★ board scored top, a 5★ board bottom) inverted.
+ *
+ * v2 was a conservative structural correction (dropped `firstMovePrecision`,
+ * promoted `wallUtilization`/`deadSpace`, added shaped `variety`) tuned on 11
+ * labels; the 35-label batch showed it still carried no rank signal (pooled
+ * ρ = 0.07).
+ *
+ * v3 prunes the composite down to the metrics the 39-board labeled set showed
+ * actually track ratings (per-metric ρ from `check-anchors`):
+ *  - kept: `stopWeighted` (+0.38), `pieceUsage` (+0.27), `wallUtilization`
+ *    (+0.19), `reversals` (+0.18), `searchProfile` (+0.12) — the "blockers and
+ *    walls actually matter" cluster, matching the dominant human complaints
+ *    (obvious solutions, useless blockers, decorative walls);
+ *  - kept `variety` on corpus ground truth (the malene profile) despite a flat
+ *    ρ in this batch — the generated set barely exercises it;
+ *  - dropped `coverage` (−0.22), `crossTrailOverlap` (−0.19), `deception`
+ *    (−0.07), `totalDistance` and `setupRatio` (~0) — anti-signal or noise
+ *    that diluted the composite as equal-weight positives;
+ *  - dropped `deadSpace` from the negatives (raw ρ +0.01 — board economy is
+ *    gate territory, G8 keeps it); kept the two zero-variance penalties as
+ *    safety rails against degenerate routes.
+ *
+ * v4 promoted `clumping` into the negatives: measured on the same labeled set
+ * it came out the second-strongest signal overall (ρ = −0.35), confirming the
+ * most common human complaint tag.
+ *
+ * v5 dropped `variety`. Two independent lines condemned it: its rating ρ was ~0
+ * (kept in v3 only on the corpus-ground-truth hunch), and PostHog behaviour
+ * (player-adjusted optimal-solve rate over 192 corpus boards) showed
+ * `uniqueSolutions` tracks *easiness* (ρ +0.18) — so variety was a positive that
+ * rewarded easy multi-solution boards while penalising the isolated-brilliant
+ * profile (torstein, few solutions). Removing it lifted pooled ρ 0.373 → 0.488
+ * and restored the anchor order (malene ≈ torstein ≫ erik > kim). Quality is
+ * non-monotonic in solution count (both varied-malene and isolated-torstein are
+ * 5★), so the varied side wants a difficulty-gated / U-shaped term, not a naive
+ * "more solutions = better" — deferred until such a term is designed and earns
+ * its ρ (`nearMissCount`/`isolationGap`, both advisory, are the raw material).
  */
 export const CALIBRATION: {
-  version: number;
+  /**
+   * Semver. Major = composite membership/bounds change (scores not comparable
+   * across it — report and cache files are keyed to this); minor = additive
+   * advisory metrics that don't enter the composite; patch = docs/refactors.
+   * Pre-semver reports used bare integers (v1, v2).
+   */
+  version: string;
   positive: Record<string, Bound>;
   negative: Record<string, Bound>;
 } = {
-  version: 1,
+  version: "5.0.0",
   positive: {
-    setupRatio: () => 1,
     pieceUsage: ({ minMoves: m, blockers: p }) =>
       p * Math.log2(1 + m) + Math.log2(1 + p),
-    deception: ({ minMoves: m }) => 7 * m,
     reversals: ({ minMoves: m }) => Math.max(1, m - 1),
-    crossTrailOverlap: () => COLS * ROWS,
-    totalDistance: ({ minMoves: m }) => 7 * m * 2,
-    firstMovePrecision: () => 1,
     searchProfile: () => 1,
-    coverage: () => 1,
     stopWeighted: ({ minMoves: m }) => 3 * m,
+    wallUtilization: () => 1,
   },
   negative: {
     pointlessClearance: ({ minMoves: m }) => Math.max(1, m),
     sameDirectionRepeat: () => COLS * ROWS,
+    clumping: () => 1,
   },
 };
 
@@ -844,30 +1087,14 @@ export const CALIBRATION: {
  * Composite quality score for a single route in `[-1, 1]`. Each metric is divided
  * by its `CALIBRATION` max so it lands in `[0,1]`, then positives are averaged and
  * the two negatives subtracted — equal footing, no metric dominating by range.
+ *
+ * Exported (with `BoundCtx`) so calibration tooling can recompute composites
+ * from cached route metrics without re-solving the board.
  */
-function compositeScore(
-  metrics: Metrics,
-  board: Board,
-  minMoves: number,
-): number {
-  const ctx: BoundCtx = {
-    minMoves,
-    blockers: board.pieces.filter((piece) => piece.type === "blocker").length,
-  };
-  const values: Record<string, number> = {
-    setupRatio: metrics.setupRatio,
-    pieceUsage: metrics.pieceUsage,
-    deception: metrics.deception,
-    reversals: metrics.reversals,
-    crossTrailOverlap: metrics.crossTrailOverlap,
-    totalDistance: metrics.totalDistance,
-    firstMovePrecision: metrics.firstMovePrecision,
-    searchProfile: metrics.searchProfile,
-    coverage: metrics.coverage,
-    stopWeighted: metrics.stopWeighted,
-    pointlessClearance: metrics.pointlessClearance,
-    sameDirectionRepeat: metrics.sameDirectionRepeat,
-  };
+export function compositeScore(metrics: Metrics, ctx: BoundCtx): number {
+  // Every CALIBRATION term maps to a metric by name (no synthetic terms since
+  // v5 dropped the shaped `variety`); a Record keeps that indirection open.
+  const values: Record<string, number> = { ...metrics };
 
   const mean = (terms: Record<string, Bound>) => {
     const keys = Object.keys(terms);
@@ -893,8 +1120,11 @@ function routeMetrics(
     | "uniqueSolutions"
     | "wallUtilization"
     | "deadSpace"
+    | "clumping"
     | "firstMovePrecision"
     | "searchProfile"
+    | "isolationGap"
+    | "nearMissCount"
   >,
 ): Metrics {
   return {
@@ -921,21 +1151,29 @@ function routeMetrics(
  */
 export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
   const routes = deduplicateSolutions(enumerateSolutions(result.dag));
+  const nearMiss = genuineNearMisses(result, routes);
   const shared = {
     uniqueSolutions: uniqueSolutions(board, routes),
     wallUtilization: wallUtilization(board, routes),
     deadSpace: deadSpace(board, routes),
+    clumping: clumping(board),
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
+    isolationGap: nearMiss.gap,
+    nearMissCount: nearMiss.count,
   };
 
+  const ctx: BoundCtx = {
+    minMoves: result.minMoves,
+    blockers: board.pieces.filter((piece) => piece.type === "blocker").length,
+  };
   const perSolution: SolutionScore[] = [];
   for (const route of routes) {
     const metrics = routeMetrics(board, route, shared);
     perSolution.push({
       moves: route,
       metrics,
-      score: compositeScore(metrics, board, result.minMoves),
+      score: compositeScore(metrics, ctx),
     });
   }
 

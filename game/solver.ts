@@ -28,12 +28,25 @@ export class SolverDepthExceededError extends Error {
  * materialized solution list: every optimal move sequence can be walked out of
  * `dag`, but the (possibly exponential) raw set is never built unless a consumer
  * asks for it via `enumerateSolutions`. `statesPerDepth[d]` counts states first
- * reached at depth `d` (index 0 is the initial state), spanning depth 0..minMoves.
+ * reached at depth `d` (index 0 is the initial state), spanning depth 0..minMoves
+ * regardless of overshoot.
+ *
+ * `searchedDepth` is the deepest depth explored to completion — `minMoves`
+ * without overshoot, and with it the end of the near-miss window (overshoot may
+ * truncate at the state cap rather than failing the solve, and `searchedDepth`
+ * reflects that).
  */
 export type SolverResult = {
   minMoves: number;
   statesPerDepth: number[];
+  searchedDepth: number;
   dag: SolutionDag;
+  /**
+   * DAG over the *suboptimal* goal states inside the searched window (empty
+   * without overshoot). `dag` stays optimal-only; near-miss consumers walk
+   * routes out of this one (e.g. one per goal via `firstSolutionFrom`).
+   */
+  nearDag: SolutionDag;
 };
 
 /** An optimal move into a state from one of its predecessors. */
@@ -75,6 +88,18 @@ type Config = {
 type SolverOptions = {
   // Maximum search depth in moves (default: 15)
   maxDepth?: number;
+  // Hard cap on BFS states before bailing with SolverDepthExceededError
+  // (default: BFS_STATE_LIMIT). A tighter budget also shrinks the pre-allocated
+  // typed arrays — the generation gate check passes a small value so branchy
+  // boards reject fast instead of grinding through millions of states.
+  maxStates?: number;
+  // Exhaustive mode only: keep exploring this many depths past the optimal
+  // depth (still capped by maxDepth) so `goalsPerDepth` records suboptimal
+  // near-miss solutions — the isolation signal. Costs geometrically more
+  // states, so it's for the offline scoring path, never gameplay or the
+  // generation gate loop. Hitting maxStates during overshoot truncates
+  // (`searchedDepth` reflects it) instead of failing the solve. Default 0.
+  overshoot?: number;
 };
 
 /** Parallel per-state metadata for the flat BFS queue, indexed by state index. */
@@ -147,8 +172,11 @@ export function solveExhaustiveSync(
 ): SolverResult {
   const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
+  const maxStates = options.maxStates ?? BFS_STATE_LIMIT;
 
-  return runToCompletion(bfsExplore(board, maxDepth, true));
+  return runToCompletion(
+    bfsExplore(board, maxDepth, true, maxStates, options.overshoot ?? 0),
+  );
 }
 
 /** Drives a `bfsExplore` generator to completion, discarding progress yields. */
@@ -212,10 +240,15 @@ export function optimalFirstMoves(dag: SolutionDag): Move[] {
   return moves;
 }
 
-/** Walks one optimal path, following the first predecessor at each step. */
-function firstSolution(dag: SolutionDag): Move[] {
+/**
+ * Walks one route from a goal state back to the root, following the first
+ * (primary-parent) predecessor at each step. One route per goal — never the
+ * combinatorial full set; near-miss consumers use this to sample the `nearDag`
+ * without materializing it.
+ */
+export function firstSolutionFrom(dag: SolutionDag, goal: number): Move[] {
   const moves: Move[] = [];
-  let edges = dag.predecessors.get(dag.goals[0]);
+  let edges = dag.predecessors.get(goal);
   while (edges) {
     const [edge] = edges;
     moves.push(edge.move);
@@ -223,6 +256,11 @@ function firstSolution(dag: SolutionDag): Move[] {
   }
   moves.reverse();
   return moves;
+}
+
+/** Walks one optimal path, following the first predecessor at each step. */
+function firstSolution(dag: SolutionDag): Move[] {
+  return firstSolutionFrom(dag, dag.goals[0]);
 }
 
 /**
@@ -246,6 +284,8 @@ function* bfsExplore(
   board: Board,
   maxDepth: number,
   exhaustive: boolean,
+  stateLimit: number = BFS_STATE_LIMIT,
+  overshoot = 0,
 ): Generator<number, SolverResult> {
   const destPos = board.destination.y * COLS + board.destination.x;
   const initialState = initState(board);
@@ -255,7 +295,9 @@ function* bfsExplore(
     return {
       minMoves: 0,
       statesPerDepth,
+      searchedDepth: 0,
       dag: { root: 0, goals: [0], predecessors: new Map() },
+      nearDag: { root: 0, goals: [], predecessors: new Map() },
     };
   }
 
@@ -265,14 +307,14 @@ function* bfsExplore(
   };
 
   // State pool: all states packed flat — no heap object per state
-  const statePool = new Uint8Array(BFS_STATE_LIMIT * config.pieceCount);
+  const statePool = new Uint8Array(stateLimit * config.pieceCount);
   statePool.set(initialState, 0);
 
   const metadata: Metadata = {
-    parentIndexes: new Int32Array(BFS_STATE_LIMIT).fill(-1),
-    fromPositions: new Uint8Array(BFS_STATE_LIMIT),
-    toPositions: new Uint8Array(BFS_STATE_LIMIT),
-    depths: new Uint8Array(BFS_STATE_LIMIT), // max depth 15 fits in u8
+    parentIndexes: new Int32Array(stateLimit).fill(-1),
+    fromPositions: new Uint8Array(stateLimit),
+    toPositions: new Uint8Array(stateLimit),
+    depths: new Uint8Array(stateLimit), // max depth 15 fits in u8
   };
 
   // Pre-allocated moves buffer: 4 directions × n pieces × 2 values (from + to)
@@ -289,19 +331,42 @@ function* bfsExplore(
   if (visitedIndex) visitedIndex.set(rootKey, 0);
   else visited!.add(rootKey);
 
-  const toResult = (minMoves: number): SolverResult => ({
-    minMoves,
-    statesPerDepth,
-    dag: buildDag(metadata, extraParents, goalIndices),
-  });
-
   let tail = 1; // next free slot (write end of the queue)
   let head = 0; // next state to process (read end of the queue)
   let lastDepth = 0;
   let goalDepth = -1;
   let hitMaxDepth = false;
+  let truncated = false;
 
-  while (head < tail) {
+  const toResult = (minMoves: number): SolverResult => {
+    // A depth is complete once a state of that depth starts processing (all
+    // shallower states were expanded first), so a truncated overshoot is still
+    // trustworthy up to `lastDepth`.
+    const searchedDepth = truncated
+      ? lastDepth
+      : Math.min(goalDepth + overshoot, maxDepth);
+    return {
+      minMoves,
+      statesPerDepth,
+      searchedDepth,
+      // Overshoot collects deeper goal states, but the primary DAG stays the
+      // *optimal* shortest-path DAG; near-misses get their own.
+      dag: buildDag(
+        metadata,
+        extraParents,
+        goalIndices.filter((i) => metadata.depths[i] === minMoves),
+      ),
+      nearDag: buildDag(
+        metadata,
+        extraParents,
+        goalIndices.filter((i) =>
+          metadata.depths[i] > minMoves && metadata.depths[i] <= searchedDepth
+        ),
+      ),
+    };
+  };
+
+  outer: while (head < tail) {
     const headOffset = head * config.pieceCount;
     const depth = metadata.depths[head];
     const parentIdx = head;
@@ -313,10 +378,11 @@ function* bfsExplore(
     }
 
     // Below the optimal depth we expand normally; once the goal depth is known
-    // (exhaustive mode) we stop expanding but let the queue drain so every
-    // depth-`goalDepth` goal state is still collected and multi-parent-tracked.
+    // (exhaustive mode) we stop expanding `overshoot` levels past it but let
+    // the queue drain so every goal state within the window is still collected
+    // and multi-parent-tracked.
     if (goalDepth !== -1) {
-      if (depth >= goalDepth) continue;
+      if (depth >= Math.min(goalDepth + overshoot, maxDepth)) continue;
     } else if (depth >= maxDepth) {
       hitMaxDepth = true;
       continue;
@@ -326,7 +392,15 @@ function* bfsExplore(
 
     // Each move is a [fromPos, toPos] pair packed consecutively in buffer.
     for (let idx = 0; idx < moveCount; idx += 2) {
-      if (tail >= BFS_STATE_LIMIT) {
+      if (tail >= stateLimit) {
+        // Expanding at depth >= goalDepth means every optimal state (and its
+        // same-depth alternative parents) is already recorded — only overshoot
+        // exploration remains, so truncate instead of failing. Below goalDepth
+        // the optimal DAG is still incomplete: fail exactly as before.
+        if (goalDepth !== -1 && depth >= goalDepth) {
+          truncated = true;
+          break outer;
+        }
         throw new SolverDepthExceededError(maxDepth);
       }
 
@@ -362,13 +436,17 @@ function* bfsExplore(
       metadata.fromPositions[tail] = fromPos;
       metadata.toPositions[tail] = toPos;
       metadata.depths[tail] = childDepth;
-      statesPerDepth[childDepth] = (statesPerDepth[childDepth] ?? 0) + 1;
+      // statesPerDepth keeps its 0..minMoves span — states found past the
+      // optimum during overshoot are the solver's own business.
+      if (goalDepth === -1 || childDepth <= goalDepth) {
+        statesPerDepth[childDepth] = (statesPerDepth[childDepth] ?? 0) + 1;
+      }
 
       if (statePool[tailOffset] === destPos) {
         goalIndices.push(tail);
+        if (goalDepth === -1) goalDepth = childDepth;
         // Single-solution mode: the first goal reached is an optimal path.
         if (!exhaustive) return toResult(childDepth);
-        if (goalDepth === -1) goalDepth = childDepth;
       }
 
       tail++;

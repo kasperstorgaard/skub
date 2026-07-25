@@ -7,7 +7,12 @@
 const entryUrl = import.meta.resolve("@phosphor-icons/core");
 const packageDir = new URL("../", entryUrl).pathname;
 const ASSETS_DIR = `${packageDir}assets/regular`;
+const FILL_ASSETS_DIR = `${packageDir}assets/fill`;
 const OUTPUT_DIR = "./components/icons";
+
+// Fill-weight variants to emit alongside the regular set (e.g. `StarFill` for a
+// selected rating star). Allowlisted — the full fill set would double the dir.
+const FILL_ICONS = ["star"];
 
 // Reserved JS identifiers that need remapping
 const NAME_MAP: Record<string, string> = {
@@ -37,6 +42,13 @@ for await (const entry of Deno.readDir(ASSETS_DIR)) {
   const content = await Deno.readTextFile(`${ASSETS_DIR}/${entry.name}`);
   const pascalName = toPascalCase(entry.name.replace(".svg", ""));
   icons.push([pascalName, extractSvgContent(content)]);
+}
+
+for (const name of FILL_ICONS) {
+  const content = await Deno.readTextFile(
+    `${FILL_ASSETS_DIR}/${name}-fill.svg`,
+  );
+  icons.push([toPascalCase(`${name}-fill`), extractSvgContent(content)]);
 }
 
 icons.sort(([a], [b]) => a.localeCompare(b));

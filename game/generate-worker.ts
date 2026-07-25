@@ -3,6 +3,7 @@ import {
   boardCanonicalHash,
   checkGates,
   computeMetrics,
+  DIFFICULTY_BANDS,
   type Metrics,
   scoreBoard,
   type ScoredBoard,
@@ -38,6 +39,15 @@ export type GenerateEvent =
 const DEFAULT_MAX_GATE_ATTEMPTS = 500;
 
 /**
+ * BFS state budget for each gate solve. Bounds worst-case solve time so a single
+ * pathological (e.g. highly symmetric, branchy) candidate can't grind for
+ * seconds and freeze the progress count. Generous for the generator's ≤6-piece
+ * boards within the difficulty bands; branchier boards reject as G1 and the loop
+ * moves on. (The full solver limit is 10M, used when solving real puzzles.)
+ */
+const GATE_MAX_STATES = 2_000_000;
+
+/**
  * Loops `generate()` → `checkGates()` until a board passes every gate at the
  * requested difficulty, or the attempt budget is spent. Emits a `progress`
  * event per attempt (a simple rising count for the UI), then a terminal
@@ -53,6 +63,12 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
   } = e.data;
   const corpusSet = new Set(corpus);
   const batchHashes = new Set<string>();
+
+  // Band-floor boards dominate the "too easy" ratings (medium: mM 7 averaged
+  // 2.95★ vs 3.44★ at mM 9), so the first half of the budget rejects them by
+  // raising the G2 floor one move; the fallback half accepts the full band.
+  const band = DIFFICULTY_BANDS[difficulty];
+  const raisedFloor = band && band[1] > band[0] ? band[0] + 1 : undefined;
 
   try {
     for (let attempts = 1; attempts <= maxGateAttempts; attempts++) {
@@ -71,12 +87,25 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
         difficulty,
         corpus: corpusSet,
         batchHashes,
+        // Reject branchy candidates fast so a single slow solve can't freeze the
+        // attempt counter — well above what a ≤6-piece board needs to depth 15.
+        maxStates: GATE_MAX_STATES,
+        minMovesFloor: attempts <= maxGateAttempts / 2
+          ? raisedFloor
+          : undefined,
       });
       if (gate.passed) {
         batchHashes.add(boardCanonicalHash(board));
-        // Score the winner once for the advisory panel (re-solves the passing
-        // board — cheap, happens only on success, not per attempt).
-        const result = solveExhaustiveSync(board, { maxDepth: 15 });
+        // Score the winner once for the advisory panel. Same state cap as the
+        // gate solve — the board just solved within it, and the cap also sizes
+        // the solver's pre-allocated buffers (default 10M ⇒ ~120 MB for nothing).
+        // Overshoot powers the isolation advisory; it's paid once per accepted
+        // board, never per attempt, and truncates at the cap instead of failing.
+        const result = solveExhaustiveSync(board, {
+          maxDepth: 15,
+          maxStates: GATE_MAX_STATES,
+          overshoot: 2,
+        });
         self.postMessage(
           {
             type: "result",

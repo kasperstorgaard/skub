@@ -322,6 +322,65 @@ Deno.test("solveExhaustiveSync() returns distinct solutions", () => {
   assertNotEquals(first, second);
 });
 
+Deno.test("solveExhaustiveSync() without overshoot searches only to the optimal depth", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }, { x: 4, y: 4, type: "blocker" }],
+    walls: [],
+  };
+
+  const result = solveExhaustiveSync(board);
+
+  assertEquals(
+    {
+      minMoves: result.minMoves,
+      searchedDepth: result.searchedDepth,
+      optimalGoals: result.dag.goals.length,
+      nearGoals: result.nearDag.goals.length,
+    },
+    { minMoves: 1, searchedDepth: 1, optimalGoals: 1, nearGoals: 0 },
+  );
+});
+
+Deno.test("solveExhaustiveSync() overshoot records suboptimal goal arrivals", () => {
+  // Optimal is the 1-move slide A1 -> H1. With overshoot, depth 2 collects the
+  // near-miss goal states where the blocker also moved (4 edges to slide to).
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }, { x: 4, y: 4, type: "blocker" }],
+    walls: [],
+  };
+
+  const result = solveExhaustiveSync(board, { overshoot: 2 });
+
+  assertEquals(
+    {
+      minMoves: result.minMoves,
+      searchedDepth: result.searchedDepth,
+      optimalGoals: result.dag.goals.length,
+      hasNearMisses: result.nearDag.goals.length > 0,
+    },
+    { minMoves: 1, searchedDepth: 3, optimalGoals: 1, hasNearMisses: true },
+  );
+});
+
+Deno.test("solveExhaustiveSync() overshoot keeps the DAG optimal-only", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }, { x: 4, y: 4, type: "blocker" }],
+    walls: [],
+  };
+
+  const solutions = enumerateSolutions(
+    solveExhaustiveSync(board, { overshoot: 2 }).dag,
+  );
+
+  assertEquals(
+    solutions.map((moves) => moves.length),
+    [1],
+  );
+});
+
 Deno.test("solveExhaustiveSync() matches solveSync minMoves on the ingrid puzzle", () => {
   assertEquals(
     solveExhaustiveSync(ingridBoard).minMoves,

@@ -5,6 +5,7 @@ import {
   boardCanonicalHash,
   boardSelfSymmetries,
   checkGates,
+  clumping,
   computeMetrics,
   computeTrails,
   coverage,
@@ -13,6 +14,9 @@ import {
   deception,
   deduplicateSolutions,
   firstMovePrecision,
+  genuineNearMisses,
+  maxUnusedBlockers,
+  minWallUtilization,
   pieceUsage,
   pointlessClearance,
   reversals,
@@ -26,10 +30,11 @@ import {
 } from "./scoring.ts";
 import {
   enumerateSolutions,
+  type SolutionDag,
   solveExhaustiveSync,
   type SolverResult,
 } from "./solver.ts";
-import type { Board } from "#/game/types.ts";
+import type { Board, Move } from "#/game/types.ts";
 
 // Real puzzle fixture (static/puzzles/ingrid.md, 7 moves; 26 raw optimal sequences).
 const ingridBoard: Board = {
@@ -59,6 +64,9 @@ const ingridBoard: Board = {
     { x: 6, y: 6, orientation: "vertical" },
   ],
 };
+
+/** Dummy DAG for synthetic SolverResults (isolation metrics never read it). */
+const emptyDag = { root: 0, goals: [], predecessors: new Map() };
 
 const asymmetricBoard: Board = {
   destination: { x: 5, y: 2 },
@@ -240,7 +248,9 @@ Deno.test("searchProfile() is the last-third share of explored states", () => {
   const result: SolverResult = {
     minMoves: 0,
     statesPerDepth: [1, 2, 1],
-    dag: { root: 0, goals: [], predecessors: new Map() },
+    searchedDepth: 0,
+    dag: emptyDag,
+    nearDag: emptyDag,
   };
   assertEquals(searchProfile(result), 1 / 4);
 });
@@ -326,9 +336,103 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
     uniqueSolutions: 4,
     wallUtilization: 0.42857142857142855,
     deadSpace: 0.4375,
+    clumping: 0.06930693069306931,
     firstMovePrecision: 0.16666666666666666,
     searchProfile: 0.8934068908865179,
+    // no overshoot on this solve — the isolation pair reads unmeasured
+    isolationGap: 0,
+    nearMissCount: 0,
   });
+});
+
+Deno.test("clumping() is the share of same-kind pairs within Chebyshev 1", () => {
+  const clumped: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 4, y: 4, type: "blocker" },
+      { x: 5, y: 4, type: "blocker" },
+      { x: 5, y: 5, type: "blocker" },
+    ],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      { x: 2, y: 2, orientation: "vertical" },
+    ],
+  };
+
+  // All 3 blocker pairs and the 1 wall pair are adjacent: 4 close / 4 total.
+  assertEquals(clumping(clumped), 1);
+});
+
+Deno.test("clumping() is low when structure is spread out", () => {
+  // asymmetricBoard: two walls at (2,2)/(6,4) and two blockers at
+  // (1,1)/(1,6) — no pair within Chebyshev distance 1.
+  assertEquals(clumping(asymmetricBoard), 0);
+});
+
+Deno.test("genuineNearMisses() counts real +1 routes and drops padded optimals", () => {
+  // One optimal route of length 2.
+  const o1: Move = [{ x: 0, y: 0 }, { x: 0, y: 3 }];
+  const o2: Move = [{ x: 0, y: 3 }, { x: 3, y: 3 }];
+  const optimal = [[o1, o2]];
+
+  // A padded near-miss: the optimal route plus one idle move — removing that
+  // move recovers the optimal multiset, so it must NOT count.
+  const idle: Move = [{ x: 5, y: 5 }, { x: 5, y: 7 }];
+  // A genuine near-miss: a distinct 3-move route sharing no optimal subset.
+  const g1: Move = [{ x: 7, y: 7 }, { x: 7, y: 4 }];
+  const g2: Move = [{ x: 7, y: 4 }, { x: 4, y: 4 }];
+  const g3: Move = [{ x: 4, y: 4 }, { x: 4, y: 2 }];
+
+  // nearDag: goal 10 walks to the padded route, goal 20 to the genuine one.
+  // firstSolutionFrom follows the first edge back to root (0), so each chain is
+  // laid out last-move-first.
+  const nearDag: SolutionDag = {
+    root: 0,
+    goals: [10, 20],
+    predecessors: new Map<number, { from: number; move: Move }[]>([
+      [10, [{ from: 11, move: idle }]],
+      [11, [{ from: 12, move: o2 }]],
+      [12, [{ from: 0, move: o1 }]],
+      [20, [{ from: 21, move: g3 }]],
+      [21, [{ from: 22, move: g2 }]],
+      [22, [{ from: 0, move: g1 }]],
+    ]),
+  };
+  const base = { statesPerDepth: [], dag: emptyDag };
+
+  // 1 genuine + 1 padded (excluded) → count 1, so a real route sits at +1 (gap 1).
+  assertEquals(
+    genuineNearMisses(
+      { ...base, minMoves: 2, searchedDepth: 4, nearDag },
+      optimal,
+    ),
+    { count: 1, gap: 1 },
+  );
+
+  // Drop the genuine goal: only the padded route remains → nothing genuine at
+  // +1, so the optimal stands alone (gap 2).
+  assertEquals(
+    genuineNearMisses(
+      {
+        ...base,
+        minMoves: 2,
+        searchedDepth: 4,
+        nearDag: { ...nearDag, goals: [10] },
+      },
+      optimal,
+    ),
+    { count: 0, gap: 2 },
+  );
+
+  // No overshoot searched → unmeasured.
+  assertEquals(
+    genuineNearMisses(
+      { ...base, minMoves: 2, searchedDepth: 2, nearDag: emptyDag },
+      optimal,
+    ),
+    { count: 0, gap: 0 },
+  );
 });
 
 Deno.test("wallUtilization() is the fraction of walls that stop a piece", () => {
@@ -364,6 +468,77 @@ Deno.test("checkGates() fails G2 when minMoves is outside the band", () => {
   assertEquals(
     checkGates(ingridBoard, { difficulty: "hard", ...noCorpus }),
     { passed: false, failedGate: "G2" },
+  );
+});
+
+Deno.test("checkGates() fails G2 when minMovesFloor raises the band floor", () => {
+  // ingrid is a 7-move medium board; a floor of 8 rejects it without touching
+  // the band's upper bound.
+  assertEquals(
+    checkGates(ingridBoard, {
+      difficulty: "medium",
+      ...noCorpus,
+      minMovesFloor: 8,
+    }),
+    { passed: false, failedGate: "G2" },
+  );
+});
+
+Deno.test("checkGates() fails G9 for a blocker walled in on all four sides", () => {
+  const trapped: Board = {
+    ...ingridBoard,
+    pieces: [...ingridBoard.pieces, { x: 3, y: 3, type: "blocker" }],
+    walls: [
+      ...ingridBoard.walls,
+      { x: 3, y: 3, orientation: "horizontal" }, // above
+      { x: 3, y: 4, orientation: "horizontal" }, // below
+      { x: 3, y: 3, orientation: "vertical" }, // left
+      { x: 4, y: 3, orientation: "vertical" }, // right
+    ],
+  };
+
+  assertEquals(
+    checkGates(trapped, { difficulty: "medium", ...noCorpus }),
+    { passed: false, failedGate: "G9" },
+  );
+});
+
+Deno.test("maxUnusedBlockers() holds at 2 for default counts, loosens past them", () => {
+  // <=5 blockers (the default blockersRange top) keep the fixed allowance of 2;
+  // denser requests scale to keep at least half the blockers in use.
+  assertEquals([3, 4, 5, 6, 7, 8].map(maxUnusedBlockers), [2, 2, 2, 3, 3, 4]);
+});
+
+Deno.test("minWallUtilization() holds at 0.2 up to 15 walls, relaxes beyond", () => {
+  // 0.2 fraction up to the default wallsRange top (15); past it the floor
+  // relaxes toward "at least 3 walls stop a piece".
+  assertEquals(minWallUtilization(5), 0.2);
+  assertEquals(minWallUtilization(15), 0.2);
+  assertEquals(minWallUtilization(20), 0.15);
+  assertEquals(minWallUtilization(30), 0.1);
+});
+
+Deno.test("checkGates() fails G10 for an egregiously clumped board", () => {
+  // Three mutually adjacent blockers + an adjacent wall pair → clumping 1.0,
+  // well past MAX_CLUMPING 0.25. None is walled in on four sides (G9 passes),
+  // so the static G10 check rejects it before the solve.
+  const clumped: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 4, y: 4, type: "blocker" },
+      { x: 5, y: 4, type: "blocker" },
+      { x: 5, y: 5, type: "blocker" },
+    ],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      { x: 2, y: 2, orientation: "vertical" },
+    ],
+  };
+
+  assertEquals(
+    checkGates(clumped, { difficulty: "medium", ...noCorpus }),
+    { passed: false, failedGate: "G10" },
   );
 });
 

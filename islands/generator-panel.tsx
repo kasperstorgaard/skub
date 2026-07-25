@@ -1,28 +1,39 @@
 import { type Signal, useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { useCallback } from "preact/hooks";
+import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import { candidate } from "#/client/generator-signals.ts";
+import { useGenerateStream } from "#/client/use-generate-stream.ts";
 import {
-  type GenerateStreamOptions,
-  useGenerateStream,
-} from "#/client/use-generate-stream.ts";
-import { Eye, Icon, Pencil, Repeat, Shuffle, X } from "#/components/icons.tsx";
+  CaretRight,
+  Eye,
+  Icon,
+  Pencil,
+  Repeat,
+  Shuffle,
+  X,
+} from "#/components/icons.tsx";
+import { NumberRange } from "#/components/number-range.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { RangeSlider } from "#/components/range-slider.tsx";
 import { Select } from "#/components/select.tsx";
 import { formatPuzzle } from "#/game/formatter.ts";
+import {
+  formatGenerated,
+  type GenOptions,
+  type StoredCandidate,
+} from "#/game/generated.ts";
+import { GENERATOR_VERSION, type WallSpread } from "#/game/generator.ts";
+import { METRIC_CATALOG } from "#/game/metric-catalog.ts";
 import type { Metrics, ScoredBoard } from "#/game/scoring.ts";
 import type { Difficulty, Puzzle } from "#/game/types.ts";
 
 type GeneratorPanelProps = {
   puzzle: Signal<Puzzle>;
-};
-
-// Wall/blocker/spread knobs are hardcoded for now; surfacing them as controls
-// is a future idea (see spec). Difficulty is the one live control.
-const GENERATE_OPTIONS: Omit<GenerateStreamOptions, "difficulty"> = {
-  wallsRange: [5, 15],
-  blockersRange: [3, 5],
-  wallSpread: "balanced",
+  /** Persisted knob values (from the generator_options cookie), server-read. */
+  initialOptions?: Partial<GenOptions>;
+  /** The restored stored candidate the page loaded with, if any. */
+  initialCandidate?: StoredCandidate;
 };
 
 // Difficulty bands the generator can target (`ultra` has no band).
@@ -30,6 +41,12 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
   { value: "easy", label: "Easy" },
   { value: "medium", label: "Medium" },
   { value: "hard", label: "Hard" },
+];
+
+const SPREAD_OPTIONS: { value: WallSpread; label: string }[] = [
+  { value: "mid", label: "Mid" },
+  { value: "balanced", label: "Balanced" },
+  { value: "spread", label: "Spread" },
 ];
 
 /** One label/value row in the generated-candidate score readout. */
@@ -59,115 +76,19 @@ function ScoreStat(
   );
 }
 
+/** Headline metric, shown above the fold rather than in the details list. */
+const HEADLINE_METRIC = "uniqueSolutions";
+
 /**
- * The advisory score for a generated candidate: a headline of the curated
- * signals (composite, weakest route, and the economy-gate metrics) plus a
- * collapsible breakdown of every remaining metric — the full view kept around
- * for tuning the composite (spec Phase 2). Detail metrics mirror the corpus
- * report's flattening (`scripts/score-corpus.ts`): totalDistance summed, stop
- * types weighted.
+ * The advisory score for a generated candidate: a headline (composite score,
+ * weakest route, solution count) over a collapsible breakdown of every metric,
+ * the full view kept around for tuning the composite. Detail rows come from
+ * `METRIC_CATALOG`, so the panel can never drift out of sync with the metrics
+ * the reports and calibration tooling measure.
  */
 function CandidateScore(
   { scored, metrics }: { scored: ScoredBoard; metrics: Metrics },
 ) {
-  const details: {
-    label: string;
-    value: number;
-    hint: string;
-    percent?: boolean;
-  }[] = [
-    {
-      label: "Mean",
-      value: scored.mean,
-      hint: "Mean route score across the distinct solutions.",
-    },
-    {
-      label: "Std dev",
-      value: scored.stddev,
-      hint: "Spread of route scores across solutions.",
-    },
-    {
-      label: "Wall use",
-      value: metrics.wallUtilization,
-      percent: true,
-      hint:
-        "Share of interior walls that ever stop a piece across solutions (gate G7).",
-    },
-    {
-      label: "Dead space",
-      value: metrics.deadSpace,
-      percent: true,
-      hint:
-        "Largest region never entered by any trail and holding no piece or goal (gate G8).",
-    },
-    {
-      label: "Coverage",
-      value: metrics.coverage,
-      hint: "Distinct cells the puck sweeps, as a fraction of the 64 cells.",
-    },
-    {
-      label: "Setup ratio",
-      value: metrics.setupRatio,
-      hint:
-        "Fraction of moves that reposition a blocker rather than the puck (more setup ⇒ harder).",
-    },
-    {
-      label: "Piece usage",
-      value: metrics.pieceUsage,
-      hint:
-        "Log-weighted blocker involvement — sums each blocker's moves and stops; grows with reuse, so it can exceed the piece count (not a count).",
-    },
-    {
-      label: "Deception",
-      value: metrics.deception,
-      hint:
-        "How far the puck slides away from the goal — what misleads a solver.",
-    },
-    {
-      label: "Reversals",
-      value: metrics.reversals,
-      hint: "Moves of the same piece in opposite directions (back-and-forth).",
-    },
-    {
-      label: "Cross-trail",
-      value: metrics.crossTrailOverlap,
-      hint: "How much one piece's path crosses another's.",
-    },
-    {
-      label: "Distance",
-      value: metrics.totalDistance,
-      hint: "Total slide distance travelled (puck + blocker).",
-    },
-    {
-      label: "First move",
-      value: metrics.firstMovePrecision,
-      hint: "1 / distinct optimal openings — 1 when the first move is forced.",
-    },
-    {
-      label: "Search",
-      value: metrics.searchProfile,
-      hint:
-        "Share of search states reached near the solution depth (back-loaded difficulty).",
-    },
-    {
-      label: "Stops (wtd)",
-      value: metrics.stopWeighted,
-      hint: "Weighted count of how slides stop: piece×3 + wall×2 + edge.",
-    },
-    {
-      label: "Pointless",
-      value: metrics.pointlessClearance,
-      hint:
-        "Blocker moves after which that blocker never matters again (negative signal).",
-    },
-    {
-      label: "Same dir",
-      value: metrics.sameDirectionRepeat,
-      hint:
-        "Cells a piece re-traverses in the same direction (negative signal).",
-    },
-  ];
-
   return (
     <div className="flex flex-col gap-fl-1 text-1">
       <dl className="flex flex-col">
@@ -183,26 +104,47 @@ function CandidateScore(
         />
         <ScoreStat
           label="Solutions"
-          value={metrics.uniqueSolutions}
+          value={metrics[HEADLINE_METRIC]}
           whole
           hint="Number of distinct optimal solutions."
         />
       </dl>
 
-      <details className="p-0 bg-none">
-        <summary className="list-none py-2 bg-none cursor-pointer">
+      {
+        /* `group-open:mb-0` drops normalize's `details[open] > summary` margin,
+          which would otherwise show a surface-2 seam between bar and content. */
+      }
+      <details className="group p-0 bg-none">
+        <summary className="flex items-center gap-1 list-none bg-surface-3 cursor-pointer -mx-5 px-5 rounded-none group-open:mb-0">
+          <Icon
+            icon={CaretRight}
+            className="transition-transform group-open:rotate-90"
+          />
           Details
         </summary>
-        <dl className="flex flex-col">
-          {details.map((stat) => (
-            <ScoreStat
-              key={stat.label}
-              label={stat.label}
-              value={stat.value}
-              hint={stat.hint}
-              percent={stat.percent}
-            />
-          ))}
+        <dl className="flex flex-col bg-surface-3 -mx-5 px-5 pb-2">
+          <ScoreStat
+            label="Mean"
+            value={scored.mean}
+            hint="Mean route score across the distinct solutions."
+          />
+          <ScoreStat
+            label="Std dev"
+            value={scored.stddev}
+            hint="Spread of route scores across solutions."
+          />
+          {METRIC_CATALOG
+            .filter((spec) => spec.key !== HEADLINE_METRIC)
+            .map((spec) => (
+              <ScoreStat
+                key={spec.key}
+                label={spec.label}
+                value={metrics[spec.key]}
+                hint={spec.hint}
+                percent={"percent" in spec ? spec.percent : undefined}
+                whole={"whole" in spec ? spec.whole : undefined}
+              />
+            ))}
         </dl>
       </details>
     </div>
@@ -215,8 +157,26 @@ function CandidateScore(
  * advisory score, and hands a chosen candidate off to the editor
  * (`/puzzles/edit`) for naming, curation and saving.
  */
-export function GeneratorPanel({ puzzle }: GeneratorPanelProps) {
-  const difficulty = useSignal<Difficulty>("medium");
+export function GeneratorPanel(
+  { puzzle, initialOptions = {}, initialCandidate }: GeneratorPanelProps,
+) {
+  const difficulty = useSignal<Difficulty>(
+    initialOptions.difficulty ?? "medium",
+  );
+  const wallsRange = useSignal<[number, number]>(
+    initialOptions.wallsRange ?? [5, 15],
+  );
+  const blockersRange = useSignal<[number, number]>(
+    initialOptions.blockersRange ?? [3, 5],
+  );
+  const wallSpread = useSignal<WallSpread>(
+    initialOptions.wallSpread ?? "balanced",
+  );
+  // Default 0.5: every 4–5★ board in the first labeled set was generated at
+  // symmetry ≥ 0.55, four of five 2★ boards at 0. Like all knob defaults it
+  // only applies when no generator_options cookie exists — the curator's
+  // last-used values (even an explicit 0) take precedence over defaults.
+  const symmetry = useSignal(initialOptions.symmetry ?? 0.5); // 0..1
   const status = useSignal<
     "idle" | "running" | "preview" | "exhausted" | "error"
   >("idle");
@@ -225,6 +185,62 @@ export function GeneratorPanel({ puzzle }: GeneratorPanelProps) {
   const scored = useSignal<
     { scored: ScoredBoard; metrics: Metrics } | null
   >(null);
+  // The in-flight auto-save; the Edit/Preview handoff awaits it so the
+  // server-assigned name/slug are on `puzzle` before the draft is stored.
+  const savePromise = useRef<Promise<void> | null>(null);
+  // Monotonic run counter — a save response is only applied if no newer run has
+  // started since, so a slow save can't resurrect a rerolled-away candidate.
+  const runId = useRef(0);
+
+  // Resume the restored candidate: the board came in via page data, so seed
+  // the shared candidate signal (shows the feedback UI, stored stars included)
+  // and land directly in preview. No stored score — the readout stays hidden
+  // for restored boards.
+  useEffect(() => {
+    if (!initialCandidate) return;
+    candidate.value = initialCandidate;
+    status.value = "preview";
+  }, []);
+
+  // Auto-persists the just-generated candidate to the `generated/` store and
+  // shares its slug with the feedback island. Dev-only endpoint —
+  // failures (e.g. production's read-only fs) leave `candidate` null so the
+  // feedback UI simply doesn't appear.
+  const saveGenerated = useCallback(async (generated: Puzzle, run: number) => {
+    const genOptions: GenOptions = {
+      difficulty: difficulty.value,
+      wallsRange: wallsRange.value,
+      blockersRange: blockersRange.value,
+      wallSpread: wallSpread.value,
+      symmetry: symmetry.value,
+    };
+    try {
+      const res = await fetch("/api/generated", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          markdown: formatGenerated({
+            ...generated,
+            genOptions,
+            generatorVersion: GENERATOR_VERSION,
+          }),
+        }),
+      });
+      // A newer run started while this save was in flight — its result belongs
+      // to a board the curator already rerolled away. Drop it.
+      if (runId.current !== run) return;
+      if (res.ok) {
+        const saved = await res.json() as { slug: string; name: string };
+        // One slug everywhere: the store file, feedback patches, and the draft
+        // all use the name-derived slug (e.g. hans / hans.md).
+        candidate.value = saved;
+        puzzle.value = { ...puzzle.value, name: saved.name, slug: saved.slug };
+      }
+    } catch {
+      // non-fatal — curation continues without a persisted candidate
+    }
+  }, []);
 
   const { start, cancel } = useGenerateStream((event) => {
     if (event.type === "progress") {
@@ -232,17 +248,19 @@ export function GeneratorPanel({ puzzle }: GeneratorPanelProps) {
       return;
     }
     if (event.type === "result") {
-      puzzle.value = {
+      const generated: Puzzle = {
         ...puzzle.value,
         board: event.board,
         minMoves: event.minMoves,
         difficulty: difficulty.value,
       };
+      puzzle.value = generated;
       scored.value = {
         scored: event.scored,
         metrics: event.metrics,
       };
       status.value = "preview";
+      savePromise.current = saveGenerated(generated, runId.current);
       return;
     }
     if (event.type === "exhausted") {
@@ -256,10 +274,18 @@ export function GeneratorPanel({ puzzle }: GeneratorPanelProps) {
   });
 
   const onGenerate = useCallback(() => {
+    runId.current++; // invalidate any in-flight save from the previous run
     attempts.value = 0;
     message.value = "";
     status.value = "running";
-    start({ ...GENERATE_OPTIONS, difficulty: difficulty.value });
+    candidate.value = null; // drop the previous candidate's feedback form
+    start({
+      wallsRange: wallsRange.value,
+      blockersRange: blockersRange.value,
+      wallSpread: wallSpread.value,
+      symmetry: symmetry.value,
+      difficulty: difficulty.value,
+    });
   }, [start]);
 
   const onCancel = useCallback(() => {
@@ -271,12 +297,15 @@ export function GeneratorPanel({ puzzle }: GeneratorPanelProps) {
 
   // The candidate only becomes a draft on demand — both handing off to the
   // editor and previewing store it first (overwriting any prior draft is fine).
-  const storeCandidate = useCallback(() =>
-    fetch("/api/store", {
+  // Awaits the auto-save so the assigned name/slug are on `puzzle` first.
+  const storeCandidate = useCallback(async () => {
+    await savePromise.current;
+    return fetch("/api/store", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ markdown: formatPuzzle(puzzle.value) }),
-    }), []);
+    });
+  }, []);
 
   const onEdit = useCallback(async () => {
     await storeCandidate();
@@ -317,6 +346,59 @@ export function GeneratorPanel({ puzzle }: GeneratorPanelProps) {
               difficulty.value = value as Difficulty;
             }}
           />
+
+          <details className="group p-0 bg-none my-fl-1">
+            <summary className="flex items-center gap-1 list-none bg-surface-3 cursor-pointer text-text-2 -mx-5 px-5 rounded-none group-open:mb-0">
+              <Icon
+                icon={CaretRight}
+                className="transition-transform group-open:rotate-90"
+              />
+              Options
+            </summary>
+            <div className="flex flex-col gap-fl-1 bg-surface-3 -mx-5 px-5 pb-2">
+              <NumberRange
+                label="Walls"
+                name="gen-walls"
+                value={wallsRange.value}
+                min={0}
+                max={25}
+                onChange={(value) => {
+                  wallsRange.value = value;
+                }}
+              />
+              <NumberRange
+                label="Blockers"
+                name="gen-blockers"
+                value={blockersRange.value}
+                min={0}
+                max={8}
+                onChange={(value) => {
+                  blockersRange.value = value;
+                }}
+              />
+              <Select
+                label="Wall spread"
+                name="gen-spread"
+                value={wallSpread.value}
+                options={SPREAD_OPTIONS}
+                onChange={(value) => {
+                  wallSpread.value = value as WallSpread;
+                }}
+              />
+              <RangeSlider
+                label="Symmetry"
+                name="gen-symmetry"
+                value={Math.round(symmetry.value * 100)}
+                min={0}
+                max={100}
+                step={5}
+                format={(v) => `${v}%`}
+                onChange={(value) => {
+                  symmetry.value = value / 100;
+                }}
+              />
+            </div>
+          </details>
 
           {isRunning
             ? (

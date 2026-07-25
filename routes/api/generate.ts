@@ -1,4 +1,5 @@
 import { define } from "#/core.ts";
+import { setGeneratorOptions } from "#/game/cookies.ts";
 import type { GenerateEvent, GenerateRequest } from "#/game/generate-worker.ts";
 import type { GenerateOptions } from "#/game/generator.ts";
 import { getCorpusHashes } from "#/game/loader.ts";
@@ -32,14 +33,17 @@ export const handler = define.handlers({
       return new Response("Invalid JSON", { status: 400 });
     }
 
-    const { wallsRange, blockersRange, wallSpread, difficulty } = body;
+    const { wallsRange, blockersRange, wallSpread, symmetry, difficulty } =
+      body;
 
     if (
       !wallsRange || !blockersRange || !wallSpread || !difficulty ||
       !BANDS.includes(difficulty) ||
       wallsRange[0] > wallsRange[1] ||
       blockersRange[0] > blockersRange[1] ||
-      wallsRange[0] < 0 || blockersRange[0] < 0
+      wallsRange[0] < 0 || blockersRange[0] < 0 ||
+      (symmetry !== undefined &&
+        (typeof symmetry !== "number" || symmetry < 0 || symmetry > 1))
     ) {
       return new Response("Invalid options", { status: 400 });
     }
@@ -68,6 +72,7 @@ export const handler = define.handlers({
           wallsRange,
           blockersRange,
           wallSpread,
+          symmetry,
           difficulty,
           corpus,
         };
@@ -78,11 +83,22 @@ export const handler = define.handlers({
       },
     });
 
-    return new Response(stream, {
-      headers: {
+    // Persist the run's knob values so /puzzles/new reopens with them
+    // ("persist on Generate" — idle slider twiddling never sticks).
+    const headers = setGeneratorOptions(
+      new Headers({
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
+      }),
+      {
+        wallsRange,
+        blockersRange,
+        wallSpread,
+        symmetry: symmetry ?? 0,
+        difficulty,
       },
-    });
+    );
+
+    return new Response(stream, { headers });
   },
 });
