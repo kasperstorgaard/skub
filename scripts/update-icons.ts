@@ -1,6 +1,17 @@
 /**
- * Generates one .ts file per Phosphor icon in components/icons/,
+ * Generates one .ts file per Phosphor icon that the codebase actually imports,
  * plus a barrel index.ts. Run with: deno task update-icons
+ *
+ * Only used icons are emitted. The full Phosphor set is ~1500 icons, and a
+ * barrel re-exporting all of them puts every one of those modules in Vite's
+ * dev graph — worth ~6s on a cold start, since dev has no tree-shaking.
+ *
+ * The used set is derived from the import statements themselves, so the import
+ * site stays the single source of truth: add an icon to an import, run this
+ * task, and icons that are no longer referenced get pruned automatically.
+ *
+ * Browse names at https://phosphoricons.com — PascalCase here, and a `Fill`
+ * suffix (e.g. `StarFill`) selects the fill weight.
  */
 
 // Resolve assets dir from the package entry point (dist/index.mjs → assets/regular)
@@ -10,9 +21,21 @@ const ASSETS_DIR = `${packageDir}assets/regular`;
 const FILL_ASSETS_DIR = `${packageDir}assets/fill`;
 const OUTPUT_DIR = "./components/icons";
 
-// Fill-weight variants to emit alongside the regular set (e.g. `StarFill` for a
-// selected rating star). Allowlisted — the full fill set would double the dir.
-const FILL_ICONS = ["star"];
+/** Module specifier consumers import icons from. */
+const ICONS_MODULE = "#/components/icons.tsx";
+
+/** `Icon` is the wrapper component in icons.tsx, not a generated icon. */
+const NOT_AN_ICON = new Set(["Icon"]);
+
+/** Directories that never contain icon imports. */
+const SKIP_DIRS = new Set([
+  "node_modules",
+  "_fresh",
+  ".git",
+  "specs",
+  "static",
+  "generated",
+]);
 
 // Reserved JS identifiers that need remapping
 const NAME_MAP: Record<string, string> = {
@@ -34,31 +57,99 @@ function extractSvgContent(svg: string): string {
   return svg.replace(/<svg[^>]*>/, "").replace(/<\/svg>/, "").trim();
 }
 
-const icons: Array<[string, string]> = [];
+/** Every icon Phosphor offers, PascalName → svg inner markup. */
+async function readAvailableIcons() {
+  const available = new Map<string, string>();
 
-for await (const entry of Deno.readDir(ASSETS_DIR)) {
-  if (!entry.isFile || !entry.name.endsWith(".svg")) continue;
+  for (const dir of [ASSETS_DIR, FILL_ASSETS_DIR]) {
+    for await (const entry of Deno.readDir(dir)) {
+      if (!entry.isFile || !entry.name.endsWith(".svg")) continue;
 
-  const content = await Deno.readTextFile(`${ASSETS_DIR}/${entry.name}`);
-  const pascalName = toPascalCase(entry.name.replace(".svg", ""));
-  icons.push([pascalName, extractSvgContent(content)]);
+      const content = await Deno.readTextFile(`${dir}/${entry.name}`);
+      const name = toPascalCase(entry.name.replace(".svg", ""));
+      available.set(name, extractSvgContent(content));
+    }
+  }
+
+  return available;
 }
 
-for (const name of FILL_ICONS) {
-  const content = await Deno.readTextFile(
-    `${FILL_ASSETS_DIR}/${name}-fill.svg`,
+/** Icon names imported from {@link ICONS_MODULE} anywhere in the project. */
+async function findUsedIcons() {
+  const used = new Set<string>();
+  const pattern = new RegExp(
+    `import\\s*\\{([^}]*)\\}\\s*from\\s*"${ICONS_MODULE}"`,
+    "g",
   );
-  icons.push([toPascalCase(`${name}-fill`), extractSvgContent(content)]);
+
+  async function walk(dir: string) {
+    for await (const entry of Deno.readDir(dir)) {
+      const path = `${dir}/${entry.name}`;
+
+      if (entry.isDirectory) {
+        if (SKIP_DIRS.has(entry.name)) continue;
+        // The generated icons themselves never import the barrel.
+        if (path === OUTPUT_DIR) continue;
+        await walk(path);
+        continue;
+      }
+
+      if (!/\.tsx?$/.test(entry.name)) continue;
+
+      const source = await Deno.readTextFile(path);
+      for (const match of source.matchAll(pattern)) {
+        for (const specifier of match[1].split(",")) {
+          // Handle `Foo as Bar` — the imported name is what we generate.
+          const name = specifier.trim().split(/\s+as\s+/)[0].trim();
+          if (name && !NOT_AN_ICON.has(name)) used.add(name);
+        }
+      }
+    }
+  }
+
+  await walk(".");
+  return used;
 }
 
-icons.sort(([a], [b]) => a.localeCompare(b));
+const [available, used] = await Promise.all([
+  readAvailableIcons(),
+  findUsedIcons(),
+]);
+
+const missing = [...used].filter((name) => !available.has(name));
+if (missing.length > 0) {
+  console.error(
+    `No Phosphor icon named: ${missing.join(", ")}\n` +
+      `Check the spelling at https://phosphoricons.com (PascalCase, ` +
+      `optionally with a Fill suffix).`,
+  );
+  Deno.exit(1);
+}
+
+const icons = [...used].sort().map(
+  (name) => [name, available.get(name)!] as const,
+);
 
 await Deno.mkdir(OUTPUT_DIR, { recursive: true });
 
+// Prune icons that are no longer imported, so the directory always matches
+// what the codebase uses.
+const keep = new Set([
+  ...icons.map(([name]) => `${toKebabCase(name)}.ts`),
+  "index.ts",
+]);
+let pruned = 0;
+for await (const entry of Deno.readDir(OUTPUT_DIR)) {
+  if (!entry.isFile || !entry.name.endsWith(".ts")) continue;
+  if (keep.has(entry.name)) continue;
+
+  await Deno.remove(`${OUTPUT_DIR}/${entry.name}`);
+  pruned++;
+}
+
 for (const [name, svg] of icons) {
-  const kebab = toKebabCase(name);
   await Deno.writeTextFile(
-    `${OUTPUT_DIR}/${kebab}.ts`,
+    `${OUTPUT_DIR}/${toKebabCase(name)}.ts`,
     `export const ${name} = \`${svg}\`;\n`,
   );
 }
@@ -70,4 +161,17 @@ const barrel = "// generated by deno task update-icons\n" +
 
 await Deno.writeTextFile(`${OUTPUT_DIR}/index.ts`, barrel);
 
-console.log(`Wrote ${icons.length} icon files → ${OUTPUT_DIR}/`);
+// The svg path data blows past the line limit, so format the output rather than
+// leaving `deno fmt --check` to fail in CI.
+const fmt = await new Deno.Command("deno", {
+  args: ["fmt", OUTPUT_DIR],
+  stdout: "null",
+  stderr: "inherit",
+}).output();
+
+if (!fmt.success) Deno.exit(fmt.code);
+
+console.log(
+  `Wrote ${icons.length} icon files → ${OUTPUT_DIR}/` +
+    (pruned > 0 ? ` (pruned ${pruned} unused)` : ""),
+);
