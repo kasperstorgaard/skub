@@ -15,6 +15,13 @@ export default defineConfig({
       // candidate back to the empty server state.
       ignored: ["**/generated/**"],
     },
+    // Transform the entries in the background as soon as the server boots,
+    // rather than on the first request. Same total work, but it overlaps with
+    // the time it takes to actually open the browser.
+    warmup: {
+      clientFiles: ["./client.ts", "./islands/*.tsx"],
+      ssrFiles: ["./routes/**/*.tsx"],
+    },
   },
   plugins: [
     workerBundle("solver-worker"),
