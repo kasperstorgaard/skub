@@ -28,6 +28,7 @@ export default define.page(
     return (
       <html
         className="min-h-dvh"
+        lang="en"
         data-theme={state.user.theme ?? "skub"}
       >
         <head>
@@ -37,6 +38,10 @@ export default define.page(
             content="width=device-width, initial-scale=1.0"
           />
           <title>Skub</title>
+          <meta
+            name="description"
+            content="Slide the puck to the target. Fewest moves wins."
+          />
           <meta property="og:title" content="Skub" />
           <meta
             property="og:description"
@@ -53,6 +58,14 @@ export default define.page(
             as="font"
             type="font/woff2"
             href="/fonts/chakra-petch-400.woff2"
+            crossOrigin="anonymous"
+          />
+          {/* Headings render at 500 — needed for first paint, same as 400 */}
+          <link
+            rel="preload"
+            as="font"
+            type="font/woff2"
+            href="/fonts/chakra-petch-500.woff2"
             crossOrigin="anonymous"
           />
 
