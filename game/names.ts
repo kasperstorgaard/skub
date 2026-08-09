@@ -1,17 +1,24 @@
 /**
- * Nordic name pool for auto-naming generated candidates, matching the corpus
+ * Danish name pool for auto-naming generated candidates, matching the corpus
  * convention of naming puzzles after people (erik, malene, torstein…). Loaded
- * from `nordic-names.json` and cached. Server-only (read from disk); never
+ * from `danish-names.json` and cached. Server-only (read from disk); never
  * imported into an island.
+ *
+ * The pool is the union of Danmarks Statistik's "Navne til nyfødte" top-50
+ * lists for every year from 1985 to 2025, ordered most-given first. Small on
+ * purpose: popularity is the only thing keeping the names recognisable, and
+ * the longer tail of any Danish name list is names essentially nobody is
+ * called. Nothing reads the ordering — picks are uniform — but it makes the
+ * file self-describing.
  */
 
 // Resolve from cwd — always the project root locally and on Deno Deploy.
-const NAMES_PATH = `${Deno.cwd()}/game/nordic-names.json`;
+const NAMES_PATH = `${Deno.cwd()}/game/danish-names.json`;
 
 let namesCache: string[] | null = null;
 
-/** The curated Nordic name pool, read once and cached. */
-export function getNordicNames(): string[] {
+/** The Danish name pool, read once and cached. */
+export function getDanishNames(): string[] {
   if (namesCache) return namesCache;
   namesCache = JSON.parse(Deno.readTextFileSync(NAMES_PATH));
   return namesCache!;
@@ -26,7 +33,7 @@ export function getNordicNames(): string[] {
  */
 export function pickUnusedName(used: Set<string>): string {
   const usedLower = new Set([...used].map((name) => name.toLowerCase()));
-  const pool = getNordicNames();
+  const pool = getDanishNames();
 
   const available = pool.filter((name) => !usedLower.has(name.toLowerCase()));
   if (available.length > 0) {
