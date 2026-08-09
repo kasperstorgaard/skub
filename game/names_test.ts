@@ -1,10 +1,10 @@
 import { assert } from "@std/assert/assert";
 import { assertEquals } from "@std/assert/equals";
 
-import { getNordicNames, pickUnusedName } from "./names.ts";
+import { getDanishNames, pickUnusedName } from "./names.ts";
 
 Deno.test("pickUnusedName avoids used names (case-insensitive)", () => {
-  const names = getNordicNames();
+  const names = getDanishNames();
   // Mark every name but one as used, in mixed case, and expect the survivor.
   const survivor = names[0];
   const used = new Set(names.slice(1).map((n) => n.toUpperCase()));
@@ -13,7 +13,7 @@ Deno.test("pickUnusedName avoids used names (case-insensitive)", () => {
 });
 
 Deno.test("pickUnusedName suffixes when the pool is exhausted", () => {
-  const names = getNordicNames();
+  const names = getDanishNames();
   const used = new Set(names);
 
   const picked = pickUnusedName(used);
@@ -26,7 +26,7 @@ Deno.test("pickUnusedName suffixes when the pool is exhausted", () => {
 });
 
 Deno.test("pickUnusedName skips taken ordinals", () => {
-  const names = getNordicNames();
+  const names = getDanishNames();
   // Every base name and every `-2` variant taken → expect a `-3`.
   const used = new Set([...names, ...names.map((n) => `${n}-2`)]);
 
@@ -34,8 +34,8 @@ Deno.test("pickUnusedName skips taken ordinals", () => {
   assert(picked.endsWith("-3"), `expected a -3 suffix, got "${picked}"`);
 });
 
-Deno.test("the Nordic name pool is non-empty and unique", () => {
-  const names = getNordicNames();
+Deno.test("the Danish name pool is non-empty and unique", () => {
+  const names = getDanishNames();
   assert(names.length > 0);
   assertEquals(new Set(names).size, names.length, "names should be unique");
 });
