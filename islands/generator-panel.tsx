@@ -25,8 +25,13 @@ import {
 } from "#/game/generated.ts";
 import { GENERATOR_VERSION, type WallSpread } from "#/game/generator.ts";
 import { METRIC_CATALOG } from "#/game/metric-catalog.ts";
-import type { Metrics, ScoredBoard } from "#/game/scoring.ts";
-import type { Difficulty, Puzzle } from "#/game/types.ts";
+import {
+  difficultyForMoves,
+  type Metrics,
+  MOVE_TARGETS,
+  type ScoredBoard,
+} from "#/game/scoring.ts";
+import type { Puzzle } from "#/game/types.ts";
 
 type GeneratorPanelProps = {
   puzzle: Signal<Puzzle>;
@@ -35,13 +40,6 @@ type GeneratorPanelProps = {
   /** The restored stored candidate the page loaded with, if any. */
   initialCandidate?: StoredCandidate;
 };
-
-// Difficulty bands the generator can target (`ultra` has no band).
-const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
-  { value: "easy", label: "Easy" },
-  { value: "medium", label: "Medium" },
-  { value: "hard", label: "Hard" },
-];
 
 const SPREAD_OPTIONS: { value: WallSpread; label: string }[] = [
   { value: "mid", label: "Mid" },
@@ -78,6 +76,14 @@ function ScoreStat(
 
 /** Headline metric, shown above the fold rather than in the details list. */
 const HEADLINE_METRIC = "uniqueSolutions";
+
+/**
+ * Draws the move count for one run, uniformly across `MOVE_TARGETS`. Uniform
+ * over the range rather than over what the generator finds easily — random
+ * layouts skew short, so sampling by frequency would bury the 9s and 10s.
+ */
+const pickTarget = (): number =>
+  MOVE_TARGETS[Math.floor(Math.random() * MOVE_TARGETS.length)];
 
 /**
  * The advisory score for a generated candidate: a headline (composite score,
@@ -160,9 +166,10 @@ function CandidateScore(
 export function GeneratorPanel(
   { puzzle, initialOptions = {}, initialCandidate }: GeneratorPanelProps,
 ) {
-  const difficulty = useSignal<Difficulty>(
-    initialOptions.difficulty ?? "medium",
-  );
+  // The move count this run is after, drawn fresh per run. Not a knob: picking
+  // it by hand is what the difficulty select used to be, and the point of
+  // dropping that was to stop the curator committing to a number up front.
+  const targetMoves = useSignal(pickTarget());
   const wallsRange = useSignal<[number, number]>(
     initialOptions.wallsRange ?? [5, 15],
   );
@@ -208,11 +215,11 @@ export function GeneratorPanel(
   // feedback UI simply doesn't appear.
   const saveGenerated = useCallback(async (generated: Puzzle, run: number) => {
     const genOptions: GenOptions = {
-      difficulty: difficulty.value,
       wallsRange: wallsRange.value,
       blockersRange: blockersRange.value,
       wallSpread: wallSpread.value,
       symmetry: symmetry.value,
+      targetMoves: targetMoves.value,
     };
     try {
       const res = await fetch("/api/generated", {
@@ -252,7 +259,9 @@ export function GeneratorPanel(
         ...puzzle.value,
         board: event.board,
         minMoves: event.minMoves,
-        difficulty: difficulty.value,
+        // A starting point, not a verdict — the curator's own difficulty call
+        // comes after they've seen the board.
+        difficulty: difficultyForMoves(event.minMoves),
       };
       puzzle.value = generated;
       scored.value = {
@@ -266,7 +275,7 @@ export function GeneratorPanel(
     if (event.type === "exhausted") {
       status.value = "exhausted";
       message.value =
-        `No board cleared the gates in ${event.attempts} tries — try again.`;
+        `No ${targetMoves.value}-move board cleared the gates in ${event.attempts} tries — try again for a new target.`;
       return;
     }
     status.value = "error";
@@ -279,12 +288,15 @@ export function GeneratorPanel(
     message.value = "";
     status.value = "running";
     candidate.value = null; // drop the previous candidate's feedback form
+    // A fresh draw per run, so rerolling walks the range instead of hammering
+    // one move count.
+    targetMoves.value = pickTarget();
     start({
       wallsRange: wallsRange.value,
       blockersRange: blockersRange.value,
       wallSpread: wallSpread.value,
       symmetry: symmetry.value,
-      difficulty: difficulty.value,
+      targetMoves: targetMoves.value,
     });
   }, [start]);
 
@@ -337,15 +349,12 @@ export function GeneratorPanel(
 
       <div className="flex flex-col col-[2/3] lg:row-[3/4] gap-fl-4 lg:gap-fl-1 place-content-between">
         <div className="flex flex-col gap-fl-1">
-          <Select
-            label="Difficulty"
-            name="gen-difficulty"
-            value={difficulty.value}
-            options={DIFFICULTY_OPTIONS}
-            onChange={(value) => {
-              difficulty.value = value as Difficulty;
-            }}
-          />
+          <p className="flex justify-between gap-fl-1 text-1 leading-tight">
+            <span className="text-text-2">Target</span>
+            <span className="text-text-1 font-weight-7 tabular-nums">
+              {targetMoves.value} moves
+            </span>
+          </p>
 
           <details className="group p-0 bg-none my-fl-1">
             <summary className="flex items-center gap-1 list-none bg-surface-3 cursor-pointer text-text-2 -mx-5 px-5 rounded-none group-open:mb-0">

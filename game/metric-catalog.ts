@@ -88,6 +88,21 @@ export const METRIC_CATALOG = [
     whole: true,
   },
   {
+    key: "puckPathVariety",
+    label: "Puck variety",
+    hint:
+      "Distinct puck trajectories ÷ distinct solutions. 100% means every solution moves the puck differently; low means the extra routes are the same puck path with the setup reshuffled.",
+    aggregate: "max",
+    percent: true,
+  },
+  {
+    key: "openingSetup",
+    label: "Opening setup",
+    hint:
+      "Moves before the puck first moves, in the solution that gets going soonest. 0 means the puck opens; higher means the puzzle starts with blocker admin.",
+    aggregate: "min",
+  },
+  {
     key: "deadSpace",
     label: "Dead space",
     hint:

@@ -502,6 +502,44 @@ export function uniqueSolutions(_board: Board, solutions: Move[][]): number {
   return solutions.length;
 }
 
+/**
+ * The puck's trajectory through a solution as a stable key — the puck's moves in
+ * order, blocker moves ignored. Two solutions with the same key send the puck
+ * along the same path and differ only in how the setup is shuffled.
+ */
+function puckPathKey(board: Board, moves: Move[]): string {
+  const roles = moveRoles(board, moves);
+  return moves
+    .filter((_, i) => roles[i] === "puck")
+    .map(([from, to]) => `${posOf(from)}>${posOf(to)}`)
+    .join(",");
+}
+
+/**
+ * Puck-path variety — distinct puck trajectories as a fraction of the distinct
+ * solutions. 1 means every solution moves the puck differently; 0.5 means half
+ * the "alternative" routes are the same puck path with the blocker setup
+ * reshuffled, which reads to a solver as one puzzle rather than two (the `birk`
+ * profile: two 9-move solutions, both moving the puck exactly twice, identically).
+ * Vacuously 1 for a single-solution board — with nothing to compare, this says
+ * nothing about quality.
+ */
+export function puckPathVariety(board: Board, solutions: Move[][]): number {
+  if (solutions.length === 0) return 0;
+  const paths = new Set(solutions.map((moves) => puckPathKey(board, moves)));
+  return paths.size / solutions.length;
+}
+
+/**
+ * Opening setup — how many moves pass before the puck first moves. 0 means the
+ * puck opens; higher means the solver must shuffle blockers before the piece
+ * they care about does anything, which curation reads as "the puzzle hasn't
+ * started yet" (occasionally the point, mostly padding — see the `henrik` note).
+ */
+export function openingSetup(board: Board, moves: Move[]): number {
+  return moveRoles(board, moves).indexOf("puck");
+}
+
 /** Wall key `x,y,orientation`, for stop-cause set membership. */
 const wallKey = (w: Wall): string => `${w.x},${w.y},${w.orientation}`;
 
@@ -698,10 +736,12 @@ export type Metrics = {
   stopWeighted: number;
   pointlessClearance: number;
   sameDirectionRepeat: number;
+  openingSetup: number;
   // multiple solutions
   uniqueSolutions: number;
   wallUtilization: number;
   deadSpace: number;
+  puckPathVariety: number;
   // static layout
   clumping: number;
   // search space
@@ -745,10 +785,12 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
     stopWeighted: maxOver(stopWeighted),
     pointlessClearance: minOver(pointlessClearance),
     sameDirectionRepeat: minOver(sameDirectionRepeat),
+    openingSetup: minOver(openingSetup),
     // multiple solutions
     uniqueSolutions: uniqueSolutions(board, solutions),
     wallUtilization: wallUtilization(board, solutions),
     deadSpace: deadSpace(board, solutions),
+    puckPathVariety: puckPathVariety(board, solutions),
     // static layout
     clumping: clumping(board),
     // search space
@@ -775,15 +817,38 @@ export type GateResult = {
 };
 
 /**
- * Inclusive minMoves band per difficulty. `ultra` is excluded from generation.
- * Exported so the generation loop can raise the G2 floor within the band
- * (band-floor boards dominate the "too easy" ratings).
+ * Inclusive minMoves band per difficulty. `ultra` has no band. No longer a
+ * generation input — generation targets an exact move count (see
+ * `MOVE_TARGETS`) and the curator labels difficulty afterwards; this is what
+ * seeds the default they're offered.
  */
 export const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
   easy: [5, 6],
   medium: [7, 9],
   hard: [10, 13],
 };
+
+/**
+ * The move counts generation targets, one picked per run. Replaces the
+ * difficulty selector: the old bands made the curator commit to a difficulty
+ * up front, and `hard` (10–13) was effectively ungeneratable — under 3% of
+ * random boards reach 10 moves and the branchy ones time out the gate solve.
+ * 6–10 is the range that produces boards at a workable rate, and what the
+ * curator says about the result afterwards is the signal worth having.
+ */
+export const MOVE_TARGETS = [6, 7, 8, 9, 10] as const;
+
+/**
+ * The difficulty a board's move count suggests, from `DIFFICULTY_BANDS` — the
+ * default the curator's post-generation difficulty control opens on. Counts
+ * past the bands clamp to the nearest end.
+ */
+export function difficultyForMoves(minMoves: number): Difficulty {
+  for (const [difficulty, [low, high]] of Object.entries(DIFFICULTY_BANDS)) {
+    if (minMoves >= low && minMoves <= high) return difficulty as Difficulty;
+  }
+  return minMoves < 5 ? "easy" : "ultra";
+}
 
 /**
  * G9: whether any blocker is boxed in on all four sides by walls or the board
@@ -887,8 +952,7 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
  *  - G9 no trapped blocker (walled in on all four sides — static, so first)
  *  - G10 clumping <= MAX_CLUMPING (egregious clutter — static, so before the solve)
  *  - G1 solvable within maxDepth 15
- *  - G2 minMoves inside the difficulty band (`ultra` has none → always fails);
- *    `minMovesFloor` can raise the band floor (band-top preference)
+ *  - G2 minMoves is exactly `targetMoves`
  *  - G3 canonical hash not already in the corpus or this batch
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
  *  - G5 unused blockers <= maxUnusedBlockers(count) (dense requests allowed more)
@@ -906,7 +970,8 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
 export function checkGates(
   board: Board,
   options: {
-    difficulty: Difficulty;
+    /** Exact minMoves the board must solve in (G2) — see `MOVE_TARGETS`. */
+    targetMoves: number;
     corpus: Set<string>;
     batchHashes: Set<string>;
     /**
@@ -915,12 +980,6 @@ export function checkGates(
      * blocking the loop for seconds; omitted elsewhere for the full solver limit.
      */
     maxStates?: number;
-    /**
-     * Raises the G2 lower bound within the difficulty band (never widens it).
-     * The generation loop passes `band floor + 1` early in its attempt budget
-     * to steer away from floor-minMoves boards, then relaxes.
-     */
-    minMovesFloor?: number;
   },
 ): GateResult {
   if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
@@ -931,17 +990,19 @@ export function checkGates(
 
   let result: SolverResult;
   try {
+    // Capping the search at the target is what makes an exact-target run
+    // affordable: a board that needs more moves blows the depth limit and
+    // rejects as G1 instead of being solved in full only to fail G2. The
+    // branchy deep boards were most of the old loop's cost.
     result = solveExhaustiveSync(board, {
-      maxDepth: 15,
+      maxDepth: options.targetMoves,
       maxStates: options.maxStates,
     });
   } catch {
     return { passed: false, failedGate: "G1" };
   }
 
-  const band = DIFFICULTY_BANDS[options.difficulty];
-  const floor = Math.max(band?.[0] ?? 0, options.minMovesFloor ?? 0);
-  if (!band || result.minMoves < floor || result.minMoves > band[1]) {
+  if (result.minMoves !== options.targetMoves) {
     return { passed: false, failedGate: "G2" };
   }
 
@@ -1120,6 +1181,7 @@ function routeMetrics(
     | "uniqueSolutions"
     | "wallUtilization"
     | "deadSpace"
+    | "puckPathVariety"
     | "clumping"
     | "firstMovePrecision"
     | "searchProfile"
@@ -1138,6 +1200,7 @@ function routeMetrics(
     stopWeighted: stopWeighted(board, route),
     pointlessClearance: pointlessClearance(board, route),
     sameDirectionRepeat: sameDirectionRepeat(board, route),
+    openingSetup: openingSetup(board, route),
     ...shared,
   };
 }
@@ -1156,6 +1219,7 @@ export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
     uniqueSolutions: uniqueSolutions(board, routes),
     wallUtilization: wallUtilization(board, routes),
     deadSpace: deadSpace(board, routes),
+    puckPathVariety: puckPathVariety(board, routes),
     clumping: clumping(board),
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),

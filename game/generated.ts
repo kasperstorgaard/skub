@@ -23,15 +23,21 @@ export const GENERATED_DIR = "generated";
 
 /**
  * Qualitative reasons a curator can tag a candidate with (all faults but
- * `nice`). Each maps loosely to a scoring metric the `compare-generated` report
- * tests: empty-areas → dead space, clumped → wall/blocker clustering,
- * too-easy/too-hard → the difficulty band, meh → the unremarkable middle.
+ * `pretty`/`nice`). Each maps loosely to a scoring metric the
+ * `compare-generated` report tests: empty-areas → dead space, clumped →
+ * wall/blocker clustering, too-easy → solves below its move count, meh → the
+ * unremarkable middle.
+ *
+ * `too-hard` was removed after ~40 labeled candidates without a single use —
+ * the generator has never produced a board that was too hard, so the tag only
+ * ever skewed the rubric by implying a symmetry that isn't there. Older
+ * candidate files carrying it still parse; nothing reads the tag list to
+ * validate history.
  */
 export const REASON_TAGS = [
   { value: "clumped", label: "Clumped" },
   { value: "empty-areas", label: "Empty areas" },
   { value: "too-easy", label: "Too easy" },
-  { value: "too-hard", label: "Too hard" },
   { value: "meh", label: "Meh" },
   { value: "pretty", label: "Pretty" },
   { value: "nice", label: "Nice" },
@@ -44,21 +50,35 @@ export const REASON_TAG_VALUES: readonly ReasonTag[] = REASON_TAGS.map((t) =>
   t.value
 );
 
-/** The generator settings a candidate was produced with (provenance). */
+/**
+ * The generator settings a candidate was produced with (provenance).
+ * `difficulty` is historical — candidates generated before 0.7.0 were produced
+ * against a difficulty band; generation now targets an exact move count and the
+ * curator judges difficulty afterwards (see `Feedback.difficulty`).
+ */
 export type GenOptions = {
-  difficulty: Difficulty;
   wallsRange: [number, number];
   blockersRange: [number, number];
   wallSpread: WallSpread;
   symmetry: number;
+  difficulty?: Difficulty;
+  /** Exact minMoves the run was after. Absent on pre-0.7.0 candidates. */
+  targetMoves?: number;
 };
 
 /** Human feedback on a candidate. All optional — a fresh candidate is unrated. */
 export type Feedback = {
-  /** 1–5 quality rating; absent until the curator rates it. */
+  /** 0.5–5 quality rating in half-star steps; absent until the curator rates it. */
   rating?: number;
   reasons?: ReasonTag[];
   note?: string;
+  /**
+   * The curator's difficulty call, made after seeing the board rather than
+   * chosen up front. Seeded from the move count (`difficultyForMoves`), then
+   * overridden by hand — the override is the signal worth having, since it's
+   * where human judgement and move count disagree.
+   */
+  difficulty?: Difficulty;
 };
 
 export type GeneratedCandidate = Puzzle & Feedback & {

@@ -3,7 +3,7 @@ import { setGeneratorOptions } from "#/game/cookies.ts";
 import type { GenerateEvent, GenerateRequest } from "#/game/generate-worker.ts";
 import type { GenerateOptions } from "#/game/generator.ts";
 import { getCorpusHashes } from "#/game/loader.ts";
-import type { Difficulty } from "#/game/types.ts";
+import { MOVE_TARGETS } from "#/game/scoring.ts";
 import { isDev } from "#/lib/env.ts";
 
 // Resolves to a file:// URL at runtime, bypassing Deno Deploy's --cached-only
@@ -16,8 +16,10 @@ const workerUrl = isDev
 const encoder = new TextEncoder();
 const encode = encoder.encode.bind(encoder);
 
-// Difficulty bands the generator can target (`ultra` has no band — see scoring).
-const BANDS: Difficulty[] = ["easy", "medium", "hard"];
+type MoveTarget = typeof MOVE_TARGETS[number];
+
+const isMoveTarget = (value: unknown): value is MoveTarget =>
+  MOVE_TARGETS.includes(value as MoveTarget);
 
 // Streams a gated generation run as SSE: `progress` events (a rising attempt
 // count) until a board passes every gate, then a terminal `result` /
@@ -25,7 +27,7 @@ const BANDS: Difficulty[] = ["easy", "medium", "hard"];
 // solves don't block the request thread.
 export const handler = define.handlers({
   async POST(ctx) {
-    let body: GenerateOptions & { difficulty?: Difficulty };
+    let body: GenerateOptions & { targetMoves?: number };
 
     try {
       body = await ctx.req.json();
@@ -33,12 +35,12 @@ export const handler = define.handlers({
       return new Response("Invalid JSON", { status: 400 });
     }
 
-    const { wallsRange, blockersRange, wallSpread, symmetry, difficulty } =
+    const { wallsRange, blockersRange, wallSpread, symmetry, targetMoves } =
       body;
 
     if (
-      !wallsRange || !blockersRange || !wallSpread || !difficulty ||
-      !BANDS.includes(difficulty) ||
+      !wallsRange || !blockersRange || !wallSpread ||
+      !isMoveTarget(targetMoves) ||
       wallsRange[0] > wallsRange[1] ||
       blockersRange[0] > blockersRange[1] ||
       wallsRange[0] < 0 || blockersRange[0] < 0 ||
@@ -73,7 +75,7 @@ export const handler = define.handlers({
           blockersRange,
           wallSpread,
           symmetry,
-          difficulty,
+          targetMoves,
           corpus,
         };
         worker.postMessage(request);
@@ -95,7 +97,6 @@ export const handler = define.handlers({
         blockersRange,
         wallSpread,
         symmetry: symmetry ?? 0,
-        difficulty,
       },
     );
 
