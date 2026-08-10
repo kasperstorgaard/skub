@@ -11,6 +11,7 @@ import {
   type GenOptions,
   parseGenerated,
   type StoredCandidate,
+  type StoredScoring,
 } from "#/game/generated.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
@@ -39,6 +40,12 @@ type PageData = {
   options: Partial<GenOptions>;
   /** The stored candidate `puzzle` was restored from, feedback included. */
   candidate: StoredCandidate | null;
+  /**
+   * That candidate's scores and metrics as measured when it was generated.
+   * Read from the store rather than re-derived: solving a board again costs
+   * seconds, and this is what lets the readout survive a navigation.
+   */
+  scoring: StoredScoring | null;
 };
 
 /**
@@ -49,7 +56,11 @@ type PageData = {
  * before it could be rated.
  */
 async function getLatestCandidate(): Promise<
-  { puzzle: Puzzle; candidate: StoredCandidate } | null
+  {
+    puzzle: Puzzle;
+    candidate: StoredCandidate;
+    scoring: StoredScoring | null;
+  } | null
 > {
   if (!isDev) return null;
   try {
@@ -69,8 +80,10 @@ async function getLatestCandidate(): Promise<
       rating,
       reasons,
       note,
+      solutionTags,
       genOptions: _genOptions,
       generatorVersion: _generatorVersion,
+      scoring,
       ...puzzle
     } = stored;
     return {
@@ -81,7 +94,10 @@ async function getLatestCandidate(): Promise<
         rating,
         reasons,
         note,
+        difficulty: puzzle.difficulty,
+        solutionTags,
       },
+      scoring: scoring ?? null,
     };
   } catch {
     return null;
@@ -99,6 +115,7 @@ export const handler = define.handlers<PageData>({
         { ...EMPTY_PUZZLE, createdAt: new Date(Date.now()) },
       options: getGeneratorOptions(ctx.req.headers),
       candidate: latest?.candidate ?? null,
+      scoring: latest?.scoring ?? null,
     });
   },
 });
@@ -106,9 +123,19 @@ export const handler = define.handlers<PageData>({
 export default define.page<typeof handler>(function GeneratePage(props) {
   const puzzle = useSignal(props.data.puzzle);
   const href = useSignal(props.url.href);
-  const mode = useSignal<"readonly">("readonly");
 
+  // Selection and replay are URL state, read here and handed to the panel: the
+  // page is what re-renders on a link, and a replay only restarts when the
+  // board mounts fresh (the solution replay page works the same way).
   const url = new URL(props.req.url);
+  const mode = useSignal<"readonly" | "replay">(
+    url.searchParams.get("mode") === "replay" ? "replay" : "readonly",
+  );
+  const selected = Number(url.searchParams.get("solution"));
+  const initialSolution = Number.isInteger(selected) &&
+      url.searchParams.has("solution")
+    ? selected
+    : undefined;
 
   return (
     <>
@@ -133,6 +160,7 @@ export default define.page<typeof handler>(function GeneratePage(props) {
           />
 
           <CandidateFeedback
+            puzzle={puzzle}
             className={clsx(
               "max-lg:mt-fl-2 max-lg:place-self-center",
               "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:w-3xs",
@@ -142,8 +170,11 @@ export default define.page<typeof handler>(function GeneratePage(props) {
       </Main>
       <GeneratorPanel
         puzzle={puzzle}
+        mode={mode}
         initialOptions={props.data.options}
         initialCandidate={props.data.candidate ?? undefined}
+        initialScoring={props.data.scoring ?? undefined}
+        initialSolution={initialSolution}
       />
     </>
   );

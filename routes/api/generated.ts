@@ -8,9 +8,12 @@ import {
   parseGenerated,
   REASON_TAG_VALUES,
   type ReasonTag,
+  SOLUTION_TAG_VALUES,
+  type SolutionTag,
 } from "#/game/generated.ts";
 import { getCorpusNames } from "#/game/loader.ts";
 import { pickUnusedName } from "#/game/names.ts";
+import { DIFFICULTIES, type Difficulty } from "#/game/types.ts";
 import { isDev } from "#/lib/env.ts";
 
 // Guards against path traversal — slugs are machine-assigned from pool names
@@ -24,8 +27,16 @@ type FeedbackPayload = {
   rating?: number;
   reasons?: ReasonTag[];
   note?: string;
+  difficulty?: Difficulty;
 };
-type Payload = CreatePayload | FeedbackPayload;
+type SolutionPayload = {
+  action: "solution";
+  slug: string;
+  /** The route being tagged, in the store's encoded-moves form. */
+  moves: string;
+  tags: SolutionTag[];
+};
+type Payload = CreatePayload | FeedbackPayload | SolutionPayload;
 
 // Names already taken by stored candidates. Scanned from disk once, then kept
 // current by appending on each create — O(1) per generate instead of re-reading
@@ -112,18 +123,30 @@ async function create(markdown: string): Promise<Response> {
  * Sets a candidate's feedback — a full overwrite of rating/reasons/note, not a
  * merge: the client always sends its complete current state, so an omitted
  * field means "cleared".
+ *
+ * `difficulty` is the exception: it's a required `Puzzle` field seeded from the
+ * board's move count at creation, so an omitted one means "unchanged" rather
+ * than "cleared" — there is no valid empty state to clear it to.
  */
 async function saveFeedback(payload: FeedbackPayload): Promise<Response> {
-  const { slug, rating, reasons, note } = payload;
+  const { slug, rating, reasons, note, difficulty } = payload;
 
   if (!SLUG_PATTERN.test(slug)) {
     return new Response("Invalid slug", { status: 400 });
   }
-  if (rating !== undefined && (rating < 1 || rating > 5)) {
+  // Half-star steps: 0.5–5, nothing finer. The UI only ever sends halves, so a
+  // stray 3.7 means a hand-rolled request, not a curator.
+  if (
+    rating !== undefined &&
+    (rating < 0.5 || rating > 5 || (rating * 2) % 1 !== 0)
+  ) {
     return new Response("Invalid rating", { status: 400 });
   }
   if (reasons && reasons.some((r) => !REASON_TAG_VALUES.includes(r))) {
     return new Response("Invalid reason", { status: 400 });
+  }
+  if (difficulty !== undefined && !DIFFICULTIES.includes(difficulty)) {
+    return new Response("Invalid difficulty", { status: 400 });
   }
 
   const path = `${GENERATED_DIR}/${slug}.md`;
@@ -140,6 +163,51 @@ async function saveFeedback(payload: FeedbackPayload): Promise<Response> {
   candidate.rating = rating;
   candidate.reasons = reasons;
   candidate.note = note;
+  if (difficulty) candidate.difficulty = difficulty;
+
+  await Deno.writeTextFile(path, formatGenerated(candidate));
+  return new Response("OK", { status: 200 });
+}
+
+/**
+ * Tags one solution of a candidate. Unlike `feedback` this is a merge, not a
+ * full overwrite: it replaces the entry for one route and leaves the rest of the
+ * candidate's feedback — including the puzzle-level star rating, which a
+ * different island owns — untouched.
+ */
+async function saveSolutionTags(payload: SolutionPayload): Promise<Response> {
+  const { slug, moves, tags } = payload;
+
+  if (!SLUG_PATTERN.test(slug)) {
+    return new Response("Invalid slug", { status: 400 });
+  }
+  if (!moves) return new Response("Missing moves", { status: 400 });
+  if (
+    !Array.isArray(tags) || tags.some((t) => !SOLUTION_TAG_VALUES.includes(t))
+  ) {
+    return new Response("Invalid tag", { status: 400 });
+  }
+
+  const path = `${GENERATED_DIR}/${slug}.md`;
+  let candidate: GeneratedCandidate;
+  try {
+    candidate = parseGenerated(await Deno.readTextFile(path));
+  } catch (err) {
+    if (err instanceof Deno.errors.NotFound) {
+      return new Response("Not found", { status: 404 });
+    }
+    return new Response("Invalid puzzle", { status: 400 });
+  }
+
+  const solutionTags = { ...candidate.solutionTags };
+  // An emptied route drops out rather than being stored as `[]` — the store is
+  // read by eye, and a file full of empty arrays hides the tags that exist.
+  if (tags.length) solutionTags[moves] = tags;
+  else delete solutionTags[moves];
+
+  candidate.solutionTags = Object.keys(solutionTags).length
+    ? solutionTags
+    : undefined;
 
   await Deno.writeTextFile(path, formatGenerated(candidate));
   return new Response("OK", { status: 200 });
@@ -174,6 +242,10 @@ export const handler = define.handlers({
 
     if (body.action === "feedback") {
       return await saveFeedback(body);
+    }
+
+    if (body.action === "solution") {
+      return await saveSolutionTags(body);
     }
 
     return new Response("Invalid action", { status: 400 });

@@ -30,13 +30,65 @@ board after seeing it, seeded from the move count. Where their label disagrees
 with the move count is the signal worth collecting; a number chosen before the
 board existed never was.
 
-## Preview the solutions in place
+## Judge the routes, not just the board
 
 Previewing solutions is the most common thing to do after a run, and it meant
-opening another tab. The panel now lists one button per distinct solution and
-replays it on the board in place. Multiple solutions are the point: a board is
-only as good as its *weakest* interesting route, and the only way to know is to
-watch them. The playable Preview button stays — it answers a different question.
+opening another tab. The panel now lists every distinct solution, weakest route
+first; selecting one shows its score, its metrics and its character, and Watch
+replays it on the board. The playable Preview button stays — it answers a
+different question.
+
+Picking a route plays it — watching is the first thing anyone does with a
+selected solution, and the numbers only mean something next to the animation
+that produced them. "Watch again" under the selection replays the same route.
+
+That turned out to matter more than convenience. Watching the alternates has
+repeatedly turned an interesting-looking board dull: the obvious route is the
+one players find, and today it drags the whole board's score down with it,
+because `compositeScore` mixes board-scope and route-scope metrics into every
+route and `scoreBoard` averages the result. Four routes that are each good for
+different reasons average out to something middling.
+
+So curation splits in two, and the tooling now says which level it's talking
+about:
+
+- The **board** is judged on how it looks and sits — interesting, pretty,
+  clumped, empty. The star rating stays here, puzzle-level and holistic, and
+  stays the only rating: a pretty board with three great solutions and one
+  boring one is a 4.
+- A **route** is judged on how it plays: `too-easy` and `boring` against
+  `interesting` and `unique`, stored per candidate under the route's encoded
+  moves. `too-easy` is the important one and
+  it belongs here, not on the board — the obvious route is the one players take,
+  so a board whose easiest solution is trivial plays trivially however good the
+  others are. Asked of a whole board the question was ambiguous (too easy by
+  which route?), which is a fair explanation for why it never correlated; asked
+  of one route it's a concrete claim, and it's the label a route-level score can
+  be calibrated against. The two positives stay separate because they fail
+  separately: `interesting` is about the route as an experience, `unique` about
+  it being its own route rather than a reshuffle of another (the `birk` case —
+  two solutions, one experience), which is what `puckPathVariety` measures.
+
+The two vocabularies no longer overlap. Board tags are `clumped`,
+`empty-areas`, `ugly` and `pretty`, each pointing at a board-scope metric that
+tests it; `ugly` earns its place because most boards are neither ugly nor
+pretty, and a tag that only marks the good ones leaves the bad and the
+unremarkable indistinguishable. `meh` and `nice` were dropped as vague and
+duplicated. Retired tags stay in the
+files that carry them, including the old board-level `too-easy` labels: the
+labelled store is calibration ground truth, so they round-trip rather than being
+stripped on the next edit.
+
+Every metric is tagged `board` or `route` scope in `METRIC_CATALOG`, and the
+readout splits on it: board metrics stated once, route metrics showing the
+selected solution — or their mean across routes when nothing is selected, since
+the composite's max/min reduction answers a different question (what the best or
+worst route offers) and shouldn't be read as the board's value.
+
+Selection and replay live in the URL — `?solution=<i>&moves=…&mode=replay` —
+the same contract the solution replay page renders under. Everything
+measured at generation is written into the candidate's store file, so a
+navigation costs nothing: the readout comes back from disk instead of a re-solve.
 
 ## Half stars
 
@@ -51,11 +103,12 @@ board is this?". `game/character.ts` derives two or three words from the metrics
 candidates can be told apart without reading the table. Purely derived; nothing
 stored, nothing gated.
 
-## Two new metrics, advisory only
+## Four new metrics, advisory only
 
-Both come straight from curation notes, and both stay out of the composite and
-out of the gates until they earn a rating correlation — same discipline
-`clumping` went through.
+All four stay out of the composite and out of the gates until they earn a rating
+correlation — same discipline `clumping` went through.
+
+Two come from curation notes about how a board *plays*:
 
 - **`openingSetup`** — moves before the puck first moves. The `henrik` note:
   *"puck starts blocked … adding a move or two just to get started"*. Occasionally
@@ -65,43 +118,59 @@ out of the gates until they earn a rating correlation — same discipline
   the same path, differing only in the order the blockers get shuffled. Reported
   as two solutions, experienced as one.
 
+Two chase the board-level tags, which have far less measurement behind them than
+the route side:
+
+- **`emptyRegion`** — the largest connected run of cells with nothing in or
+  against them. Aimed at `empty-areas`, the second most common complaint.
+  `deadSpace` is the closest existing metric but measures cells no *trail*
+  enters, which is play-derived; the complaint is about the layout you see
+  before moving anything.
+- **`wallSymmetry`** — share of walls with a mirror partner across the better
+  centre axis. Aimed at `pretty`, the one board judgement with no metric at all.
+  `boardSelfSymmetries` only catches exactly-invariant boards, which the
+  probabilistic symmetry knob almost never produces; near-symmetry is what the
+  eye rewards.
+
 ## Non-goals
 
+- **Re-tuning or splitting the composite.** The scoring shape this round
+  exposes — board terms and route terms mixed into one number — is worth
+  fixing, but it needs the two-level labels this round starts collecting.
+  `CALIBRATION` is untouched.
 - **Post-generation mutation** — "keep this board but add walls without changing
   the move count", "add a blocker", "move the puck". The most promising direction
   for turning near-misses into keepers, and a separate unit of work: it needs a
   mutate-and-reverify loop, not a UI change. Next branch.
-- Re-tuning the composite. New metrics are advisory; `CALIBRATION` is untouched.
 - Any change to how real puzzles are solved, scored, or served.
 
 ## Status
 
 Done:
 
-- New metrics `openingSetup` / `puckPathVariety` in `scoring.ts` +
-  `metric-catalog.ts`
+- New metrics `openingSetup` / `puckPathVariety` / `emptyRegion` /
+  `wallSymmetry` in `scoring.ts` + `metric-catalog.ts`, all advisory
+- `METRIC_CATALOG` entries carry a `scope`; `meanMetrics()` alongside
+  `aggregateMetrics()`
 - G2 gate switched from difficulty band to exact `targetMoves`, with the
   depth-capped gate solve; `MOVE_TARGETS` and `difficultyForMoves` exported
 - `difficulty` removed from the generate request, its validation, and the
   `generator_options` cookie
-- `game/character.ts` — derived board-character traits
-- `generated.ts`: half-star `rating`, curator `difficulty` on `Feedback`,
-  `too-hard` reason tag removed (~40 labeled candidates, never once used)
+- `game/character.ts` — derived character traits, shown for the selected route
+- `StoredScoring` written into every candidate at generation: aggregate scores,
+  board metrics, and each solution's moves, score and metrics
+- Generator panel: no difficulty select, shows the run's move target, lists the
+  solutions, per-route metrics/character/tags, Watch replays via the URL
+- `/puzzles/new` derives `mode` and the selected solution from the URL
+- Feedback island: half-star rating, curator difficulty, note saved while
+  typing, save failures surfaced; `too-hard` reason tag removed (~40 labeled
+  candidates, never once used)
+- `/api/generated`: half-step rating validation, `difficulty` persisted,
+  `action: "solution"` for per-route tags; retired reason tags still accepted so
+  older candidates round-trip intact
+- `list-generated`: half stars, half-step histogram, per-route tags
+- `GENERATOR_VERSION` 0.7.0 — candidate distribution changed, so feedback
+  buckets aren't comparable across it
 
-Remaining:
-
-- **Generator panel**: drop the difficulty select, show the run's move target,
-  render the solution list (replay via the shared `href`/`mode` signals — Board
-  already animates `mode="replay"`), show character traits. Keep Preview.
-- **`/puzzles/new`**: widen the `mode` signal to `"readonly" | "replay"` and pass
-  `href`/`mode` into the panel.
-- **Star rating**: half-star hit targets and rendering; widen the `/api/generated`
-  rating validation to half steps; fix `list-generated`'s star rendering and its
-  rating histogram (both assume integers).
-- **Feedback island**: curator difficulty control; persist the note on input
-  rather than only on blur, and surface save failures instead of swallowing them
-  — a session's worth of comments on `birk` never reached disk and nothing said
-  so.
-- Bump `GENERATOR_VERSION` to 0.7.0 (candidate distribution changes, so feedback
-  buckets aren't comparable across it).
-- Tests: gate targeting, the two new metrics, character derivation.
+The 71 candidates predating this round have no stored scoring; their readout
+stays empty until they're regenerated, and nothing else about them changes.

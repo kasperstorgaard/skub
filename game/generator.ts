@@ -12,7 +12,7 @@ const MAX_ATTEMPTS = 500;
  * across the bump (`compare-generated` buckets by vintage).
  * Candidates stored before 2026-07-22 carry the pre-semver forms "0.4"/"0.5".
  */
-export const GENERATOR_VERSION = "0.6.0";
+export const GENERATOR_VERSION = "0.7.0";
 
 /**
  * How walls are distributed across the board.

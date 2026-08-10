@@ -32,6 +32,7 @@ export * from "./shuffle.ts";
 export * from "./spinner.ts";
 export * from "./star.ts";
 export * from "./star-fill.ts";
+export * from "./star-half-fill.ts";
 export * from "./trash.ts";
 export * from "./trophy.ts";
 export * from "./user-circle.ts";

@@ -21,6 +21,8 @@ const plainMetrics: Metrics = {
   deadSpace: 0.6,
   puckPathVariety: 1,
   clumping: 0.1,
+  emptyRegion: 0.2,
+  wallSymmetry: 0.3,
   firstMovePrecision: 0.5,
   searchProfile: 0.5,
   isolationGap: 1,

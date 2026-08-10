@@ -9,10 +9,20 @@ import type { Metrics } from "#/game/scoring.ts";
  *
  * `aggregate` mirrors `computeMetrics`' reduction: `max` across routes for
  * signals, `min` for the penalties (metrics measured once per board are
- * route-constant, so `max` is a no-op on them).
+ * route-constant, so `max` is a no-op on them). `scope` says which of those two
+ * cases a metric is in.
  */
 export type MetricSpec = {
   key: keyof Metrics;
+  /**
+   * What the metric actually measures: a property of the *board* (identical
+   * whichever route you take — the layout, the solution set, the search space)
+   * or of a single *route* through it. Only route metrics have a meaningful
+   * per-solution value; only for them is an aggregate a summary rather than the
+   * number itself. Readouts split on this, so a board value is never presented
+   * as if it belonged to the solution being looked at.
+   */
+  scope: "board" | "route";
   /** Short label for the generator panel. */
   label: string;
   /** One-line explanation, shown as a tooltip. */
@@ -27,12 +37,14 @@ export type MetricSpec = {
 export const METRIC_CATALOG = [
   {
     key: "stopWeighted",
+    scope: "route",
     label: "Stops (wtd)",
     hint: "Weighted count of how slides stop: piece×3 + wall×2 + edge.",
     aggregate: "max",
   },
   {
     key: "pieceUsage",
+    scope: "route",
     label: "Piece usage",
     hint:
       "Log-weighted blocker involvement — sums each blocker's moves and stops; grows with reuse, so it can exceed the piece count (not a count).",
@@ -40,6 +52,7 @@ export const METRIC_CATALOG = [
   },
   {
     key: "wallUtilization",
+    scope: "board",
     label: "Wall use",
     hint:
       "Share of interior walls that ever stop a piece across solutions (gate G7).",
@@ -48,12 +61,14 @@ export const METRIC_CATALOG = [
   },
   {
     key: "reversals",
+    scope: "route",
     label: "Reversals",
     hint: "Moves of the same piece in opposite directions (back-and-forth).",
     aggregate: "max",
   },
   {
     key: "searchProfile",
+    scope: "board",
     label: "Search",
     hint:
       "Share of search states reached near the solution depth (back-loaded difficulty).",
@@ -61,6 +76,7 @@ export const METRIC_CATALOG = [
   },
   {
     key: "clumping",
+    scope: "board",
     label: "Clumping",
     hint:
       "Share of wall/blocker pairs bunched within one cell of each other (the 'clumped' complaint).",
@@ -68,7 +84,26 @@ export const METRIC_CATALOG = [
     percent: true,
   },
   {
+    key: "emptyRegion",
+    scope: "board",
+    label: "Empty region",
+    hint:
+      "Largest connected run of cells with nothing in or against them, as a share of the board — the static version of the 'empty areas' complaint (dead space measures trails instead).",
+    aggregate: "max",
+    percent: true,
+  },
+  {
+    key: "wallSymmetry",
+    scope: "board",
+    label: "Symmetry",
+    hint:
+      "Share of walls with a mirror partner across the better centre axis. 100% is an exactly mirrored layout; near-symmetry is what usually reads as 'pretty'.",
+    aggregate: "max",
+    percent: true,
+  },
+  {
     key: "pointlessClearance",
+    scope: "route",
     label: "Pointless",
     hint:
       "Blocker moves after which that blocker never matters again (negative signal).",
@@ -76,12 +111,14 @@ export const METRIC_CATALOG = [
   },
   {
     key: "sameDirectionRepeat",
+    scope: "route",
     label: "Same dir",
     hint: "Cells a piece re-traverses in the same direction (negative signal).",
     aggregate: "min",
   },
   {
     key: "uniqueSolutions",
+    scope: "board",
     label: "Solutions",
     hint: "Number of distinct optimal solutions.",
     aggregate: "max",
@@ -89,6 +126,7 @@ export const METRIC_CATALOG = [
   },
   {
     key: "puckPathVariety",
+    scope: "board",
     label: "Puck variety",
     hint:
       "Distinct puck trajectories ÷ distinct solutions. 100% means every solution moves the puck differently; low means the extra routes are the same puck path with the setup reshuffled.",
@@ -97,6 +135,7 @@ export const METRIC_CATALOG = [
   },
   {
     key: "openingSetup",
+    scope: "route",
     label: "Opening setup",
     hint:
       "Moves before the puck first moves, in the solution that gets going soonest. 0 means the puck opens; higher means the puzzle starts with blocker admin.",
@@ -104,6 +143,7 @@ export const METRIC_CATALOG = [
   },
   {
     key: "deadSpace",
+    scope: "board",
     label: "Dead space",
     hint:
       "Share of cells no trail enters and no piece or goal occupies (gate G8).",
@@ -112,12 +152,14 @@ export const METRIC_CATALOG = [
   },
   {
     key: "coverage",
+    scope: "route",
     label: "Coverage",
     hint: "Distinct cells the puck sweeps, as a fraction of the 64 cells.",
     aggregate: "max",
   },
   {
     key: "setupRatio",
+    scope: "route",
     label: "Setup ratio",
     hint:
       "Fraction of moves that reposition a blocker rather than the puck (more setup ⇒ harder).",
@@ -125,6 +167,7 @@ export const METRIC_CATALOG = [
   },
   {
     key: "deception",
+    scope: "route",
     label: "Deception",
     hint:
       "How far the puck slides away from the goal — what misleads a solver.",
@@ -132,24 +175,28 @@ export const METRIC_CATALOG = [
   },
   {
     key: "crossTrailOverlap",
+    scope: "route",
     label: "Cross-trail",
     hint: "How much one piece's path crosses another's.",
     aggregate: "max",
   },
   {
     key: "totalDistance",
+    scope: "route",
     label: "Distance",
     hint: "Total slide distance travelled (puck + blocker).",
     aggregate: "max",
   },
   {
     key: "firstMovePrecision",
+    scope: "board",
     label: "First move",
     hint: "1 / distinct optimal openings — 1 when the first move is forced.",
     aggregate: "max",
   },
   {
     key: "isolationGap",
+    scope: "board",
     label: "Isolation",
     hint:
       "Moves past optimal to the nearest genuine near-miss — 2 means the optimal route stands alone at +1 (torstein profile); 1 means a real alternative sits right behind it (0 = not measured).",
@@ -158,6 +205,7 @@ export const METRIC_CATALOG = [
   },
   {
     key: "nearMissCount",
+    scope: "board",
     label: "Near misses",
     hint:
       "Count of genuine alternative solutions at optimal + 1 (padded routes — an optimal path plus one idle move — excluded). Higher means being a move sloppy still finds a real route.",
@@ -188,6 +236,23 @@ export const METRIC_KEYS: readonly (keyof Metrics)[] = METRIC_CATALOG.map((
  * catalogued direction. Mirrors `computeMetrics` for consumers that hold raw
  * route metrics (e.g. the calibration cache).
  */
+/**
+ * Averages every metric across a board's routes. This is the honest summary of
+ * a route-scope metric when no single solution is in view: `aggregateMetrics`
+ * answers the different question the composite asks (the best, or worst, route
+ * a solver could take), which reads as the board's value but isn't one.
+ * Board-scope metrics are route-constant, so their mean is just their value.
+ */
+export function meanMetrics(routes: Metrics[]): Metrics {
+  const out = {} as Metrics;
+  for (const { key } of METRIC_CATALOG) {
+    let sum = 0;
+    for (const route of routes) sum += route[key];
+    out[key] = routes.length ? sum / routes.length : 0;
+  }
+  return out;
+}
+
 export function aggregateMetrics(routes: Metrics[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const { key, aggregate } of METRIC_CATALOG) {

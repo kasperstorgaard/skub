@@ -631,6 +631,103 @@ export function clumping(board: Board): number {
   return total === 0 ? 0 : close / total;
 }
 
+/** Cells a wall touches: it sits on an edge, so it borders two of them. */
+function wallCells({ x, y, orientation }: Wall): Position[] {
+  return orientation === "vertical"
+    ? [{ x, y }, { x: x - 1, y }]
+    : [{ x, y }, { x, y: y - 1 }];
+}
+
+/**
+ * Empty region — the largest connected run of cells with nothing in or against
+ * them (no piece, no destination, no wall on any side), as a fraction of the
+ * board.
+ *
+ * Aimed at the `empty-areas` complaint, the second most common in the curation
+ * set. `deadSpace` is the closest existing metric but measures something else:
+ * cells no *trail* enters, which is play-derived and counts a busy corner of the
+ * layout as dead if no solution happens to cross it. The complaint is about the
+ * board you see before moving anything — a quarter of the grid with nothing in
+ * it. Advisory (not in the composite, not gated) until it earns a rating
+ * correlation.
+ */
+export function emptyRegion(board: Board): number {
+  const cells = COLS * ROWS;
+  const index = (x: number, y: number) => y * COLS + x;
+  const structured = new Uint8Array(cells);
+
+  for (const piece of board.pieces) structured[index(piece.x, piece.y)] = 1;
+  structured[index(board.destination.x, board.destination.y)] = 1;
+  for (const wall of board.walls) {
+    for (const { x, y } of wallCells(wall)) {
+      if (x >= 0 && x < COLS && y >= 0 && y < ROWS) structured[index(x, y)] = 1;
+    }
+  }
+
+  const seen = new Uint8Array(cells);
+  let largest = 0;
+
+  for (let start = 0; start < cells; start++) {
+    if (structured[start] || seen[start]) continue;
+
+    let size = 0;
+    const queue = [start];
+    seen[start] = 1;
+
+    while (queue.length) {
+      const current = queue.pop()!;
+      size++;
+      const x = current % COLS;
+      const y = (current - x) / COLS;
+      const neighbours = [
+        [x - 1, y],
+        [x + 1, y],
+        [x, y - 1],
+        [x, y + 1],
+      ];
+      for (const [nx, ny] of neighbours) {
+        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+        const next = index(nx, ny);
+        if (structured[next] || seen[next]) continue;
+        seen[next] = 1;
+        queue.push(next);
+      }
+    }
+
+    largest = Math.max(largest, size);
+  }
+
+  return largest / cells;
+}
+
+/**
+ * Wall symmetry — the share of walls that have a mirror partner, taken across
+ * the better of the two centre axes. 1 means the wall layout mirrors exactly,
+ * 0 that no wall has a counterpart.
+ *
+ * Aimed at `pretty`, the one board-level judgement with no metric behind it at
+ * all. `boardSelfSymmetries()` only recognises boards that are *exactly*
+ * invariant, which the generator's probabilistic symmetry knob almost never
+ * produces; this is the graded version, and near-symmetry is what the eye
+ * actually rewards. Advisory, like `emptyRegion`. Vacuously 1 for a board with
+ * no walls — nothing is out of place.
+ */
+export function wallSymmetry(board: Board): number {
+  if (board.walls.length === 0) return 1;
+
+  const key = (wall: Wall) => `${wall.x},${wall.y},${wall.orientation}`;
+  const present = new Set(board.walls.map(key));
+
+  let best = 0;
+  for (const axis of ["horizontal", "vertical"] as const) {
+    const mirrored = flipBoard(board, axis).walls;
+    let matched = 0;
+    for (const wall of mirrored) if (present.has(key(wall))) matched++;
+    best = Math.max(best, matched / board.walls.length);
+  }
+  return best;
+}
+
 // ── Search-space metrics ─────────────────────────────────────────────────
 // Measure the solver's exploration structure `(result) => number`, reaching
 // beyond the winning paths into the DAG and its per-depth state counts.
@@ -744,6 +841,8 @@ export type Metrics = {
   puckPathVariety: number;
   // static layout
   clumping: number;
+  emptyRegion: number;
+  wallSymmetry: number;
   // search space
   firstMovePrecision: number;
   searchProfile: number;
@@ -793,6 +892,8 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
     puckPathVariety: puckPathVariety(board, solutions),
     // static layout
     clumping: clumping(board),
+    emptyRegion: emptyRegion(board),
+    wallSymmetry: wallSymmetry(board),
     // search space
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
@@ -1183,6 +1284,8 @@ function routeMetrics(
     | "deadSpace"
     | "puckPathVariety"
     | "clumping"
+    | "emptyRegion"
+    | "wallSymmetry"
     | "firstMovePrecision"
     | "searchProfile"
     | "isolationGap"
@@ -1221,6 +1324,8 @@ export function scoreBoard(board: Board, result: SolverResult): ScoredBoard {
     deadSpace: deadSpace(board, routes),
     puckPathVariety: puckPathVariety(board, routes),
     clumping: clumping(board),
+    emptyRegion: emptyRegion(board),
+    wallSymmetry: wallSymmetry(board),
     firstMovePrecision: firstMovePrecision(result),
     searchProfile: searchProfile(result),
     isolationGap: nearMiss.gap,

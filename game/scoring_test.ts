@@ -13,6 +13,7 @@ import {
   deadSpace,
   deception,
   deduplicateSolutions,
+  emptyRegion,
   firstMovePrecision,
   genuineNearMisses,
   maxUnusedBlockers,
@@ -28,6 +29,7 @@ import {
   setupRatio,
   stopWeighted,
   totalDistance,
+  wallSymmetry,
   wallUtilization,
 } from "./scoring.ts";
 import {
@@ -342,12 +344,96 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
     // three of the four routes move the puck differently; one is a reshuffle
     puckPathVariety: 0.75,
     clumping: 0.06930693069306931,
+    // the biggest untouched pocket of the layout — over a third of the grid
+    emptyRegion: 0.390625,
+    wallSymmetry: 0.21428571428571427,
     firstMovePrecision: 0.16666666666666666,
     searchProfile: 0.8934068908865179,
     // no overshoot on this solve — the isolation pair reads unmeasured
     isolationGap: 0,
     nearMissCount: 0,
   });
+});
+
+Deno.test("emptyRegion() measures the largest untouched pocket of the layout", () => {
+  // Structure confined to the top-left: the puck, the goal, one blocker and one
+  // wall. Everything from row 2 down is one connected empty region.
+  const sparse: Board = {
+    destination: { x: 1, y: 0 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 2, y: 1, type: "blocker" },
+    ],
+    walls: [{ x: 1, y: 1, orientation: "horizontal" }],
+  };
+
+  // Four cells carry structure — puck, goal, blocker, and the cell the wall
+  // sits against — and everything else is one connected pocket.
+  assertEquals(emptyRegion(sparse), 60 / 64);
+});
+
+Deno.test("emptyRegion() shrinks when structure is spread across the board", () => {
+  const spread: Board = {
+    destination: { x: 4, y: 4 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 2, y: 2, type: "blocker" },
+      { x: 5, y: 5, type: "blocker" },
+    ],
+    walls: [
+      { x: 4, y: 0, orientation: "vertical" },
+      { x: 4, y: 1, orientation: "vertical" },
+      { x: 4, y: 2, orientation: "vertical" },
+      { x: 4, y: 3, orientation: "vertical" },
+      { x: 4, y: 4, orientation: "vertical" },
+      { x: 4, y: 5, orientation: "vertical" },
+      { x: 4, y: 6, orientation: "vertical" },
+      { x: 4, y: 7, orientation: "vertical" },
+    ],
+  };
+
+  // The wall column splits the board, so no pocket reaches even half of it.
+  assertEquals(emptyRegion(spread) < 0.5, true);
+});
+
+Deno.test("wallSymmetry() is 1 for a mirrored wall layout", () => {
+  const mirrored: Board = {
+    destination: { x: 3, y: 3 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      // the left-right mirror of the wall above
+      { x: 5, y: 2, orientation: "horizontal" },
+    ],
+  };
+
+  assertEquals(wallSymmetry(mirrored), 1);
+});
+
+Deno.test("wallSymmetry() is the share of walls that find a partner", () => {
+  const halfMirrored: Board = {
+    destination: { x: 3, y: 3 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      { x: 5, y: 2, orientation: "horizontal" },
+      // no partner on either axis
+      { x: 1, y: 5, orientation: "vertical" },
+    ],
+  };
+
+  assertEquals(wallSymmetry(halfMirrored), 2 / 3);
+});
+
+Deno.test("wallSymmetry() is vacuously 1 when the board has no walls", () => {
+  assertEquals(
+    wallSymmetry({
+      destination: { x: 3, y: 3 },
+      pieces: [{ x: 0, y: 0, type: "puck" }],
+      walls: [],
+    }),
+    1,
+  );
 });
 
 Deno.test("clumping() is the share of same-kind pairs within Chebyshev 1", () => {
