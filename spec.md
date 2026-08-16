@@ -17,10 +17,11 @@ Properties on the existing event, not a new one:
 
 | property | meaning |
 | --- | --- |
-| `game_duration_ms` | wall clock, first move → solve |
+| `game_duration_ms` | wall clock, first interaction → solve |
 | `game_interactions` | total of the four below |
 | `game_moves_made` | moves made, including ones later undone |
 | `game_undos` / `game_redos` / `game_resets` | backtracking breakdown |
+| `game_telemetry_partial` | the attempt's start went unseen, so the numbers are floors |
 
 `game_moves_made` is deliberately distinct from the existing `game_moves`, which
 is the final solution length. The gap between them is the point: it separates
@@ -46,15 +47,30 @@ can both call it. That matters because islands hydrate as separate Preact roots:
 the solving move is recorded by the board while the payload is read by
 `AutoPostSolution`, and nothing guarantees their effects flush in tree order.
 
-## What is deliberately not measured
+## Partial attempts report, flagged
 
-An attempt reports nothing unless its first move was observed. A url arriving
-with moves already in it — a shared link, a refresh, or the return leg of a hint
-(a full page navigation that wipes module state) — would time from mid-solve and
-under-report. Absent beats wrong, since these are read as medians over attempts
-seen whole.
+A url can arrive with moves already in it — a shared link, a refresh, or the
+return leg of a hint, which is a full page navigation that wipes module state.
+The start of such an attempt went unobserved, so every number it produces is a
+floor rather than a total.
 
-No-JS solves report nothing for the same reason: module state does not survive
+Those still report, marked `game_telemetry_partial: true`. Dropping them was the
+first instinct and it was wrong twice over: the data cannot be recovered later
+if it turns out to be useful, and a dropped partial is indistinguishable from a
+no-JS solve, so there is no way to measure how much is being lost or why. The
+flag makes three states legible — no telemetry properties at all means no JS,
+`false` means an attempt seen whole, `true` means resumed.
+
+**Every insight has to filter on it.** That is the cost of the choice: an
+unfiltered median silently skews low, and nothing warns you. Weighed against
+losing the data outright, a filter that must be remembered is the better
+trade — but it does have to be remembered.
+
+The partial rate is worth reading on its own. It measures how often a solve gets
+interrupted by a hint, a refresh or a shared link, which nothing else tracks.
+
+An attempt with no interaction at all still reports nothing — there is no
+attempt to describe. No-JS solves likewise, since module state does not survive
 full page loads. The game itself is unaffected and still records `game_moves`.
 
 ## Non-goals

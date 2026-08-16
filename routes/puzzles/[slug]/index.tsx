@@ -296,7 +296,8 @@ function parseTelemetry(value: unknown): SolveTelemetry | undefined {
   if (typeof value !== "object" || value === null) return undefined;
 
   const record = value as Record<string, unknown>;
-  const parsed = {} as SolveTelemetry;
+  if (typeof record.partial !== "boolean") return undefined;
+  const parsed = { partial: record.partial } as SolveTelemetry;
 
   for (const field of SOLVE_TELEMETRY_FIELDS) {
     const entry = record[field];

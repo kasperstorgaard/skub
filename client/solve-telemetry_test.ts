@@ -27,11 +27,29 @@ Deno.test("a board never moved on reports nothing", () => {
   assertEquals(readSolveTelemetry("boxy"), undefined);
 });
 
-Deno.test("a solve resumed from a url with moves reports nothing", () => {
+Deno.test("a solve resumed from a url with moves reports as partial", () => {
   // The hint link is a full page navigation, so the module restarts mid-solve.
   resetSolveTelemetry();
   observe("boxy", url("?moves=D2D8-C4C3&cursor=2"));
   observe("boxy", url("?moves=D2D8-C4C3-G3&cursor=3"), true);
+
+  const telemetry = readSolveTelemetry("boxy");
+  assertEquals(telemetry?.partial, true);
+  // Only the move seen after resuming — the count is a floor, not the total.
+  assertEquals(telemetry?.moves, 1);
+});
+
+Deno.test("an attempt seen from the start is not partial", () => {
+  resetSolveTelemetry();
+  observe("boxy", url());
+  observe("boxy", url("?moves=D2D8&cursor=1"), true);
+
+  assertEquals(readSolveTelemetry("boxy")?.partial, false);
+});
+
+Deno.test("a resumed board never interacted with reports nothing", () => {
+  resetSolveTelemetry();
+  observe("boxy", url("?moves=D2D8-C4C3&cursor=2"));
 
   assertEquals(readSolveTelemetry("boxy"), undefined);
 });

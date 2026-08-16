@@ -6,7 +6,7 @@ import type { State } from "#/core.ts";
 import type { Move, Puzzle, SkillLevel } from "#/game/types.ts";
 import { posthog } from "#/lib/posthog.ts";
 
-/** The wire contract for solve telemetry — validation reads this list. */
+/** The numeric wire contract for solve telemetry — validation reads this list. */
 export const SOLVE_TELEMETRY_FIELDS = [
   "durationMs",
   "interactions",
@@ -17,13 +17,15 @@ export const SOLVE_TELEMETRY_FIELDS = [
 ] as const;
 
 /**
- * Client-reported effort signals, absent for no-JS and resumed solves.
- * Read as medians; never surfaced, never rewarded.
+ * Client-reported effort signals, absent only for no-JS solves. Read as
+ * medians; never surfaced, never rewarded.
+ *
+ * `partial` marks an attempt whose start went unobserved — a resumed url, so
+ * every number is a floor. Filter on it in every insight.
  */
-export type SolveTelemetry = Record<
-  typeof SOLVE_TELEMETRY_FIELDS[number],
-  number
->;
+export type SolveTelemetry =
+  & Record<typeof SOLVE_TELEMETRY_FIELDS[number], number>
+  & { partial: boolean };
 
 /**
  * Track a puzzle being solved for the first time by this user.
@@ -52,6 +54,7 @@ export function trackPuzzleSolved(
         game_undos: telemetry.undos,
         game_redos: telemetry.redos,
         game_resets: telemetry.resets,
+        game_telemetry_partial: telemetry.partial,
       }),
     },
   });

@@ -73,18 +73,22 @@ export function observe(slug: string, href: string, asMove = false): void {
   lastSeen = next;
 
   if (!interaction) return;
-  if (interaction === "move" && attempt.startedAt === null) {
-    attempt.startedAt = performance.now();
-  }
+  // Any first interaction starts the clock; on a fresh board that is always
+  // the first move, since undo and reset need moves to act on.
+  if (attempt.startedAt === null) attempt.startedAt = performance.now();
   attempt[`${interaction}s` as const]++;
 }
 
-/** Nothing when the start went unseen — a resumed url would under-report. */
+/**
+ * Nothing when this page session saw no interaction at all. Resumed attempts
+ * do report, flagged `partial` — their numbers are floors, so every insight
+ * has to filter on it.
+ */
 export function readSolveTelemetry(slug: string): SolveTelemetry | undefined {
   if (attempt?.slug !== slug) return undefined;
 
   const { startedAt, partial, moves, undos, redos, resets } = attempt;
-  if (partial || startedAt === null) return undefined;
+  if (startedAt === null) return undefined;
 
   return {
     durationMs: Math.round(performance.now() - startedAt),
@@ -93,6 +97,7 @@ export function readSolveTelemetry(slug: string): SolveTelemetry | undefined {
     undos,
     redos,
     resets,
+    partial,
   };
 }
 
