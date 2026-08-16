@@ -1,6 +1,6 @@
 ---
-name: Janne
-slug: janne
+name: Harald
+slug: harald
 createdAt: 2026-07-22T19:29:10.294Z
 difficulty: medium
 minMoves: 9
@@ -249,19 +249,17 @@ genOptions:
   wallSpread: spread
   symmetry: 0.8
 generatorVersion: 0.6.0
-reasons: []
-rating: 5
 ---
 
 ```
 + A B C D E F G H +
-1      |_ _|      |
-2 #|_         _|  |
-3       _ #̲       |
-4 _    |  @|X   _ |
-5      |  _|#     |
-6   _         _   |
-7  |    _ _    |  |
-8      |   |      |
+1 @  |  #    |    |
+2     _     _     |
+3     _|X   _     |
+4                 |
+5     _           |
+6     _|   |      |
+7   #             |
+8    |    #  |    |
 +-----------------+
 ```
