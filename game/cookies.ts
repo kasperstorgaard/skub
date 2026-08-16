@@ -87,7 +87,6 @@ const GENERATOR_OPTIONS_KEY = "generator_options";
 // 1 year in seconds
 const GENERATOR_OPTIONS_DURATION = 60 * 60 * 24 * 365;
 
-const DIFFICULTIES = ["easy", "medium", "hard"];
 const SPREADS = ["mid", "balanced", "spread"];
 
 const isRange = (r: unknown): r is [number, number] =>
@@ -112,9 +111,6 @@ export function getGeneratorOptions(headers: Headers): Partial<GenOptions> {
   }
 
   const options: Partial<GenOptions> = {};
-  if (DIFFICULTIES.includes(stored.difficulty!)) {
-    options.difficulty = stored.difficulty;
-  }
   if (isRange(stored.wallsRange)) options.wallsRange = stored.wallsRange;
   if (isRange(stored.blockersRange)) {
     options.blockersRange = stored.blockersRange;

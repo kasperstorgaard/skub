@@ -13,5 +13,11 @@ import type { StoredCandidate } from "#/game/generated.ts";
  * Holds the current stored candidate — its slug/name plus any feedback already
  * on file (a restored candidate carries its stored rating; a fresh one none) —
  * or null when there's none yet (an empty store, or a run in flight).
+ *
+ * "Feedback" spans both levels of judgement: the puzzle's rating, tags,
+ * difficulty and note, which `CandidateFeedback` owns, and `solutionTags` —
+ * per-route labels the panel writes while the curator works through the
+ * solutions. They're patched through separate endpoints so neither island's
+ * full-state write can clobber the other's.
  */
 export const candidate = signal<StoredCandidate | null>(null);

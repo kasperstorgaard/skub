@@ -17,6 +17,8 @@ type Row = {
   difficulty: string;
   minMoves: number;
   version: string;
+  /** Per-route tags, keyed by the route's encoded moves. */
+  solutionTags: [string, string[]][];
 };
 
 const rows: Row[] = [];
@@ -38,6 +40,7 @@ try {
         difficulty: c.difficulty,
         minMoves: c.minMoves,
         version: c.generatorVersion ?? "?",
+        solutionTags: Object.entries(c.solutionTags ?? {}),
       });
     } catch {
       unparseable++;
@@ -55,13 +58,17 @@ rows.sort((a, b) =>
 
 const pad = (s: string, n: number) =>
   s.padEnd(n).slice(0, Math.max(n, s.length));
+
+/** Ratings move in half steps, so a rating renders as stars plus a half. */
+const renderStars = (rating: number) =>
+  "★".repeat(Math.floor(rating)) + (rating % 1 ? "½" : "");
 const header = `${pad("name", 14)} ${pad("rate", 5)} ${pad("diff", 7)} ${
   pad("mM", 3)
 } ${pad("gen", 5)} reasons / note`;
 console.log(`\n${header}\n${"-".repeat(header.length)}`);
 
 for (const r of rows) {
-  const stars = r.rating === undefined ? "—" : "★".repeat(r.rating);
+  const stars = r.rating === undefined ? "—" : renderStars(r.rating);
   const detail = [
     r.reasons.join(", "),
     r.note ? `“${r.note}”` : "",
@@ -71,11 +78,24 @@ for (const r of rows) {
       pad(String(r.minMoves), 3)
     } ${pad(r.version, 5)} ${detail}`,
   );
+
+  // Routes the curator has labelled, under the puzzle they belong to — the
+  // rating is one verdict on the board, these say which solution earned it.
+  for (const [moves, tags] of r.solutionTags) {
+    console.log(`${" ".repeat(14)} └ ${pad(tags.join(", "), 22)} ${moves}`);
+  }
 }
 
 const rated = rows.filter((r) => r.rating !== undefined);
-const histogram = [1, 2, 3, 4, 5]
-  .map((n) => `${n}★ ${rated.filter((r) => r.rating === n).length}`)
+// Half steps make ten buckets, most of them empty in a small store — only the
+// ones that actually occur are worth a column.
+const histogram = Array.from({ length: 10 }, (_, i) => (i + 1) / 2)
+  .map((step) => ({
+    step,
+    count: rated.filter((r) => r.rating === step).length,
+  }))
+  .filter(({ count }) => count > 0)
+  .map(({ step, count }) => `${step}★ ${count}`)
   .join("  ");
 
 console.log(

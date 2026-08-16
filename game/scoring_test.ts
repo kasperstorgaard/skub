@@ -13,12 +13,15 @@ import {
   deadSpace,
   deception,
   deduplicateSolutions,
+  emptyRegion,
   firstMovePrecision,
   genuineNearMisses,
   maxUnusedBlockers,
   minWallUtilization,
+  openingSetup,
   pieceUsage,
   pointlessClearance,
+  puckPathVariety,
   reversals,
   sameDirectionRepeat,
   scoreBoard,
@@ -26,6 +29,7 @@ import {
   setupRatio,
   stopWeighted,
   totalDistance,
+  wallSymmetry,
   wallUtilization,
 } from "./scoring.ts";
 import {
@@ -333,16 +337,103 @@ Deno.test("computeMetrics() reports the full metric set for the ingrid puzzle", 
     stopWeighted: 15,
     pointlessClearance: 0,
     sameDirectionRepeat: 0,
+    openingSetup: 0,
     uniqueSolutions: 4,
     wallUtilization: 0.42857142857142855,
     deadSpace: 0.4375,
+    // three of the four routes move the puck differently; one is a reshuffle
+    puckPathVariety: 0.75,
     clumping: 0.06930693069306931,
+    // the biggest untouched pocket of the layout — over a third of the grid
+    emptyRegion: 0.390625,
+    wallSymmetry: 0.21428571428571427,
     firstMovePrecision: 0.16666666666666666,
     searchProfile: 0.8934068908865179,
     // no overshoot on this solve — the isolation pair reads unmeasured
     isolationGap: 0,
     nearMissCount: 0,
   });
+});
+
+Deno.test("emptyRegion() measures the largest untouched pocket of the layout", () => {
+  // Structure confined to the top-left: the puck, the goal, one blocker and one
+  // wall. Everything from row 2 down is one connected empty region.
+  const sparse: Board = {
+    destination: { x: 1, y: 0 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 2, y: 1, type: "blocker" },
+    ],
+    walls: [{ x: 1, y: 1, orientation: "horizontal" }],
+  };
+
+  // Four cells carry structure — puck, goal, blocker, and the cell the wall
+  // sits against — and everything else is one connected pocket.
+  assertEquals(emptyRegion(sparse), 60 / 64);
+});
+
+Deno.test("emptyRegion() shrinks when structure is spread across the board", () => {
+  const spread: Board = {
+    destination: { x: 4, y: 4 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 2, y: 2, type: "blocker" },
+      { x: 5, y: 5, type: "blocker" },
+    ],
+    walls: [
+      { x: 4, y: 0, orientation: "vertical" },
+      { x: 4, y: 1, orientation: "vertical" },
+      { x: 4, y: 2, orientation: "vertical" },
+      { x: 4, y: 3, orientation: "vertical" },
+      { x: 4, y: 4, orientation: "vertical" },
+      { x: 4, y: 5, orientation: "vertical" },
+      { x: 4, y: 6, orientation: "vertical" },
+      { x: 4, y: 7, orientation: "vertical" },
+    ],
+  };
+
+  // The wall column splits the board, so no pocket reaches even half of it.
+  assertEquals(emptyRegion(spread) < 0.5, true);
+});
+
+Deno.test("wallSymmetry() is 1 for a mirrored wall layout", () => {
+  const mirrored: Board = {
+    destination: { x: 3, y: 3 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      // the left-right mirror of the wall above
+      { x: 5, y: 2, orientation: "horizontal" },
+    ],
+  };
+
+  assertEquals(wallSymmetry(mirrored), 1);
+});
+
+Deno.test("wallSymmetry() is the share of walls that find a partner", () => {
+  const halfMirrored: Board = {
+    destination: { x: 3, y: 3 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [
+      { x: 2, y: 2, orientation: "horizontal" },
+      { x: 5, y: 2, orientation: "horizontal" },
+      // no partner on either axis
+      { x: 1, y: 5, orientation: "vertical" },
+    ],
+  };
+
+  assertEquals(wallSymmetry(halfMirrored), 2 / 3);
+});
+
+Deno.test("wallSymmetry() is vacuously 1 when the board has no walls", () => {
+  assertEquals(
+    wallSymmetry({
+      destination: { x: 3, y: 3 },
+      pieces: [{ x: 0, y: 0, type: "puck" }],
+      walls: [],
+    }),
+    1,
+  );
 });
 
 Deno.test("clumping() is the share of same-kind pairs within Chebyshev 1", () => {
@@ -455,32 +546,86 @@ Deno.test("deadSpace() is the fraction of cells no trail, piece, or goal touches
   assertEquals(deadSpace(ingridBoard, solutions), 0.4375);
 });
 
+Deno.test("openingSetup() is zero when the puck opens the solution", () => {
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" },
+      { x: 0, y: 7, type: "blocker" },
+    ],
+    walls: [],
+  };
+
+  assertEquals(
+    openingSetup(board, [
+      [{ x: 0, y: 0 }, { x: 7, y: 0 }],
+      [{ x: 0, y: 7 }, { x: 7, y: 7 }],
+    ]),
+    0,
+  );
+});
+
+// Open board, puck at A1 with a blocker below it and one in the far corner.
+// Both blockers can slide up independently, so the two setup moves reorder
+// freely — the shape the next two tests need.
+const shuffleBoard: Board = {
+  destination: { x: 6, y: 0 },
+  pieces: [
+    { x: 0, y: 0, type: "puck" },
+    { x: 0, y: 7, type: "blocker" },
+    { x: 7, y: 7, type: "blocker" },
+  ],
+  walls: [],
+};
+
+// A8 up stops under the puck; H8 up runs to the top edge; the puck then slides
+// right into the blocker now parked at H1.
+const clearLeft: Move = [{ x: 0, y: 7 }, { x: 0, y: 1 }];
+const raiseRight: Move = [{ x: 7, y: 7 }, { x: 7, y: 0 }];
+const puckRight: Move = [{ x: 0, y: 0 }, { x: 6, y: 0 }];
+
+Deno.test("openingSetup() counts the blocker moves the puck waits through", () => {
+  assertEquals(
+    openingSetup(shuffleBoard, [clearLeft, raiseRight, puckRight]),
+    2,
+  );
+});
+
+Deno.test("puckPathVariety() halves when two routes share a puck path", () => {
+  // Same single puck move in both routes — only the blocker order differs, so
+  // the two "solutions" are one puzzle (the birk profile).
+  assertEquals(
+    puckPathVariety(shuffleBoard, [
+      [clearLeft, raiseRight, puckRight],
+      [raiseRight, clearLeft, puckRight],
+    ]),
+    0.5,
+  );
+});
+
 const noCorpus = { corpus: new Set<string>(), batchHashes: new Set<string>() };
 
-Deno.test("checkGates() passes the ingrid puzzle as a medium board", () => {
+Deno.test("checkGates() passes the ingrid puzzle at its own move count", () => {
   assertEquals(
-    checkGates(ingridBoard, { difficulty: "medium", ...noCorpus }),
+    checkGates(ingridBoard, { targetMoves: 7, ...noCorpus }),
     { passed: true },
   );
 });
 
-Deno.test("checkGates() fails G2 when minMoves is outside the band", () => {
+Deno.test("checkGates() fails G2 when the board solves short of the target", () => {
+  // ingrid solves in 7; a run after 9-move boards must not settle for it.
   assertEquals(
-    checkGates(ingridBoard, { difficulty: "hard", ...noCorpus }),
+    checkGates(ingridBoard, { targetMoves: 9, ...noCorpus }),
     { passed: false, failedGate: "G2" },
   );
 });
 
-Deno.test("checkGates() fails G2 when minMovesFloor raises the band floor", () => {
-  // ingrid is a 7-move medium board; a floor of 8 rejects it without touching
-  // the band's upper bound.
+Deno.test("checkGates() fails G1 when the board needs more moves than the target", () => {
+  // The gate solve caps its depth at the target, so a board that needs more
+  // rejects on depth rather than being solved in full to fail G2.
   assertEquals(
-    checkGates(ingridBoard, {
-      difficulty: "medium",
-      ...noCorpus,
-      minMovesFloor: 8,
-    }),
-    { passed: false, failedGate: "G2" },
+    checkGates(ingridBoard, { targetMoves: 6, ...noCorpus }),
+    { passed: false, failedGate: "G1" },
   );
 });
 
@@ -498,7 +643,7 @@ Deno.test("checkGates() fails G9 for a blocker walled in on all four sides", () 
   };
 
   assertEquals(
-    checkGates(trapped, { difficulty: "medium", ...noCorpus }),
+    checkGates(trapped, { targetMoves: 7, ...noCorpus }),
     { passed: false, failedGate: "G9" },
   );
 });
@@ -537,7 +682,7 @@ Deno.test("checkGates() fails G10 for an egregiously clumped board", () => {
   };
 
   assertEquals(
-    checkGates(clumped, { difficulty: "medium", ...noCorpus }),
+    checkGates(clumped, { targetMoves: 7, ...noCorpus }),
     { passed: false, failedGate: "G10" },
   );
 });
@@ -547,7 +692,7 @@ Deno.test("checkGates() fails G3 when the board is already in the corpus", () =>
 
   assertEquals(
     checkGates(ingridBoard, {
-      difficulty: "medium",
+      targetMoves: 7,
       corpus,
       batchHashes: new Set(),
     }),

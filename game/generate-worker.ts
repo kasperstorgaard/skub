@@ -3,17 +3,17 @@ import {
   boardCanonicalHash,
   checkGates,
   computeMetrics,
-  DIFFICULTY_BANDS,
   type Metrics,
   scoreBoard,
   type ScoredBoard,
 } from "#/game/scoring.ts";
 import { solveExhaustiveSync } from "#/game/solver.ts";
-import type { Board, Difficulty } from "#/game/types.ts";
+import type { Board } from "#/game/types.ts";
 
 /** What the /api/generate route posts to the worker to start a gated run. */
 export type GenerateRequest = GenerateOptions & {
-  difficulty: Difficulty;
+  /** Exact minMoves this run is after — picked per run from `MOVE_TARGETS`. */
+  targetMoves: number;
   /** Canonical hashes of the existing corpus, for the G3 novelty gate. */
   corpus: string[];
   /** Cap on gate-checked candidates before giving up. */
@@ -48,27 +48,26 @@ const DEFAULT_MAX_GATE_ATTEMPTS = 500;
 const GATE_MAX_STATES = 2_000_000;
 
 /**
- * Loops `generate()` → `checkGates()` until a board passes every gate at the
- * requested difficulty, or the attempt budget is spent. Emits a `progress`
- * event per attempt (a simple rising count for the UI), then a terminal
- * `result` / `exhausted` / `error`. Runs off the main thread — a run can be
- * hundreds of exhaustive solves.
+ * Loops `generate()` → `checkGates()` until a board solves in exactly
+ * `targetMoves` and passes every other gate, or the attempt budget is spent.
+ * Emits a `progress` event per attempt (a simple rising count for the UI), then
+ * a terminal `result` / `exhausted` / `error`. Runs off the main thread — a run
+ * can be hundreds of exhaustive solves.
+ *
+ * The target is exact and has no fallback: a run that can't hit it reports
+ * `exhausted` rather than quietly handing back an easier board. Random layouts
+ * skew short (roughly half of solvable boards come in under 5 moves, ~4% at
+ * 9–10), so the higher targets legitimately take many more attempts.
  */
 self.onmessage = (e: MessageEvent<GenerateRequest>) => {
   const {
-    difficulty,
+    targetMoves,
     corpus,
     maxGateAttempts = DEFAULT_MAX_GATE_ATTEMPTS,
     ...options
   } = e.data;
   const corpusSet = new Set(corpus);
   const batchHashes = new Set<string>();
-
-  // Band-floor boards dominate the "too easy" ratings (medium: mM 7 averaged
-  // 2.95★ vs 3.44★ at mM 9), so the first half of the budget rejects them by
-  // raising the G2 floor one move; the fallback half accepts the full band.
-  const band = DIFFICULTY_BANDS[difficulty];
-  const raisedFloor = band && band[1] > band[0] ? band[0] + 1 : undefined;
 
   try {
     for (let attempts = 1; attempts <= maxGateAttempts; attempts++) {
@@ -84,15 +83,12 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
       }
 
       const gate = checkGates(board, {
-        difficulty,
+        targetMoves,
         corpus: corpusSet,
         batchHashes,
         // Reject branchy candidates fast so a single slow solve can't freeze the
-        // attempt counter — well above what a ≤6-piece board needs to depth 15.
+        // attempt counter — well above what a ≤6-piece board needs.
         maxStates: GATE_MAX_STATES,
-        minMovesFloor: attempts <= maxGateAttempts / 2
-          ? raisedFloor
-          : undefined,
       });
       if (gate.passed) {
         batchHashes.add(boardCanonicalHash(board));
@@ -102,7 +98,7 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
         // Overshoot powers the isolation advisory; it's paid once per accepted
         // board, never per attempt, and truncates at the cap instead of failing.
         const result = solveExhaustiveSync(board, {
-          maxDepth: 15,
+          maxDepth: targetMoves,
           maxStates: GATE_MAX_STATES,
           overshoot: 2,
         });
