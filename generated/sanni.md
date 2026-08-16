@@ -1,9 +1,20 @@
 ---
-name: Janne
-slug: janne
+name: Sanni
+slug: sanni
 createdAt: 2026-07-22T19:29:10.294Z
-difficulty: medium
-minMoves: 9
+difficulty: easy
+minMoves: 6
+genOptions:
+  wallsRange:
+    - 8
+    - 25
+  blockersRange:
+    - 3
+    - 8
+  wallSpread: spread
+  symmetry: 0.8
+  targetMoves: 6
+generatorVersion: 0.7.0
 scoring:
   score: 0.2936
   mean: 0.2936
@@ -238,30 +249,22 @@ solutionTags:
   B1B6-C1H1-G3B3-G6G1-A1-A3:
     - too-easy
     - boring
-genOptions:
-  difficulty: medium
-  wallsRange:
-    - 8
-    - 25
-  blockersRange:
-    - 3
-    - 8
-  wallSpread: spread
-  symmetry: 0.8
-generatorVersion: 0.6.0
-reasons: []
-rating: 5
+rating: 2.5
+reasons:
+  - pretty
+  - clumped
+note: 'lots of unused space, unused blockers. very very pretty in a chaos way though'
 ---
 
 ```
 + A B C D E F G H +
-1      |_ _|      |
-2 #|_         _|  |
-3       _ #̲       |
-4 _    |  @|X   _ |
-5      |  _|#     |
-6   _         _   |
-7  |    _ _    |  |
-8      |   |      |
+1   # #           |
+2    |       |    |
+3 X̲|          #|  |
+4          |#     |
+5 _   #|   |    _ |
+6             @|  |
+7   #|       |    |
+8           #     |
 +-----------------+
 ```
