@@ -215,9 +215,8 @@ function CandidateScore(
 }
 
 /**
- * The board's character as tags. Tone shows in the styling — brand for the
- * flattering traits, elevated surface for the warnings — so a board's problems
- * stand out from its virtues without reading each tooltip.
+ * The board's character as tags — what kind of board, not how good. Styled
+ * uniformly: colouring by virtue implied a claim the thresholds never earned.
  */
 function BoardCharacter({ traits }: { traits: CharacterTrait[] }) {
   if (!traits.length) return null;
@@ -230,9 +229,7 @@ function BoardCharacter({ traits }: { traits: CharacterTrait[] }) {
           title={trait.hint}
           className={clsx(
             "text-fl-0 rounded-1 px-fl-1 py-1 cursor-help leading-none",
-            trait.tone === "good" && "bg-surface-1 text-brand",
-            trait.tone === "warn" && "bg-surface-4 text-text-1",
-            trait.tone === "neutral" && "bg-surface-1 text-text-2",
+            "bg-surface-1 text-text-2",
           )}
         >
           {trait.label}

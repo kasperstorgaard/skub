@@ -16,14 +16,9 @@ export type CharacterTrait = {
   label: string;
   /** Why the board earned it, for the tooltip. */
   hint: string;
-  /** Whether the trait flatters the board, warns about it, or just describes. */
-  tone: "good" | "warn" | "neutral";
 };
 
-type TraitRule = {
-  label: string;
-  hint: string;
-  tone: CharacterTrait["tone"];
+type TraitRule = CharacterTrait & {
   /** Board-level context the rule needs beyond the metrics themselves. */
   applies: (metrics: Metrics, context: CharacterContext) => boolean;
 };
@@ -44,86 +39,72 @@ const TRAITS: TraitRule[] = [
   {
     label: "one true path",
     hint: "A single distinct solution — no alternative route to find.",
-    tone: "neutral",
     applies: (m) => m.uniqueSolutions === 1,
   },
   {
     label: "false variety",
     hint:
       "Several solutions, but they send the puck along the same path — only the setup order differs.",
-    tone: "warn",
     applies: (m) => m.uniqueSolutions > 1 && m.puckPathVariety <= 0.5,
   },
   {
     label: "slow start",
     hint: "The puck sits still while blockers are shuffled into place first.",
-    tone: "warn",
     applies: (m) => m.openingSetup >= 2,
   },
   {
     label: "setup-heavy",
     hint: "Most moves reposition blockers rather than the puck.",
-    tone: "neutral",
     applies: (m) => m.setupRatio >= 0.6,
   },
   {
     label: "wall-heavy",
     hint: "Plenty of walls, and most of them actually stop a piece.",
-    tone: "good",
     applies: (m, ctx) => ctx.walls >= 12 && m.wallUtilization >= 0.5,
   },
   {
     label: "decorative walls",
     hint: "Most of the board's walls never stop anything.",
-    tone: "warn",
     applies: (m, ctx) => ctx.walls >= 8 && m.wallUtilization < 0.3,
   },
   {
     label: "minimalist",
     hint: "Few walls and blockers — the difficulty comes from the geometry.",
-    tone: "good",
     applies: (_m, ctx) => ctx.walls <= 6 && ctx.blockers <= 3,
   },
   {
     label: "reversal",
     hint: "A piece has to double back the way it came.",
-    tone: "good",
     applies: (m) => m.reversals >= 2,
   },
   {
     label: "distance",
     hint: "Long slides — the pieces cover a lot of ground per move.",
-    tone: "neutral",
     applies: (m, ctx) => m.totalDistance >= ctx.minMoves * 4,
   },
   {
     label: "deceptive",
     hint: "The puck has to travel away from the destination to get there.",
-    tone: "good",
     applies: (m) => m.deception >= 4,
   },
   {
     label: "roomy",
     hint: "The action spreads across the board rather than huddling.",
-    tone: "good",
     applies: (m) => m.deadSpace <= 0.5,
   },
   {
     label: "cramped",
     hint: "Most of the board is never touched.",
-    tone: "warn",
     applies: (m) => m.deadSpace >= 0.75,
   },
   {
     label: "clumped",
     hint: "Walls and blockers bunch together instead of spreading out.",
-    tone: "warn",
     applies: (m) => m.clumping >= 0.18,
   },
   {
     label: "idle blockers",
     hint: "A blocker gets moved and then never matters again.",
-    tone: "warn",
     applies: (m) => m.pointlessClearance >= 1,
   },
 ];
@@ -143,5 +124,5 @@ export function boardCharacter(
   return TRAITS
     .filter((trait) => trait.applies(metrics, context))
     .slice(0, MAX_TRAITS)
-    .map(({ label, hint, tone }) => ({ label, hint, tone }));
+    .map(({ label, hint }) => ({ label, hint }));
 }

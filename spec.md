@@ -132,12 +132,93 @@ the route side:
   probabilistic symmetry knob almost never produces; near-symmetry is what the
   eye rewards.
 
+## Direction: the solution becomes the unit of scoring
+
+Not built this round — recorded because the evidence for it arrived with the
+first route labels, and the next calibration round should start here.
+
+`scoreBoard` returns `score = mean` across routes. The mean is the wrong
+reduction: four routes each good for different reasons average to something
+middling, and the route players actually find gets a quarter of a vote. The
+per-route scores already exist in `perSolution` — computed and stored, then
+collapsed at the last step.
+
+Measured against the route tags this round collects, within-board so board
+quality is controlled for:
+
+- **`too-easy` vs `interesting`: 6/6.** Where one route was tagged too-easy and
+  another interesting on the same board, the model scored the too-easy one
+  lower every time.
+- **`boring` vs `interesting`: 5/13** — worse than chance, with clean
+  inversions. Camilla's two `boring` routes are its two highest-scoring and its
+  two `interesting` routes its two lowest; mikael's `boring` route scores top of
+  six against its `interesting` route at the bottom.
+
+So the per-route composite measures **easiness, not dullness**. That follows
+from what is in it: `stopWeighted` and `pieceUsage` are effort proxies, so a
+short cheap route scores low — correct for too-easy — while a long, effortful,
+dull route gets paid for the effort. The tags confirm two separate axes rather
+than one: `interesting` and `too-easy` co-occur on three routes.
+
+This narrows what the reduction is for. Across the 19 candidates carrying
+stored scoring, `min` ranks against curator rating better than `mean`
+(ρ 0.197 vs 0.148) — but on the 13 multi-route boards, the only ones where the
+reduction changes anything, mean, min and max all collapse to ≈ 0. The
+single-route boards carry that ranking, so mean → min is not itself the fix.
+
+What the evidence does support:
+
+- **`min` as a too-easy gate, not as the board's quality score.** It is
+  validated on exactly that failure mode, and it matches the product argument
+  already made above: the obvious route is the one players find, so a board
+  whose easiest route is trivial plays trivially however good the others are.
+- **Dullness has no metric at all.** `boring` is the most common negative route
+  tag and nothing in the composite tracks it — camilla is that failure in pure
+  form. This is the gap to attack before any re-weighting.
+
+Structurally the premise holds: within-board route spread averages 0.040
+against a between-board stddev of 0.058, so routes on one board vary nearly as
+much as boards vary from each other. The variance lives at route level.
+
+Directional, not a fit — 13 multi-route boards, the 6 too-easy/interesting
+pairs spread across only 3 boards, ρ standard error ≈ 0.25 at n = 19, and
+tagging is sparse and non-exhaustive.
+
+### Adapt the per-solution scores for gating
+
+The gates never touch the composite. They are structural predicates, each with
+its own reduction: board-static (G9, G10), board-level solve facts (G1–G3),
+every route (G4), worst route (G6), and union across routes (G5, G7, G8). That
+is already closer to per-solution than `scoreBoard` is — the gates got the
+shape right and the composite didn't.
+
+Two things follow. First, the per-solution scores exist and nothing gates on
+them; a floor on the weakest route is the obvious first use, since that is the
+too-easy failure mode and `min` is the reduction the labels support.
+
+Second, the union gates get *more lenient the more routes a board has*.
+`wallUtilization` unions stopping walls across every solution and `deadSpace`
+unions every trail, so a wall need only matter in one route of eight and a cell
+need only be entered once. Redundant routes therefore help a board pass: the
+`birk` case is counted twice for coverage and experienced once. Worth measuring
+how many boards this actually changes before touching it.
+
+### Candidate metric: unused quadrants
+
+A per-solution `deadSpace`. The existing metric unions the trails of every
+solution, which is what lets redundant routes flatter it; measured per route it
+says how much of the board that route actually uses. Quadrants rather than
+cells because the complaint is about regions, not stragglers — the same reason
+`emptyRegion` counts connected runs. Advisory until it correlates, like the
+rest.
+
 ## Non-goals
 
 - **Re-tuning or splitting the composite.** The scoring shape this round
   exposes — board terms and route terms mixed into one number — is worth
   fixing, but it needs the two-level labels this round starts collecting.
-  `CALIBRATION` is untouched.
+  `CALIBRATION` is untouched; the direction above is the next round's starting
+  point, not this one's work.
 - **Post-generation mutation** — "keep this board but add walls without changing
   the move count", "add a blocker", "move the puck". The most promising direction
   for turning near-misses into keepers, and a separate unit of work: it needs a
@@ -171,6 +252,17 @@ Done:
 - `list-generated`: half stars, half-step histogram, per-route tags
 - `GENERATOR_VERSION` 0.7.0 — candidate distribution changed, so feedback
   buckets aren't comparable across it
+- `CharacterTrait.tone` removed. Over 25 rated candidates the tones had no
+  support: `wall-heavy`, `clumped` and `cramped` never fired at all, and the
+  two largest rating deltas ran against their label — `slow start` (warn) was
+  the most positive trait at +0.44, `roomy` (good) the most negative of the
+  flattering ones at −0.23, and it keys off `deadSpace`, which the composite
+  dropped in v3. The words still tell boards apart; the colouring claimed a
+  judgement the thresholds never earned. Chips now render uniformly.
+
+Not addressed: `wall-heavy` / `clumped` / `cramped` still never fire, and 17 of
+25 boards hit the `MAX_TRAITS = 3` cap, so display order is partly an artifact
+of `TRAITS` ordering.
 
 The 71 candidates predating this round have no stored scoring; their readout
 stays empty until they're regenerated, and nothing else about them changes.
