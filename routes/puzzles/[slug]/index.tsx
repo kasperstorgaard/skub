@@ -31,7 +31,12 @@ import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isBuilder, isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
-import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
+import {
+  SOLVE_TELEMETRY_FIELDS,
+  type SolveTelemetry,
+  trackPuzzleSolved,
+  trackSkillLevelUp,
+} from "#/lib/tracking.ts";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type PageData = {
@@ -96,9 +101,18 @@ export const handler = define.handlers<PageData>({
       "application/json",
     );
 
-    const { name, moves } = isJson
-      ? await ctx.req.json() as { name: string; moves: Move[] }
+    const body = isJson
+      ? await ctx.req.json() as {
+        name: string;
+        moves: Move[];
+        telemetry?: unknown;
+      }
       : await parseSolveForm(ctx.req);
+
+    const { name, moves } = body;
+    const telemetry = parseTelemetry(
+      "telemetry" in body ? body.telemetry : undefined,
+    );
 
     if (!name) throw new HttpError(400, "Must provide a username");
 
@@ -125,7 +139,7 @@ export const handler = define.handlers<PageData>({
     ]);
 
     if (isNew) {
-      trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
+      trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer, telemetry });
 
       const { skillLevel } = ctx.state.user;
       const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
@@ -271,6 +285,29 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
     </>
   );
 });
+
+/** A day — past this, a duration is a tab left open, not a solve. */
+const MAX_DURATION_MS = 24 * 60 * 60 * 1000;
+/** Generous, but bounded: nobody legitimately makes 10k moves on one board. */
+const MAX_COUNT = 10_000;
+
+/** Client-reported, so drop the payload unless every field is a sane number. */
+function parseTelemetry(value: unknown): SolveTelemetry | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+
+  const record = value as Record<string, unknown>;
+  const parsed = {} as SolveTelemetry;
+
+  for (const field of SOLVE_TELEMETRY_FIELDS) {
+    const entry = record[field];
+    const max = field === "durationMs" ? MAX_DURATION_MS : MAX_COUNT;
+    if (!Number.isInteger(entry) || (entry as number) < 0) return undefined;
+    if ((entry as number) > max) return undefined;
+    parsed[field] = entry as number;
+  }
+
+  return parsed;
+}
 
 async function parseSolveForm(
   req: Request,

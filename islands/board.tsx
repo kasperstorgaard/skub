@@ -4,7 +4,9 @@ import { useCallback, useMemo, useRef, useState } from "preact/hooks";
 
 import { useRouter } from "./router.tsx";
 import { useMoves } from "#/client/moves.ts";
+import { observe } from "#/client/solve-telemetry.ts";
 import { calculateMoveSpeed } from "#/client/touch.ts";
+import { useSolveTelemetry } from "#/client/use-solve-telemetry.ts";
 import { Icon, X } from "#/components/icons.tsx";
 import {
   getGrid,
@@ -119,6 +121,12 @@ export default function Board(
         });
       }
 
+      // Asserted here rather than left to the url watcher: replaying a move
+      // after an undo is indistinguishable from a redo in the url alone.
+      if (target && mode.value === "solve") {
+        observe(puzzle.value.slug, updatedHref, true);
+      }
+
       updateLocation(updatedHref, { replace: true });
     },
     [state, href.value, mode.value],
@@ -135,6 +143,8 @@ export default function Board(
     onMove,
     isEnabled: mode.value === "solve",
   });
+
+  useSolveTelemetry(href, puzzle.value.slug, mode.value === "solve");
 
   return (
     <>

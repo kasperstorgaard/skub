@@ -6,14 +6,35 @@ import type { State } from "#/core.ts";
 import type { Move, Puzzle, SkillLevel } from "#/game/types.ts";
 import { posthog } from "#/lib/posthog.ts";
 
+/** The wire contract for solve telemetry — validation reads this list. */
+export const SOLVE_TELEMETRY_FIELDS = [
+  "durationMs",
+  "interactions",
+  "moves",
+  "undos",
+  "redos",
+  "resets",
+] as const;
+
+/**
+ * Client-reported effort signals, absent for no-JS and resumed solves.
+ * Read as medians; never surfaced, never rewarded.
+ */
+export type SolveTelemetry = Record<
+  typeof SOLVE_TELEMETRY_FIELDS[number],
+  number
+>;
+
 /**
  * Track a puzzle being solved for the first time by this user.
  */
 export function trackPuzzleSolved(
   state: State,
   puzzle: Puzzle,
-  options: { moves: Move[]; url: string },
+  options: { moves: Move[]; url: string; telemetry?: SolveTelemetry },
 ): void {
+  const { telemetry } = options;
+
   posthog?.capture({
     distinctId: state.trackingId,
     event: "puzzle_solved",
@@ -24,6 +45,14 @@ export function trackPuzzleSolved(
       puzzle_difficulty: puzzle.difficulty,
       puzzle_min_moves: puzzle.minMoves,
       game_moves: options.moves.length,
+      ...(telemetry && {
+        game_duration_ms: telemetry.durationMs,
+        game_interactions: telemetry.interactions,
+        game_moves_made: telemetry.moves,
+        game_undos: telemetry.undos,
+        game_redos: telemetry.redos,
+        game_resets: telemetry.resets,
+      }),
     },
   });
 }

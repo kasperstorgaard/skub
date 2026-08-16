@@ -1,6 +1,7 @@
 import { type Signal } from "@preact/signals";
 import { useEffect, useMemo, useRef } from "preact/hooks";
 
+import { observe, readSolveTelemetry } from "#/client/solve-telemetry.ts";
 import { addTraceParentHeader } from "#/client/trace-context.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
@@ -56,6 +57,10 @@ export function AutoPostSolution(
 
     postingRef.current = true;
 
+    // Idempotent — the board's watcher may not have flushed its effect yet,
+    // and islands hydrate as separate roots with no ordering between them.
+    observe(puzzle.value.slug, href.value);
+
     const headers = addTraceParentHeader(
       new Headers({
         "Content-Type": "application/json",
@@ -68,7 +73,11 @@ export function AutoPostSolution(
     fetch(href.value, {
       method: "POST",
       headers,
-      body: JSON.stringify({ name: savedName, moves }),
+      body: JSON.stringify({
+        name: savedName,
+        moves,
+        telemetry: readSolveTelemetry(puzzle.value.slug),
+      }),
     }).then(async (response) => {
       completedRef.current = true;
 
