@@ -17,7 +17,6 @@ import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { CandidateFeedback } from "#/islands/candidate-feedback.tsx";
 import { GeneratorPanel } from "#/islands/generator-panel.tsx";
-import { LiveDifficultyBadge } from "#/islands/live-difficulty-badge.tsx";
 import { isDev } from "#/lib/env.ts";
 
 const EMPTY_PUZZLE: Puzzle = {
@@ -151,8 +150,6 @@ export default define.page<typeof handler>(function GeneratePage(props) {
             <h1 className="text-5 text-brand pr-1 leading-flat">Generate</h1>
             <p className="text-text-3 leading-tight ml-1">candidates</p>
           </div>
-
-          <LiveDifficultyBadge puzzle={puzzle} className="lg:mt-1" />
         </div>
 
         <div className="relative max-lg:pb-fl-5">
