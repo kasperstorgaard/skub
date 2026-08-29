@@ -5,7 +5,7 @@ import { resolveMoves } from "#/game/board.ts";
 import { getHintCount, setHintCount } from "#/game/cookies.ts";
 import { solveSync } from "#/game/solver.ts";
 import { encodeMove } from "#/game/strings.ts";
-import type { Move } from "#/game/types.ts";
+import type { Board } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { isDev } from "#/lib/env.ts";
 import { trackHintRequested } from "#/lib/tracking.ts";
@@ -33,22 +33,19 @@ export const handler = define.handlers({
       throw new HttpError(400, "Hint limit exceeded");
     }
 
-    // Hint from where the player actually stands, not the pristine board.
+    // Hint from where the player actually stands, not the pristine board. The
+    // moves arrive in the URL, so this is also where a forged list is rejected.
     const played = state.moves.slice(0, state.cursor ?? state.moves.length);
 
-    let solution: Move[];
+    let board: Board;
     try {
-      // resolveMoves throws on an illegal move, so a forged move list is
-      // rejected here rather than reaching the solver.
-      solution = solveSync(resolveMoves(puzzle.board, played));
+      board = resolveMoves(puzzle.board, played);
     } catch {
-      throw new HttpError(422, "No solution from this position");
+      throw new HttpError(400, "Invalid moves");
     }
 
-    if (!solution.length) throw new HttpError(422, "Puzzle already solved");
+    const solution = solveSync(board);
 
-    // Counted only once a hint actually exists — a failed solve shouldn't spend
-    // the player's allowance.
     trackHintRequested(ctx.state, puzzle, {
       url: ctx.req.url,
       cursor: state.cursor,
