@@ -25,8 +25,16 @@ const isMoveTarget = (value: unknown): value is MoveTarget =>
 // count) until a board passes every gate, then a terminal `result` /
 // `exhausted` / `error`. The loop runs in a worker so its many exhaustive
 // solves don't block the request thread.
+//
+// Dev-only, like the /puzzles/new page it serves: each run spawns a worker that
+// exhaustively solves up to MAX_ATTEMPTS boards, so leaving it open in
+// production hands anyone an unbounded compute lever.
 export const handler = define.handlers({
   async POST(ctx) {
+    if (!isDev) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
     let body: GenerateOptions & { targetMoves?: number };
 
     try {

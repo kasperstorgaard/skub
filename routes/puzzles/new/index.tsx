@@ -1,6 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { page } from "fresh";
+import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
@@ -106,6 +106,10 @@ async function getLatestCandidate(): Promise<
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
+    // Dev-only: generation needs a writable candidate store, and the run itself
+    // is an unbounded compute lever (see /api/generate).
+    if (!isDev) throw new HttpError(404, "Not found");
+
     // The generator resumes the newest stored candidate (or the empty board on
     // a fresh store); a candidate only becomes a draft once the curator picks
     // "Edit this".
