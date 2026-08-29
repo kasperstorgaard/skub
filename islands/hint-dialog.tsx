@@ -39,7 +39,7 @@ const MIN_THINK_MS = 3000;
 export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   const gameState = useMemo(() => decodeState(href.value), [href.value]);
   const minMoves = puzzle.value.minMoves;
-  const [solveState, setSolveState] = useState<SolveState | null>(null);
+  const [fetched, setFetched] = useState<SolveState | null>(null);
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -51,6 +51,18 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
     const url = new URL(href.value);
     return url.searchParams.get("dialog") === "hint";
   }, [href.value]);
+
+  // The hint route's answer, carried in the URL by its redirect. Derived during
+  // render rather than in an effect, so a no-JS page has something to show —
+  // effects never run there, and the dialog would otherwise render empty.
+  const served = useMemo((): SolveState | null => {
+    const remaining = Number(new URL(href.value).searchParams.get("remaining"));
+    return gameState.hint && remaining > 0
+      ? { status: "done", hint: gameState.hint, remaining }
+      : null;
+  }, [href.value, gameState.hint]);
+
+  const solveState = fetched ?? served;
 
   const moves = useMemo(
     () => gameState.moves.slice(0, gameState.cursor ?? gameState.moves.length),
@@ -84,15 +96,19 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   }, [solveState, minMoves, remainingMoves]);
 
   // Closing just clears the dialog: encodeState rebuilds the params from
-  // scratch, dropping `dialog` and `remaining` while keeping the hint.
-  const closeModal = () => {
+  // scratch, dropping `dialog` and `remaining` while keeping the hint. Exposed
+  // as an href too, so the dismiss controls are links that still work with no
+  // JS to intercept them.
+  const closeHref = useMemo(() => {
     const url = new URL(href.value);
     const hint = solveState?.status === "done"
       ? solveState.hint
       : gameState.hint;
     url.search = encodeState({ ...gameState, hint });
-    updateLocation(url.href);
-  };
+    return url.href;
+  }, [href.value, gameState, solveState]);
+
+  const closeModal = () => updateLocation(closeHref);
 
   // Highlight the move as soon as it lands, so the board updates behind the
   // open dialog. Replaces rather than pushes — the hint isn't a step worth
@@ -113,19 +129,15 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   // redirect, so the dialog can open before the answer arrives.
   useEffect(() => {
     if (!open) {
-      setSolveState(null);
+      setFetched(null);
       return;
     }
 
-    // The no-JS path already came back solved, via the route's redirect.
-    const remaining = Number(new URL(href.value).searchParams.get("remaining"));
-    if (gameState.hint && remaining > 0) {
-      setSolveState({ status: "done", hint: gameState.hint, remaining });
-      return;
-    }
+    // Already answered by the route's redirect — `served` covers the render.
+    if (served) return;
 
     const controller = new AbortController();
-    setSolveState({ status: "solving" });
+    setFetched({ status: "solving" });
 
     const minThink = new Promise<void>((resolve) =>
       setTimeout(resolve, MIN_THINK_MS)
@@ -142,14 +154,14 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
         await minThink;
         if (controller.signal.aborted) return;
         hintUsed.value = true;
-        setSolveState({
+        setFetched({
           status: "done",
           hint: decodeMove(data.hint),
           remaining: data.remaining,
         });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setSolveState({ status: "error" });
+        if (!controller.signal.aborted) setFetched({ status: "error" });
       });
 
     return () => controller.abort();
@@ -207,14 +219,16 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
                 Start over
               </a>
 
-              <button
-                type="button"
+              <a
+                href={closeHref}
                 className="link p-0 bg-transparent"
-                disabled={!open}
-                onClick={closeModal}
+                onClick={(event) => {
+                  event.preventDefault();
+                  closeModal();
+                }}
               >
                 Keep going
-              </button>
+              </a>
             </div>
           </>
         )}
@@ -234,14 +248,16 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
             </p>
 
             <div class="flex items-center gap-fl-2 mt-fl-1">
-              <button
-                type="button"
+              <a
+                href={closeHref}
                 className="btn"
-                disabled={!open}
-                onClick={closeModal}
+                onClick={(event) => {
+                  event.preventDefault();
+                  closeModal();
+                }}
               >
                 Got it
-              </button>
+              </a>
             </div>
           </>
         )}
