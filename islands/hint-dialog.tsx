@@ -14,6 +14,12 @@ import {
 } from "#/game/url.ts";
 import { useRouter } from "#/islands/router.tsx";
 
+// How long the searching state holds. The server answers in well under this,
+// so it's reading time for a state that would otherwise flash past. Coupled to
+// the searching copy, which is written for a pause this long — change both or
+// neither. Goes when hints become time-based assistance and show instantly.
+const MIN_THINK_MS = 3000;
+
 type Props = {
   puzzle: Signal<Puzzle>;
   href: Signal<string>;
@@ -29,14 +35,7 @@ type SolveState = {
   remaining: number;
 } | {
   status: "error";
-  /** The allowance was already spent, rather than the solve failing. */
-  spent?: boolean;
 };
-
-// Minimum time the solving state is shown so the hint feels earned rather than
-// instant. Pure presentation now that the solve is server-side — the round trip
-// usually costs less than this.
-const MIN_THINK_MS = 3000;
 
 export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   const gameState = useMemo(() => decodeState(href.value), [href.value]);
@@ -164,10 +163,10 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
       })
       .catch((status: unknown) => {
         if (controller.signal.aborted) return;
-        // 400 is the route's hint limit, not a solver failure. Record it so the
-        // button retires even though no hint came back.
+        // A 400 is the spent allowance. Either way no hint is coming, so the
+        // button should retire.
         if (status === 400) hintUsed.value = true;
-        setFetched({ status: "error", spent: status === 400 });
+        setFetched({ status: "error" });
       });
 
     return () => controller.abort();
@@ -271,13 +270,11 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
         {solveState?.status === "error" && (
           <>
             <h2 class="text-4 text-text-1 font-semibold leading-tight">
-              {solveState.spent ? "Hint already used" : "Something went wrong"}
+              No hint this time
             </h2>
 
             <p>
-              {solveState.spent
-                ? "That's the one hint for this puzzle today."
-                : "The solver couldn't find a solution. Try again later."}
+              Couldn't get a hint right now.
             </p>
 
             <div class="flex items-center gap-fl-2 mt-fl-1">
