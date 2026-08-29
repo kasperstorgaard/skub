@@ -26,7 +26,7 @@ const isMoveTarget = (value: unknown): value is MoveTarget =>
 // `exhausted` / `error`. The loop runs in a worker so its many exhaustive
 // solves don't block the request thread.
 //
-// Dev-only, like the /puzzles/new page it serves: each run spawns a worker that
+// Dev-only, like the /puzzles/generate page it serves: each run spawns a worker
 // exhaustively solves up to MAX_ATTEMPTS boards, so leaving it open in
 // production hands anyone an unbounded compute lever.
 export const handler = define.handlers({
@@ -93,7 +93,7 @@ export const handler = define.handlers({
       },
     });
 
-    // Persist the run's knob values so /puzzles/new reopens with them
+    // Persist the run's knob values so /puzzles/generate reopens with them
     // ("persist on Generate" — idle slider twiddling never sticks).
     const headers = setGeneratorOptions(
       new Headers({

@@ -254,7 +254,7 @@ function watchHref(scoring: StoredScoring, index: number): string {
     mode: "replay",
     solution: String(index),
   });
-  return `/puzzles/new?${params}`;
+  return `/puzzles/generate?${params}`;
 }
 
 /**
@@ -373,10 +373,10 @@ function SolutionDetail(
 }
 
 /**
- * Side panel for the puzzle generator (`/puzzles/new`).
+ * Side panel for the puzzle generator (`/puzzles/generate`).
  * Runs the gated generation loop, previews the candidate read-only with its
  * advisory score, and hands a chosen candidate off to the editor
- * (`/puzzles/edit`) for naming, curation and saving.
+ * (`/puzzles/new`) for naming, curation and saving.
  */
 export function GeneratorPanel(
   {
@@ -549,7 +549,7 @@ export function GeneratorPanel(
     // The URL still names the outgoing board's solution — it doesn't apply to
     // the incoming one. Clearing it through the router keeps the board's href
     // in step without a navigation.
-    updateLocation("/puzzles/new", { replace: true });
+    updateLocation("/puzzles/generate", { replace: true });
     mode.value = "readonly";
     selected.value = null;
     // A fresh draw per run, so rerolling walks the range instead of hammering
@@ -585,7 +585,7 @@ export function GeneratorPanel(
 
   const onEdit = useCallback(async () => {
     await storeCandidate();
-    globalThis.location.href = "/puzzles/edit";
+    globalThis.location.href = "/puzzles/new";
   }, [storeCandidate]);
 
   const onPreview = useCallback(async () => {
