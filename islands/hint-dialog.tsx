@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { Dialog } from "./dialog.tsx";
 import { hintUsed } from "#/client/hint-signals.ts";
 import { ArrowCounterClockwise, Icon } from "#/components/icons.tsx";
-import { decodeMove } from "#/game/strings.ts";
+import { decodeMove, encodeMove } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import {
   decodeState,
@@ -83,9 +83,8 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
       totalMoves > minMoves + 2;
   }, [solveState, minMoves, remainingMoves]);
 
-  // Closing is what commits the hint to the URL, so the board highlights the
-  // move as the dialog goes away. encodeState rebuilds the params from scratch,
-  // dropping `dialog` and `remaining` on the way out.
+  // Closing just clears the dialog: encodeState rebuilds the params from
+  // scratch, dropping `dialog` and `remaining` while keeping the hint.
   const closeModal = () => {
     const url = new URL(href.value);
     const hint = solveState?.status === "done"
@@ -94,6 +93,20 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
     url.search = encodeState({ ...gameState, hint });
     updateLocation(url.href);
   };
+
+  // Highlight the move as soon as it lands, so the board updates behind the
+  // open dialog. Replaces rather than pushes — the hint isn't a step worth
+  // walking back through.
+  useEffect(() => {
+    if (solveState?.status !== "done") return;
+
+    const url = new URL(href.value);
+    const hint = encodeMove(solveState.hint);
+    if (url.searchParams.get("hint") === hint) return;
+
+    url.searchParams.set("hint", hint);
+    updateLocation(url.href, { replace: true });
+  }, [solveState]);
 
   // React to ?dialog=hint appearing in the URL. The hint route is the only
   // source of a solution; this asks it for JSON instead of following its
