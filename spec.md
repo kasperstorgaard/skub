@@ -32,16 +32,19 @@ Three words, one meaning each. Conflating them is what produced the current
 tangle:
 
 - **Analysis** is a *function* — metrics and a score over a board. Gates call it,
-  the page calls it, the scripts call it. It owns no directory and no lifecycle.
-- **Candidacy** is a *state* — a board proposed but not yet approved. This is
-  what gets a directory.
+  the page calls it, the scripts call it. It owns no directory, no route and no
+  lifecycle, which is why the page isn't named after it.
+- **Candidacy** is a *state* — a board proposed but not yet approved. That's what
+  gets a directory (`candidates/`) and a route (`/candidate`).
 - **Anchor** is a *role* — a rated candidate used as a fixed point when checking
   how well the composite tracks human judgement.
 
 ### Pipeline
 
 ```
-draft (KV, per-user)  →  Propose  →  candidates/  →  approve  →  static/puzzles/
+draft (KV, per-user)  →  Propose  ─┐
+generation (gates passed)  ────────┼→  /candidate  →  candidates/  →  static/puzzles/
+an existing puzzle  ───────────────┘
 ```
 
 Generated boards enter one stage later: passing the gates is what earns them
@@ -84,12 +87,28 @@ close to free — it falls out of the backfill — and it's the cheapest evidenc
 available about which gates are miscalibrated. It also matters ahead of tiling,
 since tile-assembled boards will be judged by these same gates.
 
-### `/analyse`
+### `/candidate` — one destination, three ways in
 
-Reached from the editor, which already has an entry path from any existing puzzle
-via clone. The action is **Propose**: it commits the board to `candidates/` and
-shows the analysis. Deliberate, so idle fiddling in the editor never lands in the
-store.
+Every board that becomes a candidate arrives at the same page, whatever made it:
+
+- **Generation** hands off to it. `/puzzles/generate` keeps the knobs and the
+  run, and stops being a destination — a candidate that clears the gates lands
+  here like any other.
+- **The editor** reaches it via **Propose**, a deliberate act so that idle
+  fiddling never lands in the store.
+- **An existing puzzle** reaches it directly, which is what makes the shipped
+  corpus ratable and is the point of the whole exercise.
+
+Today the generator owns a private version of this view — the score readout in
+`generator-panel.tsx` already renders the composite, the mean and spread across
+routes, and per-route replay, but only for a freshly generated candidate. That
+readout, working for any board, *is* this page. It isn't new work so much as
+work that needs lifting out of the generator.
+
+So the page owes: the board, its analysis, **every distinct solution scored and
+replayable**, and the feedback controls. That per-solution list is load-bearing
+rather than a nicety — it's what a curator judges, and per
+`[[per-solution-scoring-direction]]` the solution is the future scoring unit.
 
 Note that clone currently mangles identity on purpose — it zeroes `minMoves`,
 resets `createdAt`, and renames to "Untitled" outside dev. That's right for
@@ -101,7 +120,15 @@ The page solves server-side and renders a finished result, so it needs no island
 Solving and playing live on the same page. Analysis says whether a board *scores*
 well; playing it says how it *feels*, and the whole reason for this work is that
 those two have drifted apart. Dropping the human loop while trying to realign
-them would throw away the signal. `/puzzles/preview` retires into this page.
+them would throw away the signal.
+
+Three things retire into this page. `/puzzles/preview` becomes redundant once
+you can play a board and read its analysis in one place. `SolveDialog` — the
+dev-only "solve it for me" that writes one solution into the URL — is strictly
+worse than a scored, replayable list of all of them. And with that gone,
+`/api/solve` has no caller at all, so the board-solving endpoint, its worker and
+the client stream go with it, leaving the solver reachable only from
+`update-puzzles` and the gated hint route.
 
 ### Retiring the anchors hardcode
 
@@ -137,11 +164,18 @@ generation.
 
 ## Scope
 
-New: `/analyse` route, the Propose action, `source` on stored candidates, a
+New: `/candidate` route, the Propose action, `source` on stored candidates, a
 split of `checkGates` into generation-loop and quality halves, a corpus gate
 audit script.
+
+Moved: the per-route score readout and replay out of `generator-panel.tsx` and
+onto `/candidate`, so it serves any board rather than only a fresh candidate.
+`/puzzles/generate` keeps generation and hands off.
 
 Renamed: `generated/` → `candidates/`, with `GENERATED_DIR`, `parseGenerated`,
 `formatGenerated` and the Vite watch-ignore entry following.
 
-Retired: `/puzzles/preview`, the `ANCHORS` hardcode in `check-anchors`.
+Retired: `/puzzles/preview`, the `ANCHORS` hardcode in `check-anchors`,
+`SolveDialog`, and with its last caller gone — `routes/api/solve.ts`,
+`client/use-solve-stream.ts`, `game/solver-worker.ts` and the
+`workerBundle("solver-worker")` line in `vite.config.ts`.
