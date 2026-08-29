@@ -1,20 +1,24 @@
 import type { Signal } from "@preact/signals";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { Dialog } from "./dialog.tsx";
-import { useSolveStream } from "#/client/use-solve-stream.ts";
+import { hintUsed } from "#/client/hint-signals.ts";
 import { ArrowCounterClockwise, Icon } from "#/components/icons.tsx";
-import { resolveMoves } from "#/game/board.ts";
-import { encodeMove } from "#/game/strings.ts";
+import { decodeMove, encodeMove } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
-import { decodeState, encodeState, getResetHref } from "#/game/url.ts";
+import {
+  decodeState,
+  encodeState,
+  getHintHref,
+  getResetHref,
+} from "#/game/url.ts";
 import { useRouter } from "#/islands/router.tsx";
+
+// How long the searching state holds. The server answers in well under this,
+// so it's reading time for a state that would otherwise flash past. Coupled to
+// the searching copy, which is written for a pause this long — change both or
+// neither. Goes when hints become time-based assistance and show instantly.
+const MIN_THINK_MS = 3000;
 
 type Props = {
   puzzle: Signal<Puzzle>;
@@ -27,20 +31,16 @@ type SolveState = {
   status: "solving";
 } | {
   status: "done";
-  moves: Move[];
+  hint: Move;
+  remaining: number;
 } | {
   status: "error";
 };
 
-// Minimum time the solving state is shown so the hint feels earned
-// rather than instant — slow puzzles already exceed this naturally.
-const MIN_THINK_MS = 3000;
-
 export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   const gameState = useMemo(() => decodeState(href.value), [href.value]);
   const minMoves = puzzle.value.minMoves;
-  const [solveState, setSolveState] = useState<SolveState | null>(null);
-  const minThinkRef = useRef<Promise<void> | null>(null);
+  const [fetched, setFetched] = useState<SolveState | null>(null);
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -53,6 +53,18 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
     return url.searchParams.get("dialog") === "hint";
   }, [href.value]);
 
+  // The hint route's answer, carried in the URL by its redirect. Derived during
+  // render because effects don't run without JS, where this is the only state
+  // the dialog has.
+  const served = useMemo((): SolveState | null => {
+    const remaining = Number(new URL(href.value).searchParams.get("remaining"));
+    return gameState.hint && remaining > 0
+      ? { status: "done", hint: gameState.hint, remaining }
+      : null;
+  }, [href.value, gameState.hint]);
+
+  const solveState = fetched ?? served;
+
   const moves = useMemo(
     () => gameState.moves.slice(0, gameState.cursor ?? gameState.moves.length),
     [
@@ -62,7 +74,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   );
 
   const remainingMoves = useMemo(
-    () => solveState?.status === "done" ? solveState.moves.length : 0,
+    () => solveState?.status === "done" ? solveState.remaining : 0,
     [solveState],
   );
 
@@ -84,47 +96,81 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
       totalMoves > minMoves + 2;
   }, [solveState, minMoves, remainingMoves]);
 
-  const closeModal = () => {
+  // Closing just clears the dialog: encodeState rebuilds the params from
+  // scratch, dropping `dialog` and `remaining` while keeping the hint. Exposed
+  // as an href too, so the dismiss controls are links that still work with no
+  // JS to intercept them.
+  const closeHref = useMemo(() => {
     const url = new URL(href.value);
-    // Clear all non-relevant state and update url
-    url.search = encodeState(gameState);
-    updateLocation(url.href);
-  };
+    const hint = solveState?.status === "done"
+      ? solveState.hint
+      : gameState.hint;
+    url.search = encodeState({ ...gameState, hint });
+    return url.href;
+  }, [href.value, gameState, solveState]);
 
-  const { start: startSolve, cancel: cancelSolve } = useSolveStream((event) => {
-    if (event.type === "solution") {
-      const { moves } = event;
-      minThinkRef.current?.then(() => setSolveState({ status: "done", moves }));
-    } else if (event.type === "error") {
-      setSolveState({ status: "error" });
-    }
-  });
+  const closeModal = () => updateLocation(closeHref);
 
-  // React to ?dialog=hint appearing in the URL (set by the server-side hint route)
-  useEffect(() => {
-    if (!open) {
-      setSolveState(null);
-      return;
-    }
-
-    setSolveState({ status: "solving" });
-    minThinkRef.current = new Promise<void>((resolve) =>
-      setTimeout(resolve, MIN_THINK_MS)
-    );
-
-    const board = resolveMoves(puzzle.value.board, moves);
-    startSolve(board);
-
-    return cancelSolve;
-  }, [open]);
-
+  // Highlight the move as soon as it lands, so the board updates behind the
+  // open dialog. Replaces rather than pushes — the hint isn't a step worth
+  // walking back through.
   useEffect(() => {
     if (solveState?.status !== "done") return;
 
     const url = new URL(href.value);
-    url.searchParams.set("hint", encodeMove(solveState.moves[0]));
-    updateLocation(url.href);
+    const hint = encodeMove(solveState.hint);
+    if (url.searchParams.get("hint") === hint) return;
+
+    url.searchParams.set("hint", hint);
+    updateLocation(url.href, { replace: true });
   }, [solveState]);
+
+  // React to ?dialog=hint appearing in the URL. The hint route is the only
+  // source of a solution; this asks it for JSON instead of following its
+  // redirect, so the dialog can open before the answer arrives.
+  useEffect(() => {
+    if (!open) {
+      setFetched(null);
+      return;
+    }
+
+    // Already answered by the route's redirect — `served` covers the render.
+    if (served) return;
+
+    const controller = new AbortController();
+    setFetched({ status: "solving" });
+
+    const minThink = new Promise<void>((resolve) =>
+      setTimeout(resolve, MIN_THINK_MS)
+    );
+
+    fetch(getHintHref(href.value), {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    })
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject(response.status)
+      )
+      .then(async (data: { hint: string; remaining: number }) => {
+        await minThink;
+        if (controller.signal.aborted) return;
+        hintUsed.value = true;
+        setFetched({
+          status: "done",
+          hint: decodeMove(data.hint),
+          remaining: data.remaining,
+        });
+      })
+      .catch((status: unknown) => {
+        if (controller.signal.aborted) return;
+        // A 400 is the spent allowance. Either way no hint is coming, so the
+        // button should retire.
+        if (status === 400) hintUsed.value = true;
+        setFetched({ status: "error" });
+      });
+
+    return () => controller.abort();
+  }, [open]);
 
   return (
     <Dialog open={open}>
@@ -178,14 +224,16 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
                 Start over
               </a>
 
-              <button
-                type="button"
+              <a
+                href={closeHref}
                 className="link p-0 bg-transparent"
-                disabled={!open}
-                onClick={closeModal}
+                onClick={(event) => {
+                  event.preventDefault();
+                  closeModal();
+                }}
               >
                 Keep going
-              </button>
+              </a>
             </div>
           </>
         )}
@@ -205,14 +253,16 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
             </p>
 
             <div class="flex items-center gap-fl-2 mt-fl-1">
-              <button
-                type="button"
+              <a
+                href={closeHref}
                 className="btn"
-                disabled={!open}
-                onClick={closeModal}
+                onClick={(event) => {
+                  event.preventDefault();
+                  closeModal();
+                }}
               >
                 Got it
-              </button>
+              </a>
             </div>
           </>
         )}
@@ -220,11 +270,11 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
         {solveState?.status === "error" && (
           <>
             <h2 class="text-4 text-text-1 font-semibold leading-tight">
-              Something went wrong
+              No hint this time
             </h2>
 
             <p>
-              The solver couldn't find a solution. Try again later.
+              Couldn't get a hint right now.
             </p>
 
             <div class="flex items-center gap-fl-2 mt-fl-1">

@@ -27,6 +27,12 @@ type SolveState = {
   status: "error";
 };
 
+/**
+ * Dev-only "solve it for me": runs the solver and writes the whole solution
+ * into the URL. Due to go — once every puzzle is proposed as a candidate, that
+ * view shows all its solutions, scored and replayable, which is strictly more
+ * than this. Removing it also retires /api/solve, its only caller.
+ */
 export function SolveDialog({ puzzle, href }: Props) {
   const gameState = useMemo(() => decodeState(href.value), [href.value]);
 

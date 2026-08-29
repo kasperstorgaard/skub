@@ -13,8 +13,16 @@ const workerUrl = isDev
 const encoder = new TextEncoder();
 const encode = encoder.encode.bind(encoder);
 
+// Dev-only. Gameplay hints solve inside the gated /puzzles/:slug/hint route and
+// puzzle move counts come from `update-puzzles`, so nothing in production posts
+// a board here — and an open board-solving endpoint is unbounded compute on
+// unvalidated input.
 export const handler = define.handlers({
   async POST(ctx) {
+    if (!isDev) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
     const board = await ctx.req.json() as Board;
 
     const worker = new Worker(workerUrl, { type: "module" });

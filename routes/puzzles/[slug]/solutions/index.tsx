@@ -3,6 +3,7 @@ import clsx from "clsx/lite";
 import { page } from "fresh";
 import { useMemo } from "preact/hooks";
 
+import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Icon, Play, Shuffle, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
@@ -15,7 +16,6 @@ import {
 import { CanonicalGroup } from "#/db/types.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { Puzzle } from "#/game/types.ts";
-import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
@@ -101,7 +101,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             </p>
           </div>
 
-          <DifficultyBadge puzzle={puzzle} />
+          <DifficultyBadge puzzle={puzzle.value} />
         </div>
 
         {

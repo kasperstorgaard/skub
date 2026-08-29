@@ -730,6 +730,18 @@
     opacity: 0;
   }
 
+  /* No JS means no showModal(), so the dialog renders non-modal: absolutely
+     positioned by the UA, with no backdrop. Centre it the way the modal
+     version lands, and drop the default border. */
+  :root:not([data-js]) dialog[data-modal][open] {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: fit-content;
+    height: fit-content;
+    border: 0;
+  }
+
   /* Not supported in tailwind yet, so we add it here */
   @starting-style {
     dialog[open] {

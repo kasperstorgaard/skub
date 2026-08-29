@@ -4,6 +4,7 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
+import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
@@ -25,7 +26,6 @@ import {
   CelebrationDialog,
 } from "#/islands/celebration-dialog.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
-import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
@@ -187,7 +187,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           </h1>
 
           <DifficultyBadge
-            puzzle={puzzle}
+            puzzle={puzzle.value}
             hideMinMoves={!props.data.hasSolved}
             className="lg:mt-1"
           />
@@ -219,7 +219,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         hintCount={props.data.hintCount}
         isDev={isDev}
         showEdit={props.data.showEdit}
-        skillLevel={props.state.user.skillLevel}
         className="print:hidden"
       />
 
@@ -241,7 +240,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         hideMinMoves={!props.data.hasSolved}
       />
-      <SolveDialog puzzle={puzzle} href={href} />
+      {/* Builder tool: no UI opens it, and it hands over the whole solution. */}
+      {isDev && <SolveDialog puzzle={puzzle} href={href} />}
 
       <SolutionDialog
         href={href}
