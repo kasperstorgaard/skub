@@ -1,19 +1,17 @@
 import type { Signal } from "@preact/signals";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { Dialog } from "./dialog.tsx";
-import { useSolveStream } from "#/client/use-solve-stream.ts";
+import { hintUsed } from "#/client/hint-signals.ts";
 import { ArrowCounterClockwise, Icon } from "#/components/icons.tsx";
-import { resolveMoves } from "#/game/board.ts";
-import { encodeMove } from "#/game/strings.ts";
+import { decodeMove } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
-import { decodeState, encodeState, getResetHref } from "#/game/url.ts";
+import {
+  decodeState,
+  encodeState,
+  getHintHref,
+  getResetHref,
+} from "#/game/url.ts";
 import { useRouter } from "#/islands/router.tsx";
 
 type Props = {
@@ -27,20 +25,21 @@ type SolveState = {
   status: "solving";
 } | {
   status: "done";
-  moves: Move[];
+  hint: Move;
+  remaining: number;
 } | {
   status: "error";
 };
 
-// Minimum time the solving state is shown so the hint feels earned
-// rather than instant — slow puzzles already exceed this naturally.
+// Minimum time the solving state is shown so the hint feels earned rather than
+// instant. Pure presentation now that the solve is server-side — the round trip
+// usually costs less than this.
 const MIN_THINK_MS = 3000;
 
 export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   const gameState = useMemo(() => decodeState(href.value), [href.value]);
   const minMoves = puzzle.value.minMoves;
   const [solveState, setSolveState] = useState<SolveState | null>(null);
-  const minThinkRef = useRef<Promise<void> | null>(null);
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -62,7 +61,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   );
 
   const remainingMoves = useMemo(
-    () => solveState?.status === "done" ? solveState.moves.length : 0,
+    () => solveState?.status === "done" ? solveState.remaining : 0,
     [solveState],
   );
 
@@ -84,47 +83,64 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
       totalMoves > minMoves + 2;
   }, [solveState, minMoves, remainingMoves]);
 
+  // Closing is what commits the hint to the URL, so the board highlights the
+  // move as the dialog goes away. encodeState rebuilds the params from scratch,
+  // dropping `dialog` and `remaining` on the way out.
   const closeModal = () => {
     const url = new URL(href.value);
-    // Clear all non-relevant state and update url
-    url.search = encodeState(gameState);
+    const hint = solveState?.status === "done"
+      ? solveState.hint
+      : gameState.hint;
+    url.search = encodeState({ ...gameState, hint });
     updateLocation(url.href);
   };
 
-  const { start: startSolve, cancel: cancelSolve } = useSolveStream((event) => {
-    if (event.type === "solution") {
-      const { moves } = event;
-      minThinkRef.current?.then(() => setSolveState({ status: "done", moves }));
-    } else if (event.type === "error") {
-      setSolveState({ status: "error" });
-    }
-  });
-
-  // React to ?dialog=hint appearing in the URL (set by the server-side hint route)
+  // React to ?dialog=hint appearing in the URL. The hint route is the only
+  // source of a solution; this asks it for JSON instead of following its
+  // redirect, so the dialog can open before the answer arrives.
   useEffect(() => {
     if (!open) {
       setSolveState(null);
       return;
     }
 
+    // The no-JS path already came back solved, via the route's redirect.
+    const remaining = Number(new URL(href.value).searchParams.get("remaining"));
+    if (gameState.hint && remaining > 0) {
+      setSolveState({ status: "done", hint: gameState.hint, remaining });
+      return;
+    }
+
+    const controller = new AbortController();
     setSolveState({ status: "solving" });
-    minThinkRef.current = new Promise<void>((resolve) =>
+
+    const minThink = new Promise<void>((resolve) =>
       setTimeout(resolve, MIN_THINK_MS)
     );
 
-    const board = resolveMoves(puzzle.value.board, moves);
-    startSolve(board);
+    fetch(getHintHref(href.value), {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    })
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject(response.status)
+      )
+      .then(async (data: { hint: string; remaining: number }) => {
+        await minThink;
+        if (controller.signal.aborted) return;
+        hintUsed.value = true;
+        setSolveState({
+          status: "done",
+          hint: decodeMove(data.hint),
+          remaining: data.remaining,
+        });
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSolveState({ status: "error" });
+      });
 
-    return cancelSolve;
+    return () => controller.abort();
   }, [open]);
-
-  useEffect(() => {
-    if (solveState?.status !== "done") return;
-
-    const url = new URL(href.value);
-    url.searchParams.set("hint", encodeMove(solveState.moves[0]));
-    updateLocation(url.href);
-  }, [solveState]);
 
   return (
     <Dialog open={open}>

@@ -2,6 +2,7 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useCallback, useEffect, useMemo } from "preact/hooks";
 
+import { hintUsed } from "#/client/hint-signals.ts";
 import { useGameShortcuts } from "#/client/keyboard.ts";
 import {
   ArrowArcLeft,
@@ -47,9 +48,11 @@ export function ControlsPanel(
   }: ControlsPanelProps,
 ) {
   const hintLimit = 1;
+  // hintCount is server-rendered, so a hint taken without a reload only shows
+  // up in the signal.
   const hintDisabled = !isDev && !isPreview &&
     skillLevel !== null && skillLevel !== "beginner" &&
-    (hintCount ?? 0) >= hintLimit;
+    (hintCount ?? 0) + (hintUsed.value ? 1 : 0) >= hintLimit;
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -64,14 +67,21 @@ export function ControlsPanel(
     href.value,
   ]);
 
+  // Opens the dialog straight away and lets it fetch the hint, rather than
+  // waiting on the route's redirect. The anchor keeps its href so the no-JS
+  // path still navigates and comes back with the hint in the URL.
+  const onHint = useCallback(() => {
+    if (hintDisabled) return;
+    const url = new URL(href.value);
+    url.searchParams.set("dialog", "hint");
+    updateLocation(url.href);
+  }, [href.value, hintDisabled]);
+
   useGameShortcuts({
     onUndo: () => self.history.back(),
     onRedo: () => self.history.forward(),
     onReset,
-    onHint: () => {
-      if (hintDisabled) return;
-      globalThis.location.href = getHintHref(href.value);
-    },
+    onHint,
   });
 
   // Clear game state before print
@@ -155,9 +165,8 @@ export function ControlsPanel(
           >
             {
               /*
-            Navigates to the /hint route,
-            which provides a hint as a redirect back in the query params.
-            This is slightly expensive, so needs to be on demand, not optimistic.
+            The /hint route solves server-side and redirects back with the hint
+            in the query params. Solving is expensive, so it stays on demand.
           */
             }
             {puzzle.value.slug !== "preview" && (
@@ -165,9 +174,9 @@ export function ControlsPanel(
                 href={hintDisabled ? "#" : getHintHref(href.value)}
                 aria-disabled={hintDisabled ? true : undefined}
                 onClick={(event) => {
-                  if (hintDisabled) event.preventDefault();
+                  event.preventDefault();
+                  onHint();
                 }}
-                className="noscript:hidden"
               >
                 {!hintDisabled
                   ? "Get a hint"
