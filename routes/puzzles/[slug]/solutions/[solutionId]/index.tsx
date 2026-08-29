@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
+import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
@@ -11,7 +12,6 @@ import { Solution } from "#/db/types.ts";
 import { Puzzle } from "#/game/types.ts";
 import { encodeState } from "#/game/url.ts";
 import Board from "#/islands/board.tsx";
-import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
@@ -72,7 +72,7 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             </p>
           </div>
 
-          <DifficultyBadge puzzle={puzzle} className="lg:mt-1" />
+          <DifficultyBadge puzzle={puzzle.value} className="lg:mt-1" />
         </div>
 
         <Board puzzle={puzzle} href={href} mode={mode} />

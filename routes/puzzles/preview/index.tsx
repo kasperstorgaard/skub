@@ -3,6 +3,7 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
+import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
@@ -11,7 +12,6 @@ import { getUserPuzzleDraft } from "#/db/user.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
-import { DifficultyBadge } from "#/islands/difficulty-badge.tsx";
 import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 
@@ -64,7 +64,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
             <span className="font-5">{props.data.puzzle.name}</span>
           </h1>
 
-          <DifficultyBadge puzzle={puzzle} className="lg:mt-1" />
+          <DifficultyBadge puzzle={puzzle.value} className="lg:mt-1" />
         </div>
 
         <Board href={href} puzzle={puzzle} mode={mode} />
