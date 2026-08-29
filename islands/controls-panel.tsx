@@ -14,7 +14,7 @@ import {
   Ranking,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { Puzzle, SkillLevel } from "#/game/types.ts";
+import { Puzzle } from "#/game/types.ts";
 import {
   decodeState,
   getHintHref,
@@ -31,7 +31,6 @@ type ControlsPanelProps = {
   showEdit?: boolean;
   hintCount?: number;
   isPreview?: boolean;
-  skillLevel?: SkillLevel | null;
   className?: string;
 };
 
@@ -43,15 +42,15 @@ export function ControlsPanel(
     showEdit,
     hintCount,
     isPreview,
-    skillLevel = "intermediate",
     className,
   }: ControlsPanelProps,
 ) {
   const hintLimit = 1;
-  // hintCount is server-rendered, so a hint taken without a reload only shows
-  // up in the signal.
+  // Mirrors the hint route's own gate. Exempting beginners here only ever
+  // produced a button that stayed lit and then failed, since the route limits
+  // everyone. hintCount is server-rendered, so a hint taken without a reload
+  // shows up in the signal instead.
   const hintDisabled = !isDev && !isPreview &&
-    skillLevel !== null && skillLevel !== "beginner" &&
     (hintCount ?? 0) + (hintUsed.value ? 1 : 0) >= hintLimit;
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
@@ -178,11 +177,7 @@ export function ControlsPanel(
                   onHint();
                 }}
               >
-                {!hintDisabled
-                  ? "Get a hint"
-                  : puzzle.value.difficulty === "easy"
-                  ? "Hints used"
-                  : "Hint used"}
+                {hintDisabled ? "Hint used" : "Get a hint"}
               </a>
             )}
 

@@ -29,6 +29,8 @@ type SolveState = {
   remaining: number;
 } | {
   status: "error";
+  /** The allowance was already spent, rather than the solve failing. */
+  spent?: boolean;
 };
 
 // Minimum time the solving state is shown so the hint feels earned rather than
@@ -160,8 +162,12 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
           remaining: data.remaining,
         });
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setFetched({ status: "error" });
+      .catch((status: unknown) => {
+        if (controller.signal.aborted) return;
+        // 400 is the route's hint limit, not a solver failure. Record it so the
+        // button retires even though no hint came back.
+        if (status === 400) hintUsed.value = true;
+        setFetched({ status: "error", spent: status === 400 });
       });
 
     return () => controller.abort();
@@ -265,11 +271,13 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
         {solveState?.status === "error" && (
           <>
             <h2 class="text-4 text-text-1 font-semibold leading-tight">
-              Something went wrong
+              {solveState.spent ? "Hint already used" : "Something went wrong"}
             </h2>
 
             <p>
-              The solver couldn't find a solution. Try again later.
+              {solveState.spent
+                ? "That's the one hint for this puzzle today."
+                : "The solver couldn't find a solution. Try again later."}
             </p>
 
             <div class="flex items-center gap-fl-2 mt-fl-1">

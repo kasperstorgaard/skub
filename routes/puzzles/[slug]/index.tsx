@@ -219,7 +219,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         hintCount={props.data.hintCount}
         isDev={isDev}
         showEdit={props.data.showEdit}
-        skillLevel={props.state.user.skillLevel}
         className="print:hidden"
       />
 
