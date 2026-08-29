@@ -11,8 +11,7 @@ type DifficultyBadgeProps = {
 
 /**
  * Difficulty label plus the shortest solution's length, both "?" until they're
- * known. Nothing here solves: a puzzle under construction gets its count from
- * `update-puzzles`, and a player's only route to a solution is the hint.
+ * known. A puzzle still being built gets its count from `update-puzzles`.
  */
 export function DifficultyBadge(
   { puzzle, hideMinMoves, className }: DifficultyBadgeProps,

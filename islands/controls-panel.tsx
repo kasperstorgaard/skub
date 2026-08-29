@@ -46,10 +46,8 @@ export function ControlsPanel(
   }: ControlsPanelProps,
 ) {
   const hintLimit = 1;
-  // Mirrors the hint route's own gate. Exempting beginners here only ever
-  // produced a button that stayed lit and then failed, since the route limits
-  // everyone. hintCount is server-rendered, so a hint taken without a reload
-  // shows up in the signal instead.
+  // Mirrors the hint route's gate. hintCount is server-rendered and the
+  // enhanced path never reloads, so a hint taken here shows up in the signal.
   const hintDisabled = !isDev && !isPreview &&
     (hintCount ?? 0) + (hintUsed.value ? 1 : 0) >= hintLimit;
 

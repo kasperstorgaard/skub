@@ -54,8 +54,8 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
   }, [href.value]);
 
   // The hint route's answer, carried in the URL by its redirect. Derived during
-  // render rather than in an effect, so a no-JS page has something to show —
-  // effects never run there, and the dialog would otherwise render empty.
+  // render because effects don't run without JS, where this is the only state
+  // the dialog has.
   const served = useMemo((): SolveState | null => {
     const remaining = Number(new URL(href.value).searchParams.get("remaining"));
     return gameState.hint && remaining > 0

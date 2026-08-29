@@ -12,10 +12,9 @@ import { trackHintRequested } from "#/lib/tracking.ts";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 /**
- * The single door to a hint: the gate and the solve live together, so the limit
- * can't be walked around by calling the solver directly. Serves two
- * representations of the same result — JSON for the dialog's client-side
- * enhancement, a 303 back to the puzzle for the no-JS path.
+ * The one place a hint comes from, so the allowance is checked wherever one is
+ * produced. Serves two representations of the same result — JSON for the
+ * dialog's client-side enhancement, a 303 back to the puzzle without JS.
  */
 export const handler = define.handlers({
   async GET(ctx) {
