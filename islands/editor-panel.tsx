@@ -32,7 +32,7 @@ type EditorPanelProps = {
  * Side panel for the puzzle editor.
  * Provides board transform actions (rotate, flip), a clear action, and — in
  * dev — a save button that writes directly to static puzzles. Generation lives
- * on the separate generator route (`/puzzles/new`).
+ * on the separate generator route (`/puzzles/generate`), which is dev-only.
  */
 export function EditorPanel(
   { puzzle, href, isDev }: EditorPanelProps,
@@ -161,10 +161,12 @@ export function EditorPanel(
             Clear
           </button>
 
-          <a href="/puzzles/new" className="btn">
-            <Icon icon={Shuffle} />
-            Generate
-          </a>
+          {isDev && (
+            <a href="/puzzles/generate" className="btn">
+              <Icon icon={Shuffle} />
+              Generate
+            </a>
+          )}
         </div>
 
         <div className="flex flex-col flex-wrap gap-fl-1">
