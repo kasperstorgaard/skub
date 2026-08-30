@@ -17,7 +17,7 @@ export const CANDIDATES_DIR = "candidates";
 /**
  * Qualitative reasons a curator can tag a *board* with — how the layout looks
  * and sits, which is the only thing this level is asked to judge. Each maps
- * loosely to a board-scope metric the `check-anchors` separation report tests:
+ * loosely to a board-scope metric the `check-calibration` separation report tests:
  * empty-areas → `emptyRegion`, clumped → `clumping`, pretty/ugly →
  * `wallSymmetry`. `ugly` is not just "not pretty": most boards are neither, so
  * a tag that only marks the good ones leaves the bad ones and the unremarkable

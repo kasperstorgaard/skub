@@ -21,18 +21,10 @@ type CandidateFeedbackProps = {
 const NOTE_DEBOUNCE_MS = 800;
 
 /**
- * Board-adjacent curation feedback for a candidate. Shows a star rating, the
- * curator's difficulty call and an always-available note; once rated, reveals
- * reason tags. Every change is patched onto the candidate's file in the
- * `candidates/` store (dev-only).
- *
- * Seeded from the server-rendered candidate: the page is what changes when a
- * different board is being rated, so a navigation is what resets the form —
- * feedback never bleeds between boards.
- *
- * Difficulty isn't here: it follows the move count now, pending a decision
- * about what should set it. Labels already on disk keep whatever a curator gave
- * them back when this offered the choice.
+ * Board-level curation feedback for a candidate: a star rating, an
+ * always-available note, and reason tags once rated. Every change is patched
+ * onto the candidate's file in the `candidates/` store (dev-only). Seeded from
+ * the server-rendered candidate, so a navigation resets the form.
  */
 export function CandidateFeedback(
   { candidate, className }: CandidateFeedbackProps,
@@ -40,8 +32,7 @@ export function CandidateFeedback(
   const rating = useSignal<number | undefined>(candidate.rating);
   const reasons = useSignal<ReasonTag[]>(candidate.reasons ?? []);
   const note = useSignal(candidate.note ?? "");
-  // Set when a patch doesn't reach disk. A silent failure once cost a whole
-  // session's notes, so a failed save says so rather than being swallowed.
+  // Set when a patch doesn't reach disk, so a failed save is visible.
   const error = useSignal<string | null>(null);
 
   const patch = useCallback(async (feedback: Feedback) => {
@@ -88,8 +79,7 @@ export function CandidateFeedback(
     patch(current());
   }, [patch]);
 
-  // Saved while typing, not only on blur — a note the curator never clicked
-  // away from used to be lost entirely.
+  // Saved while typing, not only on blur.
   const saveNote = useDebouncedCallback(
     () => patch(current()),
     NOTE_DEBOUNCE_MS,

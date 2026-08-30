@@ -1,8 +1,6 @@
 /**
  * Prints the candidate store as a table — name, source, rating, reasons,
- * difficulty, minMoves, generator version — plus summary counts, so you can see
- * the curation set grow, spot unrated candidates, and shortlist the high-rated
- * boards without opening files.
+ * difficulty, minMoves, generator version — plus summary counts.
  *
  * Usage: `deno task list-candidates`
  */
@@ -86,16 +84,14 @@ for (const r of rows) {
     } ${pad(String(r.minMoves), 3)} ${pad(r.version, 5)} ${detail}`,
   );
 
-  // Routes the curator has labelled, under the puzzle they belong to — the
-  // rating is one verdict on the board, these say which solution earned it.
+  // Routes the curator has labelled, under the puzzle they belong to.
   for (const [moves, tags] of r.solutionTags) {
     console.log(`${" ".repeat(14)} └ ${pad(tags.join(", "), 22)} ${moves}`);
   }
 }
 
 const rated = rows.filter((r) => r.rating !== undefined);
-// Half steps make ten buckets, most of them empty in a small store — only the
-// ones that actually occur are worth a column.
+// Half steps make ten buckets; only the ones that occur get a column.
 const histogram = Array.from({ length: 10 }, (_, i) => (i + 1) / 2)
   .map((step) => ({
     step,

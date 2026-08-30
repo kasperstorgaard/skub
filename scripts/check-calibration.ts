@@ -5,20 +5,16 @@
  * visible), and per-metric ρ — the evidence base for promoting or demoting
  * composite terms.
  *
- * The anchors are no longer four hardcoded ratings: a corpus puzzle rated
- * through `/candidate` is a stored candidate like any other, tagged
- * `source: corpus`, so the shipped boards — the ones that represent "good" —
- * carry their ground truth in the same place as the generated ones.
- *
- * It also answers what `compare-generated` used to: which metrics separate the
- * boards a human kept from the ones they rejected. That's a rating-separation
- * question, so it lives here; the tables go to a report file, since they're too
- * wide to read in a terminal.
+ * Ground truth is the whole rated store: a corpus puzzle rated through
+ * `/candidate` is a stored candidate tagged `source: corpus`, so shipped and
+ * generated boards carry their ratings in the same place. The separation
+ * tables — which metrics split kept boards from rejected ones — go to a report
+ * file, being too wide for a terminal.
  *
  * Run after any `CALIBRATION` change. Solves are cached and
  * calibration-independent, so iterations cost seconds.
  *
- * Usage: `deno task check-anchors [outfile] [--timeout=60000]`
+ * Usage: `deno task check-calibration [outfile] [--timeout=60000]`
  */
 import {
   type Candidate,
@@ -109,8 +105,8 @@ console.log(`\nCalibration v${CALIBRATION.version} vs human judgement\n`);
 console.log("score  ★  name");
 console.log("-".repeat(34));
 for (const row of rows) {
-  const anchor = row.source === "corpus" ? " (corpus)" : "";
-  console.log(`${row.score.toFixed(3)}  ${row.rating}  ${row.name}${anchor}`);
+  const origin = row.source === "corpus" ? " (corpus)" : "";
+  console.log(`${row.score.toFixed(3)}  ${row.rating}  ${row.name}${origin}`);
 }
 
 const ratings = rows.map((row) => row.rating);

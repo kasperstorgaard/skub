@@ -38,10 +38,7 @@ let corpusHashCache: Set<string> | null = null;
 
 /**
  * Drops both corpus caches, for the one thing that changes `static/puzzles`
- * while the server is running: promoting a candidate. Without this the process
- * keeps serving the manifest it read at boot — the promoted puzzle wouldn't
- * appear in the archive, and the generator's novelty gate wouldn't know the
- * board exists, so it could hand back the one just promoted.
+ * while the server runs: promoting a candidate.
  */
 export function invalidateCorpus(): void {
   manifestCache = null;
@@ -81,14 +78,10 @@ export async function getCorpusNames(): Promise<Set<string>> {
 export type AvailableEntry = PuzzleManifestEntry & { isFuture: boolean };
 
 /**
- * Manifest entries available today: number <= day-of-year, onboarding excluded.
- * Locally the schedule doesn't apply — there's no point hiding tomorrow's
- * puzzle from the person who wrote it.
- *
- * Which means the local list mixes released and unreleased boards, so every
- * entry says which it is. Computed here rather than written into
- * `manifest.json`: "future" is a fact about today, and the manifest is only
- * regenerated on a build, so a stored flag would be a lie by the next midnight.
+ * Manifest entries available today: number <= day-of-year, onboarding
+ * excluded. The schedule doesn't apply locally, so the list mixes released and
+ * unreleased boards and every entry carries `isFuture`. Computed per request —
+ * the manifest is only regenerated on a build, so a stored flag would go stale.
  */
 export async function getAvailableEntries(): Promise<AvailableEntry[]> {
   const today = getTodaysPuzzleNumber();
@@ -205,12 +198,9 @@ export async function getDifficultyBreakdown(): Promise<
 }
 
 /**
- * The puzzle of the day: the newest one whose scheduled day has come.
- *
- * Filters the manifest itself rather than going through
- * `getAvailableEntries`, which locally hands back the whole schedule. That
- * widening is deliberate everywhere else — but the front page is what a player
- * sees, and today is today in dev too.
+ * The puzzle of the day: the newest one whose scheduled day has come. Filters
+ * the manifest directly — `getAvailableEntries` widens to the whole schedule
+ * locally, and the front page is what a player sees.
  */
 export async function getTodaysPuzzle() {
   const today = getTodaysPuzzleNumber();
@@ -230,8 +220,7 @@ type GetRandomPuzzleOptions = {
 
 /**
  * Gets a random puzzle from the pool matching the given difficulty options.
- * Never an unreleased one: this feeds the recommendation, and recommending a
- * board no player could reach would be a local-only phantom.
+ * Never an unreleased one — this feeds the recommendation.
  */
 export async function getRandomPuzzle(
   options: GetRandomPuzzleOptions,

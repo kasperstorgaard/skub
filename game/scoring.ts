@@ -1,5 +1,6 @@
 import {
   COLS,
+  encodeBoard,
   flipBoard,
   isPositionSame,
   resolveMoves,
@@ -76,31 +77,6 @@ function applyDihedral(board: Board, transform: DihedralTransform): Board {
     case "flipH_r270":
       return rotateBoard(flipBoard(board, "horizontal"), "left");
   }
-}
-
-/**
- * Encodes a board into a comparable numeric array:
- * `[puckPos, destPos, ...sortedBlockers, 255, ...sortedWalls]`, where positions
- * are `y*8+x` and walls are `(y*8+x)*2 + (horizontal ? 0 : 1)`. Blockers and walls
- * are sorted so array order never depends on input order.
- */
-function encodeBoard(board: Board): number[] {
-  const puck = board.pieces.find((p) => p.type === "puck")!;
-  const puckPos = puck.y * COLS + puck.x;
-  const destPos = board.destination.y * COLS + board.destination.x;
-
-  const blockers = board.pieces
-    .filter((p) => p.type === "blocker")
-    .map((p) => p.y * COLS + p.x)
-    .sort((a, b) => a - b);
-
-  const walls = board.walls
-    .map((w) =>
-      (w.y * COLS + w.x) * 2 + (w.orientation === "horizontal" ? 0 : 1)
-    )
-    .sort((a, b) => a - b);
-
-  return [puckPos, destPos, ...blockers, 255, ...walls];
 }
 
 /** Lexicographic comparison of two encodings; shorter is smaller when prefixes tie. */
@@ -591,7 +567,7 @@ function visitedCells(board: Board, solutions: Move[][]): Set<number> {
 /**
  * Dead space — fraction of the board's cells that no trail ever enters and that
  * hold no piece or the destination. High dead space means the puzzle huddles in
- * one region and wastes the board (cf. the `kim` anchor).
+ * one region and wastes the board (cf. the `kim` board).
  */
 export function deadSpace(board: Board, solutions: Move[][]): number {
   const cells = COLS * ROWS;
@@ -1056,7 +1032,7 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
  *
  * Split out so the generation loop can reject a hopeless layout without paying
  * for a solve; {@link checkQualityGates} runs it again as part of the full
- * verdict (both checks are O(pieces), so the repeat is free).
+ * verdict.
  */
 export function checkStaticGates(board: Board): GateResult {
   if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
@@ -1075,9 +1051,8 @@ export function checkStaticGates(board: Board): GateResult {
  *  - G7 wall utilization >= minWallUtilization(count) (wall-heavy requests looser)
  *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
  *
- * G7–G8 gate on board *economy* — clutter and wasted space — but, like G4–G6,
- * are measured across the puzzle's solutions (which cells trails enter, which
- * walls actually stop a piece), not from the static layout alone.
+ * G7–G8 gate board economy — clutter and wasted space — but like G4–G6 are
+ * measured across the puzzle's solutions, not from the static layout alone.
  */
 function checkSolvedGates(board: Board, result: SolverResult): GateResult {
   const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
@@ -1122,13 +1097,11 @@ function checkSolvedGates(board: Board, result: SolverResult): GateResult {
 
 /**
  * Whether a board is good enough to be a candidate, whatever made it: G9–G10
- * on the layout, then G4–G8 across its optimal solutions. Origin-independent by
- * construction — nothing here asks where the board came from — which is what
- * lets a hand-built puzzle be judged by the same bar as a generated one.
+ * on the layout, then G4–G8 across its optimal solutions. Nothing here asks
+ * where the board came from.
  *
- * Gate numbers are historical, order is by cost. All of these are hard rejects
- * during generation, but they do not constrain manual editing: a curator may
- * knowingly hand-craft a board that fails one.
+ * Gate numbers are historical, order is by cost. Hard rejects during
+ * generation, but no constraint on manual editing.
  */
 export function checkQualityGates(
   board: Board,
@@ -1150,10 +1123,9 @@ export type GenerationGateResult =
  *  - G2 minMoves is exactly `targetMoves`
  *  - G3 canonical hash not already in the corpus or this batch
  *
- * Both are vacuous or self-contradictory for a board that already exists — a
- * corpus puzzle fails G3 by definition — so they are no part of candidacy; see
- * {@link checkQualityGates} for that. The solve rides along on a pass, since
- * the quality gates need one and it's the expensive part.
+ * Meaningless for a board that already exists — a corpus puzzle fails G3 by
+ * definition — so they are no part of candidacy; see {@link checkQualityGates}.
+ * The solve rides along on a pass, being the expensive part.
  */
 export function checkGenerationGates(
   board: Board,
@@ -1223,7 +1195,7 @@ type Bound = (ctx: BoundCtx) => number;
  * into both the report body and its filename.
  *
  * v1 used theoretical maxes and came out *anti-correlated* with human judgement
- * — both the corpus anchors (erik > torstein > kim > malene) and the first
+ * — both the rated corpus boards (erik > torstein > kim > malene) and the first
  * labeled generated set (a 2★ board scored top, a 5★ board bottom) inverted.
  *
  * v2 was a conservative structural correction (dropped `firstMovePrecision`,
@@ -1232,7 +1204,7 @@ type Bound = (ctx: BoundCtx) => number;
  * ρ = 0.07).
  *
  * v3 prunes the composite down to the metrics the 39-board labeled set showed
- * actually track ratings (per-metric ρ from `check-anchors`):
+ * actually track ratings (per-metric ρ from `check-calibration`):
  *  - kept: `stopWeighted` (+0.38), `pieceUsage` (+0.27), `wallUtilization`
  *    (+0.19), `reversals` (+0.18), `searchProfile` (+0.12) — the "blockers and
  *    walls actually matter" cluster, matching the dominant human complaints
@@ -1256,7 +1228,7 @@ type Bound = (ctx: BoundCtx) => number;
  * `uniqueSolutions` tracks *easiness* (ρ +0.18) — so variety was a positive that
  * rewarded easy multi-solution boards while penalising the isolated-brilliant
  * profile (torstein, few solutions). Removing it lifted pooled ρ 0.373 → 0.488
- * and restored the anchor order (malene ≈ torstein ≫ erik > kim). Quality is
+ * and restored the corpus order (malene ≈ torstein ≫ erik > kim). Quality is
  * non-monotonic in solution count (both varied-malene and isolated-torstein are
  * 5★), so the varied side wants a difficulty-gated / U-shaped term, not a naive
  * "more solutions = better" — deferred until such a term is designed and earns

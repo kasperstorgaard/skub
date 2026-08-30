@@ -7,7 +7,7 @@
     "build": "vite build",
     "dev": "vite",
     "audit-gates": "deno run -A ./scripts/audit-gates.ts",
-    "check-anchors": "deno run -A ./scripts/check-anchors.ts",
+    "check-calibration": "deno run -A ./scripts/check-calibration.ts",
     "e2e": "deno test -A --no-check --env e2e/ routes/",
     "list-candidates": "deno run -A ./scripts/list-candidates.ts",
     "preview": "deno serve -A _fresh/server.js",

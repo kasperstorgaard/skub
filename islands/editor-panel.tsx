@@ -30,12 +30,8 @@ type EditorPanelProps = {
 /**
  * Side panel for the puzzle editor. Board transform actions (rotate, flip), a
  * clear action, and the ways out: Preview to play the draft, and — in dev —
- * Review, which files it as a candidate to be analysed and rated.
- *
- * Review is the only write. Save used to put a board straight into
- * `static/puzzles`, which skipped candidacy altogether; a board earns its way
- * into the corpus by being reviewed now. Generation lives on the separate
- * generator route (`/puzzles/generate`), also dev-only.
+ * Review, which files it as a candidate to be analysed and rated. Review is
+ * the panel's only write; the corpus write lives behind Promote.
  */
 export function EditorPanel(
   { puzzle, href, isDev }: EditorPanelProps,
@@ -44,13 +40,11 @@ export function EditorPanel(
     href.value = url.href;
   }, []);
 
-  // Keeps the shared href in step with client-side navigations; the panel
-  // doesn't navigate itself any more.
+  // Keeps the shared href in step with client-side navigations.
   useRouter({ onLocationUpdated });
 
-  // Autosave is debounced, and a navigation cancels the request in flight — so
-  // Review stores the board on screen first rather than trusting KV to be
-  // current. The href still works with JS off, where nothing is ever in flight.
+  // Autosave is debounced and a navigation cancels the request in flight, so
+  // Review stores the board on screen first. The href works with JS off too.
   const onReview = useCallback(async (e: Event) => {
     e.preventDefault();
     try {

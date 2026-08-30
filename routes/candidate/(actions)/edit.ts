@@ -6,10 +6,8 @@ import { readCandidate } from "#/game/candidate-store.ts";
 import { isDev } from "#/lib/env.ts";
 
 /**
- * Takes a candidate into the editor as the current draft. Identity travels
- * with it — unlike `clone`, which mangles name and move count on purpose for
- * remixing — because the way a candidate becomes a puzzle is being edited and
- * saved under the name it was rated under.
+ * Takes a candidate into the editor as the current draft, name and move count
+ * included — unlike `clone`, which strips both for remixing.
  */
 export const handler = define.handlers({
   async GET(ctx) {

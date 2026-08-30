@@ -1,17 +1,10 @@
 /**
  * Runs the quality gates over the hand-built corpus and reports what they
- * reject. Those boards shipped, so every rejection indicts the *gate*, not the
- * puzzle — this is the cheapest evidence available about which gates are
- * miscalibrated, and it matters ahead of tiling, since tile-assembled boards
- * will be judged by these same gates.
+ * reject. Those boards shipped, so every rejection indicts the gate, not the
+ * puzzle. Generation-loop gates (G1–G3) are excluded: they ask whether a run
+ * produced what it was asked for, which an existing board can't answer.
  *
- * Generation-loop gates (G1–G3) are no part of this: they ask whether a run
- * produced what it was asked for, which a board that already exists can't
- * answer — every corpus puzzle fails the novelty gate by definition.
- *
- * Solves are cached and shared with the other reports, so a re-run costs
- * seconds. The first run after the gate verdict was added to the cache re-solves
- * the corpus once.
+ * Solves are cached and shared with the other reports.
  *
  * Usage: `deno task audit-gates [--dir=static/puzzles] [--timeout=60000]`
  */

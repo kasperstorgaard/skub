@@ -39,6 +39,16 @@ export type GenerateEvent =
   | { type: "exhausted"; attempts: number }
   | { type: "error"; message: string };
 
+/**
+ * The dedicated-worker scope this module runs in. Typed locally because the
+ * worker libs can't be pulled in with a triple-slash `no-default-lib`, which
+ * applies to the whole program and would strip the unstable KV types from `db/`.
+ */
+const worker = self as unknown as {
+  onmessage: (event: MessageEvent<GenerateRequest>) => void;
+  postMessage: (event: GenerateEvent) => void;
+};
+
 const DEFAULT_MAX_GATE_ATTEMPTS = 500;
 
 /**
@@ -52,9 +62,7 @@ const GATE_MAX_STATES = 2_000_000;
 
 /**
  * One attempt's full verdict: the static quality gates, then the run's own
- * (G1–G3), then the solve-dependent quality gates. A generated board has to
- * clear both halves — the run's, to be what was asked for, and candidacy's, to
- * be worth keeping.
+ * (G1–G3), then the solve-dependent quality gates.
  */
 function gateBoard(
   board: Board,
@@ -67,8 +75,7 @@ function gateBoard(
   const generation = checkGenerationGates(board, {
     targetMoves,
     ...novelty,
-    // Reject branchy candidates fast so a single slow solve can't freeze the
-    // attempt counter — well above what a ≤6-piece board needs.
+    // Reject branchy boards fast, well above what a ≤6-piece board needs.
     maxStates: GATE_MAX_STATES,
   });
   if (!generation.passed) return generation;
@@ -88,7 +95,7 @@ function gateBoard(
  * skew short (roughly half of solvable boards come in under 5 moves, ~4% at
  * 9–10), so the higher targets legitimately take many more attempts.
  */
-self.onmessage = (e: MessageEvent<GenerateRequest>) => {
+worker.onmessage = (e: MessageEvent<GenerateRequest>) => {
   const {
     targetMoves,
     corpus,
@@ -105,7 +112,7 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
         ({ board } = generate(options));
       } catch {
         // Couldn't produce a valid board this round — count it and retry.
-        self.postMessage(
+        worker.postMessage(
           { type: "progress", attempts } satisfies GenerateEvent,
         );
         continue;
@@ -130,7 +137,7 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
           maxStates: GATE_MAX_STATES,
           overshoot: 2,
         });
-        self.postMessage(
+        worker.postMessage(
           {
             type: "result",
             board,
@@ -143,7 +150,7 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
         return;
       }
 
-      self.postMessage(
+      worker.postMessage(
         {
           type: "progress",
           attempts,
@@ -152,11 +159,11 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
       );
     }
 
-    self.postMessage(
+    worker.postMessage(
       { type: "exhausted", attempts: maxGateAttempts } satisfies GenerateEvent,
     );
   } catch (err) {
-    self.postMessage(
+    worker.postMessage(
       {
         type: "error",
         message: err instanceof Error ? err.message : "Generation failed",

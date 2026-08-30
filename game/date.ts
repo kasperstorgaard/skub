@@ -15,12 +15,8 @@ const toPlainDate = (date: Date | Temporal.PlainDate): Temporal.PlainDate =>
 
 /**
  * The schedule slot a date falls on — days since {@link FIRST_PUZZLE_DATE},
- * counting from 1.
- *
- * Counts on across new years rather than resetting: numbers are a sequence
- * (`update-puzzles` hands out `max + 1`) and will pass 366, so measuring them
- * against day-of-year would unrelease the whole archive every Jan 1. Within
- * 2026 the two agree exactly, since slot 1 is Jan 1.
+ * counting from 1. Counts on past 366 rather than resetting, so a new year
+ * doesn't unrelease the archive.
  */
 export function getPuzzleNumber(
   date: Date | Temporal.PlainDate = new Date(),
@@ -32,11 +28,6 @@ export function getPuzzleNumber(
 /**
  * The highest puzzle number released as of today — everything numbered at or
  * below it is playable, everything above is still queued.
- *
- * Named for what callers mean rather than how it's derived: they ask which
- * puzzles are due, not what the date is. The corpus fills slots sparsely, so
- * plenty have no puzzle, and `createdAt` is when a file was written rather than
- * the day its slot comes round — the two don't line up and aren't meant to.
  */
 export function getTodaysPuzzleNumber(): number {
   return getPuzzleNumber();

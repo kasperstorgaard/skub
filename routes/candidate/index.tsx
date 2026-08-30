@@ -34,19 +34,15 @@ type PageData = {
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
-    // Dev-only: rating a candidate writes to the store, and production's
-    // filesystem is read-only.
+    // Dev-only: production's filesystem is read-only.
     if (!isDev) throw new HttpError(404, "Not found");
 
     const url = new URL(ctx.req.url);
     const slug = url.searchParams.get("slug");
     if (!slug) throw new HttpError(404, "No candidate");
 
-    // A stored entry is refreshed in place (its analysis is re-derived only if
-    // the calibration moved on); an unknown slug is looked up in the corpus,
-    // which is what makes a shipped puzzle ratable.
-    // An entry with no analysis yet is solved on this request, and a board too
-    // branchy to solve within the budget throws — report that rather than 500.
+    // An entry with no current analysis is solved on this request, and a board
+    // too branchy for the budget throws — report that rather than 500.
     let candidate;
     try {
       candidate = await currentCandidate(slug);
@@ -101,20 +97,15 @@ export const handler = define.handlers<PageData>({
 
 /**
  * One candidate, whatever made it: the board, its analysis, every distinct
- * solution scored and replayable, and the controls that record what a human
- * thinks of it.
- *
- * Analysis says whether a board *scores* well; playing it says how it feels,
- * and the whole reason this page exists is that those two have drifted apart —
- * so the board stays playable, and a selected solution replays over it.
+ * solution scored and replayable, and the feedback controls. The board stays
+ * playable — score and feel are what this page exists to compare.
  */
 export default define.page<typeof handler>(function CandidatePage(props) {
   const puzzle = useSignal(props.data.puzzle);
   const href = useSignal(props.url.href);
 
   const url = new URL(props.req.url);
-  // Replay is URL state, read here so a link is what starts the animation —
-  // the board only restarts one when the page mounts fresh.
+  // Replay is URL state: the board only restarts an animation on a fresh mount.
   const mode = useSignal<"solve" | "replay">(
     url.searchParams.get("mode") === "replay" ? "replay" : "solve",
   );

@@ -2,7 +2,6 @@ import { define } from "#/core.ts";
 import {
   pickCandidateName,
   readCandidate,
-  SLUG_PATTERN,
   writeCandidate,
 } from "#/game/candidate-store.ts";
 import {
@@ -47,14 +46,15 @@ async function create(markdown: string): Promise<Response> {
   }
 
   const { name, slug } = await pickCandidateName();
-  candidate.name = name;
-  candidate.slug = slug;
-  candidate.source = "generated";
-  // Drop the `number: 0` noise inherited from the page's empty starting puzzle —
-  // numbers are assigned to real corpus puzzles by the manifest, not candidates.
-  candidate.number = undefined;
 
-  await writeCandidate(candidate);
+  await writeCandidate({
+    ...candidate,
+    name,
+    slug,
+    source: "generated",
+    // Numbers are the corpus schedule; the editor's empty board carries a 0.
+    number: undefined,
+  });
 
   return Response.json({ slug, name });
 }
@@ -68,9 +68,6 @@ async function create(markdown: string): Promise<Response> {
 async function saveFeedback(payload: FeedbackPayload): Promise<Response> {
   const { slug, rating, reasons, note } = payload;
 
-  if (!SLUG_PATTERN.test(slug)) {
-    return new Response("Invalid slug", { status: 400 });
-  }
   // Half-star steps: 0.5–5, nothing finer. The UI only ever sends halves, so a
   // stray 3.7 means a hand-rolled request, not a curator.
   if (
@@ -85,11 +82,7 @@ async function saveFeedback(payload: FeedbackPayload): Promise<Response> {
   const candidate = await readCandidate(slug);
   if (!candidate) return new Response("Not found", { status: 404 });
 
-  candidate.rating = rating;
-  candidate.reasons = reasons;
-  candidate.note = note;
-
-  await writeCandidate(candidate);
+  await writeCandidate({ ...candidate, rating, reasons, note });
   return new Response("OK", { status: 200 });
 }
 
@@ -102,9 +95,6 @@ async function saveFeedback(payload: FeedbackPayload): Promise<Response> {
 async function saveSolutionTags(payload: SolutionPayload): Promise<Response> {
   const { slug, moves, tags } = payload;
 
-  if (!SLUG_PATTERN.test(slug)) {
-    return new Response("Invalid slug", { status: 400 });
-  }
   if (!moves) return new Response("Missing moves", { status: 400 });
   if (
     !Array.isArray(tags) || tags.some((t) => !SOLUTION_TAG_VALUES.includes(t))
@@ -121,11 +111,10 @@ async function saveSolutionTags(payload: SolutionPayload): Promise<Response> {
   if (tags.length) solutionTags[moves] = tags;
   else delete solutionTags[moves];
 
-  candidate.solutionTags = Object.keys(solutionTags).length
-    ? solutionTags
-    : undefined;
-
-  await writeCandidate(candidate);
+  await writeCandidate({
+    ...candidate,
+    solutionTags: Object.keys(solutionTags).length ? solutionTags : undefined,
+  });
   return new Response("OK", { status: 200 });
 }
 

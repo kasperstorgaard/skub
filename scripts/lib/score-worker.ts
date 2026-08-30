@@ -21,13 +21,9 @@ export type SolvedBoard = {
   /** Per distinct solution, in `scoreBoard` order. */
   routes: Metrics[];
   /**
-   * The quality gates' verdict on this board. Origin-independent, so it means
-   * the same thing for a shipped puzzle as for a candidate — which is what lets
-   * the corpus audit ask whether a gate is rejecting boards that are known good.
-   *
-   * Optional because the solve cache predates it: an entry cached before this
-   * field existed has none, and only `solveDir({ withGates: true })` re-solves
-   * to fill it in.
+   * The quality gates' verdict on this board — origin-independent, so it reads
+   * the same for a shipped puzzle as for a candidate. Absent on cache entries
+   * written before the field existed; `solveDir({ withGates: true })` fills it.
    */
   quality?: GateResult;
   ms: number;

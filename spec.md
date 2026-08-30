@@ -16,7 +16,7 @@ What's generator-only is everything *around* the score:
 
 The consequence is that the hand-built corpus — the boards we actually shipped,
 the ones that represent "good" — cannot be rated. `check-anchors` compensates
-with four hardcoded ratings, and the labelled set that calibration is tuned
+with four hardcoded ratings, and the labelled set the calibration is tuned
 against is made entirely of generator output. That's how the rubric ended up
 skewed: 19 `too-easy` tags against 0 `too-hard`, because only candidates get
 judged, and candidates are disproportionately weak.
@@ -28,7 +28,7 @@ lever we have on a composite that's known to diverge from human judgement.
 
 ### Vocabulary
 
-Three words, one meaning each. Conflating them is what produced the current
+Two words, one meaning each. Conflating them is what produced the current
 tangle:
 
 - **Analysis** is a *function* — metrics and a score over a board. Gates call it,
@@ -36,8 +36,8 @@ tangle:
   lifecycle, which is why the page isn't named after it.
 - **Candidacy** is a *state* — a board proposed but not yet approved. That's what
   gets a directory (`candidates/`) and a route (`/candidate`).
-- **Anchor** is a *role* — a rated candidate used as a fixed point when checking
-  how well the composite tracks human judgement.
+
+"Anchor" is deliberately not a third — see below.
 
 ### Pipeline
 
@@ -68,28 +68,24 @@ the only distinction the reports need.
 
 ### Splitting the gates
 
-`checkGates` currently answers two questions at once:
+`checkGates` answers two questions at once:
 
-- **Generation-loop:** G2 (did the run hit its exact `targetMoves`) and G3 (is
-  this board novel against the corpus). Both are vacuous or self-contradictory
-  for a board that already exists — every corpus puzzle fails G3 by definition.
+- **Generation-loop:** G1–G3 — did the run hit its exact `targetMoves`, is the
+  board novel. Meaningless for a board that already exists; a corpus puzzle
+  fails G3 by definition.
 - **Quality:** G4–G10 — blocker relevance, travel length, wall economy, dead
   space, trapped blockers, clumping. Origin-independent.
 
-Only the second is what candidacy should mean. Split them, and the awkward
-asymmetry ("generated boards are gated, human boards are vouched for") disappears
-— candidacy is conferred by the quality gates whatever made the board. The
-static half (G9–G10) splits off again so the generation loop can still reject a
-hopeless layout before paying for a solve.
+Only the second is what candidacy means, so candidacy is conferred by the
+quality gates whatever made the board. The static half (G9–G10) splits off
+again, so the generation loop can reject a hopeless layout before a solve.
 
 ### Auditing the gates against the corpus
 
 Once the quality half stands alone, run it over all of `static/puzzles`. Those
-boards shipped, so every rejection indicts the *gate*, not the puzzle. This is
-close to free — the verdict falls out of the solve the reports already cache —
-and it's the cheapest evidence available about which gates are miscalibrated. It
-also matters ahead of tiling, since tile-assembled boards will be judged by
-these same gates.
+boards shipped, so every rejection indicts the gate, not the puzzle — and it is
+close to free, the verdict falling out of a solve the reports already cache.
+This matters ahead of tiling, which will be judged by these same gates.
 
 ### `/candidate` — one destination, three ways in
 
@@ -99,60 +95,51 @@ Every board that becomes a candidate arrives at the same page, whatever made it:
   run, and stops being a destination — a candidate that clears the gates lands
   here like any other.
 - **The editor** reaches it via **Review**, a deliberate act so that idle
-  fiddling never lands in the store. It replaces Save, which wrote a board
-  straight into `static/puzzles` — one click that skipped candidacy entirely,
-  which is the thing this pipeline exists to prevent. Review is now the
-  editor's only write.
-- **An existing puzzle** reaches it directly, which is what makes the shipped
-  corpus ratable and is the point of the whole exercise.
+  fiddling never lands in the store. It replaces Save, which wrote straight into
+  `static/puzzles` and skipped candidacy entirely. Review is the editor's only
+  write.
+- **An existing puzzle** reaches it directly. This is the point of the exercise.
 
-Today the generator owns a private version of this view — the score readout in
-`generator-panel.tsx` already renders the composite, the mean and spread across
-routes, and per-route replay, but only for a freshly generated candidate. That
-readout, working for any board, *is* this page. It isn't new work so much as
-work that needs lifting out of the generator.
+The generator already owns a private version of this view: the score readout in
+`generator-panel.tsx` renders the composite, the spread across routes and
+per-route replay, but only for a freshly generated candidate. That readout,
+working for any board, *is* this page.
 
 So the page owes: the board, its analysis, **every distinct solution scored and
-replayable**, and the feedback controls. That per-solution list is load-bearing
-rather than a nicety — it's what a curator judges, and per
-`[[per-solution-scoring-direction]]` the solution is the future scoring unit.
+replayable**, and the feedback controls. The per-solution list is load-bearing —
+it's what a curator judges, and per `[[per-solution-scoring-direction]]` the
+solution is the future scoring unit. It solves server-side and renders a
+finished result, so it needs no island.
 
-Note that clone currently mangles identity on purpose — it zeroes `minMoves`,
-resets `createdAt`, and renames to "Untitled" outside dev. That's right for
-remixing and wrong for analysing, so the source slug needs carrying through; a
-stored rating labelled "Untitled, 0 moves" is useless as an anchor.
+Playing stays on the page. Analysis says whether a board *scores* well; playing
+says how it *feels*, and those two having drifted apart is the whole reason for
+this work.
 
-The page solves server-side and renders a finished result, so it needs no island.
-
-Solving and playing live on the same page. Analysis says whether a board *scores*
-well; playing it says how it *feels*, and the whole reason for this work is that
-those two have drifted apart. Dropping the human loop while trying to realign
-them would throw away the signal.
+Clone mangles identity on purpose — zeroes `minMoves`, resets `createdAt`,
+renames to "Untitled" outside dev. Right for remixing, wrong for analysing, so
+the source slug has to carry through; a rating filed as "Untitled, 0 moves" is
+useless as ground truth.
 
 Two things retire into this page. `SolveDialog` — the dev-only "solve it for me"
 that writes one solution into the URL — is strictly worse than a scored,
-replayable list of all of them. And with that gone, `/api/solve` has no caller
-at all, so the board-solving endpoint, its worker and the client stream go with
-it, leaving the solver reachable only from `update-puzzles` and the gated hint
-route.
+replayable list of all of them. With it gone `/api/solve` has no caller, so the
+endpoint, its worker and the client stream go too, leaving the solver reachable
+only from `update-puzzles` and the gated hint route.
 
-`/puzzles/preview` stays. It looked redundant — you can play a board and read
-its analysis in one place now — but only if you're the creator: `/candidate`
-writes to disk and solves on demand, so it's dev-only, and preview is how
-everyone else plays their own draft. It just loses the solve dialog.
+`/puzzles/preview` stays: `/candidate` writes to disk and solves on demand, so
+it's dev-only, and preview is how everyone else plays their own draft. It just
+loses the solve dialog.
 
 ### Editing forks a version
 
 A rating describes the board it was given, so editing a candidate makes a new
 one rather than changing the rated board underneath. The edit lands as the next
-letter of whatever it came from — `erik` → `erik-b` — which is enough to see the
-relationship at a glance; nothing tracks lineage, and nothing needs to, because
-"the user clicked Edit" is already carried by the draft keeping its name.
+letter of whatever it came from — `erik` → `erik-b` — which shows the
+relationship at a glance; nothing tracks lineage, and nothing needs to.
 
-That gives `source` its third value. `generated` narrows to mean the generator's
-own output and nothing else, so the separation report can still ask what the
-generator produces; a variant is `edited`, as is anything drawn by hand. A
-reader seeing `erik` generated and `erik-b` edited can infer what happened.
+That gives `source` its third value. `generated` narrows to the generator's own
+output and nothing else, so the separation report can still ask what the
+generator produces; a variant is `edited`, as is anything drawn by hand.
 
 Letters, not numbers: `hans-2` already means "a different board whose name
 collided with `hans`", and the two suffixes have to stay distinguishable —
@@ -166,28 +153,27 @@ the corpus now runs through the page where the board was played, analysed and
 rated.
 
 A variant ships under its base name and replaces what's there, keeping that
-puzzle's slot and creation date — the point of editing a promoted board is to
-change the board, not to reschedule it. Promotion is recorded on the candidate
-rather than inferred from a file existing, since a variant ships under a name
-that isn't its own: `erik-b` becomes `erik`, and asking "is there a puzzle
-called `erik-b`" would answer about the wrong board.
+puzzle's slot and creation date — editing a promoted board changes the board,
+not its schedule. Promotion is recorded on the candidate rather than inferred
+from a file existing: `erik-b` ships as `erik`, so "is there a puzzle called
+`erik-b`" would answer about the wrong board.
 
-A promoted puzzle arrives complete, so nothing downstream has to repair it: the
-measured `minMoves` from the analysis, the curator's `difficulty` rather than
-the move count's guess, and the next free schedule number. Only the `Puzzle`
-fields travel — the rating, tags, note and analysis stay in the store, which is
-the record of how the board earned its place.
+A promoted puzzle arrives complete: the measured `minMoves`, its `difficulty`
+(the move count's verdict, or a hand-set label if one is on file), and the next
+free schedule number. Only the `Puzzle` fields travel — rating, tags, note and
+analysis stay in the store.
 
-### Retiring the anchors hardcode
+### Anchors stop existing
 
-With corpus puzzles ratable, the four hardcoded ratings in `check-anchors` become
-real stored ones — seeded as part of this change so the calibration keeps its
-ground truth — and the anchor set stops being four boards.
+`check-anchors` hardcoded four ratings because the corpus couldn't carry its
+own. With corpus puzzles ratable those become real stored ratings — seeded as
+part of this change — and "anchor" stops naming anything: ground truth is the
+whole rated store, corpus and generated alike, told apart by `source`. The
+script becomes `check-calibration`, which is the question it was always asking.
 
-This also merges `compare-generated` into `check-anchors`: once there's a
-`source` field, "which metrics separate kept from rejected" is a rating-separation
-question, which is already `check-anchors`' territory. Its tables are too wide
-for a terminal, so they go to a report file while the correlations stay on
+It also absorbs `compare-generated`: with a `source` field, "which metrics
+separate kept from rejected" is a rating-separation question. Its tables are too
+wide for a terminal, so they go to a report file while the correlations stay on
 stdout.
 
 ### Roles
@@ -229,9 +215,9 @@ serve a board the generator didn't make.
 
 Renamed: `generated/` → `candidates/`, along with the module, the API route
 (`/api/generated` → `/api/candidates`), the listing script, the `Candidate` type
-and the Vite watch-ignore entry.
+and the Vite watch-ignore entry. `check-anchors` → `check-calibration`.
 
-Retired: `compare-generated`, the `ANCHORS` hardcode, the editor's Save, and
-`SolveDialog`. Each took its endpoint with it: `/api/puzzles`, whose corpus
+Retired: `compare-generated`, the `ANCHORS` hardcode and the anchor concept with
+it, the editor's Save, and `SolveDialog`. Each took its endpoint with it: `/api/puzzles`, whose corpus
 write is now the Promote action, and `/api/solve` along with its client stream,
 its worker and the worker's bundle entry.

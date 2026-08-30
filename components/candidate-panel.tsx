@@ -72,20 +72,11 @@ function MetricRows(
 }
 
 /**
- * The advisory score for a candidate: a headline (composite score, weakest
- * route, solution count) over a collapsible breakdown of every metric.
- *
- * The breakdown is split by what a number is actually about. Board metrics — the
- * layout, the solution set, the search space — are the same whichever route you
- * take, so they're stated once. Route metrics belong to a single solution: with
- * one selected they show that solution's values, and with none they show the
- * mean across routes, which is what "the board's setup ratio" can honestly mean.
- * (The composite reduces them differently again — `max` for signals, `min` for
- * penalties — because it asks what the best or worst route offers, not what a
- * typical one looks like.)
- *
- * Rows come from `METRIC_CATALOG`, so the panel can never drift out of sync with
- * the metrics the reports and calibration tooling measure.
+ * The advisory score for a candidate: a headline (composite, weakest route,
+ * solution count) over a collapsible breakdown of every metric, split by scope.
+ * Board metrics are stated once; route metrics show the selected solution's
+ * values, or the mean across routes when none is selected. Rows come from
+ * `METRIC_CATALOG` so the panel can't drift from what the reports measure.
  */
 function CandidateScore(
   { scoring, selected }: { scoring: StoredScoring; selected: number | null },
@@ -161,10 +152,7 @@ function CandidateScore(
   );
 }
 
-/**
- * The board's character as tags — what kind of board, not how good. Styled
- * uniformly: colouring by virtue implied a claim the thresholds never earned.
- */
+/** The board's character as tags — what kind of board, not how good. */
 function BoardCharacter({ traits }: { traits: CharacterTrait[] }) {
   if (!traits.length) return null;
 
@@ -190,10 +178,8 @@ function BoardCharacter({ traits }: { traits: CharacterTrait[] }) {
 const MAX_LISTED_SOLUTIONS = 8;
 
 /**
- * The page URL for one solution: selected, and playing. The moves plus
- * `mode=replay`, the same contract the solution replay page renders under —
- * the stored move encoding is already the URL's, so a route travels from the
- * store to the board as-is.
+ * The page URL for one solution: selected, and playing. The stored move
+ * encoding is already the URL's, so a route travels to the board as-is.
  */
 function watchHref(
   slug: string,
@@ -210,16 +196,9 @@ function watchHref(
 }
 
 /**
- * One link per distinct solution, weakest route first — a board is only as good
- * as its weakest interesting route, so that's the one to look at first.
- *
- * Picking a route plays it. Watching is the first thing anyone does with a
- * selected solution, and the numbers only mean something next to the animation
- * that produced them, so the click that selects is the click that replays.
- *
- * Links, not buttons: the selection lives in the URL, so a route can be
- * reloaded, shared or stepped back to, and the page load is what restarts the
- * animation.
+ * One link per distinct solution, weakest route first. Picking a route plays
+ * it. Links, not buttons: the selection lives in the URL, so a route can be
+ * reloaded or shared, and the page load is what restarts the animation.
  */
 function SolutionList(
   { slug, scoring, selected }: {
@@ -228,8 +207,7 @@ function SolutionList(
     selected: number | null;
   },
 ) {
-  // Weakest first, and a stable order across renders (`toSorted` copies, so the
-  // stored order — which the URL indexes into — is left alone).
+  // Weakest first. `toSorted` copies, leaving the stored order the URL indexes.
   const ranked = scoring.solutions
     .map((solution, index) => ({ ...solution, index }))
     .toSorted((a, b) => a.score - b.score);
@@ -266,15 +244,9 @@ function SolutionList(
 }
 
 /**
- * Everything about the one solution the URL has selected: what kind of route it
- * is, the tags the curator puts on it, and the link that plays it again (the
- * same URL, so re-clicking restarts the animation — as the solution replay
- * page's own "Watch again" does).
- *
- * The tags are the round's point — the board's star rating is a verdict on the
- * whole puzzle, and these are what say *which* route made it that. Applied to
- * the selected route only: a tag is a judgement, and judging a route you
- * haven't watched isn't one.
+ * Everything about the selected solution: what kind of route it is, its tags,
+ * and the link that plays it again. Tags apply to the selected route only —
+ * the star rating is the puzzle-level verdict, these say which route earned it.
  */
 function SolutionDetail(
   { slug, scoring, index, traits, tags }: {
@@ -372,10 +344,7 @@ export function CandidatePanel(
             )}
         </div>
 
-        {
-          /* The three ways on from a reviewed board: back into it, into the
-            corpus, or on to the next one. */
-        }
+        {/* Back into the board, into the corpus, or on to the next one. */}
         <div className="flex flex-col flex-wrap gap-fl-1">
           <a href={`/candidate/edit?slug=${puzzle.slug}`} className="btn">
             <Icon icon={Pencil} /> Edit

@@ -18,10 +18,9 @@ type SolutionTagsProps = {
 };
 
 /**
- * Per-route labels for the selected solution. Patched through the store's own
- * `solution` action rather than the board-level feedback one: that patch is a
- * full overwrite written by another island, so folding route tags into it would
- * race the star rating.
+ * Per-route labels for the selected solution. Uses the store's `solution`
+ * action, not the `feedback` one — that patch is a full overwrite owned by
+ * another island, and folding route tags in would race the star rating.
  */
 export function SolutionTags({ slug, moves, initialTags }: SolutionTagsProps) {
   const tags = useSignal<SolutionTag[]>(

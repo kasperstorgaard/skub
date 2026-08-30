@@ -1,10 +1,10 @@
 /**
  * Disk access for the `candidates/` store, plus the analysis that fills it.
- * Server-side only — never import this from an island; the shapes it reads and
- * writes live in `game/candidates.ts`, which is safe on both sides.
+ * Server-side only; the shapes it reads and writes live in `game/candidates.ts`.
  */
 import { slug as slugify } from "@annervisser/slug";
 
+import { isBoardSame } from "#/game/board.ts";
 import {
   type Candidate,
   CANDIDATES_DIR,
@@ -26,16 +26,10 @@ import {
 import { solveExhaustiveSync } from "#/game/solver.ts";
 import type { Board, Puzzle } from "#/game/types.ts";
 
-// Guards against path traversal — a slug is either machine-assigned from the
-// name pool (e.g. `hans`, `hans-2`) or a corpus puzzle's own, so a strict
-// lowercase-kebab shape is all that's valid.
-export const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-
 const candidatePath = (slug: string): string => `${CANDIDATES_DIR}/${slug}.md`;
 
 /** Reads one stored candidate, or null when the store has no such slug. */
 export async function readCandidate(slug: string): Promise<Candidate | null> {
-  if (!SLUG_PATTERN.test(slug)) return null;
   try {
     return parseCandidate(await Deno.readTextFile(candidatePath(slug)));
   } catch (err) {
@@ -46,13 +40,9 @@ export async function readCandidate(slug: string): Promise<Candidate | null> {
 
 /**
  * Writes a candidate to its slug's slot, creating the store if needed. An
- * unchanged entry is left alone — every page load re-affirms the one it's
- * showing, and rewriting it would churn the file for nothing.
+ * unchanged entry is left alone rather than rewritten.
  */
 export async function writeCandidate(candidate: Candidate): Promise<void> {
-  if (!SLUG_PATTERN.test(candidate.slug)) {
-    throw new Error(`Refusing to write candidate slug: ${candidate.slug}`);
-  }
   const path = candidatePath(candidate.slug);
   const markdown = formatCandidate(candidate);
   const current = await Deno.readTextFile(path).catch(() => null);
@@ -76,9 +66,8 @@ async function candidateFiles(): Promise<string[]> {
 }
 
 /**
- * The `name` frontmatter of every stored candidate. Read off the line rather
- * than parsed — this only ever feeds the de-duplication set, and parsing every
- * board to reach one string is work for nothing.
+ * The `name` frontmatter of every stored candidate, read off the line rather
+ * than parsed — this only feeds the de-duplication set.
  */
 async function storedNames(): Promise<string[]> {
   const names: string[] = [];
@@ -101,10 +90,9 @@ async function slugTaken(slug: string): Promise<boolean> {
 
 /**
  * Picks a random Nordic name unused by any corpus puzzle or stored candidate.
- * Name and slug/filename are one thing: `Hans` lives in `hans.md` — no
- * synthetic ids. Names are unique, but slugification folds diacritics (Kári and
- * Kari both slug to `kari`), so the two are bumped together (`Hans-2`) until
- * the file slot is free.
+ * Name and file are one thing (`Hans` lives in `hans.md`), and slugification
+ * folds diacritics (Kári and Kari both slug to `kari`), so the two are bumped
+ * together (`Hans-2`) until the file slot is free.
  */
 export async function pickCandidateName(): Promise<
   { name: string; slug: string }
@@ -122,28 +110,25 @@ export async function pickCandidateName(): Promise<
 }
 
 /**
- * BFS state budget for an analysis solve. Generous — a shipped puzzle solves in
- * a fraction of it — but bounded, because this one runs inside a request:
- * overshoot explores geometrically more states, and a truncated advisory beats
- * a page that hangs. (The offline reports run uncapped, in a subprocess.)
+ * BFS state budget for an analysis solve. Generous, but bounded: this one runs
+ * inside a request, and a truncated advisory beats a page that hangs.
  */
 const ANALYSIS_MAX_STATES = 4_000_000;
 
 /**
- * A variant marker: `erik-b`, `erik-c`. Letters, because the numeric suffix is
- * already taken — `hans-2` means "a different board whose name collided", not a
- * second version of `hans`.
+ * A variant marker: `erik-b`, `erik-c`. Letters, because a numeric suffix means
+ * a name collision (`hans-2`) rather than a second version of a board.
  */
 const VARIANT_SUFFIX = /-([b-z])$/;
 
 /** The board a variant hangs off: `erik-b` → `erik`, `hans-2` → `hans-2`. */
-export const stripVariant = (value: string): string =>
-  value.replace(VARIANT_SUFFIX, "");
+export function stripVariant(value: string): string {
+  return value.replace(VARIANT_SUFFIX, "");
+}
 
 /**
- * The next free variant of a board — the name an edit lands under, so the board
- * that was rated keeps its own entry rather than changing underneath it. Null
- * once the letters run out, leaving the caller to mint a fresh name.
+ * The next free variant of a board — the name an edit lands under, so the rated
+ * board keeps its own entry. Null once the letters run out.
  */
 export async function nextVariant(
   origin: { name: string; slug: string },
@@ -163,10 +148,9 @@ export async function nextVariant(
 export type Analysis = { minMoves: number; scoring: StoredScoring };
 
 /**
- * Metrics and a score over a board — the analysis, in the shape the store keeps
- * it in. Solves exhaustively with overshoot so the isolation advisories are
- * measured too; this is the seconds-long part, which is why the result is
- * persisted rather than re-derived on every page load.
+ * Metrics and a score over a board. Solves with overshoot so the isolation
+ * advisories are measured too — the seconds-long part, which is why the result
+ * is persisted rather than re-derived on every page load.
  */
 export function analyseBoard(board: Board): Analysis {
   const result = solveExhaustiveSync(board, {
@@ -182,47 +166,42 @@ export function analyseBoard(board: Board): Analysis {
   };
 }
 
-/** Whether two boards are the same layout, piece and wall order aside. */
-export function sameBoard(a: Board, b: Board): boolean {
-  const key = (board: Board) =>
-    JSON.stringify({
-      destination: board.destination,
-      pieces: board.pieces
-        .map((piece) => `${piece.type}${piece.x},${piece.y}`).toSorted(),
-      walls: board.walls
-        .map((wall) => `${wall.orientation}${wall.x},${wall.y}`).toSorted(),
-    });
-  return key(a) === key(b);
+/**
+ * Whether a stored analysis no longer describes the board — because the board
+ * moved under it, or the calibration it was measured under has been bumped.
+ */
+export function staleAnalysis(
+  stored: Pick<Candidate, "board" | "scoring"> | null,
+  board: Board,
+): boolean {
+  return !stored?.scoring ||
+    stored.scoring.calibrationVersion !== CALIBRATION.version ||
+    !isBoardSame(stored.board, board);
 }
 
 /**
- * The candidate for a board, analysed and on disk — the one entry point every
- * way into `/candidate` goes through.
- *
- * An existing entry keeps its feedback and the curator's difficulty call; the
- * board and the analysis are what get refreshed, and the analysis only when the
- * board moved under it or the calibration did. A corpus puzzle enters under its
- * own slug and name, because a rating filed as "Untitled, 0 moves" is useless
- * as an anchor.
+ * Pure merge of a puzzle onto its stored entry. The board is the puzzle's; the
+ * feedback, provenance, creation date and measured move count belong to the
+ * entry and survive a draft that arrives with them zeroed or reset.
  */
-export async function upsertCandidate(
+export function mergeCandidate(
   puzzle: Puzzle,
-  source?: CandidateSource,
-): Promise<Candidate> {
-  const stored = await readCandidate(puzzle.slug);
+  stored: Candidate | null,
+  options: { source?: CandidateSource; analysis?: Analysis } = {},
+): Candidate {
+  const minMoves = options.analysis?.minMoves ?? stored?.minMoves ??
+    puzzle.minMoves;
 
-  const candidate: Candidate = {
+  return {
     ...puzzle,
     // Numbers are the corpus schedule; a candidate has none until promoted, and
     // the editor's empty board carries a `number: 0` worth dropping.
     number: puzzle.number || undefined,
-    source: source ?? stored?.source ?? "generated",
-    // Feedback and provenance belong to the entry, not to the board it was
-    // made from. Same for the difficulty, the measured move count and the
-    // creation date: a draft arriving via `clone` has them zeroed and reset,
-    // and an unchanged board must not lose what is already on file.
-    difficulty: stored?.difficulty ?? puzzle.difficulty,
-    minMoves: stored?.minMoves ?? puzzle.minMoves,
+    source: options.source ?? stored?.source ?? "generated",
+    minMoves,
+    // Labels already on disk were set by hand when there was a control for it;
+    // they record where human judgement and move count disagreed, so they stay.
+    difficulty: stored?.difficulty ?? difficultyForMoves(minMoves),
     createdAt: stored?.createdAt ?? puzzle.createdAt,
     rating: stored?.rating,
     reasons: stored?.reasons,
@@ -231,67 +210,58 @@ export async function upsertCandidate(
     genOptions: stored?.genOptions,
     generatorVersion: stored?.generatorVersion,
     promotedAs: stored?.promotedAs,
-    scoring: stored?.scoring,
+    scoring: options.analysis?.scoring ?? stored?.scoring,
   };
+}
 
-  const stale = !candidate.scoring ||
-    candidate.scoring.calibrationVersion !== CALIBRATION.version ||
-    !stored || !sameBoard(stored.board, puzzle.board);
+/**
+ * The candidate for a board, analysed and on disk — the one entry point every
+ * way into `/candidate` goes through. A corpus puzzle enters under its own slug
+ * and name; a rating filed as "Untitled, 0 moves" is useless as ground truth.
+ */
+export async function upsertCandidate(
+  puzzle: Puzzle,
+  source?: CandidateSource,
+): Promise<Candidate> {
+  const stored = await readCandidate(puzzle.slug);
+  const analysis = staleAnalysis(stored, puzzle.board)
+    ? analyseBoard(puzzle.board)
+    : undefined;
 
-  if (stale) {
-    const analysis = analyseBoard(candidate.board);
-    candidate.scoring = analysis.scoring;
-    candidate.minMoves = analysis.minMoves;
-  }
-
-  // Difficulty is the move count's verdict, not the curator's — but only for
-  // entries written from here on. Labels already on disk were set by hand when
-  // there was a control for it, and they stay: they're the record of where
-  // human judgement and move count disagreed, and re-deriving would erase it.
-  if (!stored) candidate.difficulty = difficultyForMoves(candidate.minMoves);
-
+  const candidate = mergeCandidate(puzzle, stored, { source, analysis });
   await writeCandidate(candidate);
   return candidate;
 }
 
 /**
- * The candidate for a slug, brought up to date — what every visit to
- * `/candidate` goes through.
- *
- * A corpus entry is a *copy* of a shipped puzzle, so the corpus file is re-read
- * every time rather than trusted to be what it was on the first visit. Editing
- * a board by hand before release is a normal thing to do, and without this the
- * copy freezes: the page would keep rendering the old board, and the rating —
- * which is calibration ground truth — would stay attached to a board that no
- * longer ships.
+ * The candidate for a slug, brought up to date. A corpus entry is a copy, so
+ * the shipped puzzle is re-read every visit: editing a board before release is
+ * normal, and otherwise the copy — and the rating attached to it — would go on
+ * describing a board that no longer ships.
  */
 export async function currentCandidate(
   slug: string,
 ): Promise<Candidate | null> {
   const stored = await readCandidate(slug);
-  if (!stored) return await candidateForCorpusPuzzle(slug);
+  if (!stored) return candidateForCorpusPuzzle(slug);
 
   if (candidateSource(stored) === "corpus") {
     const corpus = await getPuzzle(slug);
     // A corpus file that has since been deleted leaves the copy as the record.
-    if (corpus) return await upsertCandidate(corpus, "corpus");
+    if (corpus) return upsertCandidate(corpus, "corpus");
   }
 
-  return await upsertCandidate(stored);
+  return upsertCandidate(stored);
 }
 
 /**
- * The candidate for a corpus puzzle, created on first visit. This is what makes
- * the shipped corpus ratable: the boards that represent "good" become ground
- * truth alongside the generated ones, tagged `corpus` so the two populations
- * stay separable.
+ * The candidate for a corpus puzzle, created on first visit — what makes the
+ * shipped corpus ratable alongside the generated boards.
  */
 export async function candidateForCorpusPuzzle(
   slug: string,
 ): Promise<Candidate | null> {
-  // Same guard as `readCandidate`: this slug reaches a path join too.
-  if (!SLUG_PATTERN.test(slug)) return null;
   const puzzle = await getPuzzle(slug);
   if (!puzzle) return null;
-  return await upsertCandidate(puzzle, "corpus");
+  return upsertCandidate(puzzle, "corpus");
 }
