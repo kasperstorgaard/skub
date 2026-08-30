@@ -16,7 +16,7 @@ import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getUserStats } from "#/db/stats.ts";
-import { getLatestPuzzle } from "#/game/loader.ts";
+import { getTodaysPuzzle } from "#/game/loader.ts";
 import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
 import type { UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
@@ -34,7 +34,7 @@ export const handler = define.handlers<PageData>({
     const { user } = ctx.state;
 
     const [dailyPuzzle, solutions] = await Promise.all([
-      getLatestPuzzle(),
+      getTodaysPuzzle(),
       withSpan(
         "home.solutions",
         (span) =>

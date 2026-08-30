@@ -1,4 +1,4 @@
-import { getDayOfYear } from "#/game/date.ts";
+import { getPuzzleNumber, getTodaysPuzzleNumber } from "#/game/date.ts";
 import { parsePuzzle } from "#/game/parser.ts";
 import { boardCanonicalHash } from "#/game/scoring.ts";
 import {
@@ -8,7 +8,7 @@ import {
   Puzzle,
   PuzzleManifestEntry,
 } from "#/game/types.ts";
-import { isBuilder } from "#/lib/env.ts";
+import { isDev } from "#/lib/env.ts";
 import { sortList } from "#/lib/list.ts";
 
 // Resolve from cwd — always the project root locally and on Deno Deploy.
@@ -21,8 +21,9 @@ const ITEMS_PER_PAGE = 6;
 let manifestCache: PuzzleManifestEntry[] | null = null;
 
 /**
- * Reads the puzzle manifest from disk. Cached after first read — the manifest
- * is static and never changes between requests.
+ * Reads the puzzle manifest from disk. Cached after first read — the corpus is
+ * static between requests, with one exception: promoting a candidate writes a
+ * new puzzle, and that path calls {@link invalidateCorpus}.
  */
 async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
   if (manifestCache) return manifestCache;
@@ -34,6 +35,18 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
 }
 
 let corpusHashCache: Set<string> | null = null;
+
+/**
+ * Drops both corpus caches, for the one thing that changes `static/puzzles`
+ * while the server is running: promoting a candidate. Without this the process
+ * keeps serving the manifest it read at boot — the promoted puzzle wouldn't
+ * appear in the archive, and the generator's novelty gate wouldn't know the
+ * board exists, so it could hand back the one just promoted.
+ */
+export function invalidateCorpus(): void {
+  manifestCache = null;
+  corpusHashCache = null;
+}
 
 /**
  * Canonical hashes of every puzzle board in the corpus, for the generator's G3
@@ -64,30 +77,41 @@ export async function getCorpusNames(): Promise<Set<string>> {
   return new Set(manifest.map((entry) => entry.name));
 }
 
+/** A manifest entry, plus whether its scheduled day is still ahead. */
+export type AvailableEntry = PuzzleManifestEntry & { isFuture: boolean };
+
 /**
  * Manifest entries available today: number <= day-of-year, onboarding excluded.
+ * Locally the schedule doesn't apply — there's no point hiding tomorrow's
+ * puzzle from the person who wrote it.
+ *
+ * Which means the local list mixes released and unreleased boards, so every
+ * entry says which it is. Computed here rather than written into
+ * `manifest.json`: "future" is a fact about today, and the manifest is only
+ * regenerated on a build, so a stored flag would be a lie by the next midnight.
  */
-export async function getAvailableEntries() {
-  const dayOfYear = getDayOfYear();
+export async function getAvailableEntries(): Promise<AvailableEntry[]> {
+  const today = getTodaysPuzzleNumber();
 
   const manifest = await getPuzzleManifest();
 
   return manifest
     .filter((entry) => !entry.hidden)
-    .filter((entry) => isBuilder || (entry.number ?? 0) <= dayOfYear);
+    .filter((entry) => isDev || (entry.number ?? 0) <= today)
+    .map((entry) => ({ ...entry, isFuture: (entry.number ?? 0) > today }));
 }
 
 /**
  * Manifest entries available after today: number > day-of-year, onboarding excluded.
  */
 export async function getFutureEntries() {
-  const dayOfYear = getDayOfYear();
+  const today = getTodaysPuzzleNumber();
 
   const manifest = await getPuzzleManifest();
 
   return manifest
     .filter((entry) => !entry.hidden)
-    .filter((entry) => (entry.number ?? 0) > dayOfYear);
+    .filter((entry) => (entry.number ?? 0) > today);
 }
 
 /**
@@ -181,13 +205,22 @@ export async function getDifficultyBreakdown(): Promise<
 }
 
 /**
- * Gets the latest puzzle — the puzzle of the day
+ * The puzzle of the day: the newest one whose scheduled day has come.
+ *
+ * Filters the manifest itself rather than going through
+ * `getAvailableEntries`, which locally hands back the whole schedule. That
+ * widening is deliberate everywhere else — but the front page is what a player
+ * sees, and today is today in dev too.
  */
-export async function getLatestPuzzle() {
-  const entries = await getAvailableEntries();
-  const entry = entries[0];
-  if (!entry) return null;
-  return getPuzzle(entry.slug);
+export async function getTodaysPuzzle() {
+  const today = getTodaysPuzzleNumber();
+  const manifest = await getPuzzleManifest();
+
+  const entry = manifest
+    .filter((entry) => !entry.hidden && (entry.number ?? 0) <= today)
+    .toSorted((a, b) => (b.number ?? 0) - (a.number ?? 0))[0];
+
+  return entry ? getPuzzle(entry.slug) : null;
 }
 
 type GetRandomPuzzleOptions = {
@@ -197,6 +230,8 @@ type GetRandomPuzzleOptions = {
 
 /**
  * Gets a random puzzle from the pool matching the given difficulty options.
+ * Never an unreleased one: this feeds the recommendation, and recommending a
+ * board no player could reach would be a local-only phantom.
  */
 export async function getRandomPuzzle(
   options: GetRandomPuzzleOptions,
@@ -204,6 +239,7 @@ export async function getRandomPuzzle(
   let entries = await getAvailableEntries();
 
   entries = entries
+    .filter((puzzle) => !puzzle.isFuture)
     .filter((puzzle) =>
       options.difficulty ? options.difficulty.includes(puzzle.difficulty) : true
     )
@@ -224,8 +260,9 @@ export async function getPuzzleByDate(
 ): Promise<Puzzle | null> {
   const entries = await getAvailableEntries();
 
-  const dayOfYear = getDayOfYear(date);
-  const entry = entries.find((puzzle) => puzzle.number === dayOfYear);
+  // A date maps to the slot that falls on it.
+  const slot = getPuzzleNumber(date);
+  const entry = entries.find((puzzle) => puzzle.number === slot);
   if (!entry) return null;
 
   return getPuzzle(entry.slug);

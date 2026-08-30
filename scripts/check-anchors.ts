@@ -1,67 +1,84 @@
 /**
- * Measures how well the scoring composite tracks human judgement: scores the
- * ground-truth anchors plus every rated candidate, and reports the Spearman
- * correlation between ratings and composite scores, the ordered table (so
- * misplaced boards are visible), and per-metric ρ — the evidence base for
- * promoting or demoting composite terms.
+ * Measures how well the scoring composite tracks human judgement: scores every
+ * rated candidate in the store and reports the Spearman correlation between
+ * ratings and composite scores, the ordered table (so misplaced boards are
+ * visible), and per-metric ρ — the evidence base for promoting or demoting
+ * composite terms.
+ *
+ * The anchors are no longer four hardcoded ratings: a corpus puzzle rated
+ * through `/candidate` is a stored candidate like any other, tagged
+ * `source: corpus`, so the shipped boards — the ones that represent "good" —
+ * carry their ground truth in the same place as the generated ones.
+ *
+ * It also answers what `compare-generated` used to: which metrics separate the
+ * boards a human kept from the ones they rejected. That's a rating-separation
+ * question, so it lives here; the tables go to a report file, since they're too
+ * wide to read in a terminal.
  *
  * Run after any `CALIBRATION` change. Solves are cached and
  * calibration-independent, so iterations cost seconds.
  *
- * Usage: `deno task check-anchors [--timeout=60000]`
+ * Usage: `deno task check-anchors [outfile] [--timeout=60000]`
  */
-import { GENERATED_DIR, parseGenerated } from "#/game/generated.ts";
+import {
+  type Candidate,
+  CANDIDATES_DIR,
+  type CandidateSource,
+  candidateSource,
+  parseCandidate,
+  type ReasonTag,
+} from "#/game/candidates.ts";
 import { aggregateMetrics, METRIC_CATALOG } from "#/game/metric-catalog.ts";
 import { CALIBRATION } from "#/game/scoring.ts";
 import {
   boardScore,
   flag,
   solveDir,
-  solveFiles,
+  worstRoute,
 } from "#/scripts/lib/boards.ts";
-import { spearman } from "#/scripts/lib/report.ts";
+import {
+  f,
+  mean,
+  quantiles,
+  spearman,
+  table,
+  writeReport,
+} from "#/scripts/lib/report.ts";
 import type { SolvedBoard } from "#/scripts/lib/score-worker.ts";
 
-/** Corpus anchors, mapped onto the candidates' 1–5 star scale. */
-const ANCHORS: Record<string, number> = {
-  torstein: 5,
-  malene: 5,
-  erik: 2,
-  kim: 1,
-};
-
+const outFile = Deno.args.find((arg) => !arg.startsWith("--")) ??
+  `scoring/reports/rating-separation-v${CALIBRATION.version}.md`;
 const timeoutMs = Number(flag("--timeout=") ?? "60000");
 
-type Row = { name: string; rating: number; score: number; board: SolvedBoard };
+type Row = {
+  name: string;
+  rating: number;
+  score: number;
+  source: CandidateSource;
+  stored: Candidate;
+  board: SolvedBoard;
+  /** Every reported column for this board, so subsets can be sliced by key. */
+  values: Record<string, number>;
+};
 
-const rows: Row[] = [];
-const skipped: string[] = [];
+/** Report columns: the composite headline, then every catalogued metric. */
+const COLUMNS = ["score", "worst", ...METRIC_CATALOG.map((m) => m.key)];
 
-const anchors = await solveFiles(
-  Object.keys(ANCHORS).map((slug) => `static/puzzles/${slug}.md`),
-  { timeoutMs, onProgress: (slug) => console.log(`solving ${slug}…`) },
-);
-skipped.push(...anchors.skipped);
+const columnValues = (board: SolvedBoard): Record<string, number> => ({
+  score: boardScore(board),
+  worst: worstRoute(board),
+  ...aggregateMetrics(board.routes),
+});
 
-for (const [slug, board] of anchors.boards) {
-  rows.push({
-    name: slug,
-    rating: ANCHORS[slug],
-    score: boardScore(board),
-    board,
-  });
-}
-const anchorCount = rows.length;
-
-const candidates = await solveDir(GENERATED_DIR, {
+const candidates = await solveDir(CANDIDATES_DIR, {
   timeoutMs,
   onProgress: (slug) => console.log(`solving ${slug}…`),
 });
-skipped.push(...candidates.skipped);
 
+const rows: Row[] = [];
 for (const [slug, board] of candidates.boards) {
-  const stored = parseGenerated(
-    await Deno.readTextFile(`${GENERATED_DIR}/${slug}.md`),
+  const stored = parseCandidate(
+    await Deno.readTextFile(`${CANDIDATES_DIR}/${slug}.md`),
   );
   // Unrated candidates carry no ground truth.
   if (stored.rating === undefined) continue;
@@ -69,17 +86,30 @@ for (const [slug, board] of candidates.boards) {
     name: stored.name,
     rating: stored.rating,
     score: boardScore(board),
+    source: candidateSource(stored),
+    stored,
     board,
+    values: columnValues(board),
   });
 }
 
+if (rows.length === 0) {
+  console.log(
+    "\nNothing rated yet — rate boards at /candidate (a corpus puzzle gets " +
+      "there from its own page).",
+  );
+  Deno.exit(0);
+}
+
 rows.sort((a, b) => b.score - a.score);
+
+const corpusRows = rows.filter((row) => row.source === "corpus");
 
 console.log(`\nCalibration v${CALIBRATION.version} vs human judgement\n`);
 console.log("score  ★  name");
 console.log("-".repeat(34));
 for (const row of rows) {
-  const anchor = row.name in ANCHORS ? " (anchor)" : "";
+  const anchor = row.source === "corpus" ? " (corpus)" : "";
   console.log(`${row.score.toFixed(3)}  ${row.rating}  ${row.name}${anchor}`);
 }
 
@@ -87,9 +117,13 @@ const ratings = rows.map((row) => row.rating);
 const rho = spearman(ratings, rows.map((row) => row.score));
 
 console.log(
-  `\nSpearman ρ = ${rho.toFixed(3)} over ${rows.length} boards ` +
-    `(${anchorCount} anchors + ${rows.length - anchorCount} rated candidates)` +
-    (skipped.length ? `; skipped: ${skipped.join(", ")}` : ""),
+  `\nSpearman ρ = ${rho.toFixed(3)} over ${rows.length} rated boards ` +
+    `(${corpusRows.length} corpus + ${
+      rows.length - corpusRows.length
+    } generated)` +
+    (candidates.skipped.length
+      ? `; skipped: ${candidates.skipped.join(", ")}`
+      : ""),
 );
 console.log(
   "Target: ρ → +1. The table above shows which boards sit out of order.",
@@ -117,3 +151,62 @@ for (const { key, rho: value } of metricRhos) {
     `${mark} ${key.padEnd(20)} ${sign}${Math.abs(value).toFixed(3)}  ${bar}`,
   );
 }
+
+const column = (subset: Row[], key: string) =>
+  subset.map((row) => row.values[key]);
+
+const high = rows.filter((row) => row.rating >= 4);
+const low = rows.filter((row) => row.rating <= 2);
+
+const byReason = new Map<ReasonTag, Row[]>();
+for (const row of rows) {
+  for (const reason of row.stored.reasons ?? []) {
+    byReason.set(reason, [...(byReason.get(reason) ?? []), row]);
+  }
+}
+
+const distributions = table(
+  ["metric", "corpus (min/med/max)", "high-rated", "low-rated"],
+  COLUMNS.map((key) => [
+    key,
+    quantiles(column(corpusRows, key)),
+    quantiles(column(high, key)),
+    quantiles(column(low, key)),
+  ]),
+);
+
+const reasonRows = [...byReason.entries()].map(([reason, subset]) => [
+  reason,
+  String(subset.length),
+  ...COLUMNS.map((key) => f(mean(column(subset, key)))),
+]);
+
+await writeReport(
+  outFile,
+  `# Rating separation
+
+${rows.length} rated boards — ${corpusRows.length} corpus, ${
+    rows.length - corpusRows.length
+  } generated; \
+${high.length} high-rated (4–5), ${low.length} low-rated (1–2).
+Spearman ρ = ${f(rho)} between rating and composite.
+
+All boards scored at calibration \`v${CALIBRATION.version}\`. The question this
+answers: which metrics separate the boards a human kept from the ones they
+rejected — i.e. which advisory signals are worth promoting.
+
+## Metric distributions (min / median / max)
+
+${distributions}
+
+## Per-reason-tag metric means
+
+${
+    reasonRows.length
+      ? table(["reason", "n", ...COLUMNS], reasonRows)
+      : "_no tagged candidates yet_"
+  }
+`,
+);
+
+console.log(`\nSeparation tables → ${outFile}`);

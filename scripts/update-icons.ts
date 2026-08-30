@@ -34,7 +34,7 @@ const SKIP_DIRS = new Set([
   ".git",
   "specs",
   "static",
-  "generated",
+  "candidates",
 ]);
 
 // Reserved JS identifiers that need remapping

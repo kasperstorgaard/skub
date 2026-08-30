@@ -10,10 +10,10 @@ export default defineConfig({
   server: {
     watch: {
       // The generator writes candidate files here at runtime (POST
-      // /api/generated). Without this, Vite's dev watcher treats each new file
+      // /api/candidates). Without this, Vite's dev watcher treats each new file
       // as a source change and full-reloads the page — wiping the just-shown
       // candidate back to the empty server state.
-      ignored: ["**/generated/**"],
+      ignored: ["**/candidates/**"],
     },
     // Transform the entries in the background as soon as the server boots,
     // rather than on the first request. Same total work, but it overlaps with
@@ -24,7 +24,6 @@ export default defineConfig({
     },
   },
   plugins: [
-    workerBundle("solver-worker"),
     workerBundle("generate-worker"),
     puzzleManifest(),
     tailwindcss(),

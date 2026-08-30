@@ -24,10 +24,11 @@ type Props = {
   href: Signal<string>;
   today: Temporal.PlainDate;
   selectedDate: Temporal.PlainDate;
-  isBuilder?: boolean;
+  /** Whether months past today are offered — they are only locally. */
+  showFuture?: boolean;
 };
 
-export function MonthStrip({ href, today, selectedDate, isBuilder }: Props) {
+export function MonthStrip({ href, today, selectedDate, showFuture }: Props) {
   return (
     <div className="flex max-sm:overflow-x-auto -mx-1 px-1 -my-1 py-1">
       <nav
@@ -38,7 +39,7 @@ export function MonthStrip({ href, today, selectedDate, isBuilder }: Props) {
           const month = idx + 1;
           const isFuture = month > today.month;
 
-          if (isFuture && !isBuilder) return null;
+          if (isFuture && !showFuture) return null;
 
           const isActive = selectedDate.month === idx + 1;
 

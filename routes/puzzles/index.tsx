@@ -14,7 +14,7 @@ import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getAvailableEntries, getPuzzleByDate } from "#/game/loader.ts";
 import { Difficulty, Puzzle, PuzzleManifestEntry } from "#/game/types.ts";
 import { getArchiveDate } from "#/game/url.ts";
-import { isBuilder } from "#/lib/env.ts";
+import { isDev } from "#/lib/env.ts";
 
 type PageData = {
   today: Temporal.PlainDate;
@@ -123,7 +123,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
               href={href}
               selectedDate={selectedDate}
               today={today}
-              isBuilder={isBuilder}
+              showFuture={isDev}
             />
 
             <CalendarGrid

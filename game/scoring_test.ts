@@ -4,7 +4,9 @@ import { flipBoard } from "./board.ts";
 import {
   boardCanonicalHash,
   boardSelfSymmetries,
-  checkGates,
+  checkGenerationGates,
+  checkQualityGates,
+  checkStaticGates,
   clumping,
   computeMetrics,
   computeTrails,
@@ -605,31 +607,40 @@ Deno.test("puckPathVariety() halves when two routes share a puck path", () => {
 
 const noCorpus = { corpus: new Set<string>(), batchHashes: new Set<string>() };
 
-Deno.test("checkGates() passes the ingrid puzzle at its own move count", () => {
+Deno.test("checkQualityGates() passes the ingrid puzzle", () => {
   assertEquals(
-    checkGates(ingridBoard, { targetMoves: 7, ...noCorpus }),
+    checkQualityGates(ingridBoard, solveExhaustiveSync(ingridBoard)),
     { passed: true },
   );
 });
 
-Deno.test("checkGates() fails G2 when the board solves short of the target", () => {
+Deno.test("checkGenerationGates() passes the ingrid puzzle at its own move count", () => {
+  const gate = checkGenerationGates(ingridBoard, {
+    targetMoves: 7,
+    ...noCorpus,
+  });
+
+  assertEquals(gate.passed, true);
+});
+
+Deno.test("checkGenerationGates() fails G2 when the board solves short of the target", () => {
   // ingrid solves in 7; a run after 9-move boards must not settle for it.
   assertEquals(
-    checkGates(ingridBoard, { targetMoves: 9, ...noCorpus }),
+    checkGenerationGates(ingridBoard, { targetMoves: 9, ...noCorpus }),
     { passed: false, failedGate: "G2" },
   );
 });
 
-Deno.test("checkGates() fails G1 when the board needs more moves than the target", () => {
+Deno.test("checkGenerationGates() fails G1 when the board needs more moves than the target", () => {
   // The gate solve caps its depth at the target, so a board that needs more
   // rejects on depth rather than being solved in full to fail G2.
   assertEquals(
-    checkGates(ingridBoard, { targetMoves: 6, ...noCorpus }),
+    checkGenerationGates(ingridBoard, { targetMoves: 6, ...noCorpus }),
     { passed: false, failedGate: "G1" },
   );
 });
 
-Deno.test("checkGates() fails G9 for a blocker walled in on all four sides", () => {
+Deno.test("checkStaticGates() fails G9 for a blocker walled in on all four sides", () => {
   const trapped: Board = {
     ...ingridBoard,
     pieces: [...ingridBoard.pieces, { x: 3, y: 3, type: "blocker" }],
@@ -643,7 +654,7 @@ Deno.test("checkGates() fails G9 for a blocker walled in on all four sides", () 
   };
 
   assertEquals(
-    checkGates(trapped, { targetMoves: 7, ...noCorpus }),
+    checkStaticGates(trapped),
     { passed: false, failedGate: "G9" },
   );
 });
@@ -663,7 +674,7 @@ Deno.test("minWallUtilization() holds at 0.2 up to 15 walls, relaxes beyond", ()
   assertEquals(minWallUtilization(30), 0.1);
 });
 
-Deno.test("checkGates() fails G10 for an egregiously clumped board", () => {
+Deno.test("checkStaticGates() fails G10 for an egregiously clumped board", () => {
   // Three mutually adjacent blockers + an adjacent wall pair → clumping 1.0,
   // well past MAX_CLUMPING 0.25. None is walled in on four sides (G9 passes),
   // so the static G10 check rejects it before the solve.
@@ -682,16 +693,16 @@ Deno.test("checkGates() fails G10 for an egregiously clumped board", () => {
   };
 
   assertEquals(
-    checkGates(clumped, { targetMoves: 7, ...noCorpus }),
+    checkStaticGates(clumped),
     { passed: false, failedGate: "G10" },
   );
 });
 
-Deno.test("checkGates() fails G3 when the board is already in the corpus", () => {
+Deno.test("checkGenerationGates() fails G3 when the board is already in the corpus", () => {
   const corpus = new Set([boardCanonicalHash(ingridBoard)]);
 
   assertEquals(
-    checkGates(ingridBoard, {
+    checkGenerationGates(ingridBoard, {
       targetMoves: 7,
       corpus,
       batchHashes: new Set(),

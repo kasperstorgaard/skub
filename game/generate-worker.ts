@@ -1,8 +1,11 @@
 import { generate, type GenerateOptions } from "#/game/generator.ts";
 import {
   boardCanonicalHash,
-  checkGates,
+  checkGenerationGates,
+  checkQualityGates,
+  checkStaticGates,
   computeMetrics,
+  type GateResult,
   type Metrics,
   scoreBoard,
   type ScoredBoard,
@@ -48,7 +51,33 @@ const DEFAULT_MAX_GATE_ATTEMPTS = 500;
 const GATE_MAX_STATES = 2_000_000;
 
 /**
- * Loops `generate()` → `checkGates()` until a board solves in exactly
+ * One attempt's full verdict: the static quality gates, then the run's own
+ * (G1–G3), then the solve-dependent quality gates. A generated board has to
+ * clear both halves — the run's, to be what was asked for, and candidacy's, to
+ * be worth keeping.
+ */
+function gateBoard(
+  board: Board,
+  targetMoves: number,
+  novelty: { corpus: Set<string>; batchHashes: Set<string> },
+): GateResult {
+  const staticGate = checkStaticGates(board);
+  if (!staticGate.passed) return staticGate;
+
+  const generation = checkGenerationGates(board, {
+    targetMoves,
+    ...novelty,
+    // Reject branchy candidates fast so a single slow solve can't freeze the
+    // attempt counter — well above what a ≤6-piece board needs.
+    maxStates: GATE_MAX_STATES,
+  });
+  if (!generation.passed) return generation;
+
+  return checkQualityGates(board, generation.result);
+}
+
+/**
+ * Loops `generate()` → `gateBoard()` until a board solves in exactly
  * `targetMoves` and passes every other gate, or the attempt budget is spent.
  * Emits a `progress` event per attempt (a simple rising count for the UI), then
  * a terminal `result` / `exhausted` / `error`. Runs off the main thread — a run
@@ -82,14 +111,13 @@ self.onmessage = (e: MessageEvent<GenerateRequest>) => {
         continue;
       }
 
-      const gate = checkGates(board, {
-        targetMoves,
+      // Cheapest first: the layout-only gates reject a hopeless board before it
+      // ever reaches a solve, then the run's own gates, then candidacy.
+      const gate = gateBoard(board, targetMoves, {
         corpus: corpusSet,
         batchHashes,
-        // Reject branchy candidates fast so a single slow solve can't freeze the
-        // attempt counter — well above what a ≤6-piece board needs.
-        maxStates: GATE_MAX_STATES,
       });
+
       if (gate.passed) {
         batchHashes.add(boardCanonicalHash(board));
         // Score the winner once for the advisory panel. Same state cap as the

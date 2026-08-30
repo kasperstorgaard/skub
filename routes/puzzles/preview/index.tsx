@@ -1,4 +1,6 @@
-// Preview puzzle route — renders a user's draft board, no solution submission
+// Preview puzzle route — renders a user's draft board so it can be played, no
+// solution submission. Analysis lives on /candidate; this is the play-it check
+// anyone gets, dev or not.
 import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
@@ -12,7 +14,6 @@ import { getUserPuzzleDraft } from "#/db/user.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
-import { SolveDialog } from "#/islands/solve-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 
 type PageData = {
@@ -23,14 +24,6 @@ export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const draft = await getUserPuzzleDraft(ctx.state.userId);
     if (!draft) throw new HttpError(500, "No stored puzzle");
-
-    if (isDev) {
-      const url = new URL(ctx.req.url);
-      if (!url.searchParams.has("dialog")) {
-        url.searchParams.set("dialog", "solve");
-        return Response.redirect(url, 303);
-      }
-    }
 
     const puzzle: Puzzle = { ...draft, slug: "preview", number: 0 };
 
@@ -90,8 +83,6 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
       >
         {printUrl}
       </a>
-
-      {isDev && <SolveDialog puzzle={puzzle} href={href} />}
     </>
   );
 });

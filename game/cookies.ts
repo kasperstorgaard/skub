@@ -1,6 +1,6 @@
 import { getCookies, setCookie } from "@std/http/cookie";
 
-import type { GenOptions } from "#/game/generated.ts";
+import type { GenOptions } from "#/game/candidates.ts";
 
 const TRACKING_ID_KEY = "tracking_id";
 // 1 year

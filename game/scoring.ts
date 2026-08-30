@@ -1049,69 +1049,37 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
 }
 
 /**
- * Runs the acceptance gates, cheapest-first, short-circuiting on the first fail:
- *  - G9 no trapped blocker (walled in on all four sides — static, so first)
- *  - G10 clumping <= MAX_CLUMPING (egregious clutter — static, so before the solve)
- *  - G1 solvable within maxDepth 15
- *  - G2 minMoves is exactly `targetMoves`
- *  - G3 canonical hash not already in the corpus or this batch
+ * The static half of the quality gates — the ones the layout alone answers, so
+ * they run before any solve:
+ *  - G9 no trapped blocker (walled in on all four sides)
+ *  - G10 clumping <= MAX_CLUMPING (egregious clutter)
+ *
+ * Split out so the generation loop can reject a hopeless layout without paying
+ * for a solve; {@link checkQualityGates} runs it again as part of the full
+ * verdict (both checks are O(pieces), so the repeat is free).
+ */
+export function checkStaticGates(board: Board): GateResult {
+  if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
+  if (clumping(board) > MAX_CLUMPING) {
+    return { passed: false, failedGate: "G10" };
+  }
+  return { passed: true };
+}
+
+/**
+ * The solve-dependent quality gates, cheapest-first, short-circuiting on the
+ * first fail:
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
  *  - G5 unused blockers <= maxUnusedBlockers(count) (dense requests allowed more)
  *  - G6 every route travels >= minMoves * LENGTH_FACTOR cells (not cramped/trivial)
  *  - G7 wall utilization >= minWallUtilization(count) (wall-heavy requests looser)
  *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
  *
- * Gate numbers are historical, order is by cost. G7–G8 gate on board *economy*
- * — clutter and wasted space — but, like G1–G6, are measured across the
- * puzzle's solutions (which cells trails enter, which walls actually stop a
- * piece), not from the static layout alone. All gates are hard rejects during
- * generation, but do not constrain manual editing — a human curator may
- * knowingly hand-craft a board that fails a gate.
+ * G7–G8 gate on board *economy* — clutter and wasted space — but, like G4–G6,
+ * are measured across the puzzle's solutions (which cells trails enter, which
+ * walls actually stop a piece), not from the static layout alone.
  */
-export function checkGates(
-  board: Board,
-  options: {
-    /** Exact minMoves the board must solve in (G2) — see `MOVE_TARGETS`. */
-    targetMoves: number;
-    corpus: Set<string>;
-    batchHashes: Set<string>;
-    /**
-     * BFS state budget for the gate solve. The generation loop passes a tight
-     * cap so pathologically branchy candidates reject fast (G1) instead of
-     * blocking the loop for seconds; omitted elsewhere for the full solver limit.
-     */
-    maxStates?: number;
-  },
-): GateResult {
-  if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
-
-  if (clumping(board) > MAX_CLUMPING) {
-    return { passed: false, failedGate: "G10" };
-  }
-
-  let result: SolverResult;
-  try {
-    // Capping the search at the target is what makes an exact-target run
-    // affordable: a board that needs more moves blows the depth limit and
-    // rejects as G1 instead of being solved in full only to fail G2. The
-    // branchy deep boards were most of the old loop's cost.
-    result = solveExhaustiveSync(board, {
-      maxDepth: options.targetMoves,
-      maxStates: options.maxStates,
-    });
-  } catch {
-    return { passed: false, failedGate: "G1" };
-  }
-
-  if (result.minMoves !== options.targetMoves) {
-    return { passed: false, failedGate: "G2" };
-  }
-
-  const hash = boardCanonicalHash(board);
-  if (options.corpus.has(hash) || options.batchHashes.has(hash)) {
-    return { passed: false, failedGate: "G3" };
-  }
-
+function checkSolvedGates(board: Board, result: SolverResult): GateResult {
   const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
 
   const everyUsesBlocker = solutions.every((moves) =>
@@ -1150,6 +1118,82 @@ export function checkGates(
   }
 
   return { passed: true };
+}
+
+/**
+ * Whether a board is good enough to be a candidate, whatever made it: G9–G10
+ * on the layout, then G4–G8 across its optimal solutions. Origin-independent by
+ * construction — nothing here asks where the board came from — which is what
+ * lets a hand-built puzzle be judged by the same bar as a generated one.
+ *
+ * Gate numbers are historical, order is by cost. All of these are hard rejects
+ * during generation, but they do not constrain manual editing: a curator may
+ * knowingly hand-craft a board that fails one.
+ */
+export function checkQualityGates(
+  board: Board,
+  result: SolverResult,
+): GateResult {
+  const staticGate = checkStaticGates(board);
+  if (!staticGate.passed) return staticGate;
+  return checkSolvedGates(board, result);
+}
+
+/** A generation run's verdict — the solve is handed back on a pass. */
+export type GenerationGateResult =
+  | { passed: false; failedGate: GateResult["failedGate"] }
+  | { passed: true; result: SolverResult };
+
+/**
+ * The gates that only mean something inside a generation run:
+ *  - G1 solvable within the target depth
+ *  - G2 minMoves is exactly `targetMoves`
+ *  - G3 canonical hash not already in the corpus or this batch
+ *
+ * Both are vacuous or self-contradictory for a board that already exists — a
+ * corpus puzzle fails G3 by definition — so they are no part of candidacy; see
+ * {@link checkQualityGates} for that. The solve rides along on a pass, since
+ * the quality gates need one and it's the expensive part.
+ */
+export function checkGenerationGates(
+  board: Board,
+  options: {
+    /** Exact minMoves the board must solve in (G2) — see `MOVE_TARGETS`. */
+    targetMoves: number;
+    corpus: Set<string>;
+    batchHashes: Set<string>;
+    /**
+     * BFS state budget for the gate solve. The generation loop passes a tight
+     * cap so pathologically branchy candidates reject fast (G1) instead of
+     * blocking the loop for seconds; omitted elsewhere for the full solver limit.
+     */
+    maxStates?: number;
+  },
+): GenerationGateResult {
+  let result: SolverResult;
+  try {
+    // Capping the search at the target is what makes an exact-target run
+    // affordable: a board that needs more moves blows the depth limit and
+    // rejects as G1 instead of being solved in full only to fail G2. The
+    // branchy deep boards were most of the old loop's cost.
+    result = solveExhaustiveSync(board, {
+      maxDepth: options.targetMoves,
+      maxStates: options.maxStates,
+    });
+  } catch {
+    return { passed: false, failedGate: "G1" };
+  }
+
+  if (result.minMoves !== options.targetMoves) {
+    return { passed: false, failedGate: "G2" };
+  }
+
+  const hash = boardCanonicalHash(board);
+  if (options.corpus.has(hash) || options.batchHashes.has(hash)) {
+    return { passed: false, failedGate: "G3" };
+  }
+
+  return { passed: true, result };
 }
 
 /** A single distinct solution with its own metrics and composite score. */

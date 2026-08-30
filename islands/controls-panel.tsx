@@ -12,6 +12,7 @@ import {
   Pencil,
   Printer,
   Ranking,
+  Star,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { Puzzle } from "#/game/types.ts";
@@ -198,16 +199,14 @@ export function ControlsPanel(
             <Icon icon={Printer} /> Print
           </button>
 
-          {!isPreview &&
-            puzzle.value.slug !== "preview" &&
-            (
-              <a
-                href={`/puzzles/${puzzle.value.slug}/solutions`}
-                className="btn"
-              >
-                <Icon icon={Ranking} /> See solves
-              </a>
-            )}
+          {!isPreview && (
+            <a
+              href={`/puzzles/${puzzle.value.slug}/solutions`}
+              className="btn"
+            >
+              <Icon icon={Ranking} /> See solves
+            </a>
+          )}
 
           {isPreview && (
             <a href="/api/export" download className="btn">
@@ -222,6 +221,17 @@ export function ControlsPanel(
               className="btn"
             >
               <Icon icon={Pencil} /> Edit
+            </a>
+          )}
+
+          {
+            /* Straight to the candidate page, not via clone: clone mangles
+              identity for remixing, and a rating filed under "Untitled, 0
+              moves" is useless as an anchor. */
+          }
+          {isDev && !isPreview && (
+            <a href={`/candidate?slug=${puzzle.value.slug}`} className="btn">
+              <Icon icon={Star} /> Rate
             </a>
           )}
         </div>
