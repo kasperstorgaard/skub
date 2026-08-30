@@ -6,10 +6,10 @@
   "tasks": {
     "build": "vite build",
     "dev": "vite",
-    "check-anchors": "deno run -A ./scripts/check-anchors.ts",
-    "compare-generated": "deno run -A ./scripts/compare-generated.ts",
+    "audit-gates": "deno run -A ./scripts/audit-gates.ts",
+    "check-calibration": "deno run -A ./scripts/check-calibration.ts",
     "e2e": "deno test -A --no-check --env e2e/ routes/",
-    "list-generated": "deno run -A ./scripts/list-generated.ts",
+    "list-candidates": "deno run -A ./scripts/list-candidates.ts",
     "preview": "deno serve -A _fresh/server.js",
     "score-corpus": "deno run -A ./scripts/score-corpus.ts",
     "screenshots": "deno run -A ./scripts/screenshots.ts",
@@ -26,8 +26,7 @@
       ]
     },
     "exclude": [
-      "static/*",
-      "routes/api/solver-worker.js"
+      "static/*"
     ]
   },
   "fmt": {
@@ -37,8 +36,7 @@
       "spec.md",
       "static/*",
       "specs/*",
-      "generated/*",
-      "routes/api/solver-worker.js"
+      "candidates/*"
     ]
   },
   "exclude": [

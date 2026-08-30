@@ -110,7 +110,11 @@ Deno.test("home — stats show streak and solve count after solving first daily"
       getAvailableEntries(),
     ]);
 
-    for (const entry of entries.slice(0, 1)) {
+    // This process is dev, so the list carries the whole schedule; only
+    // released puzzles count toward a streak on the server.
+    const released = entries.filter((entry) => !entry.isFuture);
+
+    for (const entry of released.slice(0, 1)) {
       await addSolution({
         puzzleSlug: entry.slug,
         moves: await solvePuzzle(entry.slug),
@@ -135,7 +139,11 @@ Deno.test("home — stats show streak and solve count after solving multiple dai
       getAvailableEntries(),
     ]);
 
-    for (const entry of entries.slice(0, 3)) {
+    // This process is dev, so the list carries the whole schedule; only
+    // released puzzles count toward a streak on the server.
+    const released = entries.filter((entry) => !entry.isFuture);
+
+    for (const entry of released.slice(0, 3)) {
       await addSolution({
         puzzleSlug: entry.slug,
         moves: await solvePuzzle(entry.slug),

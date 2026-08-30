@@ -5,6 +5,7 @@ import {
   flipBoard,
   getGrid,
   getTargets,
+  isBoardSame,
   isMoveSame,
   isPositionSame,
   isValidMove,
@@ -148,6 +149,147 @@ Deno.test("isMoveSame() should compare both positions of a move", () => {
       x: 3,
       y: 0,
     }]),
+    false,
+  );
+});
+
+Deno.test("isBoardSame() should ignore the order pieces and walls are listed in", () => {
+  assertEquals(
+    isBoardSame({
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [
+        { x: 2, y: 2, orientation: "vertical" },
+        { x: 4, y: 6, orientation: "horizontal" },
+      ],
+    }, {
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 5, y: 5, type: "blocker" },
+        { x: 1, y: 1, type: "puck" },
+      ],
+      walls: [
+        { x: 4, y: 6, orientation: "horizontal" },
+        { x: 2, y: 2, orientation: "vertical" },
+      ],
+    }),
+    true,
+  );
+});
+
+Deno.test("isBoardSame() should be false for boards differing by one wall", () => {
+  assertEquals(
+    isBoardSame({
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [
+        { x: 2, y: 2, orientation: "vertical" },
+        { x: 4, y: 6, orientation: "horizontal" },
+      ],
+    }, {
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [
+        { x: 2, y: 2, orientation: "vertical" },
+        { x: 4, y: 6, orientation: "horizontal" },
+        { x: 6, y: 6, orientation: "vertical" },
+      ],
+    }),
+    false,
+  );
+});
+
+Deno.test("isBoardSame() should be false for boards differing by wall orientation", () => {
+  assertEquals(
+    isBoardSame({
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [{ x: 2, y: 2, orientation: "vertical" }],
+    }, {
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [{ x: 2, y: 2, orientation: "horizontal" }],
+    }),
+    false,
+  );
+});
+
+Deno.test("isBoardSame() should be false for boards differing only in destination", () => {
+  assertEquals(
+    isBoardSame({
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [{ x: 2, y: 2, orientation: "vertical" }],
+    }, {
+      destination: { x: 4, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [{ x: 2, y: 2, orientation: "vertical" }],
+    }),
+    false,
+  );
+});
+
+Deno.test("isBoardSame() should be false when the puck and a blocker swap roles", () => {
+  assertEquals(
+    isBoardSame({
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [],
+    }, {
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "blocker" },
+        { x: 5, y: 5, type: "puck" },
+      ],
+      walls: [],
+    }),
+    false,
+  );
+});
+
+Deno.test("isBoardSame() should be false for a mirrored board", () => {
+  // A mirror is a different layout to play, unlike the canonical hash the
+  // novelty gate uses, which folds the dihedral symmetries together.
+  assertEquals(
+    isBoardSame({
+      destination: { x: 3, y: 3 },
+      pieces: [
+        { x: 1, y: 1, type: "puck" },
+        { x: 5, y: 5, type: "blocker" },
+      ],
+      walls: [{ x: 2, y: 2, orientation: "vertical" }],
+    }, {
+      destination: { x: 4, y: 3 },
+      pieces: [
+        { x: 6, y: 1, type: "puck" },
+        { x: 2, y: 5, type: "blocker" },
+      ],
+      walls: [{ x: 5, y: 2, orientation: "vertical" }],
+    }),
     false,
   );
 });

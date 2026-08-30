@@ -1,5 +1,6 @@
 import {
   COLS,
+  encodeBoard,
   flipBoard,
   isPositionSame,
   resolveMoves,
@@ -76,31 +77,6 @@ function applyDihedral(board: Board, transform: DihedralTransform): Board {
     case "flipH_r270":
       return rotateBoard(flipBoard(board, "horizontal"), "left");
   }
-}
-
-/**
- * Encodes a board into a comparable numeric array:
- * `[puckPos, destPos, ...sortedBlockers, 255, ...sortedWalls]`, where positions
- * are `y*8+x` and walls are `(y*8+x)*2 + (horizontal ? 0 : 1)`. Blockers and walls
- * are sorted so array order never depends on input order.
- */
-function encodeBoard(board: Board): number[] {
-  const puck = board.pieces.find((p) => p.type === "puck")!;
-  const puckPos = puck.y * COLS + puck.x;
-  const destPos = board.destination.y * COLS + board.destination.x;
-
-  const blockers = board.pieces
-    .filter((p) => p.type === "blocker")
-    .map((p) => p.y * COLS + p.x)
-    .sort((a, b) => a - b);
-
-  const walls = board.walls
-    .map((w) =>
-      (w.y * COLS + w.x) * 2 + (w.orientation === "horizontal" ? 0 : 1)
-    )
-    .sort((a, b) => a - b);
-
-  return [puckPos, destPos, ...blockers, 255, ...walls];
 }
 
 /** Lexicographic comparison of two encodings; shorter is smaller when prefixes tie. */
@@ -591,7 +567,7 @@ function visitedCells(board: Board, solutions: Move[][]): Set<number> {
 /**
  * Dead space — fraction of the board's cells that no trail ever enters and that
  * hold no piece or the destination. High dead space means the puzzle huddles in
- * one region and wastes the board (cf. the `kim` anchor).
+ * one region and wastes the board (cf. the `kim` board).
  */
 export function deadSpace(board: Board, solutions: Move[][]): number {
   const cells = COLS * ROWS;
@@ -1049,69 +1025,36 @@ function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
 }
 
 /**
- * Runs the acceptance gates, cheapest-first, short-circuiting on the first fail:
- *  - G9 no trapped blocker (walled in on all four sides — static, so first)
- *  - G10 clumping <= MAX_CLUMPING (egregious clutter — static, so before the solve)
- *  - G1 solvable within maxDepth 15
- *  - G2 minMoves is exactly `targetMoves`
- *  - G3 canonical hash not already in the corpus or this batch
+ * The static half of the quality gates — the ones the layout alone answers, so
+ * they run before any solve:
+ *  - G9 no trapped blocker (walled in on all four sides)
+ *  - G10 clumping <= MAX_CLUMPING (egregious clutter)
+ *
+ * Split out so the generation loop can reject a hopeless layout without paying
+ * for a solve; {@link checkQualityGates} runs it again as part of the full
+ * verdict.
+ */
+export function checkStaticGates(board: Board): GateResult {
+  if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
+  if (clumping(board) > MAX_CLUMPING) {
+    return { passed: false, failedGate: "G10" };
+  }
+  return { passed: true };
+}
+
+/**
+ * The solve-dependent quality gates, cheapest-first, short-circuiting on the
+ * first fail:
  *  - G4 every optimal solution moves at least one blocker (blockers matter)
  *  - G5 unused blockers <= maxUnusedBlockers(count) (dense requests allowed more)
  *  - G6 every route travels >= minMoves * LENGTH_FACTOR cells (not cramped/trivial)
  *  - G7 wall utilization >= minWallUtilization(count) (wall-heavy requests looser)
  *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
  *
- * Gate numbers are historical, order is by cost. G7–G8 gate on board *economy*
- * — clutter and wasted space — but, like G1–G6, are measured across the
- * puzzle's solutions (which cells trails enter, which walls actually stop a
- * piece), not from the static layout alone. All gates are hard rejects during
- * generation, but do not constrain manual editing — a human curator may
- * knowingly hand-craft a board that fails a gate.
+ * G7–G8 gate board economy — clutter and wasted space — but like G4–G6 are
+ * measured across the puzzle's solutions, not from the static layout alone.
  */
-export function checkGates(
-  board: Board,
-  options: {
-    /** Exact minMoves the board must solve in (G2) — see `MOVE_TARGETS`. */
-    targetMoves: number;
-    corpus: Set<string>;
-    batchHashes: Set<string>;
-    /**
-     * BFS state budget for the gate solve. The generation loop passes a tight
-     * cap so pathologically branchy candidates reject fast (G1) instead of
-     * blocking the loop for seconds; omitted elsewhere for the full solver limit.
-     */
-    maxStates?: number;
-  },
-): GateResult {
-  if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
-
-  if (clumping(board) > MAX_CLUMPING) {
-    return { passed: false, failedGate: "G10" };
-  }
-
-  let result: SolverResult;
-  try {
-    // Capping the search at the target is what makes an exact-target run
-    // affordable: a board that needs more moves blows the depth limit and
-    // rejects as G1 instead of being solved in full only to fail G2. The
-    // branchy deep boards were most of the old loop's cost.
-    result = solveExhaustiveSync(board, {
-      maxDepth: options.targetMoves,
-      maxStates: options.maxStates,
-    });
-  } catch {
-    return { passed: false, failedGate: "G1" };
-  }
-
-  if (result.minMoves !== options.targetMoves) {
-    return { passed: false, failedGate: "G2" };
-  }
-
-  const hash = boardCanonicalHash(board);
-  if (options.corpus.has(hash) || options.batchHashes.has(hash)) {
-    return { passed: false, failedGate: "G3" };
-  }
-
+function checkSolvedGates(board: Board, result: SolverResult): GateResult {
   const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
 
   const everyUsesBlocker = solutions.every((moves) =>
@@ -1152,6 +1095,79 @@ export function checkGates(
   return { passed: true };
 }
 
+/**
+ * Whether a board is good enough to be a candidate, whatever made it: G9–G10
+ * on the layout, then G4–G8 across its optimal solutions. Nothing here asks
+ * where the board came from.
+ *
+ * Gate numbers are historical, order is by cost. Hard rejects during
+ * generation, but no constraint on manual editing.
+ */
+export function checkQualityGates(
+  board: Board,
+  result: SolverResult,
+): GateResult {
+  const staticGate = checkStaticGates(board);
+  if (!staticGate.passed) return staticGate;
+  return checkSolvedGates(board, result);
+}
+
+/** A generation run's verdict — the solve is handed back on a pass. */
+export type GenerationGateResult =
+  | { passed: false; failedGate: GateResult["failedGate"] }
+  | { passed: true; result: SolverResult };
+
+/**
+ * The gates that only mean something inside a generation run:
+ *  - G1 solvable within the target depth
+ *  - G2 minMoves is exactly `targetMoves`
+ *  - G3 canonical hash not already in the corpus or this batch
+ *
+ * Meaningless for a board that already exists — a corpus puzzle fails G3 by
+ * definition — so they are no part of candidacy; see {@link checkQualityGates}.
+ * The solve rides along on a pass, being the expensive part.
+ */
+export function checkGenerationGates(
+  board: Board,
+  options: {
+    /** Exact minMoves the board must solve in (G2) — see `MOVE_TARGETS`. */
+    targetMoves: number;
+    corpus: Set<string>;
+    batchHashes: Set<string>;
+    /**
+     * BFS state budget for the gate solve. The generation loop passes a tight
+     * cap so pathologically branchy candidates reject fast (G1) instead of
+     * blocking the loop for seconds; omitted elsewhere for the full solver limit.
+     */
+    maxStates?: number;
+  },
+): GenerationGateResult {
+  let result: SolverResult;
+  try {
+    // Capping the search at the target is what makes an exact-target run
+    // affordable: a board that needs more moves blows the depth limit and
+    // rejects as G1 instead of being solved in full only to fail G2. The
+    // branchy deep boards were most of the old loop's cost.
+    result = solveExhaustiveSync(board, {
+      maxDepth: options.targetMoves,
+      maxStates: options.maxStates,
+    });
+  } catch {
+    return { passed: false, failedGate: "G1" };
+  }
+
+  if (result.minMoves !== options.targetMoves) {
+    return { passed: false, failedGate: "G2" };
+  }
+
+  const hash = boardCanonicalHash(board);
+  if (options.corpus.has(hash) || options.batchHashes.has(hash)) {
+    return { passed: false, failedGate: "G3" };
+  }
+
+  return { passed: true, result };
+}
+
 /** A single distinct solution with its own metrics and composite score. */
 export type SolutionScore = { moves: Move[]; metrics: Metrics; score: number };
 
@@ -1179,7 +1195,7 @@ type Bound = (ctx: BoundCtx) => number;
  * into both the report body and its filename.
  *
  * v1 used theoretical maxes and came out *anti-correlated* with human judgement
- * — both the corpus anchors (erik > torstein > kim > malene) and the first
+ * — both the rated corpus boards (erik > torstein > kim > malene) and the first
  * labeled generated set (a 2★ board scored top, a 5★ board bottom) inverted.
  *
  * v2 was a conservative structural correction (dropped `firstMovePrecision`,
@@ -1188,7 +1204,7 @@ type Bound = (ctx: BoundCtx) => number;
  * ρ = 0.07).
  *
  * v3 prunes the composite down to the metrics the 39-board labeled set showed
- * actually track ratings (per-metric ρ from `check-anchors`):
+ * actually track ratings (per-metric ρ from `check-calibration`):
  *  - kept: `stopWeighted` (+0.38), `pieceUsage` (+0.27), `wallUtilization`
  *    (+0.19), `reversals` (+0.18), `searchProfile` (+0.12) — the "blockers and
  *    walls actually matter" cluster, matching the dominant human complaints
@@ -1212,7 +1228,7 @@ type Bound = (ctx: BoundCtx) => number;
  * `uniqueSolutions` tracks *easiness* (ρ +0.18) — so variety was a positive that
  * rewarded easy multi-solution boards while penalising the isolated-brilliant
  * profile (torstein, few solutions). Removing it lifted pooled ρ 0.373 → 0.488
- * and restored the anchor order (malene ≈ torstein ≫ erik > kim). Quality is
+ * and restored the corpus order (malene ≈ torstein ≫ erik > kim). Quality is
  * non-monotonic in solution count (both varied-malene and isolated-torstein are
  * 5★), so the varied side wants a difficulty-gated / U-shaped term, not a naive
  * "more solutions = better" — deferred until such a term is designed and earns

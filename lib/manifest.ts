@@ -40,3 +40,19 @@ export async function updateManifest() {
     JSON.stringify(entries, null, 2),
   );
 }
+
+/**
+ * The next free schedule slot — one past the highest number in the corpus.
+ * Read off the manifest file rather than the loader's cache, which a promote
+ * has just invalidated by writing a new puzzle.
+ */
+export async function nextPuzzleNumber(): Promise<number> {
+  try {
+    const text = await Deno.readTextFile(`${PUZZLES_DIR}/manifest.json`);
+    const entries = JSON.parse(text) as PuzzleManifestEntry[];
+    return entries.reduce((max, entry) => Math.max(max, entry.number ?? 0), 0) +
+      1;
+  } catch {
+    return 1;
+  }
+}

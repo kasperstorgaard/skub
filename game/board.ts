@@ -76,6 +76,43 @@ export function isMoveSame(src: Move, target: Move) {
 }
 
 /**
+ * Encodes a board into a comparable numeric array:
+ * `[puckPos, destPos, ...sortedBlockers, 255, ...sortedWalls]`, where positions
+ * are `y*8+x` and walls are `(y*8+x)*2 + (horizontal ? 0 : 1)`. Blockers and walls
+ * are sorted so array order never depends on input order.
+ */
+export function encodeBoard(board: Board): number[] {
+  const puck = board.pieces.find((p) => p.type === "puck")!;
+  const puckPos = puck.y * COLS + puck.x;
+  const destPos = board.destination.y * COLS + board.destination.x;
+
+  const blockers = board.pieces
+    .filter((p) => p.type === "blocker")
+    .map((p) => p.y * COLS + p.x)
+    .sort((a, b) => a - b);
+
+  const walls = board.walls
+    .map((w) =>
+      (w.y * COLS + w.x) * 2 + (w.orientation === "horizontal" ? 0 : 1)
+    )
+    .sort((a, b) => a - b);
+
+  return [puckPos, destPos, ...blockers, 255, ...walls];
+}
+
+/**
+ * Checks if two boards are the same layout, piece and wall order aside.
+ * @param src The source board
+ * @param target The target board to compare against.
+ * @returns True if identical, otherwise false
+ */
+export function isBoardSame(src: Board, target: Board) {
+  const a = encodeBoard(src);
+  const b = encodeBoard(target);
+  return a.length === b.length && a.every((value, i) => value === b[i]);
+}
+
+/**
  * Validates the board structure and contents, returning a sanitized Board object.
  * Can be consumed as a truthy check or a means to get a properly typed Board.
  * Will throw BoardError if invalid.

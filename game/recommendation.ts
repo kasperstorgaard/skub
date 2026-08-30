@@ -2,10 +2,10 @@ import { getBestMoves } from "#/db/solutions.ts";
 import type { Solution } from "#/db/types.ts";
 import {
   getAvailableEntries,
-  getLatestPuzzle,
   getOnboardingPuzzle,
   getPuzzle,
   getRandomPuzzle,
+  getTodaysPuzzle,
   getTutorialPuzzle,
 } from "#/game/loader.ts";
 import type { SkillLevel } from "#/game/types.ts";
@@ -41,16 +41,20 @@ export async function pickRecommendedPuzzle(
   const bestMoves = getBestMoves(solutions);
   const [entries, dailyPuzzle] = await Promise.all([
     getAvailableEntries(),
-    getLatestPuzzle(),
+    getTodaysPuzzle(),
   ]);
-  const optimalSlugs = entries
+  // Only released boards count. Locally the available list carries the whole
+  // schedule, and a puzzle nobody could have played is neither perfected nor
+  // worth recommending.
+  const released = entries.filter((entry) => !entry.isFuture);
+  const optimalSlugs = released
     .filter((entry) => bestMoves[entry.slug] === entry.minMoves)
     .map((entry) => entry.slug);
 
   // Endgame: everything available (besides today's daily, which is shown on its
   // own card) is perfected. Recommend loke even if today's daily is still
   // unsolved — otherwise excludeSlugs covers every puzzle and we 500.
-  const nothingLeftToPerfect = entries
+  const nothingLeftToPerfect = released
     .filter((entry) => entry.minMoves && entry.slug !== dailyPuzzle?.slug)
     .every((entry) => optimalSlugs.includes(entry.slug));
 

@@ -9,7 +9,7 @@ const MAX_ATTEMPTS = 500;
  * behaviour-preserving fixes, minor = additive knobs/defaults, major (or the
  * 0.x minor) = placement/symmetry changes that alter the candidate
  * distribution — anything that means feedback buckets aren't comparable
- * across the bump (`compare-generated` buckets by vintage).
+ * across the bump.
  * Candidates stored before 2026-07-22 carry the pre-semver forms "0.4"/"0.5".
  */
 export const GENERATOR_VERSION = "0.7.0";

@@ -1,5 +1,11 @@
 import { parsePuzzle } from "#/game/parser.ts";
-import { type BoundCtx, type Metrics, scoreBoard } from "#/game/scoring.ts";
+import {
+  type BoundCtx,
+  checkQualityGates,
+  type GateResult,
+  type Metrics,
+  scoreBoard,
+} from "#/game/scoring.ts";
 import { solveExhaustiveSync } from "#/game/solver.ts";
 
 /**
@@ -14,6 +20,12 @@ export type SolvedBoard = {
   ctx: BoundCtx;
   /** Per distinct solution, in `scoreBoard` order. */
   routes: Metrics[];
+  /**
+   * The quality gates' verdict on this board — origin-independent, so it reads
+   * the same for a shipped puzzle as for a candidate. Absent on cache entries
+   * written before the field existed; `solveDir({ withGates: true })` fills it.
+   */
+  quality?: GateResult;
   ms: number;
 };
 
@@ -27,6 +39,8 @@ export function solveBoardFile(path: string): SolvedBoard {
     overshoot: 2,
   });
   const scored = scoreBoard(puzzle.board, result);
+  // Free at this point — the gates need the solve, and it just happened.
+  const quality = checkQualityGates(puzzle.board, result);
 
   return {
     slug: puzzle.slug,
@@ -37,6 +51,7 @@ export function solveBoardFile(path: string): SolvedBoard {
       blockers: puzzle.board.pieces.filter((p) => p.type === "blocker").length,
     },
     routes: scored.perSolution.map((solution) => solution.metrics),
+    quality,
     ms: Math.round(performance.now() - started),
   };
 }

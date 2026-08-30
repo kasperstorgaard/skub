@@ -1,7 +1,7 @@
 import { createDefine, HttpError } from "fresh";
 
 import type { State } from "#/core.ts";
-import { getDayOfYear } from "#/game/date.ts";
+import { getTodaysPuzzleNumber } from "#/game/date.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { isDev } from "#/lib/env.ts";
@@ -26,8 +26,7 @@ export const handler = define.middleware(async (ctx) => {
   }
 
   if (!isDev && puzzle.number) {
-    const dayOfYear = getDayOfYear();
-    if (puzzle.number > dayOfYear) {
+    if (puzzle.number > getTodaysPuzzleNumber()) {
       throw new HttpError(404, `Unable to find puzzle with slug: ${slug}`);
     }
   }
