@@ -68,6 +68,7 @@ solutionTags:
   H8H3-D3-D6-A6A1-D6A6-A1A5-B5-A6A1-B5A5-A1A4:
     - interesting
     - unique
+promotedAs: karina
 ---
 
 ```

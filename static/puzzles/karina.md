@@ -1,10 +1,10 @@
 ---
+number: 254
 name: Karina
 slug: karina
 createdAt: 2026-08-30T18:42:24.631Z
 difficulty: hard
 minMoves: 10
-number: 254
 ---
 
 ```
