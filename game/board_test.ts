@@ -1,4 +1,4 @@
-import { assertEquals, assertThrows } from "@std/assert";
+import { assertEquals, assertObjectMatch, assertThrows } from "@std/assert";
 
 import {
   BoardError,
@@ -1136,8 +1136,10 @@ Deno.test("getSlide() should let a hole swallow a piece sliding into it", () => 
     portals: [],
   });
 
-  assertEquals(slide?.outcome, "dropped");
-  assertEquals(slide?.target, { x: 3, y: 0 });
+  assertObjectMatch({ ...slide }, {
+    outcome: "dropped",
+    target: { x: 3, y: 0 },
+  });
 });
 
 Deno.test("getSlide() should stop at a wall standing before a hole", () => {
@@ -1148,8 +1150,10 @@ Deno.test("getSlide() should stop at a wall standing before a hole", () => {
     portals: [],
   });
 
-  assertEquals(slide?.outcome, "stopped");
-  assertEquals(slide?.target, { x: 1, y: 0 });
+  assertObjectMatch({ ...slide }, {
+    outcome: "stopped",
+    target: { x: 1, y: 0 },
+  });
 });
 
 Deno.test("resolveMoves() should remove a piece that fell in a hole", () => {
@@ -1173,13 +1177,15 @@ Deno.test("getSlide() should carry momentum out of the paired portal", () => {
     portals: [{ x: 2, y: 0 }, { x: 5, y: 4 }],
   });
 
-  assertEquals(slide?.outcome, "stopped");
-  assertEquals(slide?.target, { x: 7, y: 4 });
-  // One leg up to the entry portal, one on from the exit.
-  assertEquals(slide?.segments, [
-    [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }],
-    [{ x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }],
-  ]);
+  assertObjectMatch({ ...slide }, {
+    outcome: "stopped",
+    target: { x: 7, y: 4 },
+    // One leg up to the entry portal, one on from the exit.
+    segments: [
+      [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }],
+      [{ x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }],
+    ],
+  });
 });
 
 Deno.test("getSlide() should stop on the exit portal when the way beyond is blocked", () => {
@@ -1190,8 +1196,10 @@ Deno.test("getSlide() should stop on the exit portal when the way beyond is bloc
     portals: [{ x: 2, y: 0 }, { x: 7, y: 4 }],
   });
 
-  assertEquals(slide?.outcome, "stopped");
-  assertEquals(slide?.target, { x: 7, y: 4 });
+  assertObjectMatch({ ...slide }, {
+    outcome: "stopped",
+    target: { x: 7, y: 4 },
+  });
 });
 
 Deno.test("getSlide() should stop on the entry portal when the exit is occupied", () => {
@@ -1203,8 +1211,10 @@ Deno.test("getSlide() should stop on the entry portal when the exit is occupied"
     portals: [{ x: 2, y: 0 }, { x: 5, y: 4 }],
   });
 
-  assertEquals(slide?.outcome, "stopped");
-  assertEquals(slide?.target, { x: 2, y: 0 });
+  assertObjectMatch({ ...slide }, {
+    outcome: "stopped",
+    target: { x: 2, y: 0 },
+  });
 });
 
 Deno.test("getSlide() should slide over a portal that has no pair", () => {
@@ -1215,8 +1225,10 @@ Deno.test("getSlide() should slide over a portal that has no pair", () => {
     portals: [{ x: 3, y: 0 }],
   });
 
-  assertEquals(slide?.outcome, "stopped");
-  assertEquals(slide?.target, { x: 7, y: 0 });
+  assertObjectMatch({ ...slide }, {
+    outcome: "stopped",
+    target: { x: 7, y: 0 },
+  });
 });
 
 Deno.test("getSlide() should loop when the slide re-enters the portal it came in by", () => {
@@ -1227,8 +1239,10 @@ Deno.test("getSlide() should loop when the slide re-enters the portal it came in
     portals: [{ x: 5, y: 0 }, { x: 1, y: 0 }],
   });
 
-  assertEquals(slide?.outcome, "looped");
-  assertEquals(slide?.target, { x: 5, y: 0 });
+  assertObjectMatch({ ...slide }, {
+    outcome: "looped",
+    target: { x: 5, y: 0 },
+  });
 });
 
 Deno.test("resolveMoves() should keep a looping piece on the portal it entered", () => {

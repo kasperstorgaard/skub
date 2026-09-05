@@ -478,8 +478,10 @@ Deno.test("solveSync() should route a slide through a portal pair", () => {
 
   const moves = solveSync(board);
 
-  assertEquals(moves, [[{ x: 0, y: 0 }, { x: 7, y: 4 }]]);
-  assertEquals(isValidSolution(resolveMoves(board, moves)), true);
+  assertEquals({ moves, solves: isValidSolution(resolveMoves(board, moves)) }, {
+    moves: [[{ x: 0, y: 0 }, { x: 7, y: 4 }]],
+    solves: true,
+  });
 });
 
 Deno.test("solveSync() should route the puck around a hole rather than into it", () => {
@@ -494,8 +496,10 @@ Deno.test("solveSync() should route the puck around a hole rather than into it",
 
   const moves = solveSync(board);
 
-  assertEquals(moves.length, 3);
-  assertEquals(isValidSolution(resolveMoves(board, moves)), true);
+  assertEquals({
+    length: moves.length,
+    solves: isValidSolution(resolveMoves(board, moves)),
+  }, { length: 3, solves: true });
 });
 
 Deno.test("solveSync() should drop a blocker in a hole to clear the puck's path", () => {
@@ -514,11 +518,13 @@ Deno.test("solveSync() should drop a blocker in a hole to clear the puck's path"
 
   const moves = solveSync(board);
 
-  assertEquals(moves, [
-    [{ x: 4, y: 7 }, { x: 4, y: 0 }],
-    [{ x: 0, y: 7 }, { x: 7, y: 7 }],
-  ]);
-  assertEquals(isValidSolution(resolveMoves(board, moves)), true);
+  assertEquals({ moves, solves: isValidSolution(resolveMoves(board, moves)) }, {
+    moves: [
+      [{ x: 4, y: 7 }, { x: 4, y: 0 }],
+      [{ x: 0, y: 7 }, { x: 7, y: 7 }],
+    ],
+    solves: true,
+  });
 });
 
 Deno.test("solveSync() should only emit moves the board itself accepts", () => {

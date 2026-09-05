@@ -133,10 +133,11 @@ Deno.test("getGuides() should stop a hint at the portal, not at where it lands",
     { hint: [{ x: 0, y: 0 }, { x: 7, y: 4 }] },
   );
 
-  assertEquals(result.length, 1);
-  assertEquals(result[0].isHint, true);
-  // Drawn only as far as the portal it goes in by.
-  assertEquals(result[0].to, { x: 2, y: 0 });
-  // The move committed is still the whole slide.
-  assertEquals(result[0].move, [{ x: 0, y: 0 }, { x: 7, y: 4 }]);
+  assertEquals(result, [{
+    // The move committed is still the whole slide...
+    move: [{ x: 0, y: 0 }, { x: 7, y: 4 }],
+    // ...but it is drawn only as far as the portal it goes in by.
+    to: { x: 2, y: 0 },
+    isHint: true,
+  }]);
 });

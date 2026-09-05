@@ -91,9 +91,6 @@ function formatCell(
   }
 
   // Nothing can share a cell with a hole or a portal, so no circumflex here.
-  // The destination is written first because a board that somehow holds both
-  // has to lose the hazard rather than the goal, which the parser would
-  // otherwise relocate to the board's corner.
   const hazard = holes.some((hole) => isPositionSame(hole, position))
     ? "H"
     : portals.some((portal) => isPositionSame(portal, position))
