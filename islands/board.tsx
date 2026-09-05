@@ -128,19 +128,31 @@ export default function Board(
   // A hole removes the piece outright, so there is nothing left to animate.
   // Keep the one that just fell mounted for a beat and let it drop away.
   const [fall, setFall] = useState<FallingPiece | null>(null);
-  const [warp, setWarp] = useState<PortalWarp | null>(null);
   const playedCount = useRef(moves.length);
+
+  // Arriving on a URL that already holds the move should show the finished
+  // board rather than replay it, so nothing animates on the very first render.
+  const hasMounted = useRef(false);
+  useEffect(() => {
+    hasMounted.current = true;
+  }, []);
+
+  /**
+   * Derived during the render that moves the piece, not in an effect. An effect
+   * runs a render too late: the piece has already been given its final position
+   * by then, and the plain transform transition has started dragging it
+   * straight there — so the slide played twice, once wrongly.
+   */
+  const warp = useMemo(
+    () => hasMounted.current ? getPortalWarp(puzzle.value.board, moves) : null,
+    [moves, puzzle.value.board],
+  );
 
   useEffect(() => {
     const isNewMove = moves.length > playedCount.current;
     playedCount.current = moves.length;
 
-    // Only a move made here animates; arriving on a URL that already holds one
-    // should show the finished board, not replay it.
-    if (!isNewMove) return;
-
-    setFall(getFallingPiece(puzzle.value.board, moves));
-    setWarp(getPortalWarp(puzzle.value.board, moves));
+    if (isNewMove) setFall(getFallingPiece(puzzle.value.board, moves));
   }, [moves, puzzle.value.board]);
 
   const onMove = useCallback(
@@ -564,7 +576,10 @@ function BoardPiece(
         "grid col-start-1 row-start-1 w-full h-full p-(--pad)",
         "translate-x-[calc((var(--space-w)+var(--gap))*var(--x))]",
         "translate-y-[calc((var(--space-w)+var(--gap))*var(--y))]",
-        "transition-transform duration-(--piece-speed,200ms) ease-out",
+        // A keyframed piece drives --x/--y itself, so the transition would only
+        // smear the steps it is trying to make crisp.
+        !warp && !loop &&
+          "transition-transform duration-(--piece-speed,200ms) ease-out",
         isReadonly && "pointer-events-none",
       )}
       tabIndex={isReadonly ? -1 : 0}
