@@ -86,3 +86,18 @@ Deno.test("buildPortalKeyframes() gives each warp its own name so a repeat move 
   assertEquals(first === second, false);
   assertStringIncludes(second, "warp-p_0-2");
 });
+
+Deno.test("buildReplayKeyframes() keeps a swallowed piece visible until it falls", () => {
+  const css = buildReplayKeyframes([
+    { id: "b_1", legs: [[{ x: 4, y: 7 }, { x: 4, y: 0 }]], dropped: true },
+    { id: "p_0", legs: [[{ x: 0, y: 7 }, { x: 7, y: 7 }]] },
+  ], 2);
+
+  // It is on the board for its own move, then gone for the rest of the replay.
+  assertStringIncludes(css, "@keyframes replay-b_1-drop {");
+  assertStringIncludes(css, "0% { scale: 1 1; }");
+  assertStringIncludes(css, "100% { scale: 0 0; }");
+
+  // A piece that never falls gets no drop rule at all.
+  assertEquals(css.includes("replay-p_0-drop"), false);
+});

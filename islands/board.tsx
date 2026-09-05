@@ -77,10 +77,10 @@ export default function Board(
     moves,
   ]);
 
-  const pieces = useMemo(() => trackPieces(puzzle.value.board, moves), [
-    puzzle.value.board,
-    moves,
-  ]);
+  const { pieces, dropped } = useMemo(
+    () => trackPieces(puzzle.value.board, moves),
+    [puzzle.value.board, moves],
+  );
 
   const hasSolution = useMemo(
     () => mode.value === "solve" && isValidSolution(board),
@@ -285,6 +285,23 @@ export default function Board(
               updateLocation(href, { replace: true });
               setWiggle((val) => ({ ...val, [piece.type]: false }));
             }}
+          />
+        ))}
+
+        {
+          /* Replay resolves the board to how it ends up, so a swallowed piece
+            would otherwise be missing for the whole playback rather than seen
+            to fall. Its keyframes hold it visible until the move that takes it. */
+        }
+        {mode.value === "replay" && dropped.map((piece) => (
+          <BoardPiece
+            key={piece.id}
+            {...piece}
+            href="#"
+            isReadonly
+            isReplay
+            isDropped
+            onFocus={() => {}}
           />
         ))}
 
@@ -539,6 +556,7 @@ type BoardPieceProps = {
   isActive?: boolean;
   isReadonly?: boolean;
   isReplay?: boolean;
+  isDropped?: boolean;
   warp?: PortalWarp;
   loop?: PortalLoop;
   wiggle?: boolean;
@@ -554,6 +572,7 @@ function BoardPiece(
     type,
     isReadonly,
     isReplay,
+    isDropped,
     isActive,
     warp,
     loop,
@@ -609,7 +628,9 @@ function BoardPiece(
     >
       <div
         style={{
-          animation: warp
+          animation: isDropped
+            ? `replay-${id}-drop var(--replay-duration) ease-in-out both`
+            : warp
             ? `${warpName(warp)}-squish ${warpDuration(warp)}ms linear`
             : loop
             ? `${loopName(loop.id)}-squish ${
@@ -670,7 +691,7 @@ function getPortalLoop(
   const lastMove = moves.at(-1);
   if (!lastMove) return null;
 
-  const pieces = trackPieces(board, moves.slice(0, -1));
+  const { pieces } = trackPieces(board, moves.slice(0, -1));
   const slide = getMoveSlide(lastMove, { ...board, pieces });
   if (slide?.outcome !== "looped") return null;
 
@@ -690,7 +711,7 @@ function getPortalWarp(
   const lastMove = moves.at(-1);
   if (!lastMove) return null;
 
-  const pieces = trackPieces(board, moves.slice(0, -1));
+  const { pieces } = trackPieces(board, moves.slice(0, -1));
   const slide = getMoveSlide(lastMove, { ...board, pieces });
 
   // One leg is an ordinary slide; a dropped piece is the falling ghost's job.
@@ -762,13 +783,17 @@ function BoardReplayStyles({ puzzle, moves }: BoardReplayProps) {
   const stops: KeyframeStop[] = [];
   for (let idx = 0; idx < moves.length; idx++) {
     const move = moves[idx];
-    const pieces = trackPieces(puzzle.board, moves.slice(0, idx));
+    const { pieces } = trackPieces(puzzle.board, moves.slice(0, idx));
     const piece = pieces.find((item) => isPositionSame(item, move[0]));
     const slide = getMoveSlide(move, { ...puzzle.board, pieces });
 
     if (!piece || !slide) continue;
 
-    stops.push({ id: piece.id, legs: slide.segments });
+    stops.push({
+      id: piece.id,
+      legs: slide.segments,
+      dropped: slide.outcome === "dropped",
+    });
   }
 
   return (
@@ -786,30 +811,43 @@ function getPieceId(piece: Piece, idx: number) {
 
 type TrackedPiece = Piece & { id: string };
 
+type TrackedBoard = {
+  pieces: TrackedPiece[];
+  /** The pieces a hole swallowed, each at the cell it fell into. */
+  dropped: TrackedPiece[];
+};
+
 /**
  * Resolves the board while keeping hold of which piece is which, pinned to
- * where each one started.
+ * where each one started, and of the ones that left along the way.
  *
  * Array position cannot serve as identity now that a hole can remove a piece:
  * every later slot shifts up, and a renderer keying on position would hand one
  * piece's element to another and animate the wrong one.
  */
-function trackPieces(board: Puzzle["board"], moves: Move[]): TrackedPiece[] {
+function trackPieces(board: Puzzle["board"], moves: Move[]): TrackedBoard {
   let pieces: TrackedPiece[] = board.pieces.map((piece, idx) => ({
     ...piece,
     id: getPieceId(piece, idx),
   }));
+  const dropped: TrackedPiece[] = [];
 
   for (const move of moves) {
     const slide = getMoveSlide(move, { ...board, pieces });
     if (!slide) break;
 
-    pieces = slide.outcome === "dropped"
-      ? pieces.filter((piece) => !isPositionSame(piece, move[0]))
-      : pieces.map((piece) =>
-        isPositionSame(piece, move[0]) ? { ...piece, ...move[1] } : piece
-      );
+    if (slide.outcome === "dropped") {
+      const piece = pieces.find((item) => isPositionSame(item, move[0]));
+      if (piece) dropped.push({ ...piece, ...slide.target });
+
+      pieces = pieces.filter((item) => !isPositionSame(item, move[0]));
+      continue;
+    }
+
+    pieces = pieces.map((piece) =>
+      isPositionSame(piece, move[0]) ? { ...piece, ...move[1] } : piece
+    );
   }
 
-  return pieces;
+  return { pieces, dropped };
 }

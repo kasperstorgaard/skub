@@ -2,6 +2,8 @@ import type { Position } from "#/game/types.ts";
 
 export type KeyframeStop = {
   id: string;
+  /** Set when this move is the one a hole swallows the piece on. */
+  dropped?: boolean;
   /**
    * The legs of the slide, each listing the cells it crosses. A slide has more
    * than one only when it passes through a portal, and the keyframes have to
@@ -60,8 +62,15 @@ export function buildReplayKeyframes(
     else lookup[stop.id].push({ idx, stop });
   }
 
+  const windowOf = (idx: number): [number, number] => [
+    idx * increment + waitOffset,
+    (idx + 1) * increment + waitOffset,
+  ];
+
   return Object.entries(lookup)
     .map(([id, pieceStops]) => {
+      const drop = pieceStops.find(({ stop }) => stop.dropped);
+
       return [
         `@keyframes replay-${id} {`,
         `  ${writeKeyframeMove(0, pieceStops[0].stop.legs[0][0])}`,
@@ -70,16 +79,28 @@ export function buildReplayKeyframes(
          * happens as a single step rather than a glide from the board's origin.
          */
         ...pieceStops.flatMap(({ idx, stop }) =>
-          writeStop(
-            stop,
-            idx * increment + waitOffset,
-            (idx + 1) * increment + waitOffset,
-          ).map((frame) => `  ${frame}`)
+          writeStop(stop, ...windowOf(idx)).map((frame) => `  ${frame}`)
         ),
         "}",
+        // A swallowed piece is already gone from the board the replay resolves
+        // to, so it needs its own reason to disappear at the right moment
+        // rather than being missing for the whole playback.
+        ...(drop ? [writeDrop(id, ...windowOf(drop.idx))] : []),
       ].join("");
     })
     .join("");
+}
+
+/** Shrinks a piece into the hole over the tail of the move that drops it. */
+function writeDrop(id: string, start: number, end: number): string {
+  return [
+    `@keyframes replay-${id}-drop {`,
+    "  0% { scale: 1 1; }",
+    `  ${start + (end - start) * 0.7}% { scale: 1 1; }`,
+    `  ${end}% { scale: 0 0; }`,
+    "  100% { scale: 0 0; }",
+    "}",
+  ].join("");
 }
 
 /**
