@@ -41,7 +41,15 @@ export function useSolveStream(
           return;
         }
 
-        const reader = response.body!.getReader();
+        if (!response.body) {
+          onEventRef.current({
+            type: "error",
+            message: "Solve returned no events",
+          });
+          return;
+        }
+
+        const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
 
