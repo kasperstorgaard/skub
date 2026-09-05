@@ -16,7 +16,6 @@ import {
   getGrid,
   getMoveSlide,
   getTargets,
-  isLooped,
   isPositionSame,
   isValidSolution,
   resolveMoves,
@@ -39,8 +38,12 @@ import {
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
   buildPortalKeyframes,
+  buildPortalLoopKeyframes,
   buildReplayKeyframes,
   type KeyframeStop,
+  loopDuration,
+  loopName,
+  type PortalLoop,
   type PortalWarp,
   warpDuration,
   warpName,
@@ -86,10 +89,12 @@ export default function Board(
 
   // A portal loop leaves the piece circling with nowhere to come to rest, so
   // the board stops taking input until the move is undone.
-  const isLocked = useMemo(
-    () => isLooped(puzzle.value.board, moves),
+  const loop = useMemo(
+    () => getPortalLoop(puzzle.value.board, moves),
     [puzzle.value.board, moves],
   );
+
+  const isLocked = loop != null;
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -258,6 +263,7 @@ export default function Board(
             {...piece}
             href={getActiveHref(piece, { ...state, href: href.value })}
             warp={warp?.id === piece.id ? warp : undefined}
+            loop={loop?.id === piece.id ? loop : undefined}
             isActive={state.active && isPositionSame(piece, state.active)}
             isReadonly={mode.value !== "solve" || isLocked}
             isReplay={mode.value === "replay"}
@@ -271,6 +277,8 @@ export default function Board(
         ))}
 
         {warp && <style>{buildPortalKeyframes(warp)}</style>}
+
+        {loop && <style>{buildPortalLoopKeyframes(loop)}</style>}
 
         {fall && (
           <BoardFallingPiece
@@ -506,6 +514,7 @@ type BoardPieceProps = {
   isReadonly?: boolean;
   isReplay?: boolean;
   warp?: PortalWarp;
+  loop?: PortalLoop;
   wiggle?: boolean;
   onFocus: (event: FocusEvent) => void;
 };
@@ -521,6 +530,7 @@ function BoardPiece(
     isReplay,
     isActive,
     warp,
+    loop,
     wiggle,
     onFocus,
   }: BoardPieceProps,
@@ -543,6 +553,9 @@ function BoardPiece(
           // which would cut straight across the board.
           : warp
           ? `${warpName(warp)} ${warpDuration()}ms ease-out`
+          // Caught between two portals: it circles until the move is undone.
+          : loop
+          ? `${loopName(loop.id)} ${loopDuration(loop)}ms linear infinite`
           : undefined,
         "--replay-duration": "calc(var(--replay-len) * var(--replay-speed))",
       }}
@@ -564,6 +577,10 @@ function BoardPiece(
         style={{
           animation: warp
             ? `${warpName(warp)}-squish ${warpDuration()}ms ease-out`
+            : loop
+            ? `${loopName(loop.id)}-squish ${
+              loopDuration(loop)
+            }ms linear infinite`
             : undefined,
         }}
         className={clsx(
@@ -604,6 +621,31 @@ function getFallingPiece(
   const lastLeg = slide.segments[slide.segments.length - 1];
 
   return { type: piece.type, from: lastLeg[0], to: slide.target };
+}
+
+/**
+ * The circuit a piece is stuck on, if the last move ended in a portal loop.
+ *
+ * Derived from the move list rather than stored, so a reloaded or shared link
+ * arrives at the same locked board.
+ */
+function getPortalLoop(
+  board: Puzzle["board"],
+  moves: Move[],
+): PortalLoop | null {
+  const lastMove = moves.at(-1);
+  if (!lastMove) return null;
+
+  const pieces = trackPieces(board, moves.slice(0, -1));
+  const slide = getMoveSlide(lastMove, { ...board, pieces });
+  if (slide?.outcome !== "looped") return null;
+
+  const piece = pieces.find((item) => isPositionSame(item, lastMove[0]));
+  if (!piece) return null;
+
+  // The last leg runs from the portal it came out of back into the one it
+  // went in by — the circuit it now repeats.
+  return { id: piece.id, leg: slide.segments[slide.segments.length - 1] };
 }
 
 /** The slide the last move took through a portal, if it took one. */

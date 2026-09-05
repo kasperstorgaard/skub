@@ -153,3 +153,46 @@ export function buildPortalKeyframes(warp: PortalWarp): string {
     "}",
   ].join("");
 }
+
+export type PortalLoop = {
+  id: string;
+  /** The cells the piece circles, from the portal it comes out of to the one it goes back in. */
+  leg: Position[];
+};
+
+/** How long the piece takes to cross one cell of the loop, in ms. */
+const LOOP_MS_PER_CELL = 220;
+
+export function loopName(id: string) {
+  return `loop-${id}`;
+}
+
+export function loopDuration({ leg }: PortalLoop) {
+  return Math.max(leg.length - 1, 1) * LOOP_MS_PER_CELL;
+}
+
+/**
+ * Keyframes for a piece caught circling between two portals: it pops out of one,
+ * slides across, and is swallowed by the other, forever.
+ *
+ * The jump back is the loop itself — 100% holds at the portal it goes into and
+ * 0% is the one it comes out of, so wrapping round is the teleport.
+ */
+export function buildPortalLoopKeyframes(loop: PortalLoop): string {
+  const name = loopName(loop.id);
+  const [exit, entry] = [loop.leg[0], loop.leg[loop.leg.length - 1]];
+
+  return [
+    `@keyframes ${name} {`,
+    writeKeyframeMove(0, exit),
+    writeKeyframeMove(85, entry),
+    writeKeyframeMove(100, entry),
+    "}",
+    `@keyframes ${name}-squish {`,
+    "0% { scale: 0.5 0.5; }",
+    "15% { scale: 1 1; }",
+    "85% { scale: 1 1; }",
+    "100% { scale: 0.5 0.5; }",
+    "}",
+  ].join("");
+}
