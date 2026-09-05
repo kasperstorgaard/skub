@@ -183,6 +183,8 @@ minMoves: 7
     difficulty: "medium",
     minMoves: 7,
     board: {
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 7 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -226,6 +228,8 @@ Navigate the puck around the middle
   });
 
   assertEquals(result.board, {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 6 },
     pieces: [
       { x: 2, y: 1, type: "blocker" },
@@ -287,6 +291,8 @@ difficulty: medium
   });
 
   assertEquals(result.board, {
+    holes: [],
+    portals: [],
     destination: { x: 4, y: 5 },
     pieces: [
       { x: 1, y: 1, type: "blocker" },
@@ -340,6 +346,8 @@ createdAt: 2026-02-03T00:00:00.000Z
   });
 
   assertEquals(result.board, {
+    holes: [],
+    portals: [],
     destination: { x: 4, y: 0 },
     pieces: [
       { x: 4, y: 0, type: "blocker" },

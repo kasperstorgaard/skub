@@ -60,7 +60,10 @@ export function formatPuzzle(puzzle: Puzzle): string {
  * @param position
  * @returns Cell contents, including any combining characters
  */
-function formatCell({ destination, walls, pieces }: Board, position: Position) {
+function formatCell(
+  { destination, walls, pieces, holes, portals }: Board,
+  position: Position,
+) {
   // Horizontal walls are positioned below the cell
   const wallPosition = { x: position.x, y: position.y + 1 };
 
@@ -79,6 +82,17 @@ function formatCell({ destination, walls, pieces }: Board, position: Position) {
     // Add circumflex if piece is on destination
     if (isDestination) char += COMBINING_CIRCUMFLEX;
     return char;
+  }
+
+  // Nothing can share a cell with a hole or a portal, so no circumflex here.
+  const hazard = holes.some((hole) => isPositionSame(hole, position))
+    ? "H"
+    : portals.some((portal) => isPositionSame(portal, position))
+    ? "P"
+    : null;
+
+  if (hazard) {
+    return hasHorizontalWall ? hazard + COMBINING_LOW_LINE : hazard;
   }
 
   if (isDestination) {

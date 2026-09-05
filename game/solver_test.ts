@@ -20,6 +20,8 @@ import type { Board, Puzzle } from "#/game/types.ts";
 // Real puzzle fixture (static/puzzles/ingrid.md, 7 moves) for exhaustive-solver
 // tests — a realistic board rather than a hand-crafted one.
 const ingridBoard: Board = {
+  holes: [],
+  portals: [],
   destination: { x: 5, y: 2 },
   pieces: [
     { x: 3, y: 0, type: "blocker" },
@@ -50,6 +52,8 @@ const ingridBoard: Board = {
 Deno.test("solveSync() finds 1-move solution (puck slides to destination)", () => {
   // Puck at A1 (0,0) slides right to H1 (7,0) where destination is
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -65,6 +69,8 @@ Deno.test("solveSync() finds 2-move solution", () => {
   // Move 1: A1 -> A8 (down)
   // Move 2: A8 -> H8 (right)
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -77,6 +83,8 @@ Deno.test("solveSync() finds 2-move solution", () => {
 Deno.test("solveSync() throws for unsolvable puzzle (puck trapped)", () => {
   // Puck at A1 trapped by walls, cannot reach H8
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [
@@ -90,6 +98,8 @@ Deno.test("solveSync() throws for unsolvable puzzle (puck trapped)", () => {
 
 Deno.test("solveSync() throws for unsolvable puzzle (puck can't stop)", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 5, y: 5 },
     pieces: [
       { x: 1, y: 1, type: "puck" },
@@ -103,6 +113,8 @@ Deno.test("solveSync() throws for unsolvable puzzle (puck can't stop)", () => {
 Deno.test("solveSync() respects maxDepth option", () => {
   // Puzzle that requires at least 2 moves
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -124,6 +136,8 @@ Deno.test("solveSync() accepts Puzzle type (not just Board)", () => {
     difficulty: "medium",
     minMoves: 7,
     board: {
+      holes: [],
+      portals: [],
       destination: { x: 7, y: 0 },
       pieces: [{ x: 0, y: 0, type: "puck" as const }],
       walls: [],
@@ -138,6 +152,8 @@ Deno.test("solveSync() accepts Puzzle type (not just Board)", () => {
 Deno.test("solve() yields progress then solution", () => {
   // Puck at (0,0), dest at (7,7) — not aligned, initial threshold = 2
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -157,6 +173,8 @@ Deno.test("solve() yields progress then solution", () => {
 
 Deno.test("solveSync() solves complex puzzle", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     "destination": { "x": 4, "y": 5 },
     "pieces": [
       { "x": 1, "y": 1, "type": "blocker" },
@@ -191,6 +209,8 @@ Deno.test("solveSync() solves complex puzzle", () => {
 
 Deno.test("solveSync() solves complex puzzle with many pieces", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 6 },
     pieces: [
       { x: 2, y: 1, type: "blocker" },
@@ -232,6 +252,8 @@ Deno.test("solveSync() solves complex puzzle with many pieces", () => {
 
 Deno.test("solveSync() finds 8-move solution for sara puzzle", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 4, y: 5 },
     pieces: [
       { x: 2, y: 0, type: "blocker" },
@@ -267,6 +289,8 @@ Deno.test("solveSync() finds 8-move solution for sara puzzle", () => {
 Deno.test("solveExhaustiveSync() returns the single optimal solution for a unique board", () => {
   // Puck at A1 (0,0) has exactly one 1-move path to the destination at H1 (7,0).
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -284,6 +308,8 @@ Deno.test("solveExhaustiveSync() records new states discovered per depth", () =>
   // Empty board, A1 -> H8: depth 0 is the start, depth 1 adds the right/down
   // slides, depth 2 adds the goal corner.
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -297,6 +323,8 @@ Deno.test("solveExhaustiveSync() records new states discovered per depth", () =>
 Deno.test("solveExhaustiveSync() enumerates both optimal paths on an open board", () => {
   // Empty board: A1 -> H8 is 2 moves via two symmetric L-shaped paths.
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -312,6 +340,8 @@ Deno.test("solveExhaustiveSync() enumerates both optimal paths on an open board"
 
 Deno.test("solveExhaustiveSync() returns distinct solutions", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -324,6 +354,8 @@ Deno.test("solveExhaustiveSync() returns distinct solutions", () => {
 
 Deno.test("solveExhaustiveSync() without overshoot searches only to the optimal depth", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }, { x: 4, y: 4, type: "blocker" }],
     walls: [],
@@ -346,6 +378,8 @@ Deno.test("solveExhaustiveSync() overshoot records suboptimal goal arrivals", ()
   // Optimal is the 1-move slide A1 -> H1. With overshoot, depth 2 collects the
   // near-miss goal states where the blocker also moved (4 edges to slide to).
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }, { x: 4, y: 4, type: "blocker" }],
     walls: [],
@@ -366,6 +400,8 @@ Deno.test("solveExhaustiveSync() overshoot records suboptimal goal arrivals", ()
 
 Deno.test("solveExhaustiveSync() overshoot keeps the DAG optimal-only", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }, { x: 4, y: 4, type: "blocker" }],
     walls: [],
@@ -415,6 +451,8 @@ Deno.test("solveExhaustiveSync() enumerates every optimal solution on the ingrid
 Deno.test("solveExhaustiveSync() throws for an unsolvable puzzle", () => {
   // Puck can never stop on the destination row/column.
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 5, y: 5 },
     pieces: [{ x: 1, y: 1, type: "puck" }],
     walls: [],

@@ -156,6 +156,8 @@ Deno.test("isMoveSame() should compare both positions of a move", () => {
 Deno.test("isBoardSame() should ignore the order pieces and walls are listed in", () => {
   assertEquals(
     isBoardSame({
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -166,6 +168,8 @@ Deno.test("isBoardSame() should ignore the order pieces and walls are listed in"
         { x: 4, y: 6, orientation: "horizontal" },
       ],
     }, {
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 5, y: 5, type: "blocker" },
@@ -183,6 +187,8 @@ Deno.test("isBoardSame() should ignore the order pieces and walls are listed in"
 Deno.test("isBoardSame() should be false for boards differing by one wall", () => {
   assertEquals(
     isBoardSame({
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -193,6 +199,8 @@ Deno.test("isBoardSame() should be false for boards differing by one wall", () =
         { x: 4, y: 6, orientation: "horizontal" },
       ],
     }, {
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -211,6 +219,8 @@ Deno.test("isBoardSame() should be false for boards differing by one wall", () =
 Deno.test("isBoardSame() should be false for boards differing by wall orientation", () => {
   assertEquals(
     isBoardSame({
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -218,6 +228,8 @@ Deno.test("isBoardSame() should be false for boards differing by wall orientatio
       ],
       walls: [{ x: 2, y: 2, orientation: "vertical" }],
     }, {
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -232,6 +244,8 @@ Deno.test("isBoardSame() should be false for boards differing by wall orientatio
 Deno.test("isBoardSame() should be false for boards differing only in destination", () => {
   assertEquals(
     isBoardSame({
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -239,6 +253,8 @@ Deno.test("isBoardSame() should be false for boards differing only in destinatio
       ],
       walls: [{ x: 2, y: 2, orientation: "vertical" }],
     }, {
+      holes: [],
+      portals: [],
       destination: { x: 4, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -253,6 +269,8 @@ Deno.test("isBoardSame() should be false for boards differing only in destinatio
 Deno.test("isBoardSame() should be false when the puck and a blocker swap roles", () => {
   assertEquals(
     isBoardSame({
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -260,6 +278,8 @@ Deno.test("isBoardSame() should be false when the puck and a blocker swap roles"
       ],
       walls: [],
     }, {
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "blocker" },
@@ -276,6 +296,8 @@ Deno.test("isBoardSame() should be false for a mirrored board", () => {
   // novelty gate uses, which folds the dihedral symmetries together.
   assertEquals(
     isBoardSame({
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -283,6 +305,8 @@ Deno.test("isBoardSame() should be false for a mirrored board", () => {
       ],
       walls: [{ x: 2, y: 2, orientation: "vertical" }],
     }, {
+      holes: [],
+      portals: [],
       destination: { x: 4, y: 3 },
       pieces: [
         { x: 6, y: 1, type: "puck" },
@@ -296,6 +320,8 @@ Deno.test("isBoardSame() should be false for a mirrored board", () => {
 
 Deno.test("getTargets() should return {} for an empty space", () => {
   const result = getTargets({ x: 4, y: 4 }, {
+    holes: [],
+    portals: [],
     walls: [],
     pieces: [],
   });
@@ -305,6 +331,8 @@ Deno.test("getTargets() should return {} for an empty space", () => {
 
 Deno.test("getTargets() should get 4 positions for a center source", () => {
   const targets = getTargets({ x: 3, y: 5 }, {
+    holes: [],
+    portals: [],
     walls: [],
     pieces: [{ type: "puck", x: 3, y: 5 }],
   });
@@ -322,6 +350,8 @@ Deno.test("getTargets() should get 4 positions for a center source", () => {
 
 Deno.test("getTargets() should ignore itself", () => {
   const targets = getTargets({ x: 3, y: 5 }, {
+    holes: [],
+    portals: [],
     walls: [],
     pieces: [{ x: 3, y: 5, type: "puck" }],
   });
@@ -339,6 +369,8 @@ Deno.test("getTargets() should ignore itself", () => {
 
 Deno.test("getTargets() walls should end targets", () => {
   const targets = getTargets({ x: 6, y: 6 }, {
+    holes: [],
+    portals: [],
     walls: [
       { x: 6, y: 4, orientation: "horizontal" },
     ],
@@ -358,6 +390,8 @@ Deno.test("getTargets() walls should end targets", () => {
 
 Deno.test("getTargets() should respect multiple walls", () => {
   const targets = getTargets({ x: 3, y: 4 }, {
+    holes: [],
+    portals: [],
     walls: [
       { x: 3, y: 4, orientation: "horizontal" },
       { x: 6, y: 4, orientation: "horizontal" },
@@ -375,6 +409,8 @@ Deno.test("getTargets() should respect multiple walls", () => {
 
 Deno.test("getTargets() should use the closest wall to src", () => {
   const targets = getTargets({ x: 2, y: 7 }, {
+    holes: [],
+    portals: [],
     walls: [
       { x: 2, y: 4, orientation: "horizontal" },
       { x: 2, y: 6, orientation: "horizontal" },
@@ -394,6 +430,8 @@ Deno.test("getTargets() should use the closest wall to src", () => {
 
 Deno.test("getTargets() is not affected by not non-aligned walls", () => {
   const targets = getTargets({ x: 4, y: 5 }, {
+    holes: [],
+    portals: [],
     walls: [
       { x: 5, y: 6, orientation: "horizontal" },
       { x: 1, y: 3, orientation: "horizontal" },
@@ -418,6 +456,8 @@ Deno.test("getTargets() is not affected by not non-aligned walls", () => {
 
 Deno.test("getTargets() pieces should end targets", () => {
   const targets = getTargets({ x: 6, y: 6 }, {
+    holes: [],
+    portals: [],
     walls: [],
     pieces: [
       { x: 6, y: 4, type: "puck" },
@@ -438,6 +478,8 @@ Deno.test("getTargets() pieces should end targets", () => {
 
 Deno.test("getTargets() is not affected by non-aligned pieces", () => {
   const targets = getTargets({ x: 6, y: 6 }, {
+    holes: [],
+    portals: [],
     walls: [],
     pieces: [
       { x: 6, y: 6, type: "puck" },
@@ -462,6 +504,8 @@ Deno.test("getTargets() is not affected by non-aligned pieces", () => {
 
 Deno.test("getTargets() should respect both pieces and walls", () => {
   const targets = getTargets({ x: 3, y: 6 }, {
+    holes: [],
+    portals: [],
     walls: [
       { x: 3, y: 7, orientation: "horizontal" },
       { x: 3, y: 4, orientation: "horizontal" },
@@ -484,6 +528,8 @@ Deno.test("getTargets() should respect both pieces and walls", () => {
 
 Deno.test("getTargets() should not overlap with pieces a)", () => {
   const targets = getTargets({ x: 3, y: 4 }, {
+    holes: [],
+    portals: [],
     pieces: [
       { x: 3, y: 4, type: "puck" },
     ],
@@ -504,6 +550,8 @@ Deno.test("getTargets() should not overlap with pieces a)", () => {
 
 Deno.test("getTargets() should not overlap with pieces b)", () => {
   const targets = getTargets({ x: 6, y: 7 }, {
+    holes: [],
+    portals: [],
     pieces: [
       { x: 6, y: 7, type: "puck" },
       { x: 7, y: 7, type: "blocker" },
@@ -664,6 +712,8 @@ Deno.test("validateBoard() should return board for valid simple board", () => {
   });
 
   assertEquals(result, {
+    holes: [],
+    portals: [],
     destination: { x: 0, y: 3 },
     pieces: [{ x: 4, y: 1, type: "puck" }],
     walls: [{ x: 1, y: 2, orientation: "horizontal" }],
@@ -692,6 +742,8 @@ Deno.test("validateBoard() should return board for valid complex board", () => {
   });
 
   assertEquals(result, {
+    holes: [],
+    portals: [],
     destination: { x: 2, y: 3 },
     pieces: [
       { x: 4, y: 1, type: "puck" },
@@ -717,6 +769,8 @@ Deno.test("isValidMove() should return false for move not matching a piece", () 
     { x: 3, y: 1 },
     { x: 6, y: 3 },
   ], {
+    holes: [],
+    portals: [],
     pieces: [
       { x: 4, y: 1, type: "puck" },
     ],
@@ -731,6 +785,8 @@ Deno.test("isValidMove() should return false for diagonal move", () => {
     { x: 4, y: 1 },
     { x: 6, y: 3 },
   ], {
+    holes: [],
+    portals: [],
     pieces: [
       { x: 4, y: 1, type: "puck" },
     ],
@@ -745,6 +801,8 @@ Deno.test("isValidMove() should return false for blocked move", () => {
     { x: 4, y: 1 },
     { x: 6, y: 1 },
   ], {
+    holes: [],
+    portals: [],
     pieces: [{ x: 4, y: 1, type: "puck" }],
     walls: [{ x: 5, y: 1, orientation: "vertical" }],
   });
@@ -754,11 +812,15 @@ Deno.test("isValidMove() should return false for blocked move", () => {
 
 Deno.test("resolveMoves() should return the intial board with an empty list", () => {
   const result = resolveMoves({
+    holes: [],
+    portals: [],
     pieces: [{ x: 4, y: 1, type: "puck" }],
     walls: [{ x: 5, y: 1, orientation: "vertical" }],
   }, []);
 
   assertEquals(result, {
+    holes: [],
+    portals: [],
     pieces: [{ x: 4, y: 1, type: "puck" }],
     walls: [{ x: 5, y: 1, orientation: "vertical" }],
   });
@@ -766,11 +828,15 @@ Deno.test("resolveMoves() should return the intial board with an empty list", ()
 
 Deno.test("resolveMoves() should return updated board state when passed a single move", () => {
   const result = resolveMoves({
+    holes: [],
+    portals: [],
     pieces: [{ x: 4, y: 1, type: "puck" }],
     walls: [{ x: 5, y: 1, orientation: "vertical" }],
   }, [[{ x: 4, y: 1 }, { x: 4, y: 7 }]]);
 
   assertEquals(result, {
+    holes: [],
+    portals: [],
     pieces: [{ x: 4, y: 7, type: "puck" }],
     walls: [{ x: 5, y: 1, orientation: "vertical" }],
   });
@@ -779,6 +845,8 @@ Deno.test("resolveMoves() should return updated board state when passed a single
 Deno.test("resolveMoves() should throw if passed an illegal move (a)", () => {
   assertThrows(() =>
     resolveMoves({
+      holes: [],
+      portals: [],
       pieces: [{ x: 4, y: 1, type: "puck" }],
       walls: [{ x: 4, y: 4, orientation: "horizontal" }],
     }, [[{ x: 4, y: 1 }, { x: 4, y: 7 }]])
@@ -788,6 +856,8 @@ Deno.test("resolveMoves() should throw if passed an illegal move (a)", () => {
 Deno.test("resolveMoves() should throw if passed an illegal move (b)", () => {
   assertThrows(() =>
     resolveMoves({
+      holes: [],
+      portals: [],
       pieces: [{ x: 4, y: 1, type: "puck" }],
       walls: [],
     }, [
@@ -799,6 +869,8 @@ Deno.test("resolveMoves() should throw if passed an illegal move (b)", () => {
 
 Deno.test("resolveMoves() should return updated board state when passed a list of moves", () => {
   const result = resolveMoves({
+    holes: [],
+    portals: [],
     pieces: [
       { x: 4, y: 1, type: "puck" },
       { x: 6, y: 6, type: "blocker" },
@@ -812,6 +884,8 @@ Deno.test("resolveMoves() should return updated board state when passed a list o
   ]);
 
   assertEquals(result, {
+    holes: [],
+    portals: [],
     pieces: [
       { x: 5, y: 3, type: "puck" },
       { x: 6, y: 0, type: "blocker" },
@@ -855,6 +929,8 @@ Deno.test("isValidSolution() should return true for winning position", () => {
 
 Deno.test("rotateBoard() right should rotate positions 90° clockwise", () => {
   const result = rotateBoard({
+    holes: [],
+    portals: [],
     destination: { x: 1, y: 2 },
     pieces: [
       { x: 3, y: 5, type: "puck" },
@@ -872,6 +948,8 @@ Deno.test("rotateBoard() right should rotate positions 90° clockwise", () => {
 
 Deno.test("rotateBoard() right should swap wall orientations", () => {
   const result = rotateBoard({
+    holes: [],
+    portals: [],
     destination: { x: 0, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [
@@ -888,6 +966,8 @@ Deno.test("rotateBoard() right should swap wall orientations", () => {
 
 Deno.test("rotateBoard() right applied 4 times returns the original board", () => {
   const board = {
+    holes: [],
+    portals: [],
     destination: { x: 2, y: 5 },
     pieces: [
       { x: 3, y: 1, type: "puck" as const },
@@ -909,6 +989,8 @@ Deno.test("rotateBoard() right applied 4 times returns the original board", () =
 
 Deno.test("rotateBoard() left should be the reverse of cw", () => {
   const board = {
+    holes: [],
+    portals: [],
     destination: { x: 2, y: 5 },
     pieces: [
       { x: 3, y: 1, type: "puck" as const },
@@ -930,6 +1012,8 @@ Deno.test("rotateBoard() left should be the reverse of cw", () => {
 
 Deno.test("flipBoard() horizontal should mirror positions left/right", () => {
   const result = flipBoard({
+    holes: [],
+    portals: [],
     destination: { x: 1, y: 3 },
     pieces: [
       { x: 2, y: 5, type: "puck" },
@@ -947,6 +1031,8 @@ Deno.test("flipBoard() horizontal should mirror positions left/right", () => {
 
 Deno.test("flipBoard() horizontal should keep wall orientations and shift positions", () => {
   const result = flipBoard({
+    holes: [],
+    portals: [],
     destination: { x: 0, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [
@@ -963,6 +1049,8 @@ Deno.test("flipBoard() horizontal should keep wall orientations and shift positi
 
 Deno.test("flipBoard() horizontal applied twice returns the original board", () => {
   const board = {
+    holes: [],
+    portals: [],
     destination: { x: 2, y: 5 },
     pieces: [
       { x: 3, y: 1, type: "puck" as const },
@@ -981,6 +1069,8 @@ Deno.test("flipBoard() horizontal applied twice returns the original board", () 
 
 Deno.test("flipBoard() vertical should mirror positions up/down", () => {
   const result = flipBoard({
+    holes: [],
+    portals: [],
     destination: { x: 1, y: 2 },
     pieces: [
       { x: 3, y: 5, type: "puck" },
@@ -998,6 +1088,8 @@ Deno.test("flipBoard() vertical should mirror positions up/down", () => {
 
 Deno.test("flipBoard() vertical should keep wall orientations and shift positions", () => {
   const result = flipBoard({
+    holes: [],
+    portals: [],
     destination: { x: 0, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [
@@ -1014,6 +1106,8 @@ Deno.test("flipBoard() vertical should keep wall orientations and shift position
 
 Deno.test("flipBoard() vertical applied twice returns the original board", () => {
   const board = {
+    holes: [],
+    portals: [],
     destination: { x: 2, y: 5 },
     pieces: [
       { x: 3, y: 1, type: "puck" as const },

@@ -20,6 +20,8 @@ const baseCandidate = (): Candidate => ({
   difficulty: "medium",
   minMoves: 8,
   board: {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 3 },
     pieces: [
       { x: 1, y: 1, type: "puck" },

@@ -1,9 +1,17 @@
-import { getTargets, isMoveSame } from "./board.ts";
-import { Board, Move, Position } from "./types.ts";
+import { getSlides, isMoveSame, type SlideBoard } from "./board.ts";
+import { Move, Position } from "./types.ts";
 
 /** A move guide shown on the board, optionally flagged as a hint. */
 export type Guide = {
   move: Move;
+  /**
+   * The cell the guide is drawn to — the end of the slide's first leg.
+   *
+   * Same as `move[1]` for an ordinary slide. For one that teleports it is the
+   * entry portal, so the strip and its target stay on-axis with the piece and
+   * never give away where a portal comes out.
+   */
+  to: Position;
   isHint: boolean;
 };
 
@@ -13,20 +21,31 @@ export type Guide = {
  * If a hint is provided and matches a target direction, it replaces that target.
  */
 export function getGuides(
-  board: Pick<Board, "pieces" | "walls">,
+  board: SlideBoard,
   { active, hint }: { active?: Position; hint?: Move },
 ): Guide[] {
   const result: Guide[] = [];
-  const targets = active ? getTargets(active, board) : {};
 
-  for (const target of Object.values(targets)) {
-    result.push({ move: [active!, target], isHint: false });
+  if (active) {
+    for (const slide of Object.values(getSlides(active, board))) {
+      const [firstLeg] = slide.segments;
+
+      result.push({
+        move: [active, slide.target],
+        to: firstLeg[firstLeg.length - 1],
+        isHint: false,
+      });
+    }
   }
 
   if (hint) {
     const target = result.find((item) => isMoveSame(item.move, hint));
     const insertIdx = target ? result.indexOf(target) : result.length;
-    result.splice(insertIdx, 1, { move: hint, isHint: true });
+    result.splice(insertIdx, 1, {
+      move: hint,
+      to: target?.to ?? hint[1],
+      isHint: true,
+    });
   }
 
   return result;

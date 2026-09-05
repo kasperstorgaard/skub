@@ -11,6 +11,8 @@ import { CALIBRATION, type Metrics } from "#/game/scoring.ts";
 import type { Board, Puzzle } from "#/game/types.ts";
 
 const board: Board = {
+  holes: [],
+  portals: [],
   destination: { x: 3, y: 3 },
   pieces: [
     { x: 1, y: 1, type: "puck" },
@@ -50,6 +52,8 @@ Deno.test("stripVariant() strips the name as it strips the slug", () => {
 
 /** Solves in one move: the puck slides down and the blocker stops it on target. */
 const oneMoveBoard: Board = {
+  holes: [],
+  portals: [],
   destination: { x: 0, y: 3 },
   pieces: [
     { x: 0, y: 0, type: "puck" },
@@ -236,6 +240,8 @@ Deno.test("staleAnalysis() is false when the stored scoring describes the board"
 
 Deno.test("staleAnalysis() is true when the board moved under the scoring", () => {
   const moved: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 3 },
     pieces: [
       { x: 1, y: 1, type: "puck" },

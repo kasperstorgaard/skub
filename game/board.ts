@@ -1,5 +1,5 @@
 import { encodeMove } from "#/game/strings.ts";
-import { Board, Move, Piece, Position, Wall } from "#/game/types.ts";
+import { Board, Direction, Move, Piece, Position, Wall } from "#/game/types.ts";
 
 /**
  * The board dimensions.
@@ -37,6 +37,23 @@ export type BoardLike = {
   destination: Position | null | undefined;
   walls: (Wall | null | undefined)[] | undefined | null;
   pieces: (Piece | null | undefined)[] | undefined | null;
+  holes?: (Position | null | undefined)[] | undefined | null;
+  portals?: (Position | null | undefined)[] | undefined | null;
+};
+
+/** The parts of a board a slide has to consult. */
+export type SlideBoard = Pick<
+  Board,
+  "pieces" | "walls" | "holes" | "portals"
+>;
+
+export const DIRECTIONS: Direction[] = ["up", "right", "down", "left"];
+
+const DELTAS: Record<Direction, Position> = {
+  up: { x: 0, y: -1 },
+  right: { x: 1, y: 0 },
+  down: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
 };
 
 /**
@@ -75,15 +92,20 @@ export function isMoveSame(src: Move, target: Move) {
   return isPositionSame(src[0], target[0]) && isPositionSame(src[1], target[1]);
 }
 
+/** Position code standing in for a piece that fell in a hole. */
+export const GONE = COLS * ROWS;
+
 /**
  * Encodes a board into a comparable numeric array:
- * `[puckPos, destPos, ...sortedBlockers, 255, ...sortedWalls]`, where positions
- * are `y*8+x` and walls are `(y*8+x)*2 + (horizontal ? 0 : 1)`. Blockers and walls
- * are sorted so array order never depends on input order.
+ * `[puckPos, destPos, ...sortedBlockers, 255, ...sortedWalls, 254, ...sortedHoles,
+ * 253, ...sortedPortals]`, where positions are `y*8+x` and walls are
+ * `(y*8+x)*2 + (horizontal ? 0 : 1)`. Every list is sorted so array order never
+ * depends on input order — portals included, since the pair is symmetric.
+ * Wall codes top out at 127, leaving the separators free.
  */
 export function encodeBoard(board: Board): number[] {
-  const puck = board.pieces.find((p) => p.type === "puck")!;
-  const puckPos = puck.y * COLS + puck.x;
+  const puck = board.pieces.find((p) => p.type === "puck");
+  const puckPos = puck ? puck.y * COLS + puck.x : GONE;
   const destPos = board.destination.y * COLS + board.destination.x;
 
   const blockers = board.pieces
@@ -97,7 +119,25 @@ export function encodeBoard(board: Board): number[] {
     )
     .sort((a, b) => a - b);
 
-  return [puckPos, destPos, ...blockers, 255, ...walls];
+  const holes = board.holes
+    .map((hole) => hole.y * COLS + hole.x)
+    .sort((a, b) => a - b);
+
+  const portals = board.portals
+    .map((portal) => portal.y * COLS + portal.x)
+    .sort((a, b) => a - b);
+
+  return [
+    puckPos,
+    destPos,
+    ...blockers,
+    255,
+    ...walls,
+    254,
+    ...holes,
+    253,
+    ...portals,
+  ];
 }
 
 /**
@@ -186,11 +226,68 @@ export function validateBoard(board: BoardLike): Board {
     checkedWalls.push(wall);
   }
 
+  const checkedHoles = validatePositions(board.holes ?? [], "Hole");
+  const checkedPortals = validatePositions(board.portals ?? [], "Portal");
+
+  // A pair teleports; a third has nowhere agreed to send anything.
+  if (checkedPortals.length > 2) {
+    throw new BoardError("Board has more than two portals");
+  }
+
+  for (const hazard of [...checkedHoles, ...checkedPortals]) {
+    const at = `(${hazard.x}, ${hazard.y})`;
+
+    if (
+      checkedHoles.some((hole) => isPositionSame(hole, hazard)) &&
+      checkedPortals.some((portal) => isPositionSame(portal, hazard))
+    ) {
+      throw new BoardError(`Hole and portal share ${at}`);
+    }
+
+    if (checkedPieces.some((piece) => isPositionSame(piece, hazard))) {
+      throw new BoardError(`Piece starts on a hole or portal at ${at}`);
+    }
+
+    if (isPositionSame(destination, hazard)) {
+      throw new BoardError(`Destination is on a hole or portal at ${at}`);
+    }
+  }
+
   return {
     destination,
     pieces: checkedPieces,
     walls: checkedWalls,
+    holes: checkedHoles,
+    portals: checkedPortals,
   };
+}
+
+// Bounds- and duplicate-checks a hazard list, returning it sanitized.
+function validatePositions(
+  positions: (Position | null | undefined)[],
+  label: string,
+): Position[] {
+  const checked: Position[] = [];
+
+  for (const position of positions) {
+    if (position == null || position.x == null || position.y == null) {
+      throw new BoardError(`${label} is invalid`);
+    }
+
+    const at = `(${position.x}, ${position.y})`;
+
+    if (isPositionOutOfBounds(position)) {
+      throw new BoardError(`${label} at ${at} is out of bounds`);
+    }
+
+    if (checked.some((item) => isPositionSame(item, position))) {
+      throw new BoardError(`Duplicate ${label.toLowerCase()} at ${at}`);
+    }
+
+    checked.push(position);
+  }
+
+  return checked;
 }
 
 /**
@@ -205,9 +302,132 @@ export type Targets = {
   left?: Position;
 };
 
+/** How a slide ended. */
+export type SlideOutcome = "stopped" | "dropped" | "looped";
+
+/**
+ * A resolved slide in one direction.
+ *
+ * `segments` holds one entry per portal leg — the cells crossed, starting at the
+ * origin or at an exit portal — so callers can animate and measure the real path
+ * instead of interpolating between the endpoints.
+ */
+export type Slide = {
+  segments: Position[][];
+  // Where the piece ends: a resting cell, the hole it fell into, or the portal
+  // it was caught circling.
+  target: Position;
+  outcome: SlideOutcome;
+};
+
+/**
+ * Whether a wall stands between two adjacent cells. Walls are stored on the cell
+ * they block entry into from the lower coordinate, so the wall to look for
+ * always sits on whichever of the two is further along the axis.
+ */
+function hasWallBetween(from: Position, to: Position, walls: Wall[]) {
+  const orientation = from.y === to.y ? "vertical" : "horizontal";
+  const at = to.x > from.x || to.y > from.y ? to : from;
+
+  return walls.some((wall) =>
+    wall.orientation === orientation && isPositionSame(wall, at)
+  );
+}
+
+/**
+ * Walks a piece one cell at a time until something ends the slide.
+ *
+ * A step-by-step walk rather than a clamp from the board edge, because holes and
+ * portals act on the cells crossed on the way, not on where the slide would
+ * otherwise have stopped.
+ *
+ * @param src The starting position
+ * @param direction The direction to slide in
+ * @param board The board state
+ * @returns The resolved slide, or undefined if no piece stands on `src`
+ */
+export function getSlide(
+  src: Position,
+  direction: Direction,
+  { pieces, walls, holes, portals }: SlideBoard,
+): Slide | undefined {
+  if (!pieces.some((piece) => isPositionSame(piece, src))) return undefined;
+
+  const delta = DELTAS[direction];
+  // The mover cannot block itself — every other piece can.
+  const isBlocked = (position: Position) =>
+    pieces.some((piece) =>
+      !isPositionSame(piece, src) && isPositionSame(piece, position)
+    );
+
+  const entered: Position[] = [];
+  let current = src;
+  let segment: Position[] = [current];
+  const segments = [segment];
+
+  while (true) {
+    const next = { x: current.x + delta.x, y: current.y + delta.y };
+
+    if (isPositionOutOfBounds(next)) break;
+    if (hasWallBetween(current, next, walls)) break;
+    if (isBlocked(next)) break;
+
+    current = next;
+    segment.push(current);
+
+    if (holes.some((hole) => isPositionSame(hole, current))) {
+      return { segments, target: current, outcome: "dropped" };
+    }
+
+    const entry = portals.find((portal) => isPositionSame(portal, current));
+    if (!entry) continue;
+
+    // A single portal has nowhere to send anything, so pieces slide over it.
+    const exit = portals.find((portal) => !isPositionSame(portal, entry));
+    if (!exit) continue;
+
+    // Back into a portal already taken this slide: the piece circles forever.
+    if (entered.some((portal) => isPositionSame(portal, entry))) {
+      return { segments, target: current, outcome: "looped" };
+    }
+    entered.push(entry);
+
+    // Nothing can come through an occupied exit, so the piece stays on entry.
+    if (isBlocked(exit)) {
+      return { segments, target: entry, outcome: "stopped" };
+    }
+
+    current = exit;
+    segment = [current];
+    segments.push(segment);
+  }
+
+  return { segments, target: current, outcome: "stopped" };
+}
+
+/**
+ * Every direction the piece on `src` can actually travel in.
+ * A direction that would leave it where it started is not a move.
+ */
+export function getSlides(
+  src: Position,
+  board: SlideBoard,
+): Partial<Record<Direction, Slide>> {
+  const slides: Partial<Record<Direction, Slide>> = {};
+
+  for (const direction of DIRECTIONS) {
+    const slide = getSlide(src, direction, board);
+    if (!slide || isPositionSame(slide.target, src)) continue;
+
+    slides[direction] = slide;
+  }
+
+  return slides;
+}
+
 /**
  * Gets the furthest possible position a piece can move in each direction,
- * blocked by walls, other pieces and board edges.
+ * blocked by walls, other pieces and board edges — or swallowed by a hole.
  *
  * An empty direction means the piece cannot move in that direction.
  * An empty object means the piece cannot move at all.
@@ -216,75 +436,32 @@ export type Targets = {
  * @param board The board state
  * @returns The possible target positions of the piece
  */
-export function getTargets(
-  src: Position,
-  { walls, pieces }: Pick<Board, "pieces" | "walls">,
-): Targets {
-  const up = { x: src.x, y: 0 };
-  const right = { x: COLS - 1, y: src.y };
-  const down = { x: src.x, y: ROWS - 1 };
-  const left = { x: 0, y: src.y };
-
-  const targetPiece = pieces.find((piece) => isPositionSame(piece, src));
-  if (!targetPiece) return {};
-
-  /**
-   * Determine if any walls are in between src position and current targets
-   * note: walls can be on the same space as src, the `<=` and `=>` and off by 1 account for that.
-   */
-  for (const wall of walls) {
-    if (wall.y === src.y && wall.orientation === "vertical") {
-      if (wall.x <= src.x && wall.x > left.x) {
-        left.x = wall.x;
-      }
-
-      if (wall.x > src.x && wall.x <= right.x) {
-        right.x = wall.x - 1;
-      }
-    } else if (wall.x === src.x && wall.orientation === "horizontal") {
-      if (wall.y <= src.y && wall.y > up.y) {
-        up.y = wall.y;
-      }
-
-      if (wall.y > src.y && wall.y <= down.y) {
-        down.y = wall.y - 1;
-      }
-    }
-  }
-
-  for (const piece of pieces) {
-    if (piece.y === src.y && piece.x === src.x) continue;
-
-    if (piece.y === src.y) {
-      if (piece.x <= src.x && piece.x >= left.x) {
-        left.x = piece.x + 1;
-      }
-
-      if (piece.x >= src.x && piece.x <= right.x) {
-        right.x = piece.x - 1;
-      }
-    } else if (piece.x === src.x) {
-      if (piece.y <= src.y && piece.y >= up.y) {
-        up.y = piece.y + 1;
-      }
-
-      if (piece.y >= src.y && piece.y <= down.y) {
-        down.y = piece.y - 1;
-      }
-    }
-  }
-
-  // Check for overlaps, and only add targets where not found
+export function getTargets(src: Position, board: SlideBoard): Targets {
   const lookup: Targets = {};
-  for (const [key, target] of Object.entries({ up, right, down, left })) {
-    const hasOverlap = pieces.some((piece) => isPositionSame(piece, target));
 
-    if (!hasOverlap) {
-      lookup[key as keyof Targets] = target;
-    }
+  for (const [direction, slide] of Object.entries(getSlides(src, board))) {
+    lookup[direction as keyof Targets] = slide.target;
   }
 
   return lookup;
+}
+
+/**
+ * Recovers the slide a move describes.
+ *
+ * A move only records where a piece ended, so the direction has to be found by
+ * matching endpoints. First match in `DIRECTIONS` order wins, which only becomes
+ * a choice at all on boards where two portal routes share an endpoint.
+ */
+function findSlide(move: Move, board: SlideBoard): Slide | undefined {
+  const slides = getSlides(move[0], board);
+
+  for (const direction of DIRECTIONS) {
+    const slide = slides[direction];
+    if (slide && isPositionSame(slide.target, move[1])) return slide;
+  }
+
+  return undefined;
 }
 
 /**
@@ -293,23 +470,8 @@ export function getTargets(
  * @param board
  * @returns true if valid, otherwise false
  */
-export function isValidMove(
-  move: Move,
-  board: Pick<Board, "pieces" | "walls">,
-) {
-  const matchingPiece = board.pieces.find((piece) =>
-    isPositionSame(piece, move[0])
-  );
-
-  if (!matchingPiece) return false;
-
-  const targets = getTargets(move[0], board);
-
-  for (const possibleTarget of Object.values(targets)) {
-    if (isPositionSame(possibleTarget, move[1])) return true;
-  }
-
-  return false;
+export function isValidMove(move: Move, board: SlideBoard) {
+  return findSlide(move, board) != null;
 }
 
 /**
@@ -319,28 +481,41 @@ export function isValidMove(
  * @param moves
  * @returns updated board state.
  */
-export function resolveMoves<
-  TBoard extends Pick<Board, "pieces" | "walls"> = Pick<
-    Board,
-    "pieces" | "walls"
-  >,
->(
+export function resolveMoves<TBoard extends SlideBoard = SlideBoard>(
   board: TBoard,
   moves: Move[],
 ): TBoard {
-  const updatedBoard = { ...board };
+  let updatedBoard = { ...board };
 
   for (const move of moves) {
-    if (!isValidMove(move, updatedBoard)) {
-      throw new Error(`Invalid move: ${encodeMove(move)}`);
-    }
+    const slide = findSlide(move, updatedBoard);
+    if (!slide) throw new Error(`Invalid move: ${encodeMove(move)}`);
 
-    updatedBoard.pieces = updatedBoard.pieces.map((piece) =>
-      isPositionSame(piece, move[0]) ? { ...piece, ...move[1] } : piece
-    );
+    updatedBoard = {
+      ...updatedBoard,
+      pieces: slide.outcome === "dropped"
+        ? updatedBoard.pieces.filter((piece) => !isPositionSame(piece, move[0]))
+        : updatedBoard.pieces.map((piece) =>
+          isPositionSame(piece, move[0]) ? { ...piece, ...move[1] } : piece
+        ),
+    };
   }
 
   return updatedBoard;
+}
+
+/**
+ * Whether the last move left a piece circling between two portals.
+ *
+ * Derived rather than stored: moves live in the URL, so a reloaded or shared
+ * link has to arrive at the same locked board, with or without JavaScript.
+ */
+export function isLooped(board: SlideBoard, moves: Move[]) {
+  const lastMove = moves.at(-1);
+  if (!lastMove) return false;
+
+  const before = resolveMoves(board, moves.slice(0, -1));
+  return findSlide(lastMove, before)?.outcome === "looped";
 }
 
 /**
@@ -370,8 +545,12 @@ export function rotateBoard(
   const destination = rotatePosition(board.destination, direction);
   const pieces = board.pieces.map((piece) => rotatePosition(piece, direction));
   const walls = board.walls.map((wall) => rotatePosition(wall, direction));
+  const holes = board.holes.map((hole) => rotatePosition(hole, direction));
+  const portals = board.portals.map((portal) =>
+    rotatePosition(portal, direction)
+  );
 
-  return { destination, pieces, walls };
+  return { destination, pieces, walls, holes, portals };
 }
 
 // Rotates a position or wall 90° right. Walls swap orientation and use a shifted x offset.
@@ -419,8 +598,10 @@ export function flipBoard(
   const destination = flipPosition(board.destination, axis);
   const pieces = board.pieces.map((piece) => flipPosition(piece, axis));
   const walls = board.walls.map((wall) => flipPosition(wall, axis));
+  const holes = board.holes.map((hole) => flipPosition(hole, axis));
+  const portals = board.portals.map((portal) => flipPosition(portal, axis));
 
-  return { destination, pieces, walls };
+  return { destination, pieces, walls, holes, portals };
 }
 
 // Flips a position or wall along an axis. Cross-axis walls get a +1 offset to preserve edge alignment.

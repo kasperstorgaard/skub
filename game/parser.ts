@@ -21,6 +21,10 @@ import { Board, Piece, Position, type Puzzle, Wall } from "#/game/types.ts";
  *   - `#̲̂` = blocker on destination + horizontal wall below (# + U+0332 + U+0302)
  *   - `X` = destination (when no piece on it)
  *   - `X̲` = destination + horizontal wall below (X + U+0332)
+ *   - `H` = hole (swallows any piece that slides in)
+ *   - `H̲` = hole + horizontal wall below (H + U+0332)
+ *   - `P` = portal (always a pair; teleports to the other one)
+ *   - `P̲` = portal + horizontal wall below (P + U+0332)
  *   - `|` = vertical wall (between columns)
  *   - `_` = horizontal wall (standalone, below empty cell)
  *
@@ -62,6 +66,10 @@ const CELL_CHARS = {
   blockerWall: "#̲", // # + U+0332
   destination: "X",
   destinationWall: "X̲", // X + U+0332
+  hole: "H",
+  holeWall: "H̲", // H + U+0332
+  portal: "P",
+  portalWall: "P̲", // P + U+0332
   empty: " ",
   wallVertical: "|",
   wallHorizontal: "_",
@@ -79,6 +87,8 @@ function parseBoard(rows: string[], validate = true): Board {
   const pieces: Piece[] = [];
   let destination: Position | undefined;
   const walls: Wall[] = [];
+  const holes: Position[] = [];
+  const portals: Position[] = [];
 
   for (let y = 0; y < rows.length; y++) {
     const row = rows[y];
@@ -198,6 +208,24 @@ function parseBoard(rows: string[], validate = true): Board {
         continue;
       }
 
+      // Check for hole
+      if (char === CELL_CHARS.hole) {
+        holes.push({ x, y });
+        if (hasUnderline) {
+          walls.push({ x, y: y + 1, orientation: "horizontal" });
+        }
+        continue;
+      }
+
+      // Check for portal
+      if (char === CELL_CHARS.portal) {
+        portals.push({ x, y });
+        if (hasUnderline) {
+          walls.push({ x, y: y + 1, orientation: "horizontal" });
+        }
+        continue;
+      }
+
       // Empty space - but check for underline modifier
       if (char === " ") {
         // Space with underline means a horizontal wall below this empty cell
@@ -221,13 +249,21 @@ function parseBoard(rows: string[], validate = true): Board {
   // A draft is stored mid-build, before it has a puck or a destination — the
   // editor's own new board starts at 0,0 the same way.
   if (!validate) {
-    return { destination: destination ?? { x: 0, y: 0 }, pieces, walls };
+    return {
+      destination: destination ?? { x: 0, y: 0 },
+      pieces,
+      walls,
+      holes,
+      portals,
+    };
   }
 
   return validateBoard({
     destination,
     pieces,
     walls,
+    holes,
+    portals,
   });
 }
 

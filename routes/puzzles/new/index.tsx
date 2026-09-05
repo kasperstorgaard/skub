@@ -29,6 +29,8 @@ export const handler = define.handlers<Puzzle>({
         destination: { x: 0, y: 0 },
         pieces: [],
         walls: [],
+        holes: [],
+        portals: [],
       },
     };
 

@@ -13,6 +13,8 @@ Deno.test("formatPuzzle - formats simple puzzle", () => {
     difficulty: "medium",
     minMoves: 7,
     board: {
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 7 },
       pieces: [
         { x: 1, y: 1, type: "puck" },
@@ -39,6 +41,8 @@ Deno.test("formatPuzzle - formats puzzle with walls", () => {
     difficulty: "medium",
     minMoves: 6,
     board: {
+      holes: [],
+      portals: [],
       destination: { x: 7, y: 7 },
       pieces: [{ x: 0, y: 0, type: "puck" }],
       walls: [
@@ -64,6 +68,8 @@ Deno.test("formatPuzzle - formats puzzle with piece on destination", () => {
     difficulty: "medium",
     minMoves: 6,
     board: {
+      holes: [],
+      portals: [],
       destination: { x: 4, y: 4 },
       pieces: [
         { x: 4, y: 4, type: "puck" }, // Puck on destination
@@ -96,6 +102,8 @@ Deno.test("formatPuzzle - formats puzzle with piece on destination and wall", ()
     difficulty: "medium",
     minMoves: 6,
     board: {
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 2 },
       pieces: [
         { x: 0, y: 0, type: "puck" }, // Need a puck for validation

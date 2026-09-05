@@ -101,12 +101,7 @@ export default function Board(
     }) => {
       if (!src || !boardRef.current) return;
 
-      const possibleTargets = getTargets(src, {
-        pieces: board.pieces,
-        walls: board.walls,
-      });
-
-      const target = possibleTargets[opts.direction];
+      const target = getTargets(src, board)[opts.direction];
       let updatedHref = getActiveHref(src, { ...state, href: href.value });
 
       if (target) {

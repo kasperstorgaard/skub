@@ -17,11 +17,18 @@ export type Wall = Position & {
   orientation: "horizontal" | "vertical";
 };
 
-// The complete board state with destination, walls, and pieces
+// A hole swallows any piece that slides into it. A portal teleports one to its
+// pair. Neither ever moves, so they are positions rather than Piece variants.
+export type Hazard = "hole" | "portal";
+
+// The complete board state with destination, walls, pieces and hazards
 export type Board = {
   destination: Position;
   walls: Wall[];
   pieces: Piece[];
+  holes: Position[];
+  // 0 or 2 once valid; the editor may hold 1 mid-build
+  portals: Position[];
 };
 
 // "ultra" is a one-off tier for "Loke" — the hidden endgame puzzle shown

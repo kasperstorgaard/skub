@@ -62,7 +62,13 @@ export function EditorPanel(
   const onClear = useCallback(() => {
     puzzle.value = {
       ...puzzle.value,
-      board: { destination: { x: 3, y: 3 }, pieces: [], walls: [] },
+      board: {
+        destination: { x: 3, y: 3 },
+        pieces: [],
+        walls: [],
+        holes: [],
+        portals: [],
+      },
       minMoves: 0,
     };
   }, [puzzle]);
