@@ -4,21 +4,18 @@ import clsx from "clsx/lite";
  * Ring insets as percentages of the container, outermost first. The negative
  * ones run past its corners, to be cropped by the overflow.
  *
- * They stop well before the middle: once a circle is small enough that one side
- * of its border holds less than a single dash, a browser draws the four sides as
- * four strokes and the ring reads as a cross rather than a circle. A solid core
- * fills the centre instead.
+ * The innermost circles are small enough that one side of the border holds less
+ * than a dash, so a browser draws the four sides as four strokes and they read
+ * as a cross rather than a ring. Kept anyway: rings packed the whole way in look
+ * better than a tidy centre.
  */
-const CELL_RINGS = [-22, -16, -10, -4, 2, 8, 14, 20];
-const CELL_CORE = 40;
+const CELL_RINGS = [-22, -16, -10, -4, 2, 8, 14, 20, 26, 32, 38, 44];
 
-// A toolbar swatch is a quarter of a cell, so far fewer bands fit above that
-// same limit.
-const ICON_RINGS = [-25, -5, 15];
-const ICON_CORE = 38;
+// A toolbar swatch is a quarter of a cell, so far fewer bands fit.
+const ICON_RINGS = [-25, -8, 9, 26];
 
 type PortalRingsProps = {
-  /** Renders the sparser set that survives being drawn at swatch size. */
+  /** Renders the sparser set that fits a swatch. */
   compact?: boolean;
 };
 
@@ -51,12 +48,6 @@ export function PortalRings({ compact }: PortalRingsProps) {
           }}
         />
       ))}
-
-      {/* A small dark eye, so the middle reads as somewhere to fall into. */}
-      <div
-        className="absolute rounded-round bg-hole"
-        style={{ inset: `${compact ? ICON_CORE : CELL_CORE}%` }}
-      />
     </>
   );
 }
