@@ -105,7 +105,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         disabled={disabled}
         onClick={() => setCellContent("hole")}
       >
-        <div className="size-4 bg-hole border-1 border-ui-4 rounded-round" />
+        <div className="size-5 bg-hole rounded-1" />
       </button>
 
       <button
@@ -115,7 +115,10 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         disabled={disabled}
         onClick={() => setCellContent("portal")}
       >
-        <div className="size-4 rounded-round border-2 border-dashed border-portal bg-portal-alt" />
+        <div className="size-5 rounded-1 overflow-hidden bg-portal-alt relative">
+          <div className="absolute -inset-1/4 rounded-round border-2 border-dashed border-portal" />
+          <div className="absolute inset-1/4 rounded-round border-1 border-dashed border-portal" />
+        </div>
       </button>
 
       <div
