@@ -1,8 +1,14 @@
 import { type Signal } from "@preact/signals";
 import { useCallback } from "preact/hooks";
 
-import { isPositionSame } from "#/game/board.ts";
-import type { Position, Puzzle, Wall } from "#/game/types.ts";
+import { getCellContent, isPositionSame } from "#/game/board.ts";
+import {
+  CELL_CONTENTS,
+  type CellContent,
+  type Position,
+  type Puzzle,
+  type Wall,
+} from "#/game/types.ts";
 
 /**
  * Current state for the editor
@@ -64,31 +70,38 @@ export function useEditor(
     [active, puzzle],
   );
 
-  const togglePieceType = useCallback(
-    (type: "puck" | "blocker" | null) => {
+  const setCellContent = useCallback(
+    (content: CellContent | null) => {
       if (!active) return;
 
-      // find existing match of same position and type
-      const match = type &&
-        puzzle.value.board.pieces.find((piece) =>
-          isPositionSame(piece, active) && type === piece.type
-        );
+      const board = puzzle.value.board;
+      // Setting what is already there clears the cell instead.
+      const target = content === getCellContent(board, active) ? null : content;
 
-      // Clear pieces at the active position
-      let pieces = puzzle.value.board.pieces.filter((piece) =>
+      // A cell holds one thing, so start by emptying it.
+      let pieces = board.pieces.filter((piece) =>
         !isPositionSame(piece, active)
       );
+      const holes = board.holes.filter((hole) => !isPositionSame(hole, active));
+      let portals = board.portals.filter((portal) =>
+        !isPositionSame(portal, active)
+      );
 
-      // Puck is unique — remove any existing puck at other positions
-      if (type === "puck") {
+      if (target === "puck") {
+        // Puck is unique — remove any existing puck at other positions
         pieces = pieces.filter((piece) => piece.type !== "puck");
       }
 
-      if (type && !match) {
-        pieces = [...pieces, { ...active, type }];
+      if (target === "puck" || target === "blocker") {
+        pieces = [...pieces, { ...active, type: target }];
+      } else if (target === "hole") {
+        holes.push({ ...active });
+      } else if (target === "portal") {
+        // Portals work in pairs, so a third one retires the oldest.
+        portals = [...portals, { ...active }].slice(-2);
       }
 
-      updateBoard(puzzle, { pieces });
+      updateBoard(puzzle, { pieces, holes, portals });
     },
     [active, puzzle],
   );
@@ -121,22 +134,17 @@ export function useEditor(
     }
   }, [active, puzzle]);
 
-  const cyclePiece = useCallback(() => {
+  const cycleCell = useCallback(() => {
     if (!active) return;
 
-    const { pieces } = puzzle.value.board;
-    const activePiece = pieces.find((piece) => isPositionSame(piece, active));
+    const current = getCellContent(puzzle.value.board, active);
+    const index = current ? CELL_CONTENTS.indexOf(current) : -1;
 
-    if (!activePiece) {
-      togglePieceType("blocker");
-    } else if (activePiece.type === "blocker") {
-      togglePieceType("puck");
-    } else {
-      togglePieceType(null);
-    }
-  }, [active, puzzle]);
+    // Past the last content the cycle empties the cell again.
+    setCellContent(CELL_CONTENTS[index + 1] ?? null);
+  }, [active, puzzle, setCellContent]);
 
-  return { toggleWall, togglePieceType, setDestination, cycleWall, cyclePiece };
+  return { toggleWall, setCellContent, setDestination, cycleWall, cycleCell };
 }
 
 // Applies a board mutation to the puzzle signal, clearing minMoves.

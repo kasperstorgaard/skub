@@ -21,6 +21,11 @@ export type Wall = Position & {
 // pair. Neither ever moves, so they are positions rather than Piece variants.
 export type Hazard = "hole" | "portal";
 
+// Everything that can occupy a cell, in the order the editor cycles through
+// them. One list so the cycle and the toolbar can never drift apart.
+export const CELL_CONTENTS = ["blocker", "puck", "hole", "portal"] as const;
+export type CellContent = typeof CELL_CONTENTS[number];
+
 // The complete board state with destination, walls, pieces and hazards
 export type Board = {
   destination: Position;

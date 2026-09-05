@@ -1,6 +1,12 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { useCallback, useMemo, useRef, useState } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 
 import { useRouter } from "./router.tsx";
 import { useMoves } from "#/client/moves.ts";
@@ -8,7 +14,9 @@ import { calculateMoveSpeed } from "#/client/touch.ts";
 import { Icon, X } from "#/components/icons.tsx";
 import {
   getGrid,
+  getMoveSlide,
   getTargets,
+  isLooped,
   isPositionSame,
   isValidSolution,
   resolveMoves,
@@ -64,6 +72,13 @@ export default function Board(
     [board, mode.value],
   );
 
+  // A portal loop leaves the piece circling with nowhere to come to rest, so
+  // the board stops taking input until the move is undone.
+  const isLocked = useMemo(
+    () => isLooped(puzzle.value.board, moves),
+    [puzzle.value.board, moves],
+  );
+
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
   }, [board]);
@@ -74,10 +89,10 @@ export default function Board(
 
   const guides = useMemo(
     () =>
-      mode.value === "solve"
+      mode.value === "solve" && !isLocked
         ? getGuides(board, { active: state.active, hint: state.hint })
         : [],
-    [state.active, state.hint, board, mode.value],
+    [state.active, state.hint, board, mode.value, isLocked],
   );
 
   const activePiece = useMemo(() => {
@@ -92,6 +107,20 @@ export default function Board(
   );
 
   const [wiggle, setWiggle] = useState({ puck: isNew, blocker: isNew });
+
+  // A hole removes the piece outright, so there is nothing left to animate.
+  // Keep the one that just fell mounted for a beat and let it drop away.
+  const [fall, setFall] = useState<FallingPiece | null>(null);
+  const playedCount = useRef(moves.length);
+
+  useEffect(() => {
+    const isNewMove = moves.length > playedCount.current;
+    playedCount.current = moves.length;
+
+    // Only a move made here falls; arriving on a URL that already has one
+    // should show the finished board, not replay the drop.
+    if (isNewMove) setFall(getFallingPiece(puzzle.value.board, moves));
+  }, [moves, puzzle.value.board]);
 
   const onMove = useCallback(
     (src: Position, opts: {
@@ -128,7 +157,7 @@ export default function Board(
     pieces: board.pieces,
     active: state.active,
     onMove,
-    isEnabled: mode.value === "solve",
+    isEnabled: mode.value === "solve" && !isLocked,
   });
 
   return (
@@ -175,6 +204,14 @@ export default function Board(
           ))
         )}
 
+        {board.holes.map((hole) => (
+          <BoardHole key={`hole-${hole.x}-${hole.y}`} {...hole} />
+        ))}
+
+        {board.portals.map((portal) => (
+          <BoardPortal key={`portal-${portal.x}-${portal.y}`} {...portal} />
+        ))}
+
         <BoardDestination {...board.destination} />
 
         {board.walls.map((wall) => (
@@ -205,7 +242,7 @@ export default function Board(
             href={getActiveHref(piece, { ...state, href: href.value })}
             id={getPieceId(piece, idx)}
             isActive={state.active && isPositionSame(piece, state.active)}
-            isReadonly={mode.value !== "solve"}
+            isReadonly={mode.value !== "solve" || isLocked}
             isReplay={mode.value === "replay"}
             wiggle={mode.value === "solve" && wiggle[piece.type]}
             onFocus={(event) => {
@@ -215,6 +252,14 @@ export default function Board(
             }}
           />
         ))}
+
+        {fall && (
+          <BoardFallingPiece
+            key={`fall-${fall.to.x}-${fall.to.y}-${moves.length}`}
+            {...fall}
+            onDone={() => setFall(null)}
+          />
+        )}
 
         {mode.value === "replay" && (
           <BoardReplayStyles
@@ -303,6 +348,68 @@ function BoardSpace(
   );
 }
 
+function BoardHole({ x, y }: Position) {
+  return (
+    <div
+      className={clsx(
+        "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
+        "rounded-1 bg-hole overflow-hidden pointer-events-none",
+      )}
+      style={{ "--x": x, "--y": y }}
+    >
+      {
+        /* A fine hatch, so the void reads as a surface rather than a gap in the
+          render — the only cue on themes whose ground is already black. */
+      }
+      <div
+        className={clsx(
+          "size-full opacity-8",
+          "bg-[repeating-linear-gradient(45deg,#fff_0_1px,transparent_1px_5px)]",
+        )}
+      />
+    </div>
+  );
+}
+
+/**
+ * Concentric ring insets as percentages of the cell, largest first. The negative
+ * ones run past the cell's corners so the overflow crops them, and the step is
+ * barely wider than the 2px border, so the rings pack the space with no gap.
+ */
+const PORTAL_RINGS = [-22, -16, -10, -4, 2, 8, 14, 20, 26, 32, 38, 44];
+
+function BoardPortal({ x, y }: Position) {
+  return (
+    <div
+      className={clsx(
+        "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
+        "relative overflow-hidden rounded-1 pointer-events-none",
+      )}
+      style={{ "--x": x, "--y": y }}
+    >
+      {
+        /* Each ring paints over the last one's interior, so all that stays
+          visible is its dashed band — and the gaps between dashes show the
+          ring's own fill, which is what makes the dash two-coloured rather
+          than see-through. Rings turn faster toward the centre, alternating
+          direction so the whole thing churns. */
+      }
+      {PORTAL_RINGS.map((inset, index) => (
+        <div
+          key={inset}
+          className="absolute rounded-round border-2 border-dashed border-portal bg-portal-alt"
+          style={{
+            inset: `${inset}%`,
+            animation: `spin ${18 - index * 1.4}s linear infinite${
+              index % 2 ? " reverse" : ""
+            }`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function BoardDestination({ x, y }: Position) {
   return (
     <div
@@ -325,9 +432,11 @@ type MoveGuideProps = Guide & {
   href: string;
 };
 
-function MoveGuide({ move, href, isHint }: MoveGuideProps) {
-  const [active, target] = move;
-  const isVertical = active.x === target.x;
+// `to` is the end of the slide's first leg, not where the piece comes to rest —
+// a slide through a portal is drawn only as far as the portal it goes in by.
+function MoveGuide({ move, to, href, isHint }: MoveGuideProps) {
+  const [active] = move;
+  const isVertical = active.x === to.x;
 
   return (
     <>
@@ -340,12 +449,12 @@ function MoveGuide({ move, href, isHint }: MoveGuideProps) {
         style={isVertical
           ? {
             gridColumnStart: `${active.x + 1}`,
-            gridRowStart: `${Math.min(active.y, target.y) + 1}`,
-            gridRowEnd: `${Math.max(active.y, target.y) + 2}`,
+            gridRowStart: `${Math.min(active.y, to.y) + 1}`,
+            gridRowEnd: `${Math.max(active.y, to.y) + 2}`,
           }
           : {
-            gridColumnStart: `${Math.min(active.x, target.x) + 1}`,
-            gridColumnEnd: `${Math.max(active.x, target.x) + 2}`,
+            gridColumnStart: `${Math.min(active.x, to.x) + 1}`,
+            gridColumnEnd: `${Math.max(active.x, to.x) + 2}`,
             gridRowStart: `${active.y + 1}`,
           }}
       />
@@ -359,10 +468,10 @@ function MoveGuide({ move, href, isHint }: MoveGuideProps) {
           isHint && "border-(--hint-bg) animate-blink",
         )}
         style={{
-          "--x": target.x,
-          "--y": target.y,
+          "--x": to.x,
+          "--y": to.y,
         }}
-        aria-label={`move to ${target.x},${target.y}`}
+        aria-label={`move to ${to.x},${to.y}`}
         tabIndex={-1}
         data-router="replace"
       />
@@ -437,6 +546,77 @@ function BoardPiece(
         )}
       />
     </a>
+  );
+}
+
+type FallingPiece = {
+  type: Piece["type"];
+  from: Position;
+  to: Position;
+};
+
+/** The piece the last move dropped in a hole, if it dropped one. */
+function getFallingPiece(
+  board: Puzzle["board"],
+  moves: Move[],
+): FallingPiece | null {
+  const lastMove = moves.at(-1);
+  if (!lastMove) return null;
+
+  const before = resolveMoves(board, moves.slice(0, -1));
+  const slide = getMoveSlide(lastMove, before);
+  if (slide?.outcome !== "dropped") return null;
+
+  const piece = before.pieces.find((item) => isPositionSame(item, lastMove[0]));
+  if (!piece) return null;
+
+  return { type: piece.type, from: lastMove[0], to: slide.target };
+}
+
+type BoardFallingPieceProps = FallingPiece & {
+  onDone: () => void;
+};
+
+/**
+ * A piece on its way into a hole: it slides the last leg like any other move,
+ * then the inner shape scales away once it has arrived. Mounting at `from` and
+ * moving on the next frame is what gives the transition something to animate.
+ */
+function BoardFallingPiece(
+  { type, from, to, onDone }: BoardFallingPieceProps,
+) {
+  const [at, setAt] = useState(from);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setAt(to));
+    return () => cancelAnimationFrame(frame);
+  }, [to]);
+
+  return (
+    <div
+      style={{
+        "--x": at.x,
+        "--y": at.y,
+        "--pad": "min(20%,var(--size-2))",
+      }}
+      className={clsx(
+        "grid col-start-1 row-start-1 w-full h-full p-(--pad) pointer-events-none",
+        "translate-x-[calc((var(--space-w)+var(--gap))*var(--x))]",
+        "translate-y-[calc((var(--space-w)+var(--gap))*var(--y))]",
+        "transition-transform duration-(--piece-speed,200ms) ease-out",
+      )}
+    >
+      <div
+        onTransitionEnd={onDone}
+        className={clsx(
+          "w-full h-full origin-center",
+          type === "puck" && "bg-ui-2 rounded-round",
+          type === "blocker" && "bg-ui-3 rounded-1",
+          "transition-all ease-in duration-300 delay-(--piece-speed,200ms)",
+          at === from ? "scale-100 opacity-100" : "scale-0 opacity-0",
+        )}
+      />
+    </div>
   );
 }
 

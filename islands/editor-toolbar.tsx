@@ -24,7 +24,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
     [href.value],
   );
 
-  const { toggleWall, togglePieceType, setDestination } = useEditor({
+  const { toggleWall, setCellContent, setDestination } = useEditor({
     puzzle,
     active,
   });
@@ -34,7 +34,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
   return (
     <div
       className={clsx(
-        "grid grid-cols-[repeat(6,2.5rem)] h-fit place-content-center gap-1",
+        "grid grid-cols-[repeat(4,2.5rem)] h-fit place-content-center gap-1",
         "lg:grid-cols-[auto_1.5rem] lg:auto-rows-[2.5rem]",
         className,
       )}
@@ -83,7 +83,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
         aria-label="Blocker"
         disabled={disabled}
-        onClick={() => togglePieceType("blocker")}
+        onClick={() => setCellContent("blocker")}
       >
         <div className="size-4 bg-ui-3 rounded-1" />
       </button>
@@ -93,14 +93,34 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
         aria-label="Puck"
         disabled={disabled}
-        onClick={() => togglePieceType("puck")}
+        onClick={() => setCellContent("puck")}
       >
         <div className="size-4 bg-ui-2 rounded-round" />
       </button>
 
+      <button
+        type="button"
+        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        aria-label="Hole"
+        disabled={disabled}
+        onClick={() => setCellContent("hole")}
+      >
+        <div className="size-4 bg-hole border-1 border-ui-4 rounded-round" />
+      </button>
+
+      <button
+        type="button"
+        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        aria-label="Portal"
+        disabled={disabled}
+        onClick={() => setCellContent("portal")}
+      >
+        <div className="size-4 rounded-round border-2 border-dashed border-portal bg-portal-alt" />
+      </button>
+
       <div
         className={clsx(
-          "not-lg:hidden col-2 row-start-4 row-span-2 relative flex items-center justify-center p-1",
+          "not-lg:hidden col-2 row-start-4 row-span-4 relative flex items-center justify-center p-1",
         )}
       >
         <BracketBackground className="absolute inset-0" />

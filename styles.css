@@ -355,6 +355,9 @@
   --color-ui-3: var(--color-ui-3);
   --color-ui-4: var(--color-ui-4);
   --color-ui-contrast: var(--color-ui-contrast);
+  --color-hole: var(--color-hole);
+  --color-portal: var(--color-portal);
+  --color-portal-alt: var(--color-portal-alt);
 
   /* Animations */
   --animate-fade-in: var(--animation-fade-in);

@@ -1,5 +1,6 @@
 import { kv } from "#/db/kv.ts";
 import { User } from "#/db/types.ts";
+import { normalizeBoard } from "#/game/board.ts";
 import type { Puzzle } from "#/game/types.ts";
 
 export async function getUser(userId: string): Promise<User | null> {
@@ -24,7 +25,9 @@ export async function getUserPuzzleDraft(
   userId: string,
 ): Promise<Puzzle | null> {
   const res = await kv.get<Puzzle>(["user", userId, "puzzle_draft"]);
-  return res.value ?? null;
+  if (!res.value) return null;
+
+  return { ...res.value, board: normalizeBoard(res.value.board) };
 }
 
 export async function setUserPuzzleDraft(

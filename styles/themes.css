@@ -31,6 +31,9 @@
   --color-ui-3: var(--violet-6);
   --color-ui-4: var(--orange-6);
   --color-ui-contrast: var(--pink-7);
+  --color-hole: #05060a;
+  --color-portal: var(--blue-4);
+  --color-portal-alt: var(--indigo-9);
 }
 
 /* High Contrast / A11y — Wong (2011) / Okabe-Ito colorblind-safe palette.
@@ -58,6 +61,9 @@
   --color-ui-3: var(--pink-5); /* blockers    — warm pink  — 7.0:1  */
   --color-ui-4: var(--gray-4); /* walls       — cool gray  — 14.0:1 */
   --color-ui-contrast: #000000;
+  --color-hole: #000000; /* void — the rendered ring carries definition */
+  --color-portal: var(--teal-3); /* bluish-green — 14.6:1 */
+  --color-portal-alt: #000000;
 }
 
 /* Dracula */
@@ -79,6 +85,9 @@
   --color-ui-3: #bd93f9;
   --color-ui-4: #ffb86c;
   --color-ui-contrast: #ff79c6;
+  --color-hole: #12131a;
+  --color-portal: #8be9fd;
+  --color-portal-alt: #44475a;
 }
 
 /* Acid — matrix/terminal neon */
@@ -100,6 +109,9 @@
   --color-ui-3: #ff0090;
   --color-ui-4: #ff6600;
   --color-ui-contrast: #0d0d0d;
+  --color-hole: #000000;
+  --color-portal: #00e5ff;
+  --color-portal-alt: #003b45;
 }
 
 /* ─── Light themes ─────────────────────────────────────────────── */
@@ -123,6 +135,9 @@
   --color-ui-3: #b91c1c;
   --color-ui-4: #374151;
   --color-ui-contrast: #ffffff;
+  --color-hole: #2d1a0e;
+  --color-portal: #0f766e;
+  --color-portal-alt: #d7ece9;
 }
 
 /* Solarized Light (ethanschoonover.com/solarized) */
@@ -144,6 +159,9 @@
   --color-ui-3: #d33682;
   --color-ui-4: #073642;
   --color-ui-contrast: #b58900;
+  --color-hole: #073642;
+  --color-portal: #268bd2;
+  --color-portal-alt: #d6e5ef;
 }
 
 /* Catppuccin Latte (catppuccin.com) */
@@ -165,6 +183,9 @@
   --color-ui-3: #8839ef;
   --color-ui-4: #fe640b;
   --color-ui-contrast: #8839ef;
+  --color-hole: #3b3f52;
+  --color-portal: #1e66f5;
+  --color-portal-alt: #ccd6f4;
 }
 
 /* Catppuccin Latte, adjusted for print (catppuccin.com) */
@@ -186,5 +207,8 @@
     --color-ui-3: #8839ef;
     --color-ui-4: #fe640b;
     --color-ui-contrast: #8839ef;
+    --color-hole: #acb0be;
+    --color-portal: #1e66f5;
+    --color-portal-alt: #dce0e8;
   }
 }

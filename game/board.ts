@@ -1,5 +1,13 @@
 import { encodeMove } from "#/game/strings.ts";
-import { Board, Direction, Move, Piece, Position, Wall } from "#/game/types.ts";
+import {
+  Board,
+  type CellContent,
+  Direction,
+  Move,
+  Piece,
+  Position,
+  Wall,
+} from "#/game/types.ts";
 
 /**
  * The board dimensions.
@@ -80,6 +88,38 @@ function isPositionOutOfBounds(
  */
 export function isPositionSame(src: Position, target: Position) {
   return src.x === target.x && src.y === target.y;
+}
+
+/** A board as it may come back from storage, written before hazards existed. */
+type StoredBoard =
+  & Omit<Board, "holes" | "portals">
+  & Partial<Pick<Board, "holes" | "portals">>;
+
+/**
+ * Fills in board fields a stored value predates. Editor drafts live in KV as
+ * plain objects, so ones saved before holes and portals arrive without them.
+ */
+export function normalizeBoard(board: StoredBoard): Board {
+  return { ...board, holes: board.holes ?? [], portals: board.portals ?? [] };
+}
+
+/**
+ * What occupies a cell, if anything. Pieces, holes and portals are mutually
+ * exclusive, so one answer is always enough.
+ */
+export function getCellContent(
+  { pieces, holes, portals }: Pick<Board, "pieces" | "holes" | "portals">,
+  position: Position,
+): CellContent | null {
+  const piece = pieces.find((item) => isPositionSame(item, position));
+  if (piece) return piece.type;
+
+  if (holes.some((hole) => isPositionSame(hole, position))) return "hole";
+  if (portals.some((portal) => isPositionSame(portal, position))) {
+    return "portal";
+  }
+
+  return null;
 }
 
 /**

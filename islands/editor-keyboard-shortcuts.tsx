@@ -9,7 +9,7 @@ type Props = { puzzle: Signal<Puzzle>; href: Signal<string> };
 
 export function EditorKeyboardShortcuts({ puzzle, href }: Props) {
   const active = useMemo(() => decodeState(href.value).active, [href.value]);
-  const { cycleWall, cyclePiece, setDestination } = useEditor({
+  const { cycleWall, cycleCell, setDestination } = useEditor({
     active,
     puzzle,
   });
@@ -25,7 +25,7 @@ export function EditorKeyboardShortcuts({ puzzle, href }: Props) {
         case "w":
           return cycleWall();
         case "p":
-          return cyclePiece();
+          return cycleCell();
         case "d":
           return setDestination();
       }
@@ -33,7 +33,7 @@ export function EditorKeyboardShortcuts({ puzzle, href }: Props) {
 
     if (active) self.addEventListener("keyup", onKeyUp);
     return () => self.removeEventListener("keyup", onKeyUp);
-  }, [active, cycleWall, cyclePiece, setDestination]);
+  }, [active, cycleWall, cycleCell, setDestination]);
 
   return null;
 }
