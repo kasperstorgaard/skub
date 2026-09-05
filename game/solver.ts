@@ -131,7 +131,7 @@ export function* solve(
   const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
 
-  const solver = bfsExplore(board, maxDepth, false);
+  const solver = bfsExplore(board, maxDepth, false, options.maxStates);
   let result = solver.next();
   while (!result.done) {
     yield { type: "progress", depth: result.value };
@@ -153,7 +153,9 @@ export function solveSync(
   const board = "board" in puzzleOrBoard ? puzzleOrBoard.board : puzzleOrBoard;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
 
-  const result = runToCompletion(bfsExplore(board, maxDepth, false));
+  const result = runToCompletion(
+    bfsExplore(board, maxDepth, false, options.maxStates),
+  );
   return firstSolution(result.dag);
 }
 
