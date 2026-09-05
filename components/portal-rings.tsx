@@ -10,12 +10,12 @@ import clsx from "clsx/lite";
  * fills the centre instead.
  */
 const CELL_RINGS = [-22, -16, -10, -4, 2, 8, 14, 20];
-const CELL_CORE = 28;
+const CELL_CORE = 40;
 
 // A toolbar swatch is a quarter of a cell, so far fewer bands fit above that
 // same limit.
 const ICON_RINGS = [-25, -5, 15];
-const ICON_CORE = 30;
+const ICON_CORE = 38;
 
 type PortalRingsProps = {
   /** Renders the sparser set that survives being drawn at swatch size. */
@@ -52,8 +52,9 @@ export function PortalRings({ compact }: PortalRingsProps) {
         />
       ))}
 
+      {/* A small dark eye, so the middle reads as somewhere to fall into. */}
       <div
-        className="absolute rounded-round bg-portal"
+        className="absolute rounded-round bg-hole"
         style={{ inset: `${compact ? ICON_CORE : CELL_CORE}%` }}
       />
     </>
