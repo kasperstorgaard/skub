@@ -453,7 +453,10 @@ export function getTargets(src: Position, board: SlideBoard): Targets {
  * matching endpoints. First match in `DIRECTIONS` order wins, which only becomes
  * a choice at all on boards where two portal routes share an endpoint.
  */
-function findSlide(move: Move, board: SlideBoard): Slide | undefined {
+export function getMoveSlide(
+  move: Move,
+  board: SlideBoard,
+): Slide | undefined {
   const slides = getSlides(move[0], board);
 
   for (const direction of DIRECTIONS) {
@@ -471,7 +474,7 @@ function findSlide(move: Move, board: SlideBoard): Slide | undefined {
  * @returns true if valid, otherwise false
  */
 export function isValidMove(move: Move, board: SlideBoard) {
-  return findSlide(move, board) != null;
+  return getMoveSlide(move, board) != null;
 }
 
 /**
@@ -488,7 +491,7 @@ export function resolveMoves<TBoard extends SlideBoard = SlideBoard>(
   let updatedBoard = { ...board };
 
   for (const move of moves) {
-    const slide = findSlide(move, updatedBoard);
+    const slide = getMoveSlide(move, updatedBoard);
     if (!slide) throw new Error(`Invalid move: ${encodeMove(move)}`);
 
     updatedBoard = {
@@ -515,7 +518,7 @@ export function isLooped(board: SlideBoard, moves: Move[]) {
   if (!lastMove) return false;
 
   const before = resolveMoves(board, moves.slice(0, -1));
-  return findSlide(lastMove, before)?.outcome === "looped";
+  return getMoveSlide(lastMove, before)?.outcome === "looped";
 }
 
 /**

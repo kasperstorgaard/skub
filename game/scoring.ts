@@ -2,6 +2,7 @@ import {
   COLS,
   encodeBoard,
   flipBoard,
+  getMoveSlide,
   isPositionSame,
   resolveMoves,
   rotateBoard,
@@ -14,7 +15,7 @@ import {
   solveExhaustiveSync,
   type SolverResult,
 } from "#/game/solver.ts";
-import { getCanonicalMoveKey } from "#/game/strings.ts";
+import { encodeMove, getCanonicalMoveKey } from "#/game/strings.ts";
 import type {
   Board,
   Difficulty,
@@ -138,27 +139,13 @@ function moveDirection(from: Position, to: Position): Direction {
   return "up";
 }
 
-/** Every cell a slide passes through, inclusive of both endpoints, as `y*8+x`. */
-function cellsBetween(from: Position, to: Position): number[] {
-  const dx = Math.sign(to.x - from.x);
-  const dy = Math.sign(to.y - from.y);
-  const cells: number[] = [];
-  let x = from.x;
-  let y = from.y;
-  cells.push(y * COLS + x);
-  while (x !== to.x || y !== to.y) {
-    x += dx;
-    y += dy;
-    cells.push(y * COLS + x);
-  }
-  return cells;
-}
-
 /**
  * The trail of each solution: for every move, the cells it sweeps tagged with the
- * moving piece's role, the slide direction, and the move index. Re-resolves the
- * board before each move to identify which piece moved. Trails drive overlap,
- * coverage, and canonicalization.
+ * moving piece's role, the slide direction, and the move index. Trails drive
+ * overlap, coverage, and canonicalization.
+ *
+ * The cells come from the slide itself rather than being interpolated between
+ * the endpoints, because a slide through a portal ends off its own axis.
  */
 export function computeTrails(
   board: Board,
@@ -166,15 +153,36 @@ export function computeTrails(
 ): TrailCell[][] {
   return solutions.map((moves) => {
     const trail: TrailCell[] = [];
+    let current = board;
+
     for (let i = 0; i < moves.length; i++) {
-      const [from, to] = moves[i];
-      const pre = resolveMoves(board, moves.slice(0, i));
-      const piece = pre.pieces.find((p) => isPositionSame(p, from))!;
-      const direction = moveDirection(from, to);
-      for (const pos of cellsBetween(from, to)) {
-        trail.push({ pos, pieceRole: piece.type, direction, moveIndex: i });
+      const move = moves[i];
+      const [from] = move;
+      const slide = getMoveSlide(move, current);
+      const piece = current.pieces.find((item) => isPositionSame(item, from));
+
+      if (!slide || !piece) {
+        throw new Error(`Solution move ${i} is not playable`);
       }
+
+      // Portals keep momentum, so every leg travels the same way.
+      const [firstLeg] = slide.segments;
+      const direction = moveDirection(firstLeg[0], firstLeg[1]);
+
+      for (const leg of slide.segments) {
+        for (const pos of leg) {
+          trail.push({
+            pos: posOf(pos),
+            pieceRole: piece.type,
+            direction,
+            moveIndex: i,
+          });
+        }
+      }
+
+      current = resolveMoves(current, [move]);
     }
+
     return trail;
   });
 }
@@ -352,15 +360,19 @@ function wallBeyond(walls: Board["walls"], to: Position, direction: Direction) {
 
 type MoveAnalysis = {
   moverId: number;
-  cause: "edge" | "wall" | "piece";
+  cause: "edge" | "wall" | "piece" | "hole" | "portal";
   stoppingId: number | null;
 };
 
 /**
  * Per-move analysis of a solution: which piece moved (`moverId`, a stable index
- * into the initial pieces), why the slide stopped (`edge`/`wall`/`piece`), and —
- * for piece stops — which piece stopped it (`stoppingId`). Simulates piece
- * positions itself (no board re-resolve), so the whole solution is one pass.
+ * into the initial pieces), why the slide stopped, and — for piece stops — which
+ * piece stopped it (`stoppingId`).
+ *
+ * A slide that ends on a hole or a portal is attributed to that cell rather than
+ * to whatever lies one step beyond it, because a portal stop is decided across
+ * the board from where the piece came to rest. Boards carrying neither analyse
+ * exactly as they did before.
  */
 function analyzeMoves(board: Board, moves: Move[]): MoveAnalysis[] {
   const posToId = new Map<number, number>();
@@ -368,41 +380,62 @@ function analyzeMoves(board: Board, moves: Move[]): MoveAnalysis[] {
     posToId.set(posOf(board.pieces[i]), i);
   }
 
-  return moves.map(([from, to]) => {
-    const moverId = posToId.get(posOf(from))!;
-    const direction = moveDirection(from, to);
+  let current = board;
+
+  return moves.map((move) => {
+    const [from, to] = move;
+    const moverId = posToId.get(posOf(from));
+    const slide = getMoveSlide(move, current);
+
+    if (moverId == null || !slide) {
+      throw new Error(`Solution move ${encodeMove(move)} is not playable`);
+    }
+
+    const [firstLeg] = slide.segments;
+    const direction = moveDirection(firstLeg[0], firstLeg[1]);
     const beyond = beyondCell(to, direction);
 
     let cause: MoveAnalysis["cause"] = "edge";
     let stoppingId: number | null = null;
-    if (inBounds(beyond)) {
-      if (wallBeyond(board.walls, to, direction)) cause = "wall";
+
+    if (slide.outcome === "dropped") {
+      cause = "hole";
+    } else if (current.portals.some((portal) => isPositionSame(portal, to))) {
+      cause = "portal";
+    } else if (inBounds(beyond)) {
+      if (wallBeyond(current.walls, to, direction)) cause = "wall";
       else if (posToId.has(posOf(beyond))) {
         cause = "piece";
-        stoppingId = posToId.get(posOf(beyond))!;
+        stoppingId = posToId.get(posOf(beyond)) ?? null;
       }
     }
 
     posToId.delete(posOf(from));
-    posToId.set(posOf(to), moverId);
+    if (slide.outcome !== "dropped") posToId.set(posOf(to), moverId);
+
+    current = resolveMoves(current, [move]);
     return { moverId, cause, stoppingId };
   });
 }
 
 /**
- * Stop weight — how a solution's slides end, scored `piece×3 + wall×2 + edge`.
- * Piece stops are the most interesting to solve around, edges the least.
+ * Stop weight — how a solution's slides end, scored
+ * `(piece|hole|portal)×3 + wall×2 + edge`. Stops you have to arrange are the
+ * most interesting to solve around, edges the least; a hole or a portal takes
+ * the same weight as a piece, since both have to be set up deliberately.
  */
 export function stopWeighted(board: Board, moves: Move[]): number {
   let edge = 0;
   let wall = 0;
-  let piece = 0;
+  let arranged = 0;
+
   for (const a of analyzeMoves(board, moves)) {
     if (a.cause === "edge") edge++;
     else if (a.cause === "wall") wall++;
-    else piece++;
+    else arranged++;
   }
-  return piece * 3 + wall * 2 + edge;
+
+  return arranged * 3 + wall * 2 + edge;
 }
 
 /**

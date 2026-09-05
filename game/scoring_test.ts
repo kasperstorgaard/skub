@@ -135,12 +135,14 @@ Deno.test("boardSelfSymmetries() is empty for an asymmetric board", () => {
 });
 
 Deno.test("computeTrails() tags every swept cell of a slide", () => {
+  // The wall is what makes the slide stop at (3,0) — trails come from the real
+  // path now, so the move has to be one the board actually allows.
   const board: Board = {
     holes: [],
     portals: [],
     destination: { x: 3, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
-    walls: [],
+    walls: [{ x: 4, y: 0, orientation: "vertical" }],
   };
 
   const trails = computeTrails(board, [[[{ x: 0, y: 0 }, { x: 3, y: 0 }]]]);
@@ -775,4 +777,41 @@ Deno.test("scoreBoard() scores each route and aggregates with the mean", () => {
       allRoutesInRange: true,
     },
   );
+});
+
+Deno.test("stopWeighted() counts a blocker dropped in a hole as an arranged stop", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 7, type: "puck" },
+      { x: 4, y: 7, type: "blocker" },
+    ],
+    walls: [],
+    holes: [{ x: 4, y: 0 }],
+    portals: [],
+  };
+
+  // Blocker into the hole (3), then the puck runs to the edge (1).
+  const moves: Move[] = [
+    [{ x: 4, y: 7 }, { x: 4, y: 0 }],
+    [{ x: 0, y: 7 }, { x: 7, y: 7 }],
+  ];
+
+  assertEquals(stopWeighted(board, moves), 4);
+});
+
+Deno.test("stopWeighted() counts a piece left on a portal as an arranged stop", () => {
+  const board: Board = {
+    destination: { x: 5, y: 5 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 2, y: 0 }, { x: 7, y: 4 }],
+  };
+
+  // The puck comes through the portal and is stopped by the edge beyond it,
+  // resting on the portal itself — attributed to the portal, not that edge.
+  const moves: Move[] = [[{ x: 0, y: 0 }, { x: 7, y: 4 }]];
+
+  assertEquals(stopWeighted(board, moves), 3);
 });
