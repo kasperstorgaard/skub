@@ -37,7 +37,14 @@ import {
   getReplaySpeed,
 } from "#/game/url.ts";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
-import { buildReplayKeyframes, type KeyframeStop } from "#/lib/replay.ts";
+import {
+  buildPortalKeyframes,
+  buildReplayKeyframes,
+  type KeyframeStop,
+  type PortalWarp,
+  warpDuration,
+  warpName,
+} from "#/lib/replay.ts";
 
 type BoardProps = {
   href: Signal<string>;
@@ -63,6 +70,11 @@ export default function Board(
   );
 
   const board = useMemo(() => resolveMoves(puzzle.value.board, moves), [
+    puzzle.value.board,
+    moves,
+  ]);
+
+  const pieces = useMemo(() => trackPieces(puzzle.value.board, moves), [
     puzzle.value.board,
     moves,
   ]);
@@ -111,15 +123,19 @@ export default function Board(
   // A hole removes the piece outright, so there is nothing left to animate.
   // Keep the one that just fell mounted for a beat and let it drop away.
   const [fall, setFall] = useState<FallingPiece | null>(null);
+  const [warp, setWarp] = useState<PortalWarp | null>(null);
   const playedCount = useRef(moves.length);
 
   useEffect(() => {
     const isNewMove = moves.length > playedCount.current;
     playedCount.current = moves.length;
 
-    // Only a move made here falls; arriving on a URL that already has one
-    // should show the finished board, not replay the drop.
-    if (isNewMove) setFall(getFallingPiece(puzzle.value.board, moves));
+    // Only a move made here animates; arriving on a URL that already holds one
+    // should show the finished board, not replay it.
+    if (!isNewMove) return;
+
+    setFall(getFallingPiece(puzzle.value.board, moves));
+    setWarp(getPortalWarp(puzzle.value.board, moves));
   }, [moves, puzzle.value.board]);
 
   const onMove = useCallback(
@@ -236,11 +252,12 @@ export default function Board(
           />
         ))}
 
-        {board.pieces.map((piece, idx) => (
+        {pieces.map((piece) => (
           <BoardPiece
+            key={piece.id}
             {...piece}
             href={getActiveHref(piece, { ...state, href: href.value })}
-            id={getPieceId(piece, idx)}
+            warp={warp?.id === piece.id ? warp : undefined}
             isActive={state.active && isPositionSame(piece, state.active)}
             isReadonly={mode.value !== "solve" || isLocked}
             isReplay={mode.value === "replay"}
@@ -252,6 +269,8 @@ export default function Board(
             }}
           />
         ))}
+
+        {warp && <style>{buildPortalKeyframes(warp)}</style>}
 
         {fall && (
           <BoardFallingPiece
@@ -391,8 +410,8 @@ function BoardPortal({ x, y }: Position) {
         /* Each ring paints over the last one's interior, so all that stays
           visible is its dashed band — and the gaps between dashes show the
           ring's own fill, which is what makes the dash two-coloured rather
-          than see-through. Rings turn faster toward the centre, alternating
-          direction so the whole thing churns. */
+          than see-through. All turn the same way, slowly, and a little faster
+          toward the centre. */
       }
       {PORTAL_RINGS.map((inset, index) => (
         <div
@@ -400,9 +419,7 @@ function BoardPortal({ x, y }: Position) {
           className="absolute rounded-round border-2 border-dashed border-portal bg-portal-alt"
           style={{
             inset: `${inset}%`,
-            animation: `spin ${18 - index * 1.4}s linear infinite${
-              index % 2 ? " reverse" : ""
-            }`,
+            animation: `spin ${48 - index * 3.6}s linear infinite`,
           }}
         />
       ))}
@@ -488,6 +505,7 @@ type BoardPieceProps = {
   isActive?: boolean;
   isReadonly?: boolean;
   isReplay?: boolean;
+  warp?: PortalWarp;
   wiggle?: boolean;
   onFocus: (event: FocusEvent) => void;
 };
@@ -502,6 +520,7 @@ function BoardPiece(
     isReadonly,
     isReplay,
     isActive,
+    warp,
     wiggle,
     onFocus,
   }: BoardPieceProps,
@@ -519,6 +538,11 @@ function BoardPiece(
         // shadow the board exit animation (inline > stylesheet specificity).
         animation: isReplay
           ? `replay-${id} var(--replay-duration) ease-in-out`
+          // A slide through a portal is not a straight line, so it animates on
+          // generated keyframes rather than the plain transform transition,
+          // which would cut straight across the board.
+          : warp
+          ? `${warpName(warp)} ${warpDuration()}ms ease-out`
           : undefined,
         "--replay-duration": "calc(var(--replay-len) * var(--replay-speed))",
       }}
@@ -537,6 +561,11 @@ function BoardPiece(
       aria-current={isActive ? true : undefined}
     >
       <div
+        style={{
+          animation: warp
+            ? `${warpName(warp)}-squish ${warpDuration()}ms ease-out`
+            : undefined,
+        }}
         className={clsx(
           "w-full h-full",
           type === "puck" && "bg-ui-2 rounded-round",
@@ -570,7 +599,32 @@ function getFallingPiece(
   const piece = before.pieces.find((item) => isPositionSame(item, lastMove[0]));
   if (!piece) return null;
 
-  return { type: piece.type, from: lastMove[0], to: slide.target };
+  // Start from the last leg, so a piece that fell after a portal drops from
+  // where it came out rather than cutting across the board.
+  const lastLeg = slide.segments[slide.segments.length - 1];
+
+  return { type: piece.type, from: lastLeg[0], to: slide.target };
+}
+
+/** The slide the last move took through a portal, if it took one. */
+function getPortalWarp(
+  board: Puzzle["board"],
+  moves: Move[],
+): PortalWarp | null {
+  const lastMove = moves.at(-1);
+  if (!lastMove) return null;
+
+  const pieces = trackPieces(board, moves.slice(0, -1));
+  const slide = getMoveSlide(lastMove, { ...board, pieces });
+
+  // One leg is an ordinary slide; a dropped piece is the falling ghost's job.
+  if (!slide || slide.segments.length < 2) return null;
+  if (slide.outcome === "dropped") return null;
+
+  const piece = pieces.find((item) => isPositionSame(item, lastMove[0]));
+  if (!piece) return null;
+
+  return { id: piece.id, legs: slide.segments, nonce: moves.length };
 }
 
 type BoardFallingPieceProps = FallingPiece & {
@@ -632,13 +686,13 @@ function BoardReplayStyles({ puzzle, moves }: BoardReplayProps) {
   const stops: KeyframeStop[] = [];
   for (let idx = 0; idx < moves.length; idx++) {
     const move = moves[idx];
-    const state = resolveMoves(puzzle.board, moves.slice(0, idx));
-    const piece = state.pieces.find((item) => isPositionSame(item, move[0]));
+    const pieces = trackPieces(puzzle.board, moves.slice(0, idx));
+    const piece = pieces.find((item) => isPositionSame(item, move[0]));
+    const slide = getMoveSlide(move, { ...puzzle.board, pieces });
 
-    if (!piece) continue;
+    if (!piece || !slide) continue;
 
-    const id = getPieceId(piece, state.pieces.indexOf(piece));
-    stops.push({ id, from: move[0], to: move[1] });
+    stops.push({ id: piece.id, legs: slide.segments });
   }
 
   return (
@@ -652,4 +706,34 @@ function BoardReplayStyles({ puzzle, moves }: BoardReplayProps) {
 
 function getPieceId(piece: Piece, idx: number) {
   return `${piece.type === "puck" ? "p" : "b"}_${idx}`;
+}
+
+type TrackedPiece = Piece & { id: string };
+
+/**
+ * Resolves the board while keeping hold of which piece is which, pinned to
+ * where each one started.
+ *
+ * Array position cannot serve as identity now that a hole can remove a piece:
+ * every later slot shifts up, and a renderer keying on position would hand one
+ * piece's element to another and animate the wrong one.
+ */
+function trackPieces(board: Puzzle["board"], moves: Move[]): TrackedPiece[] {
+  let pieces: TrackedPiece[] = board.pieces.map((piece, idx) => ({
+    ...piece,
+    id: getPieceId(piece, idx),
+  }));
+
+  for (const move of moves) {
+    const slide = getMoveSlide(move, { ...board, pieces });
+    if (!slide) break;
+
+    pieces = slide.outcome === "dropped"
+      ? pieces.filter((piece) => !isPositionSame(piece, move[0]))
+      : pieces.map((piece) =>
+        isPositionSame(piece, move[0]) ? { ...piece, ...move[1] } : piece
+      );
+  }
+
+  return pieces;
 }
