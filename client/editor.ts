@@ -1,5 +1,5 @@
 import { type Signal } from "@preact/signals";
-import { useCallback, useMemo } from "preact/hooks";
+import { useCallback } from "preact/hooks";
 
 import { getCellContent, isPositionSame } from "#/game/board.ts";
 import {
@@ -78,10 +78,6 @@ export function useEditor(
       // Setting what is already there clears the cell instead.
       const target = content === getCellContent(board, active) ? null : content;
 
-      // The destination has nowhere else to go, and a cell is written down as
-      // one character, so a hazard cannot take its cell.
-      if (target && !canHold(board, active, target)) return;
-
       // A cell holds one thing, so start by emptying it.
       let pieces = board.pieces.filter((piece) =>
         !isPositionSame(piece, active)
@@ -105,7 +101,16 @@ export function useEditor(
         portals = [...portals, { ...active }].slice(-2);
       }
 
-      updateBoard(puzzle, { pieces, holes, portals });
+      // A hazard takes the whole cell, so the destination goes with everything
+      // else that was there. The board is invalid until one is placed again,
+      // which the editor is content to hold — as it is with no puck.
+      const takesCell = target === "hole" || target === "portal";
+      const destination = takesCell && board.destination &&
+          isPositionSame(board.destination, active)
+        ? undefined
+        : board.destination;
+
+      updateBoard(puzzle, { pieces, holes, portals, destination });
     },
     [active, puzzle],
   );
@@ -152,55 +157,14 @@ export function useEditor(
   const cycleCell = useCallback(() => {
     if (!active) return;
 
-    const board = puzzle.value.board;
-    // Skip what this cell cannot hold, rather than stalling the cycle on it.
-    const available = CELL_CONTENTS.filter((content) =>
-      canHold(board, active, content)
-    );
-
-    const current = getCellContent(board, active);
-    const index = current ? available.indexOf(current) : -1;
+    const current = getCellContent(puzzle.value.board, active);
+    const index = current ? CELL_CONTENTS.indexOf(current) : -1;
 
     // Past the last content the cycle empties the cell again.
-    setCellContent(available[index + 1] ?? null);
+    setCellContent(CELL_CONTENTS[index + 1] ?? null);
   }, [active, puzzle, setCellContent]);
 
-  // What the toolbar can offer for the active cell.
-  const allowed = useMemo(
-    () =>
-      CELL_CONTENTS.filter((content) =>
-        active ? canHold(puzzle.value.board, active, content) : true
-      ),
-    [active, puzzle.value.board],
-  );
-
-  return {
-    toggleWall,
-    setCellContent,
-    setDestination,
-    cycleWall,
-    cycleCell,
-    allowed,
-  };
-}
-
-/**
- * Whether a cell can hold a given content.
- *
- * Everything can share a cell with everything else by being cleared first — a
- * cell holds one thing. The exception is the destination: every board has
- * exactly one, so there is no state to clear it to, and the board format writes
- * a cell as a single character, so it cannot record a hazard sitting on it
- * either.
- */
-function canHold(
-  board: Puzzle["board"],
-  position: Position,
-  content: CellContent,
-): boolean {
-  if (content !== "hole" && content !== "portal") return true;
-
-  return !isPositionSame(board.destination, position);
+  return { toggleWall, setCellContent, setDestination, cycleWall, cycleCell };
 }
 
 // Applies a board mutation to the puzzle signal, clearing minMoves.

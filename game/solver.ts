@@ -305,7 +305,11 @@ function* bfsExplore(
   stateLimit: number = BFS_STATE_LIMIT,
   overshoot = 0,
 ): Generator<number, SolverResult> {
-  const destPos = board.destination.y * COLS + board.destination.x;
+  const { destination } = board;
+  // Nothing to solve toward on a board that is still being built.
+  if (!destination) throw new Error("Unsolvable puzzle");
+
+  const destPos = destination.y * COLS + destination.x;
   const initialState = initState(board);
   const statesPerDepth: number[] = [1];
 

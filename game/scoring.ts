@@ -313,6 +313,8 @@ export function totalDistance(board: Board, moves: Move[]): number {
  */
 export function deception(board: Board, moves: Move[]): number {
   const d = board.destination;
+  if (!d) return 0;
+
   const roles = moveRoles(board, moves);
   let sum = 0;
   for (let i = 0; i < moves.length; i++) {
@@ -624,7 +626,7 @@ export function wallUtilization(board: Board, solutions: Move[][]): number {
 /** Cells carrying structure or action: trails + initial pieces + destination. */
 function visitedCells(board: Board, solutions: Move[][]): Set<number> {
   const visited = new Set<number>();
-  visited.add(posOf(board.destination));
+  if (board.destination) visited.add(posOf(board.destination));
   for (const p of board.pieces) visited.add(posOf(p));
   for (const trail of computeTrails(board, solutions)) {
     for (const c of trail) visited.add(c.pos);
@@ -701,7 +703,9 @@ export function emptyRegion(board: Board): number {
   const structured = new Uint8Array(cells);
 
   for (const piece of board.pieces) structured[index(piece.x, piece.y)] = 1;
-  structured[index(board.destination.x, board.destination.y)] = 1;
+  if (board.destination) {
+    structured[index(board.destination.x, board.destination.y)] = 1;
+  }
   for (const wall of board.walls) {
     for (const { x, y } of wallCells(wall)) {
       if (x >= 0 && x < COLS && y >= 0 && y < ROWS) structured[index(x, y)] = 1;

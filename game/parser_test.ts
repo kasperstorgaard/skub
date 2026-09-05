@@ -399,7 +399,9 @@ slug: untitled
 
   assertEquals(result.board.pieces, [{ x: 1, y: 1, type: "blocker" }]);
   assertEquals(result.board.walls, [{ x: 2, y: 4, orientation: "horizontal" }]);
-  assertEquals(result.board.destination, { x: 0, y: 0 });
+  // No destination rather than one invented in the corner, which the player
+  // would then have to notice and undo.
+  assertEquals(result.board.destination, undefined);
 
   assertThrows(
     () => parsePuzzle(markdown),

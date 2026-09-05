@@ -246,7 +246,7 @@ export default function Board(
           <BoardActiveCell {...state.active} />
         )}
 
-        <BoardDestination {...board.destination} />
+        {board.destination && <BoardDestination {...board.destination} />}
 
         {board.walls.map((wall) => (
           <BoardWall
@@ -359,7 +359,7 @@ function BoardWall({ x, y, orientation }: Wall) {
 
 type BoardSpaceProps = Position & {
   href?: string;
-  destination: Position;
+  destination?: Position;
   hasSolution: boolean;
 };
 
@@ -369,9 +369,9 @@ function BoardSpace(
   const tileStyle = {
     "--x": x,
     "--y": y,
-    "--ripple-tx": Math.sign(x - destination.x),
-    "--ripple-ty": Math.sign(y - destination.y),
-    "--ripple-delay": hasSolution
+    "--ripple-tx": destination ? Math.sign(x - destination.x) : 0,
+    "--ripple-ty": destination ? Math.sign(y - destination.y) : 0,
+    "--ripple-delay": hasSolution && destination
       ? `${getRippleDelay({ x, y }, destination)}ms`
       : undefined,
   };

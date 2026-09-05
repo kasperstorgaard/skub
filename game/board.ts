@@ -42,12 +42,15 @@ export class BoardError extends Error {
  * Board type to use when inputting potentially incomplete board data.
  */
 export type BoardLike = {
-  destination: Position | null | undefined;
+  destination?: Position | null;
   walls: (Wall | null | undefined)[] | undefined | null;
   pieces: (Piece | null | undefined)[] | undefined | null;
   holes?: (Position | null | undefined)[] | undefined | null;
   portals?: (Position | null | undefined)[] | undefined | null;
 };
+
+/** A board that has passed validation, so everything a puzzle needs is present. */
+export type ValidBoard = Board & { destination: Position };
 
 /** The parts of a board a slide has to consult. */
 export type SlideBoard = Pick<
@@ -146,7 +149,8 @@ export const GONE = COLS * ROWS;
 export function encodeBoard(board: Board): number[] {
   const puck = board.pieces.find((p) => p.type === "puck");
   const puckPos = puck ? puck.y * COLS + puck.x : GONE;
-  const destPos = board.destination.y * COLS + board.destination.x;
+  const { destination } = board;
+  const destPos = destination ? destination.y * COLS + destination.x : GONE;
 
   const blockers = board.pieces
     .filter((p) => p.type === "blocker")
@@ -197,7 +201,7 @@ export function isBoardSame(src: Board, target: Board) {
  * Can be consumed as a truthy check or a means to get a properly typed Board.
  * Will throw BoardError if invalid.
  */
-export function validateBoard(board: BoardLike): Board {
+export function validateBoard(board: BoardLike): ValidBoard {
   if (!board) throw new BoardError("Board is missing");
 
   const { destination, pieces, walls } = board;
@@ -567,10 +571,15 @@ export function isLooped(board: SlideBoard, moves: Move[]) {
  * @returns true if valid solution, otherwise false
  */
 export function isValidSolution(board: Pick<Board, "destination" | "pieces">) {
+  // A board still being built has nowhere to reach.
+  if (!board.destination) return false;
+
   for (const piece of board.pieces) {
     if (piece.type === "blocker") continue;
 
-    if (isPositionSame(piece, board.destination)) return true;
+    if (board.destination && isPositionSame(piece, board.destination)) {
+      return true;
+    }
   }
 
   return false;
@@ -585,7 +594,8 @@ export function rotateBoard(
   board: Board,
   direction: "right" | "left",
 ): Board {
-  const destination = rotatePosition(board.destination, direction);
+  const destination = board.destination &&
+    rotatePosition(board.destination, direction);
   const pieces = board.pieces.map((piece) => rotatePosition(piece, direction));
   const walls = board.walls.map((wall) => rotatePosition(wall, direction));
   const holes = board.holes.map((hole) => rotatePosition(hole, direction));
@@ -638,7 +648,8 @@ export function flipBoard(
   board: Board,
   axis: "horizontal" | "vertical",
 ): Board {
-  const destination = flipPosition(board.destination, axis);
+  const destination = board.destination &&
+    flipPosition(board.destination, axis);
   const pieces = board.pieces.map((piece) => flipPosition(piece, axis));
   const walls = board.walls.map((wall) => flipPosition(wall, axis));
   const holes = board.holes.map((hole) => flipPosition(hole, axis));

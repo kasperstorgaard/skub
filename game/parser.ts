@@ -246,17 +246,10 @@ function parseBoard(rows: string[], validate = true): Board {
     }
   }
 
-  // A draft is stored mid-build, before it has a puck or a destination — the
-  // editor's own new board starts at 0,0 the same way.
-  if (!validate) {
-    return {
-      destination: destination ?? { x: 0, y: 0 },
-      pieces,
-      walls,
-      holes,
-      portals,
-    };
-  }
+  // A draft is stored mid-build, before it has a puck or a destination. Say so,
+  // rather than inventing a destination in the corner that the player then has
+  // to notice and undo.
+  if (!validate) return { destination, pieces, walls, holes, portals };
 
   return validateBoard({
     destination,

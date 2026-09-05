@@ -28,7 +28,9 @@ export type CellContent = typeof CELL_CONTENTS[number];
 
 // The complete board state with destination, walls, pieces and hazards
 export type Board = {
-  destination: Position;
+  // Absent while a board is being built: the editor can hold an incomplete
+  // draft, the same way it can hold one with no puck yet.
+  destination?: Position;
   walls: Wall[];
   pieces: Piece[];
   holes: Position[];

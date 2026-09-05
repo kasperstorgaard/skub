@@ -30,9 +30,10 @@ type Props = {
 export function CelebrationDialog(
   { href, puzzle, back, celebrationData, celebrationError }: Props,
 ) {
+  const destination = puzzle.value.board.destination;
   const rippleDuration = useMemo(
-    () => getBoardRippleDuration(puzzle.value.board.destination),
-    [puzzle.value.board.destination.x, puzzle.value.board.destination.y],
+    () => destination ? getBoardRippleDuration(destination) : 0,
+    [destination?.x, destination?.y],
   );
   const [minElapsed, setMinElapsed] = useState(false);
 

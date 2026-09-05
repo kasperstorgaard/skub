@@ -53,8 +53,9 @@ export function Thumbnail({
     cy: cellY(y) + cellSize / 2,
   });
 
-  const destX = cellX(board.destination.x);
-  const destY = cellY(board.destination.y);
+  const destination = board.destination;
+  const destX = destination ? cellX(destination.x) : 0;
+  const destY = destination ? cellY(destination.y) : 0;
 
   return (
     <svg
@@ -108,32 +109,34 @@ export function Thumbnail({
         );
       })}
 
-      {/* Destination marker */}
-      <g stroke={colors.ui1} fill="none" className="svg-destination">
-        <rect
-          x={destX}
-          y={destY}
-          width={cellSize}
-          height={cellSize}
-          strokeWidth="2"
-        />
-        <line
-          x1={destX + cellSize * 0.25}
-          y1={destY + cellSize * 0.25}
-          x2={destX + cellSize * 0.75}
-          y2={destY + cellSize * 0.75}
-          strokeWidth="3"
-          stroke-linecap="round"
-        />
-        <line
-          x1={destX + cellSize * 0.25}
-          y1={destY + cellSize * 0.75}
-          x2={destX + cellSize * 0.75}
-          y2={destY + cellSize * 0.25}
-          strokeWidth="3"
-          stroke-linecap="round"
-        />
-      </g>
+      {/* Destination marker — absent while a board is still being built */}
+      {destination && (
+        <g stroke={colors.ui1} fill="none" className="svg-destination">
+          <rect
+            x={destX}
+            y={destY}
+            width={cellSize}
+            height={cellSize}
+            strokeWidth="2"
+          />
+          <line
+            x1={destX + cellSize * 0.25}
+            y1={destY + cellSize * 0.25}
+            x2={destX + cellSize * 0.75}
+            y2={destY + cellSize * 0.75}
+            strokeWidth="3"
+            stroke-linecap="round"
+          />
+          <line
+            x1={destX + cellSize * 0.25}
+            y1={destY + cellSize * 0.75}
+            x2={destX + cellSize * 0.75}
+            y2={destY + cellSize * 0.25}
+            strokeWidth="3"
+            stroke-linecap="round"
+          />
+        </g>
+      )}
 
       {/* Walls — offset by half the gap so they appear between cells */}
       {board.walls.map((wall: Wall, idx) => {

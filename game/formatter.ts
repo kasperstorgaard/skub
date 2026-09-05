@@ -70,7 +70,8 @@ function formatCell(
   const hasHorizontalWall = walls.some((wall) =>
     wall.orientation === "horizontal" && isPositionSame(wall, wallPosition)
   );
-  const isDestination = isPositionSame(destination, position);
+  const isDestination = destination != null &&
+    isPositionSame(destination, position);
 
   // Determine cell character
   const piece = pieces.find((item) => isPositionSame(item, position));
