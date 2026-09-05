@@ -1,5 +1,6 @@
 import { assertEquals, assertObjectMatch, assertThrows } from "@std/assert";
 
+import { BoardError } from "./board.ts";
 import { parsePuzzle, ParserError } from "./parser.ts";
 
 Deno.test("parsePuzzle - parses metadata with extra fields", () => {
@@ -365,4 +366,36 @@ createdAt: 2026-02-03T00:00:00.000Z
       { x: 5, y: 6, orientation: "horizontal" },
     ],
   });
+});
+
+Deno.test("parsePuzzle - keeps an unfinished draft board", () => {
+  const markdown = `---
+name: Untitled
+slug: untitled
+---
+
++ A B C D E F G H +
+1                 |
+2   #             |
+3                 |
+4     _           |
+5                 |
+6                 |
+7                 |
+8                 |
++-----------------+
+`;
+
+  // A draft is saved on every edit, long before it has a puck.
+  const result = parsePuzzle(markdown, { validate: false });
+
+  assertEquals(result.board.pieces, [{ x: 1, y: 1, type: "blocker" }]);
+  assertEquals(result.board.walls, [{ x: 2, y: 4, orientation: "horizontal" }]);
+  assertEquals(result.board.destination, { x: 0, y: 0 });
+
+  assertThrows(
+    () => parsePuzzle(markdown),
+    BoardError,
+    "Board has no destination",
+  );
 });

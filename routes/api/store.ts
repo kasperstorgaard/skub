@@ -28,7 +28,8 @@ export const handler = define.handlers({
     let puzzle: Puzzle;
 
     try {
-      puzzle = parsePuzzle(markdown);
+      // A draft is saved on every change, most of them mid-build.
+      puzzle = parsePuzzle(markdown, { validate: false });
     } catch {
       return new Response("Invalid puzzle", { status: 400 });
     }

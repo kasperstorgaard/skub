@@ -37,4 +37,5 @@ export * from "./star-half-fill.ts";
 export * from "./trash.ts";
 export * from "./trophy.ts";
 export * from "./user-circle.ts";
+export * from "./warning.ts";
 export * from "./x.ts";

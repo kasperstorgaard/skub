@@ -25,6 +25,7 @@ export default defineConfig({
   },
   plugins: [
     workerBundle("generate-worker"),
+    workerBundle("solver-worker"),
     puzzleManifest(),
     tailwindcss(),
     fresh(),

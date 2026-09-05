@@ -75,7 +75,7 @@ const COMBINING_CIRCUMFLEX = "\u0302";
 /**
  * Parses the board grid into pieces, walls, and destination
  */
-function parseBoard(rows: string[]): Board {
+function parseBoard(rows: string[], validate = true): Board {
   const pieces: Piece[] = [];
   let destination: Position | undefined;
   const walls: Wall[] = [];
@@ -218,6 +218,12 @@ function parseBoard(rows: string[]): Board {
     }
   }
 
+  // A draft is stored mid-build, before it has a puck or a destination — the
+  // editor's own new board starts at 0,0 the same way.
+  if (!validate) {
+    return { destination: destination ?? { x: 0, y: 0 }, pieces, walls };
+  }
+
   return validateBoard({
     destination,
     pieces,
@@ -230,6 +236,7 @@ function parseBoard(rows: string[]): Board {
  */
 export function parsePuzzle(
   content: string,
+  options: { validate?: boolean } = {},
 ): Puzzle {
   const { attrs, body } = extractYaml<Omit<Puzzle, "board">>(content);
 
@@ -242,7 +249,7 @@ export function parsePuzzle(
     throw new ParserError(`Expected ${ROWS} board rows, found ${rows.length}`);
   }
 
-  const board = parseBoard(rows);
+  const board = parseBoard(rows, options.validate ?? true);
 
   return {
     ...attrs,

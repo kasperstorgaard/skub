@@ -10,6 +10,7 @@ import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
+import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
 import { EditorPanel } from "#/islands/editor-panel.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
@@ -64,6 +65,8 @@ export default define.page<typeof handler>(function EditorPage(props) {
               edit
             </p>
           </div>
+
+          <EditorDifficultyBadge puzzle={puzzle} className="lg:mt-1" />
         </div>
 
         <div className="relative max-lg:pb-fl-5">
