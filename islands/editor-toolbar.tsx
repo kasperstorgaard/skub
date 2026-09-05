@@ -25,7 +25,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
     [href.value],
   );
 
-  const { toggleWall, setCellContent, setDestination } = useEditor({
+  const { toggleWall, setCellContent, setDestination, allowed } = useEditor({
     puzzle,
     active,
   });
@@ -103,7 +103,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         type="button"
         className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
         aria-label="Hole"
-        disabled={disabled}
+        disabled={disabled || !allowed.includes("hole")}
         onClick={() => setCellContent("hole")}
       >
         <div className="size-5 bg-hole rounded-1" />
@@ -113,7 +113,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         type="button"
         className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
         aria-label="Portal"
-        disabled={disabled}
+        disabled={disabled || !allowed.includes("portal")}
         onClick={() => setCellContent("portal")}
       >
         <div className="size-5 rounded-1 overflow-hidden bg-portal-alt relative">
