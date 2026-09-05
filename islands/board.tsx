@@ -695,9 +695,12 @@ function getPortalWarp(
   const { pieces } = trackPieces(board, moves.slice(0, -1));
   const slide = getMoveSlide(lastMove, { ...board, pieces });
 
-  // One leg is an ordinary slide; a dropped piece is the falling ghost's job.
+  // Only an ordinary slide that happens to pass through a portal warps. One leg
+  // means it never reached one; a dropped piece is the falling ghost's job; and
+  // a loop has no end to travel to, so it circles on getPortalLoop's animation
+  // instead — which this would otherwise mask, being picked first.
   if (!slide || slide.segments.length < 2) return null;
-  if (slide.outcome === "dropped") return null;
+  if (slide.outcome !== "stopped") return null;
 
   const piece = pieces.find((item) => isPositionSame(item, lastMove[0]));
   if (!piece) return null;
