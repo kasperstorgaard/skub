@@ -78,26 +78,8 @@ export default function Board(
     moves,
   ]);
 
-  /**
-   * Replay drives every piece from keyframes that begin at the board as it was,
-   * so that is what it renders. Rendering the finished positions instead shows
-   * the end of the replay for a frame before the animation takes over — a jump
-   * backwards, then the replay — and leaves out any piece a hole took, which by
-   * then is no longer on the board at all.
-   */
-  const pieces = useMemo(
-    () =>
-      trackPieces(puzzle.value.board, mode.value === "replay" ? [] : moves)
-        .pieces,
-    [puzzle.value.board, moves, mode.value],
-  );
-
-  // Which of them a hole takes along the way, so their keyframes know to end.
-  const dropping = useMemo(
-    () =>
-      new Set(
-        trackPieces(puzzle.value.board, moves).dropped.map(({ id }) => id),
-      ),
+  const { pieces, dropped } = useMemo(
+    () => trackPieces(puzzle.value.board, moves),
     [puzzle.value.board, moves],
   );
 
@@ -308,13 +290,29 @@ export default function Board(
             isActive={state.active && isPositionSame(piece, state.active)}
             isReadonly={mode.value !== "solve" || isLocked}
             isReplay={mode.value === "replay" && isHydrated}
-            isDropped={dropping.has(piece.id)}
             wiggle={mode.value === "solve" && wiggle[piece.type]}
             onFocus={(event) => {
               const href = (event.target as HTMLAnchorElement).href;
               updateLocation(href, { replace: true });
               setWiggle((val) => ({ ...val, [piece.type]: false }));
             }}
+          />
+        ))}
+
+        {
+          /* Replay resolves the board to how it ends up, so a swallowed piece
+            would otherwise be missing for the whole playback rather than seen
+            to fall. Its keyframes hold it visible until the move that takes it. */
+        }
+        {mode.value === "replay" && dropped.map((piece) => (
+          <BoardPiece
+            key={piece.id}
+            {...piece}
+            href="#"
+            isReadonly
+            isReplay={isHydrated}
+            isDropped
+            onFocus={() => {}}
           />
         ))}
 
