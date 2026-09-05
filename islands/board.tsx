@@ -552,7 +552,7 @@ function BoardPiece(
           // generated keyframes rather than the plain transform transition,
           // which would cut straight across the board.
           : warp
-          ? `${warpName(warp)} ${warpDuration()}ms ease-out`
+          ? `${warpName(warp)} ${warpDuration(warp)}ms linear`
           // Caught between two portals: it circles until the move is undone.
           : loop
           ? `${loopName(loop.id)} ${loopDuration(loop)}ms linear infinite`
@@ -576,7 +576,7 @@ function BoardPiece(
       <div
         style={{
           animation: warp
-            ? `${warpName(warp)}-squish ${warpDuration()}ms ease-out`
+            ? `${warpName(warp)}-squish ${warpDuration(warp)}ms linear`
             : loop
             ? `${loopName(loop.id)}-squish ${
               loopDuration(loop)

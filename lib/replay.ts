@@ -82,10 +82,13 @@ export function buildReplayKeyframes(
     .join("");
 }
 
-/** How long a piece is held in the portal, being pulled through, in ms. */
-export const PORTAL_SQUISH_MS = 100;
-/** How long the travel either side of a portal takes in total, in ms. */
+/**
+ * How long each leg of a portal slide travels, in ms — the same as the default
+ * --piece-speed, so a leg moves at the pace of any other slide.
+ */
 export const PORTAL_TRAVEL_MS = 200;
+/** How long the piece is gone for, between going in one portal and out the other. */
+export const PORTAL_PAUSE_MS = 400;
 
 export type PortalWarp = {
   id: string;
@@ -98,58 +101,63 @@ export function warpName({ id, nonce }: PortalWarp) {
   return `warp-${id}-${nonce}`;
 }
 
-export function warpDuration() {
-  return PORTAL_TRAVEL_MS + PORTAL_SQUISH_MS;
+export function warpDuration({ legs }: PortalWarp) {
+  return PORTAL_TRAVEL_MS * legs.length +
+    PORTAL_PAUSE_MS * (legs.length - 1);
 }
 
 /**
- * Keyframes for a slide that goes through a portal: travel in, a squish while
- * the piece is pulled through, then travel on.
+ * Keyframes for a slide that goes through a portal: travel in, vanish for the
+ * length of the pause, then reappear at the far portal and travel on.
+ *
+ * A pair of portals can only ever bend a slide once, so there are exactly two
+ * legs. The piece scales to nothing while it is between them — during the pause
+ * it is not on the board at all, which is the whole point of a portal.
  *
  * Position and scale animate as two separate rules because the piece's
- * translate is composed from --x/--y on its outer element — a keyframe setting
- * `transform` there would replace it. The inner shape carries the squish.
+ * translate is composed from --x/--y on its outer element; a keyframe setting
+ * `transform` there would replace it. The inner shape carries the scale.
  *
- * The travel time is split between the legs by how far each one runs, so a long
- * approach and a short exit look like one continuous slide.
+ * The animation itself runs linear so the pause keeps its length, and each
+ * travelling leg sets its own ease-out to match an ordinary move.
  */
 export function buildPortalKeyframes(warp: PortalWarp): string {
   const name = warpName(warp);
-  const total = warpDuration();
-
-  const lengths = warp.legs.map((leg) => Math.max(leg.length - 1, 1));
-  const travelled = lengths.reduce((sum, length) => sum + length, 0);
-
+  const total = warpDuration(warp);
   const percent = (ms: number) => (ms / total) * 100;
-  const first = PORTAL_TRAVEL_MS * (lengths[0] / travelled);
 
-  // Enters the portal, is held there through the squish, leaves from the other.
-  const arrive = percent(first);
-  const midway = percent(first + PORTAL_SQUISH_MS / 2);
-  const depart = percent(first + PORTAL_SQUISH_MS);
-  // The shape springs back over the first part of the outward leg.
-  const settled = depart + (100 - depart) * 0.35;
+  // In at the end of the first leg, out at the start of the last.
+  const swallowed = percent(PORTAL_TRAVEL_MS);
+  const emerges = percent(PORTAL_TRAVEL_MS + PORTAL_PAUSE_MS);
+  // Position jumps midway through the pause, where nothing can be seen anyway.
+  const jump = percent(PORTAL_TRAVEL_MS + PORTAL_PAUSE_MS / 2);
 
-  const [firstLeg, lastLeg] = [warp.legs[0], warp.legs[warp.legs.length - 1]];
-  const [start, entry] = legEnds(firstLeg);
-  const [exit, end] = legEnds(lastLeg);
+  const [start, entry] = legEnds(warp.legs[0]);
+  const [exit, end] = legEnds(warp.legs[warp.legs.length - 1]);
+
+  // Narrows going in and comes back out the same way, so the piece reads as
+  // being drawn through rather than simply hidden.
+  const pinch = swallowed * 0.85;
+  const spread = emerges + (100 - emerges) * 0.3;
+  const settled = emerges + (100 - emerges) * 0.6;
 
   return [
     `@keyframes ${name} {`,
-    writeKeyframeMove(0, start),
-    writeKeyframeMove(arrive, entry),
-    writeKeyframeMove(midway, entry),
-    writeKeyframeMove(midway + TELEPORT_GAP, exit),
-    writeKeyframeMove(depart, exit),
+    `0% { --x: ${start.x}; --y: ${start.y}; animation-timing-function: ease-out; }`,
+    writeKeyframeMove(swallowed, entry),
+    writeKeyframeMove(jump, entry),
+    writeKeyframeMove(jump + TELEPORT_GAP, exit),
+    `${emerges}% { --x: ${exit.x}; --y: ${exit.y}; animation-timing-function: ease-out; }`,
     writeKeyframeMove(100, end),
     "}",
     `@keyframes ${name}-squish {`,
-    `${arrive}% { scale: 1 1; }`,
-    // Narrows going in, then flattens coming out; between the two it passes
-    // through both at once, which is what sells being pulled through.
-    `${midway}% { scale: 0.8 1; }`,
-    `${depart}% { scale: 1 0.8; }`,
-    `${settled}% { scale: 1 1; }`,
+    "0% { scale: 1 1; }",
+    `${pinch}% { scale: 0.8 1; }`,
+    `${swallowed}% { scale: 0 0.6; }`,
+    `${emerges}% { scale: 0 0.6; }`,
+    `${spread}% { scale: 0.8 1; }`,
+    `${settled}% { scale: 1 0.8; }`,
+    "100% { scale: 1 1; }",
     "}",
   ].join("");
 }
@@ -189,10 +197,10 @@ export function buildPortalLoopKeyframes(loop: PortalLoop): string {
     writeKeyframeMove(100, entry),
     "}",
     `@keyframes ${name}-squish {`,
-    "0% { scale: 0.5 0.5; }",
+    "0% { scale: 0 0.6; }",
     "15% { scale: 1 1; }",
     "85% { scale: 1 1; }",
-    "100% { scale: 0.5 0.5; }",
+    "100% { scale: 0 0.6; }",
     "}",
   ].join("");
 }
