@@ -3,7 +3,7 @@ number: 258
 name: Michelle
 slug: michelle
 createdAt: 2026-09-05T16:58:21.764Z
-difficulty: medium
+difficulty: hard
 minMoves: 9
 ---
 

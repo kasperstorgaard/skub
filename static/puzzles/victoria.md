@@ -3,7 +3,7 @@ number: 257
 name: Victoria
 slug: victoria
 createdAt: 2026-09-05T16:38:27.057Z
-difficulty: easy
+difficulty: medium
 minMoves: 6
 ---
 

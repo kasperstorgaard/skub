@@ -3,7 +3,7 @@ number: 259
 name: Leo
 slug: leo
 createdAt: 2026-09-05T17:05:45.743Z
-difficulty: easy
+difficulty: medium
 minMoves: 6
 ---
 
