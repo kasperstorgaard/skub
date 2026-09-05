@@ -1,4 +1,4 @@
-import { COLS, ROWS } from "#/game/board.ts";
+import { COLS, GONE, ROWS } from "#/game/board.ts";
 import type { Board, Move, Puzzle } from "#/game/types.ts";
 import { CompactSet } from "#/lib/compact-set.ts";
 
@@ -78,9 +78,25 @@ type WallLookup = {
   vWalls: number[][];
 };
 
-type Config = {
-  pieceCount: number;
-} & WallLookup;
+/** Board-wide hazard lookups, indexed by `y*COLS+x`. */
+type HazardLookup = {
+  /** holes[pos] = 1 where a hole swallows a piece */
+  holes: Uint8Array;
+  /** portals[pos] = the position its pair emerges at, or -1 */
+  portals: Int8Array;
+  /** Whether the board has any hazard at all — gates the slower walk */
+  hasHazards: boolean;
+};
+
+type Config =
+  & {
+    pieceCount: number;
+  }
+  & WallLookup
+  & HazardLookup;
+
+/** Step deltas in DIRECTIONS order, matching board.ts so both agree on moves. */
+const STEPS: [number, number][] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
 /**
  * Solver configuration options.
@@ -305,6 +321,7 @@ function* bfsExplore(
 
   const config: Config = {
     ...buildWallLookup(board.walls),
+    ...buildHazardLookup(board),
     pieceCount: initialState.length,
   };
 
@@ -531,9 +548,13 @@ function applyMove(
 ): void {
   pool.copyWithin(dstOffset, srcOffset, srcOffset + config.pieceCount);
 
+  // A piece swallowed by a hole keeps its slot at GONE, so the pool stride and
+  // the state key never change shape. GONE sorts last, above every real cell.
+  const stored = config.hasHazards && config.holes[toPos] ? GONE : toPos;
+
   // Puck is always at index 0 — no sorting needed when it moves.
   if (pool[dstOffset] === fromPos) {
-    pool[dstOffset] = toPos;
+    pool[dstOffset] = stored;
     return;
   }
 
@@ -544,7 +565,7 @@ function applyMove(
     i++;
   }
 
-  pool[dstOffset + i] = toPos;
+  pool[dstOffset + i] = stored;
 
   // Bubble left if the blocker moved to a smaller position.
   while (i > 1 && pool[dstOffset + i] < pool[dstOffset + i - 1]) {
@@ -572,6 +593,11 @@ function applyMove(
  * For each piece, walls and other pieces narrow the four sliding ranges.
  * No occupancy check needed — the piece-constraint loop already stops the slider
  * one cell before any blocker, so the destination is always free.
+ *
+ * Ranges only work because a slide is decided entirely by where it stops. Holes
+ * and portals act on the cells crossed on the way, so those boards divert to
+ * getHazardMoves — leaving every board without them on the original path, at
+ * the original speed.
  */
 function getMoves(
   pool: Uint8Array,
@@ -579,6 +605,8 @@ function getMoves(
   offset: number,
   buffer: Uint8Array,
 ): number {
+  if (config.hasHazards) return getHazardMoves(pool, config, offset, buffer);
+
   let count = 0;
 
   for (let piece = 0; piece < config.pieceCount; piece++) {
@@ -641,6 +669,116 @@ function getMoves(
   return count;
 }
 
+/** Whether a piece other than `piece` stands on `pos`. */
+function isOccupied(
+  pool: Uint8Array,
+  config: Config,
+  offset: number,
+  piece: number,
+  pos: number,
+): boolean {
+  for (let other = 0; other < config.pieceCount; other++) {
+    if (other === piece) continue;
+    if (pool[offset + other] === pos) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Walks one piece cell by cell, mirroring getSlide in game/board.ts — the two
+ * must agree exactly or the solver's minMoves diverges from what a player can do.
+ *
+ * Returns the cell the piece ends on — the hole's own cell when one swallows it,
+ * so the emitted Move stays a real board position and matches what board.ts
+ * accepts. Translating that landing into the GONE state code is applyMove's job.
+ *
+ * Returns -1 when there is no move: the piece never left its start, or it fell
+ * into a portal loop. A loop's only escape is undo, so the branch can never
+ * reach a goal and is dropped here rather than explored.
+ */
+function walkSlide(
+  pool: Uint8Array,
+  config: Config,
+  offset: number,
+  piece: number,
+  stepX: number,
+  stepY: number,
+): number {
+  const start = pool[offset + piece];
+  let x = start % COLS;
+  let y = (start / COLS) | 0;
+  // One slot is enough: with a single pair, the only portal a piece can come
+  // back to is the one it went in by.
+  let entered = -1;
+
+  while (true) {
+    const nextX = x + stepX;
+    const nextY = y + stepY;
+
+    if (nextX < 0 || nextX >= COLS || nextY < 0 || nextY >= ROWS) break;
+
+    // Walls sit on the cell they block entry into from the lower coordinate.
+    if (stepY !== 0) {
+      if (config.hWalls[x].includes(stepY > 0 ? nextY : y)) break;
+    } else if (config.vWalls[y].includes(stepX > 0 ? nextX : x)) {
+      break;
+    }
+
+    const nextPos = nextY * COLS + nextX;
+    if (isOccupied(pool, config, offset, piece, nextPos)) break;
+
+    x = nextX;
+    y = nextY;
+
+    if (config.holes[nextPos]) return nextPos;
+
+    const exit = config.portals[nextPos];
+    if (exit < 0) continue;
+
+    if (entered === nextPos) return -1;
+    entered = nextPos;
+
+    // Nothing can come through an occupied exit, so the piece stays on entry.
+    if (isOccupied(pool, config, offset, piece, exit)) return nextPos;
+
+    x = exit % COLS;
+    y = (exit / COLS) | 0;
+  }
+
+  const end = y * COLS + x;
+  return end === start ? -1 : end;
+}
+
+/** getMoves for boards carrying holes or portals. */
+function getHazardMoves(
+  pool: Uint8Array,
+  config: Config,
+  offset: number,
+  buffer: Uint8Array,
+): number {
+  let count = 0;
+
+  for (let piece = 0; piece < config.pieceCount; piece++) {
+    const piecePos = pool[offset + piece];
+    if (piecePos === GONE) continue;
+
+    for (const [stepX, stepY] of STEPS) {
+      const target = walkSlide(pool, config, offset, piece, stepX, stepY);
+      if (target < 0) continue;
+
+      // Piece 0 is the puck; once it is gone no branch below can reach the
+      // destination. A player may still drop it — the solver just won't.
+      if (piece === 0 && config.holes[target]) continue;
+
+      buffer[count++] = piecePos;
+      buffer[count++] = target;
+    }
+  }
+
+  return count;
+}
+
 /**
  * Takes the board walls and builds 2 index arrays
  * one for horizontal, one for vertical.
@@ -658,6 +796,28 @@ function buildWallLookup(walls: Board["walls"]): WallLookup {
 }
 
 /**
+ * Builds the hole and portal lookups, and reports whether the board has either.
+ * Boards without hazards keep the original clamp-based move generation.
+ */
+function buildHazardLookup(board: Board): HazardLookup {
+  const holes = new Uint8Array(COLS * ROWS);
+  for (const hole of board.holes) holes[hole.y * COLS + hole.x] = 1;
+
+  const portals = new Int8Array(COLS * ROWS).fill(-1);
+  const [first, second] = board.portals;
+  const paired = first != null && second != null;
+
+  if (paired) {
+    const firstPos = first.y * COLS + first.x;
+    const secondPos = second.y * COLS + second.x;
+    portals[firstPos] = secondPos;
+    portals[secondPos] = firstPos;
+  }
+
+  return { holes, portals, hasHazards: board.holes.length > 0 || paired };
+}
+
+/**
  * Initialised the indexed board state
  */
 function initState(board: Board): Uint8Array {
@@ -670,13 +830,16 @@ function initState(board: Board): Uint8Array {
 }
 
 /**
- * Get packed integer key — safe for up to 8 pieces (64^8 < Number.MAX_SAFE_INTEGER).
+ * Get packed integer key — safe for up to 8 pieces (65^8 < Number.MAX_SAFE_INTEGER).
+ *
+ * Base 65, not 64, because GONE is a 65th position code: a piece swallowed by a
+ * hole keeps its slot so the pool stride never changes.
  */
 function stateKeyAt(pool: Uint8Array, config: Config, offset: number): number {
   let key = 0;
 
   for (let pieceIdx = 0; pieceIdx < config.pieceCount; pieceIdx++) {
-    key = key * 64 + pool[offset + pieceIdx];
+    key = key * 65 + pool[offset + pieceIdx];
   }
 
   return key;

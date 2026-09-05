@@ -4,8 +4,10 @@ import {
   BoardError,
   flipBoard,
   getGrid,
+  getSlide,
   getTargets,
   isBoardSame,
+  isLooped,
   isMoveSame,
   isPositionSame,
   isValidMove,
@@ -1122,4 +1124,261 @@ Deno.test("flipBoard() vertical applied twice returns the original board", () =>
   const result = flipBoard(flipBoard(board, "vertical"), "vertical");
 
   assertEquals(result, board);
+});
+
+// --- holes ---
+
+Deno.test("getSlide() should let a hole swallow a piece sliding into it", () => {
+  const slide = getSlide({ x: 0, y: 0 }, "right", {
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [{ x: 3, y: 0 }],
+    portals: [],
+  });
+
+  assertEquals(slide?.outcome, "dropped");
+  assertEquals(slide?.target, { x: 3, y: 0 });
+});
+
+Deno.test("getSlide() should stop at a wall standing before a hole", () => {
+  const slide = getSlide({ x: 0, y: 0 }, "right", {
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [{ x: 2, y: 0, orientation: "vertical" }],
+    holes: [{ x: 3, y: 0 }],
+    portals: [],
+  });
+
+  assertEquals(slide?.outcome, "stopped");
+  assertEquals(slide?.target, { x: 1, y: 0 });
+});
+
+Deno.test("resolveMoves() should remove a piece that fell in a hole", () => {
+  const result = resolveMoves({
+    pieces: [{ x: 0, y: 0, type: "puck" }, { x: 0, y: 5, type: "blocker" }],
+    walls: [],
+    holes: [{ x: 3, y: 0 }],
+    portals: [],
+  }, [[{ x: 0, y: 0 }, { x: 3, y: 0 }]]);
+
+  assertEquals(result.pieces, [{ x: 0, y: 5, type: "blocker" }]);
+});
+
+// --- portals ---
+
+Deno.test("getSlide() should carry momentum out of the paired portal", () => {
+  const slide = getSlide({ x: 0, y: 0 }, "right", {
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 2, y: 0 }, { x: 5, y: 4 }],
+  });
+
+  assertEquals(slide?.outcome, "stopped");
+  assertEquals(slide?.target, { x: 7, y: 4 });
+  // One leg up to the entry portal, one on from the exit.
+  assertEquals(slide?.segments, [
+    [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }],
+    [{ x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }],
+  ]);
+});
+
+Deno.test("getSlide() should stop on the exit portal when the way beyond is blocked", () => {
+  const slide = getSlide({ x: 0, y: 0 }, "right", {
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 2, y: 0 }, { x: 7, y: 4 }],
+  });
+
+  assertEquals(slide?.outcome, "stopped");
+  assertEquals(slide?.target, { x: 7, y: 4 });
+});
+
+Deno.test("getSlide() should stop on the entry portal when the exit is occupied", () => {
+  // A piece can only sit on a portal mid-game — none may start on one.
+  const slide = getSlide({ x: 0, y: 0 }, "right", {
+    pieces: [{ x: 0, y: 0, type: "puck" }, { x: 5, y: 4, type: "blocker" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 2, y: 0 }, { x: 5, y: 4 }],
+  });
+
+  assertEquals(slide?.outcome, "stopped");
+  assertEquals(slide?.target, { x: 2, y: 0 });
+});
+
+Deno.test("getSlide() should slide over a portal that has no pair", () => {
+  const slide = getSlide({ x: 0, y: 0 }, "right", {
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 3, y: 0 }],
+  });
+
+  assertEquals(slide?.outcome, "stopped");
+  assertEquals(slide?.target, { x: 7, y: 0 });
+});
+
+Deno.test("getSlide() should loop when the slide re-enters the portal it came in by", () => {
+  const slide = getSlide({ x: 3, y: 0 }, "right", {
+    pieces: [{ x: 3, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 5, y: 0 }, { x: 1, y: 0 }],
+  });
+
+  assertEquals(slide?.outcome, "looped");
+  assertEquals(slide?.target, { x: 5, y: 0 });
+});
+
+Deno.test("resolveMoves() should keep a looping piece on the portal it entered", () => {
+  const board = {
+    pieces: [{ x: 3, y: 0, type: "puck" as const }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 5, y: 0 }, { x: 1, y: 0 }],
+  };
+
+  const result = resolveMoves(board, [[{ x: 3, y: 0 }, { x: 5, y: 0 }]]);
+
+  assertEquals(result.pieces, [{ x: 5, y: 0, type: "puck" }]);
+});
+
+Deno.test("isLooped() should report a board locked by the last move", () => {
+  const board = {
+    pieces: [{ x: 3, y: 0, type: "puck" as const }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 5, y: 0 }, { x: 1, y: 0 }],
+  };
+
+  assertEquals(isLooped(board, [[{ x: 3, y: 0 }, { x: 5, y: 0 }]]), true);
+});
+
+Deno.test("isLooped() should be false once the looping move is undone", () => {
+  const board = {
+    pieces: [{ x: 3, y: 0, type: "puck" as const }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 5, y: 0 }, { x: 1, y: 0 }],
+  };
+
+  assertEquals(isLooped(board, []), false);
+});
+
+Deno.test("isLooped() should be false for an ordinary move", () => {
+  const board = {
+    pieces: [{ x: 0, y: 0, type: "puck" as const }],
+    walls: [],
+    holes: [],
+    portals: [],
+  };
+
+  assertEquals(isLooped(board, [[{ x: 0, y: 0 }, { x: 7, y: 0 }]]), false);
+});
+
+// --- hazard validation ---
+
+Deno.test("validateBoard() should throw when a piece starts on a hole", () => {
+  assertThrows(
+    () =>
+      validateBoard({
+        destination: { x: 5, y: 5 },
+        pieces: [{ x: 2, y: 2, type: "puck" }],
+        walls: [],
+        holes: [{ x: 2, y: 2 }],
+        portals: [],
+      }),
+    BoardError,
+    "Piece starts on a hole or portal at (2, 2)",
+  );
+});
+
+Deno.test("validateBoard() should throw when the destination is on a portal", () => {
+  assertThrows(
+    () =>
+      validateBoard({
+        destination: { x: 4, y: 4 },
+        pieces: [{ x: 2, y: 2, type: "puck" }],
+        walls: [],
+        holes: [],
+        portals: [{ x: 4, y: 4 }, { x: 6, y: 6 }],
+      }),
+    BoardError,
+    "Destination is on a hole or portal at (4, 4)",
+  );
+});
+
+Deno.test("validateBoard() should throw for a third portal", () => {
+  assertThrows(
+    () =>
+      validateBoard({
+        destination: { x: 5, y: 5 },
+        pieces: [{ x: 2, y: 2, type: "puck" }],
+        walls: [],
+        holes: [],
+        portals: [{ x: 1, y: 1 }, { x: 3, y: 3 }, { x: 4, y: 4 }],
+      }),
+    BoardError,
+    "Board has more than two portals",
+  );
+});
+
+Deno.test("validateBoard() should throw when a hole and a portal share a cell", () => {
+  assertThrows(
+    () =>
+      validateBoard({
+        destination: { x: 5, y: 5 },
+        pieces: [{ x: 2, y: 2, type: "puck" }],
+        walls: [],
+        holes: [{ x: 3, y: 3 }],
+        portals: [{ x: 3, y: 3 }, { x: 6, y: 6 }],
+      }),
+    BoardError,
+    "Hole and portal share (3, 3)",
+  );
+});
+
+Deno.test("validateBoard() should accept a single portal, which the editor holds mid-build", () => {
+  const board = validateBoard({
+    destination: { x: 5, y: 5 },
+    pieces: [{ x: 2, y: 2, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 3, y: 3 }],
+  });
+
+  assertEquals(board.portals, [{ x: 3, y: 3 }]);
+});
+
+// --- transforms carry hazards ---
+
+Deno.test("rotateBoard() right should carry holes and portals", () => {
+  const board = {
+    destination: { x: 0, y: 0 },
+    pieces: [{ x: 1, y: 1, type: "puck" as const }],
+    walls: [],
+    holes: [{ x: 2, y: 3 }],
+    portals: [{ x: 4, y: 5 }, { x: 6, y: 7 }],
+  };
+
+  const result = rotateBoard(
+    rotateBoard(rotateBoard(rotateBoard(board, "right"), "right"), "right"),
+    "right",
+  );
+
+  assertEquals(result, board);
+});
+
+Deno.test("flipBoard() horizontal should mirror holes and portals", () => {
+  const result = flipBoard({
+    destination: { x: 0, y: 0 },
+    pieces: [{ x: 1, y: 1, type: "puck" }],
+    walls: [],
+    holes: [{ x: 2, y: 3 }],
+    portals: [{ x: 4, y: 5 }, { x: 6, y: 7 }],
+  }, "horizontal");
+
+  assertEquals(result.holes, [{ x: 5, y: 3 }]);
+  assertEquals(result.portals, [{ x: 3, y: 5 }, { x: 1, y: 7 }]);
 });

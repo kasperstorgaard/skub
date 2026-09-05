@@ -6,7 +6,7 @@ import {
 } from "@std/assert";
 import { assertExists } from "@std/assert/exists";
 
-import { isValidSolution, resolveMoves } from "./board.ts";
+import { isValidMove, isValidSolution, resolveMoves } from "./board.ts";
 import {
   enumerateSolutions,
   optimalFirstMoves,
@@ -459,4 +459,85 @@ Deno.test("solveExhaustiveSync() throws for an unsolvable puzzle", () => {
   };
 
   assertThrows(() => solveExhaustiveSync(board));
+});
+
+// --- holes and portals ---
+//
+// The solver keeps its own tuned copy of the slide, so these also guard that it
+// still agrees with getSlide in board.ts — a divergence would make minMoves
+// describe moves a player cannot actually make.
+
+Deno.test("solveSync() should route a slide through a portal pair", () => {
+  const board: Board = {
+    destination: { x: 7, y: 4 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 2, y: 0 }, { x: 5, y: 4 }],
+  };
+
+  const moves = solveSync(board);
+
+  assertEquals(moves, [[{ x: 0, y: 0 }, { x: 7, y: 4 }]]);
+  assertEquals(isValidSolution(resolveMoves(board, moves)), true);
+});
+
+Deno.test("solveSync() should route the puck around a hole rather than into it", () => {
+  // Sliding right drops the puck at (3,0), so the only route is down, across, up.
+  const board: Board = {
+    destination: { x: 7, y: 0 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [{ x: 3, y: 0 }],
+    portals: [],
+  };
+
+  const moves = solveSync(board);
+
+  assertEquals(moves.length, 3);
+  assertEquals(isValidSolution(resolveMoves(board, moves)), true);
+});
+
+Deno.test("solveSync() should drop a blocker in a hole to clear the puck's path", () => {
+  // The blocker at (4,7) walls the puck off. Sliding it up drops it at (4,0);
+  // every other move it has leaves it in the way, so the hole is the solution.
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 7, type: "puck" },
+      { x: 4, y: 7, type: "blocker" },
+    ],
+    walls: [],
+    holes: [{ x: 4, y: 0 }],
+    portals: [],
+  };
+
+  const moves = solveSync(board);
+
+  assertEquals(moves, [
+    [{ x: 4, y: 7 }, { x: 4, y: 0 }],
+    [{ x: 0, y: 7 }, { x: 7, y: 7 }],
+  ]);
+  assertEquals(isValidSolution(resolveMoves(board, moves)), true);
+});
+
+Deno.test("solveSync() should only emit moves the board itself accepts", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 7, type: "puck" },
+      { x: 4, y: 7, type: "blocker" },
+    ],
+    walls: [{ x: 2, y: 3, orientation: "vertical" }],
+    holes: [{ x: 4, y: 0 }],
+    portals: [{ x: 1, y: 2 }, { x: 6, y: 5 }],
+  };
+
+  let current = board;
+  for (const move of solveSync(board)) {
+    assertEquals(isValidMove(move, current), true);
+    current = resolveMoves(current, [move]);
+  }
+
+  assertEquals(isValidSolution(current), true);
 });
