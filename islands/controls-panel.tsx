@@ -15,6 +15,7 @@ import {
   Star,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { isLooped } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
 import {
   decodeState,
@@ -46,11 +47,20 @@ export function ControlsPanel(
     className,
   }: ControlsPanelProps,
 ) {
+  // A board caught in a portal loop has one way on, and the hint route refuses
+  // it too — offering one here would only 400.
+  const isLocked = useMemo(() => {
+    const state = decodeState(href.value);
+    const played = state.moves.slice(0, state.cursor ?? state.moves.length);
+
+    return isLooped(puzzle.value.board, played);
+  }, [href.value, puzzle.value.board]);
+
   const hintLimit = 1;
   // Mirrors the hint route's gate. hintCount is server-rendered and the
   // enhanced path never reloads, so a hint taken here shows up in the signal.
-  const hintDisabled = !isDev && !isPreview &&
-    (hintCount ?? 0) + (hintUsed.value ? 1 : 0) >= hintLimit;
+  const hintDisabled = isLocked || (!isDev && !isPreview &&
+    (hintCount ?? 0) + (hintUsed.value ? 1 : 0) >= hintLimit);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -176,7 +186,11 @@ export function ControlsPanel(
                   onHint();
                 }}
               >
-                {hintDisabled ? "Hint used" : "Get a hint"}
+                {isLocked
+                  ? "Stuck in a portal"
+                  : hintDisabled
+                  ? "Hint used"
+                  : "Get a hint"}
               </a>
             )}
 

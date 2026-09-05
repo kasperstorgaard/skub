@@ -57,7 +57,15 @@ rule is deterministic.
 
 Being stuck in a loop is derived from the move list, never stored, because moves
 live in the URL — a reloaded or shared stuck link has to come back stuck, with
-or without JavaScript.
+or without JavaScript. The trapped piece is shown circling the two portals, and
+the hint refuses a board it cannot advance rather than failing on it.
+
+One thing a hole forces that nothing did before: a piece can leave the board.
+Identity could previously be a piece's slot in the board's list, since that list
+only ever changed in place. Removing a piece shifts every later slot, so pieces
+now carry an identity pinned to where they started — without it a renderer
+keying on position hands one piece's element to another and animates the wrong
+one.
 
 ## Non-goals
 
