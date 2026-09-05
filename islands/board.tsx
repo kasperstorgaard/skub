@@ -12,6 +12,7 @@ import { useRouter } from "./router.tsx";
 import { useMoves } from "#/client/moves.ts";
 import { calculateMoveSpeed } from "#/client/touch.ts";
 import { Icon, X } from "#/components/icons.tsx";
+import { PortalRings } from "#/components/portal-rings.tsx";
 import {
   getGrid,
   getMoveSlide,
@@ -233,10 +234,6 @@ export default function Board(
           ))
         )}
 
-        {mode.value === "editor" && state.active && (
-          <BoardActiveCell {...state.active} />
-        )}
-
         {board.holes.map((hole) => (
           <BoardHole key={`hole-${hole.x}-${hole.y}`} {...hole} />
         ))}
@@ -244,6 +241,10 @@ export default function Board(
         {board.portals.map((portal) => (
           <BoardPortal key={`portal-${portal.x}-${portal.y}`} {...portal} />
         ))}
+
+        {mode.value === "editor" && state.active && (
+          <BoardActiveCell {...state.active} />
+        )}
 
         <BoardDestination {...board.destination} />
 
@@ -441,13 +442,6 @@ function BoardHole({ x, y }: Position) {
   );
 }
 
-/**
- * Concentric ring insets as percentages of the cell, largest first. The negative
- * ones run past the cell's corners so the overflow crops them, and the step is
- * barely wider than the 2px border, so the rings pack the space with no gap.
- */
-const PORTAL_RINGS = [-22, -16, -10, -4, 2, 8, 14, 20, 26, 32, 38, 44];
-
 function BoardPortal({ x, y }: Position) {
   return (
     <div
@@ -457,23 +451,7 @@ function BoardPortal({ x, y }: Position) {
       )}
       style={{ "--x": x, "--y": y }}
     >
-      {
-        /* Each ring paints over the last one's interior, so all that stays
-          visible is its dashed band — and the gaps between dashes show the
-          ring's own fill, which is what makes the dash two-coloured rather
-          than see-through. All turn the same way, slowly, and a little faster
-          toward the centre. */
-      }
-      {PORTAL_RINGS.map((inset, index) => (
-        <div
-          key={inset}
-          className="absolute rounded-round border-2 border-dashed border-portal bg-portal-alt"
-          style={{
-            inset: `${inset}%`,
-            animation: `spin ${48 - index * 3.6}s linear infinite`,
-          }}
-        />
-      ))}
+      <PortalRings />
     </div>
   );
 }

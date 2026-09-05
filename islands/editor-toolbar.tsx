@@ -4,6 +4,7 @@ import { useMemo } from "preact/hooks";
 
 import { useEditor } from "#/client/editor.ts";
 import { Icon, X } from "#/components/icons.tsx";
+import { PortalRings } from "#/components/portal-rings.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 
@@ -116,8 +117,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         onClick={() => setCellContent("portal")}
       >
         <div className="size-5 rounded-1 overflow-hidden bg-portal-alt relative">
-          <div className="absolute -inset-1/4 rounded-round border-2 border-dashed border-portal" />
-          <div className="absolute inset-1/4 rounded-round border-1 border-dashed border-portal" />
+          <PortalRings compact />
         </div>
       </button>
 
