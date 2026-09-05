@@ -1,4 +1,9 @@
-import { getSlides, isMoveSame, type SlideBoard } from "./board.ts";
+import {
+  getMoveSlide,
+  getSlides,
+  isMoveSame,
+  type SlideBoard,
+} from "./board.ts";
 import { Move, Position } from "./types.ts";
 
 /** A move guide shown on the board, optionally flagged as a hint. */
@@ -41,9 +46,16 @@ export function getGuides(
   if (hint) {
     const target = result.find((item) => isMoveSame(item.move, hint));
     const insertIdx = target ? result.indexOf(target) : result.length;
+
+    // A hint arrives without a selected piece, so there is usually no guide to
+    // borrow from. Resolving its own slide is what keeps it stopping at the
+    // portal — falling back to the move's endpoint would both point off-axis
+    // and give away where the portal comes out.
+    const [firstLeg] = getMoveSlide(hint, board)?.segments ?? [];
+
     result.splice(insertIdx, 1, {
       move: hint,
-      to: target?.to ?? hint[1],
+      to: target?.to ?? firstLeg?.[firstLeg.length - 1] ?? hint[1],
       isHint: true,
     });
   }

@@ -118,3 +118,25 @@ Deno.test("getGuides() hint should replace matching direction in place", () => {
     },
   ]);
 });
+
+Deno.test("getGuides() should stop a hint at the portal, not at where it lands", () => {
+  // A hint arrives with no piece selected, so there is no guide for it to
+  // borrow geometry from. Falling back to the move's endpoint would point the
+  // strip off-axis and give away where the portal comes out.
+  const result = getGuides(
+    {
+      pieces: [{ x: 0, y: 0, type: "puck" }],
+      walls: [],
+      holes: [],
+      portals: [{ x: 2, y: 0 }, { x: 5, y: 4 }],
+    },
+    { hint: [{ x: 0, y: 0 }, { x: 7, y: 4 }] },
+  );
+
+  assertEquals(result.length, 1);
+  assertEquals(result[0].isHint, true);
+  // Drawn only as far as the portal it goes in by.
+  assertEquals(result[0].to, { x: 2, y: 0 });
+  // The move committed is still the whole slide.
+  assertEquals(result[0].move, [{ x: 0, y: 0 }, { x: 7, y: 4 }]);
+});

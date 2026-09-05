@@ -7,6 +7,7 @@ import {
   resolveMoves,
   rotateBoard,
   ROWS,
+  type Slide,
 } from "#/game/board.ts";
 import {
   enumerateSolutions,
@@ -165,9 +166,7 @@ export function computeTrails(
         throw new Error(`Solution move ${i} is not playable`);
       }
 
-      // Portals keep momentum, so every leg travels the same way.
-      const [firstLeg] = slide.segments;
-      const direction = moveDirection(firstLeg[0], firstLeg[1]);
+      const direction = slideDirection(slide);
 
       for (const leg of slide.segments) {
         for (const pos of leg) {
@@ -206,6 +205,41 @@ export function deduplicateSolutions(solutions: Move[][]): Move[][] {
   }
 
   return representatives;
+}
+
+/**
+ * Pairs every move with the slide it actually takes.
+ *
+ * A move records only where a piece ended, and a slide through a portal ends off
+ * its own axis — so neither the direction travelled nor the distance covered can
+ * be read back from the endpoints alone.
+ */
+function solutionSlides(board: Board, moves: Move[]): Slide[] {
+  const slides: Slide[] = [];
+  let current = board;
+
+  for (const move of moves) {
+    const slide = getMoveSlide(move, current);
+    if (!slide) {
+      throw new Error(`Solution move ${encodeMove(move)} is not playable`);
+    }
+
+    slides.push(slide);
+    current = resolveMoves(current, [move]);
+  }
+
+  return slides;
+}
+
+/** Which way a slide travelled. Portals keep momentum, so every leg agrees. */
+function slideDirection(slide: Slide): Direction {
+  const [firstLeg] = slide.segments;
+  return moveDirection(firstLeg[0], firstLeg[1]);
+}
+
+/** How far a slide actually travelled, counting every leg. */
+function slideDistance(slide: Slide): number {
+  return slide.segments.reduce((total, leg) => total + leg.length - 1, 0);
 }
 
 /** The role of the piece that moves in each move (found by re-resolving). */
@@ -261,15 +295,15 @@ function movePieceIds(board: Board, moves: Move[]): number[] {
 }
 
 /**
- * Total slide distance in a solution — Manhattan distance summed over every move
- * (puck and blocker alike).
+ * Total slide distance in a solution — cells crossed, summed over every move
+ * (puck and blocker alike). Taken from the slides rather than the endpoints,
+ * which would measure a portal's jump instead of the travel either side of it.
  */
-export function totalDistance(_board: Board, moves: Move[]): number {
-  let total = 0;
-  for (const [from, to] of moves) {
-    total += Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
-  }
-  return total;
+export function totalDistance(board: Board, moves: Move[]): number {
+  return solutionSlides(board, moves).reduce(
+    (total, slide) => total + slideDistance(slide),
+    0,
+  );
 }
 
 /**
@@ -284,9 +318,11 @@ export function deception(board: Board, moves: Move[]): number {
   for (let i = 0; i < moves.length; i++) {
     if (roles[i] !== "puck") continue;
     const [from, to] = moves[i];
-    const onX = from.y === to.y;
-    const before = onX ? Math.abs(from.x - d.x) : Math.abs(from.y - d.y);
-    const after = onX ? Math.abs(to.x - d.x) : Math.abs(to.y - d.y);
+    // Full Manhattan rather than the axis travelled: on a straight slide the
+    // other axis cancels, so this is the same number, and a slide through a
+    // portal moves on both.
+    const before = Math.abs(from.x - d.x) + Math.abs(from.y - d.y);
+    const after = Math.abs(to.x - d.x) + Math.abs(to.y - d.y);
     sum += Math.max(0, after - before);
   }
   return sum;
@@ -298,11 +334,11 @@ export function deception(board: Board, moves: Move[]): number {
  */
 export function reversals(board: Board, moves: Move[]): number {
   const ids = movePieceIds(board, moves);
+  const slides = solutionSlides(board, moves);
   const dirs = new Map<number, Direction[]>();
   for (let i = 0; i < moves.length; i++) {
-    const [from, to] = moves[i];
     const list = dirs.get(ids[i]) ?? [];
-    list.push(moveDirection(from, to));
+    list.push(slideDirection(slides[i]));
     dirs.set(ids[i], list);
   }
   let count = 0;
@@ -391,8 +427,7 @@ function analyzeMoves(board: Board, moves: Move[]): MoveAnalysis[] {
       throw new Error(`Solution move ${encodeMove(move)} is not playable`);
     }
 
-    const [firstLeg] = slide.segments;
-    const direction = moveDirection(firstLeg[0], firstLeg[1]);
+    const direction = slideDirection(slide);
     const beyond = beyondCell(to, direction);
 
     let cause: MoveAnalysis["cause"] = "edge";
@@ -574,10 +609,10 @@ export function wallUtilization(board: Board, solutions: Move[][]): number {
   const used = new Set<string>();
   for (const moves of solutions) {
     const analysis = analyzeMoves(board, moves);
+    const slides = solutionSlides(board, moves);
     for (let i = 0; i < moves.length; i++) {
       if (analysis[i].cause !== "wall") continue;
-      const [from, to] = moves[i];
-      used.add(stoppingWallKey(to, moveDirection(from, to)));
+      used.add(stoppingWallKey(moves[i][1], slideDirection(slides[i])));
     }
   }
   const boardKeys = new Set(board.walls.map(wallKey));

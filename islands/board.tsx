@@ -412,7 +412,10 @@ function BoardActiveCell({ x, y }: Position) {
     <div
       className={clsx(
         "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
-        "rounded-1 bg-brand/30 animate-blink pointer-events-none",
+        // Positioned, because a portal's wrapper is — and a positioned sibling
+        // paints above a non-positioned one whatever the document order, which
+        // is what kept burying this.
+        "relative rounded-1 bg-brand/30 animate-blink pointer-events-none",
       )}
       style={{ "--x": x, "--y": y }}
     />

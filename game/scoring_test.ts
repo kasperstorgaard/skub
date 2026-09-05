@@ -815,3 +815,63 @@ Deno.test("stopWeighted() counts a piece left on a portal as an arranged stop", 
 
   assertEquals(stopWeighted(board, moves), 3);
 });
+
+// Metrics that used to read direction or distance off a move's raw endpoints.
+// A slide through a portal ends off its own axis, so the endpoints describe a
+// journey the piece never made.
+
+Deno.test("totalDistance() counts the cells crossed, not the portal's jump", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 3, y: 0 }, { x: 1, y: 5 }],
+  };
+
+  // Three cells to the portal, six on from the other one. The endpoints alone
+  // would say 12, which counts the teleport as travel.
+  assertEquals(
+    totalDistance(board, [[{ x: 0, y: 0 }, { x: 7, y: 5 }]]),
+    9,
+  );
+});
+
+Deno.test("reversals() reads the direction travelled, not the endpoints", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 0, y: 3 }, { x: 6, y: 5 }],
+  };
+
+  // The puck slides down through the portal and comes out heading down still,
+  // ending at (6,7) — off to the right of where it began. Read off those
+  // endpoints the move looks like it went right, which would pair with the
+  // left slide after it and report a reversal that never happened.
+  const moves: Move[] = [
+    [{ x: 0, y: 0 }, { x: 6, y: 7 }],
+    [{ x: 6, y: 7 }, { x: 0, y: 7 }],
+  ];
+
+  assertEquals(reversals(board, moves), 0);
+});
+
+Deno.test("wallUtilization() credits the wall a portal slide actually stops on", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [{ x: 4, y: 7, orientation: "horizontal" }],
+    holes: [],
+    portals: [{ x: 0, y: 3 }, { x: 4, y: 5 }],
+  };
+
+  // The puck slides down, comes out at (4,5) and is stopped by the wall below
+  // (4,6). Keyed off the endpoints the lookup misses and the wall reads as
+  // decorative clutter.
+  assertEquals(
+    wallUtilization(board, [[[{ x: 0, y: 0 }, { x: 4, y: 6 }]]]),
+    1,
+  );
+});

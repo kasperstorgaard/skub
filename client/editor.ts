@@ -78,6 +78,11 @@ export function useEditor(
       // Setting what is already there clears the cell instead.
       const target = content === getCellContent(board, active) ? null : content;
 
+      // The destination has nowhere else to go, so a hazard cannot take its
+      // cell — the board would have no way to record both.
+      const isHazard = target === "hole" || target === "portal";
+      if (isHazard && isPositionSame(board.destination, active)) return;
+
       // A cell holds one thing, so start by emptying it.
       let pieces = board.pieces.filter((piece) =>
         !isPositionSame(piece, active)
@@ -108,7 +113,18 @@ export function useEditor(
 
   const setDestination = useCallback(() => {
     if (!active) return;
-    updateBoard(puzzle, { destination: active });
+
+    // Nothing can sit under the destination, and a board carrying both cannot
+    // be written down: the cell has one character.
+    updateBoard(puzzle, {
+      destination: active,
+      holes: puzzle.value.board.holes.filter((hole) =>
+        !isPositionSame(hole, active)
+      ),
+      portals: puzzle.value.board.portals.filter((portal) =>
+        !isPositionSame(portal, active)
+      ),
+    });
   }, [active, puzzle]);
 
   const cycleWall = useCallback(() => {

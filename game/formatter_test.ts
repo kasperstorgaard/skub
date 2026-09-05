@@ -129,3 +129,30 @@ Deno.test("formatPuzzle - formats puzzle with piece on destination and wall", ()
   );
   assertEquals(blockerOnDest !== undefined, true);
 });
+
+Deno.test("formatPuzzle - keeps the destination when a hazard shares its cell", () => {
+  // Not a board the editor will make, but the cell holds one character, so if
+  // it ever happens the hazard is what gives way. Writing the hole instead used
+  // to drop the X, and the lenient parse behind the editor's autosave then
+  // relocated the destination to the board's corner.
+  const markdown = formatPuzzle({
+    number: 5,
+    name: "Hazard Puzzle",
+    slug: "hazard-puzzle",
+    createdAt: new Date("2024-06-20T00:00:00.000Z"),
+    difficulty: "medium",
+    minMoves: 1,
+    board: {
+      destination: { x: 4, y: 4 },
+      pieces: [{ x: 0, y: 0, type: "puck" }],
+      walls: [],
+      holes: [{ x: 4, y: 4 }],
+      portals: [],
+    },
+  });
+
+  const board = parsePuzzle(markdown, { validate: false }).board;
+
+  assertEquals(board.destination, { x: 4, y: 4 });
+  assertEquals(board.holes, []);
+});

@@ -84,7 +84,15 @@ function formatCell(
     return char;
   }
 
+  if (isDestination) {
+    const char = "X";
+    return hasHorizontalWall ? char + COMBINING_LOW_LINE : char;
+  }
+
   // Nothing can share a cell with a hole or a portal, so no circumflex here.
+  // The destination is written first because a board that somehow holds both
+  // has to lose the hazard rather than the goal, which the parser would
+  // otherwise relocate to the board's corner.
   const hazard = holes.some((hole) => isPositionSame(hole, position))
     ? "H"
     : portals.some((portal) => isPositionSame(portal, position))
@@ -93,11 +101,6 @@ function formatCell(
 
   if (hazard) {
     return hasHorizontalWall ? hazard + COMBINING_LOW_LINE : hazard;
-  }
-
-  if (isDestination) {
-    const char = "X";
-    return hasHorizontalWall ? char + COMBINING_LOW_LINE : char;
   }
 
   // Only horizontal wall present
