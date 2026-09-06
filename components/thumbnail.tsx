@@ -109,7 +109,7 @@ export function Thumbnail({
         );
       })}
 
-      {/* Destination marker — absent while a board is still being built */}
+      {/* Destination marker */}
       {destination && (
         <g stroke={colors.ui1} fill="none" className="svg-destination">
           <rect
