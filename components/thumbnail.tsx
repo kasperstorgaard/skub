@@ -7,6 +7,9 @@ export type ThumbnailColors = {
   ui2: string; // puck fill
   ui3: string; // blocker fill
   ui4: string; // wall stroke
+  hole: string; // hole fill
+  portal: string; // portal ring stroke
+  portalAlt: string; // portal ground behind the rings
 };
 
 export const CSS_VAR_COLORS: ThumbnailColors = {
@@ -14,6 +17,9 @@ export const CSS_VAR_COLORS: ThumbnailColors = {
   ui2: "var(--color-ui-2)",
   ui3: "var(--color-ui-3)",
   ui4: "var(--color-ui-4)",
+  hole: "var(--color-hole)",
+  portal: "var(--color-portal)",
+  portalAlt: "var(--color-portal-alt)",
 };
 
 export type BoardSvgProps = SVGAttributes<SVGSVGElement> & {
@@ -47,8 +53,9 @@ export function Thumbnail({
     cy: cellY(y) + cellSize / 2,
   });
 
-  const destX = cellX(board.destination.x);
-  const destY = cellY(board.destination.y);
+  const destination = board.destination;
+  const destX = destination ? cellX(destination.x) : 0;
+  const destY = destination ? cellY(destination.y) : 0;
 
   return (
     <svg
@@ -58,32 +65,78 @@ export function Thumbnail({
     >
       {background && <rect width={width} height={height} fill={background} />}
 
-      {/* Destination marker */}
-      <g stroke={colors.ui1} fill="none" className="svg-destination">
+      {/* Holes — a plain filled cell; at thumbnail size a texture is noise */}
+      {board.holes.map((hole, idx) => (
         <rect
-          x={destX}
-          y={destY}
+          className="svg-hole"
+          key={`hole-${idx}`}
+          x={cellX(hole.x)}
+          y={cellY(hole.y)}
           width={cellSize}
           height={cellSize}
-          strokeWidth="2"
+          rx={cellSize * 0.1}
+          fill={colors.hole}
         />
-        <line
-          x1={destX + cellSize * 0.25}
-          y1={destY + cellSize * 0.25}
-          x2={destX + cellSize * 0.75}
-          y2={destY + cellSize * 0.75}
-          strokeWidth="3"
-          stroke-linecap="round"
-        />
-        <line
-          x1={destX + cellSize * 0.25}
-          y1={destY + cellSize * 0.75}
-          x2={destX + cellSize * 0.75}
-          y2={destY + cellSize * 0.25}
-          strokeWidth="3"
-          stroke-linecap="round"
-        />
-      </g>
+      ))}
+
+      {/* Portals — the board's rings, held still */}
+      {board.portals.map((portal, idx) => {
+        const { cx, cy } = getCenter(portal.x, portal.y);
+
+        return (
+          <g className="svg-portal" key={`portal-${idx}`}>
+            <rect
+              x={cellX(portal.x)}
+              y={cellY(portal.y)}
+              width={cellSize}
+              height={cellSize}
+              rx={cellSize * 0.1}
+              fill={colors.portalAlt}
+            />
+            {[0.46, 0.32, 0.18, 0.06].map((ratio) => (
+              <circle
+                key={ratio}
+                cx={cx}
+                cy={cy}
+                r={cellSize * ratio}
+                fill="none"
+                stroke={colors.portal}
+                strokeWidth={cellSize * 0.08}
+                strokeDasharray={`${cellSize * 0.14} ${cellSize * 0.1}`}
+              />
+            ))}
+          </g>
+        );
+      })}
+
+      {/* Destination marker — absent while a board is still being built */}
+      {destination && (
+        <g stroke={colors.ui1} fill="none" className="svg-destination">
+          <rect
+            x={destX}
+            y={destY}
+            width={cellSize}
+            height={cellSize}
+            strokeWidth="2"
+          />
+          <line
+            x1={destX + cellSize * 0.25}
+            y1={destY + cellSize * 0.25}
+            x2={destX + cellSize * 0.75}
+            y2={destY + cellSize * 0.75}
+            strokeWidth="3"
+            stroke-linecap="round"
+          />
+          <line
+            x1={destX + cellSize * 0.25}
+            y1={destY + cellSize * 0.75}
+            x2={destX + cellSize * 0.75}
+            y2={destY + cellSize * 0.25}
+            strokeWidth="3"
+            stroke-linecap="round"
+          />
+        </g>
+      )}
 
       {/* Walls — offset by half the gap so they appear between cells */}
       {board.walls.map((wall: Wall, idx) => {

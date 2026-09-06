@@ -17,11 +17,25 @@ export type Wall = Position & {
   orientation: "horizontal" | "vertical";
 };
 
-// The complete board state with destination, walls, and pieces
+// A hole swallows any piece that slides into it. A portal teleports one to its
+// pair. Neither ever moves, so they are positions rather than Piece variants.
+export type Hazard = "hole" | "portal";
+
+// Everything that can occupy a cell, in the order the editor cycles through
+// them. One list so the cycle and the toolbar can never drift apart.
+export const CELL_CONTENTS = ["blocker", "puck", "hole", "portal"] as const;
+export type CellContent = typeof CELL_CONTENTS[number];
+
+// The complete board state with destination, walls, pieces and hazards
 export type Board = {
-  destination: Position;
+  // Absent while a board is being built: the editor can hold an incomplete
+  // draft, the same way it can hold one with no puck yet.
+  destination?: Position;
   walls: Wall[];
   pieces: Piece[];
+  holes: Position[];
+  // 0 or 2 once valid; the editor may hold 1 mid-build
+  portals: Position[];
 };
 
 // "ultra" is a one-off tier for "Loke" — the hidden endgame puzzle shown

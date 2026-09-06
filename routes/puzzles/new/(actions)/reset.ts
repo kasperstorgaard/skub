@@ -14,7 +14,13 @@ export const handler = define.handlers({
       createdAt: new Date(Date.now()),
       difficulty: "medium",
       minMoves: 0,
-      board: { destination: { x: 3, y: 3 }, pieces: [], walls: [] },
+      board: {
+        destination: { x: 3, y: 3 },
+        pieces: [],
+        walls: [],
+        holes: [],
+        portals: [],
+      },
     });
 
     return new Response("", {

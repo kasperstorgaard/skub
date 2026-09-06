@@ -135,7 +135,7 @@ function generateBoard({
 
   const destination = takeRandom(pieceSpots);
 
-  return { destination, pieces, walls };
+  return { destination, pieces, walls, holes: [], portals: [] };
 }
 
 const ORIGIN: Position = { x: 0, y: 0 };
@@ -152,7 +152,11 @@ const sameWall = (a: Wall, b: Wall): boolean =>
  * (which keeps the vertical-wall `x` / horizontal-wall `y` edge alignment).
  */
 const mirrorWalls = (walls: Wall[], axis: "horizontal" | "vertical"): Wall[] =>
-  flipBoard({ destination: ORIGIN, pieces: [], walls }, axis).walls;
+  flipBoard(
+    { destination: ORIGIN, pieces: [], walls, holes: [], portals: [] },
+    axis,
+  )
+    .walls;
 
 /**
  * Grows a wall set toward mirror symmetry: each base wall gets its horizontal,

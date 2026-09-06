@@ -44,6 +44,8 @@ import type { Board, Move } from "#/game/types.ts";
 
 // Real puzzle fixture (static/puzzles/ingrid.md, 7 moves; 26 raw optimal sequences).
 const ingridBoard: Board = {
+  holes: [],
+  portals: [],
   destination: { x: 5, y: 2 },
   pieces: [
     { x: 3, y: 0, type: "blocker" },
@@ -75,6 +77,8 @@ const ingridBoard: Board = {
 const emptyDag = { root: 0, goals: [], predecessors: new Map() };
 
 const asymmetricBoard: Board = {
+  holes: [],
+  portals: [],
   destination: { x: 5, y: 2 },
   pieces: [
     { x: 1, y: 1, type: "blocker" },
@@ -131,10 +135,14 @@ Deno.test("boardSelfSymmetries() is empty for an asymmetric board", () => {
 });
 
 Deno.test("computeTrails() tags every swept cell of a slide", () => {
+  // The wall is what makes the slide stop at (3,0) — trails come from the real
+  // path now, so the move has to be one the board actually allows.
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
-    walls: [],
+    walls: [{ x: 4, y: 0, orientation: "vertical" }],
   };
 
   const trails = computeTrails(board, [[[{ x: 0, y: 0 }, { x: 3, y: 0 }]]]);
@@ -151,6 +159,8 @@ Deno.test("deduplicateSolutions() keeps genuinely distinct routes", () => {
   // Open board A1 -> H8: two L-shaped routes, each with dependent moves that
   // can't be reordered — so they stay two classes.
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -174,6 +184,8 @@ Deno.test("deduplicateSolutions() groups the ingrid solutions as the product doe
 
 Deno.test("setupRatio() is zero when only the puck moves", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -184,6 +196,8 @@ Deno.test("setupRatio() is zero when only the puck moves", () => {
 
 Deno.test("coverage() counts the puck's swept cells over 64", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -195,6 +209,8 @@ Deno.test("coverage() counts the puck's swept cells over 64", () => {
 
 Deno.test("totalDistance() sums a solution's total slide length", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -205,6 +221,8 @@ Deno.test("totalDistance() sums a solution's total slide length", () => {
 
 Deno.test("deception() sums how far the puck slides away from the destination", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 0, y: 0 },
     pieces: [{ x: 3, y: 0, type: "puck" }],
     walls: [],
@@ -216,6 +234,8 @@ Deno.test("deception() sums how far the puck slides away from the destination", 
 
 Deno.test("reversals() counts a piece moving in opposite directions", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 3 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -232,6 +252,8 @@ Deno.test("reversals() counts a piece moving in opposite directions", () => {
 
 Deno.test("crossTrailOverlap() counts cells two pieces both sweep", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [
       { x: 0, y: 3, type: "puck" },
@@ -268,6 +290,8 @@ Deno.test("firstMovePrecision() is the reciprocal of distinct optimal openings",
 
 Deno.test("stopWeighted() scores a slide into the edge as weight 1", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -279,6 +303,8 @@ Deno.test("stopWeighted() scores a slide into the edge as weight 1", () => {
 
 Deno.test("pieceUsage() is zero when no blocker is used", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -289,6 +315,8 @@ Deno.test("pieceUsage() is zero when no blocker is used", () => {
 
 Deno.test("pointlessClearance() counts a blocker that never interacts again", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [
       { x: 0, y: 0, type: "puck" },
@@ -309,6 +337,8 @@ Deno.test("pointlessClearance() counts a blocker that never interacts again", ()
 
 Deno.test("sameDirectionRepeat() counts cells re-crossed in the same direction", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [],
@@ -361,6 +391,8 @@ Deno.test("emptyRegion() measures the largest untouched pocket of the layout", (
   // Structure confined to the top-left: the puck, the goal, one blocker and one
   // wall. Everything from row 2 down is one connected empty region.
   const sparse: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 1, y: 0 },
     pieces: [
       { x: 0, y: 0, type: "puck" },
@@ -376,6 +408,8 @@ Deno.test("emptyRegion() measures the largest untouched pocket of the layout", (
 
 Deno.test("emptyRegion() shrinks when structure is spread across the board", () => {
   const spread: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 4, y: 4 },
     pieces: [
       { x: 0, y: 0, type: "puck" },
@@ -400,6 +434,8 @@ Deno.test("emptyRegion() shrinks when structure is spread across the board", () 
 
 Deno.test("wallSymmetry() is 1 for a mirrored wall layout", () => {
   const mirrored: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 3 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [
@@ -414,6 +450,8 @@ Deno.test("wallSymmetry() is 1 for a mirrored wall layout", () => {
 
 Deno.test("wallSymmetry() is the share of walls that find a partner", () => {
   const halfMirrored: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 3, y: 3 },
     pieces: [{ x: 0, y: 0, type: "puck" }],
     walls: [
@@ -430,6 +468,8 @@ Deno.test("wallSymmetry() is the share of walls that find a partner", () => {
 Deno.test("wallSymmetry() is vacuously 1 when the board has no walls", () => {
   assertEquals(
     wallSymmetry({
+      holes: [],
+      portals: [],
       destination: { x: 3, y: 3 },
       pieces: [{ x: 0, y: 0, type: "puck" }],
       walls: [],
@@ -440,6 +480,8 @@ Deno.test("wallSymmetry() is vacuously 1 when the board has no walls", () => {
 
 Deno.test("clumping() is the share of same-kind pairs within Chebyshev 1", () => {
   const clumped: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [
       { x: 0, y: 0, type: "puck" },
@@ -550,6 +592,8 @@ Deno.test("deadSpace() is the fraction of cells no trail, piece, or goal touches
 
 Deno.test("openingSetup() is zero when the puck opens the solution", () => {
   const board: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 0 },
     pieces: [
       { x: 0, y: 0, type: "puck" },
@@ -571,6 +615,8 @@ Deno.test("openingSetup() is zero when the puck opens the solution", () => {
 // Both blockers can slide up independently, so the two setup moves reorder
 // freely — the shape the next two tests need.
 const shuffleBoard: Board = {
+  holes: [],
+  portals: [],
   destination: { x: 6, y: 0 },
   pieces: [
     { x: 0, y: 0, type: "puck" },
@@ -679,6 +725,8 @@ Deno.test("checkStaticGates() fails G10 for an egregiously clumped board", () =>
   // well past MAX_CLUMPING 0.25. None is walled in on four sides (G9 passes),
   // so the static G10 check rejects it before the solve.
   const clumped: Board = {
+    holes: [],
+    portals: [],
     destination: { x: 7, y: 7 },
     pieces: [
       { x: 0, y: 0, type: "puck" },
@@ -728,5 +776,102 @@ Deno.test("scoreBoard() scores each route and aggregates with the mean", () => {
       minIsWorstRoute: true,
       allRoutesInRange: true,
     },
+  );
+});
+
+Deno.test("stopWeighted() counts a blocker dropped in a hole as an arranged stop", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 7, type: "puck" },
+      { x: 4, y: 7, type: "blocker" },
+    ],
+    walls: [],
+    holes: [{ x: 4, y: 0 }],
+    portals: [],
+  };
+
+  // Blocker into the hole (3), then the puck runs to the edge (1).
+  const moves: Move[] = [
+    [{ x: 4, y: 7 }, { x: 4, y: 0 }],
+    [{ x: 0, y: 7 }, { x: 7, y: 7 }],
+  ];
+
+  assertEquals(stopWeighted(board, moves), 4);
+});
+
+Deno.test("stopWeighted() counts a piece left on a portal as an arranged stop", () => {
+  const board: Board = {
+    destination: { x: 5, y: 5 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 2, y: 0 }, { x: 7, y: 4 }],
+  };
+
+  // The puck comes through the portal and is stopped by the edge beyond it,
+  // resting on the portal itself — attributed to the portal, not that edge.
+  const moves: Move[] = [[{ x: 0, y: 0 }, { x: 7, y: 4 }]];
+
+  assertEquals(stopWeighted(board, moves), 3);
+});
+
+// Metrics that used to read direction or distance off a move's raw endpoints.
+// A slide through a portal ends off its own axis, so the endpoints describe a
+// journey the piece never made.
+
+Deno.test("totalDistance() counts the cells crossed, not the portal's jump", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 3, y: 0 }, { x: 1, y: 5 }],
+  };
+
+  // Three cells to the portal, six on from the other one. The endpoints alone
+  // would say 12, which counts the teleport as travel.
+  assertEquals(
+    totalDistance(board, [[{ x: 0, y: 0 }, { x: 7, y: 5 }]]),
+    9,
+  );
+});
+
+Deno.test("reversals() reads the direction travelled, not the endpoints", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 0, y: 3 }, { x: 6, y: 5 }],
+  };
+
+  // The puck slides down through the portal and comes out heading down still,
+  // ending at (6,7) — off to the right of where it began. Read off those
+  // endpoints the move looks like it went right, which would pair with the
+  // left slide after it and report a reversal that never happened.
+  const moves: Move[] = [
+    [{ x: 0, y: 0 }, { x: 6, y: 7 }],
+    [{ x: 6, y: 7 }, { x: 0, y: 7 }],
+  ];
+
+  assertEquals(reversals(board, moves), 0);
+});
+
+Deno.test("wallUtilization() credits the wall a portal slide actually stops on", () => {
+  const board: Board = {
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [{ x: 4, y: 7, orientation: "horizontal" }],
+    holes: [],
+    portals: [{ x: 0, y: 3 }, { x: 4, y: 5 }],
+  };
+
+  // The puck slides down, comes out at (4,5) and is stopped by the wall below
+  // (4,6). Keyed off the endpoints the lookup misses and the wall reads as
+  // decorative clutter.
+  assertEquals(
+    wallUtilization(board, [[[{ x: 0, y: 0 }, { x: 4, y: 6 }]]]),
+    1,
   );
 });

@@ -1,11 +1,11 @@
 import { HttpError } from "fresh";
 
 import { incrementHintUsageCount } from "#/db/stats.ts";
-import { resolveMoves } from "#/game/board.ts";
+import { isLooped, resolveMoves } from "#/game/board.ts";
 import { getHintCount, setHintCount } from "#/game/cookies.ts";
 import { solveSync } from "#/game/solver.ts";
 import { encodeMove } from "#/game/strings.ts";
-import type { Board } from "#/game/types.ts";
+import type { Board, Move } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { isDev } from "#/lib/env.ts";
 import { trackHintRequested } from "#/lib/tracking.ts";
@@ -44,7 +44,21 @@ export const handler = define.handlers({
       throw new HttpError(400, "Invalid moves");
     }
 
-    const solution = solveSync(board);
+    // Dropping the puck in a hole, or getting caught in a portal loop, leaves
+    // nothing to hint toward — undo is the only way on from either.
+    const hasPuck = board.pieces.some((piece) => piece.type === "puck");
+    if (!hasPuck || isLooped(puzzle.board, played)) {
+      throw new HttpError(400, "No hint available from here");
+    }
+
+    // A board a player has made unsolvable (a blocker dropped in a hole, say)
+    // is a bad request, not a server error.
+    let solution: Move[];
+    try {
+      solution = solveSync(board);
+    } catch {
+      throw new HttpError(400, "No hint available from here");
+    }
 
     trackHintRequested(ctx.state, puzzle, {
       url: ctx.req.url,

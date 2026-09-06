@@ -22,6 +22,8 @@ const EMPTY_PUZZLE: Puzzle = {
     destination: { x: 3, y: 3 },
     pieces: [],
     walls: [],
+    holes: [],
+    portals: [],
   },
 };
 

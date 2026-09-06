@@ -1,13 +1,21 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { useCallback, useMemo, useRef, useState } from "preact/hooks";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "preact/hooks";
 
 import { useRouter } from "./router.tsx";
 import { useMoves } from "#/client/moves.ts";
 import { calculateMoveSpeed } from "#/client/touch.ts";
 import { Icon, X } from "#/components/icons.tsx";
+import { PortalRings } from "#/components/portal-rings.tsx";
 import {
   getGrid,
+  getMoveSlide,
   getTargets,
   isPositionSame,
   isValidSolution,
@@ -29,7 +37,18 @@ import {
   getReplaySpeed,
 } from "#/game/url.ts";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
-import { buildReplayKeyframes, type KeyframeStop } from "#/lib/replay.ts";
+import {
+  buildPortalKeyframes,
+  buildPortalLoopKeyframes,
+  buildReplayKeyframes,
+  type KeyframeStop,
+  loopDuration,
+  loopName,
+  type PortalLoop,
+  type PortalWarp,
+  warpDuration,
+  warpName,
+} from "#/lib/replay.ts";
 
 type BoardProps = {
   href: Signal<string>;
@@ -59,10 +78,24 @@ export default function Board(
     moves,
   ]);
 
+  const { pieces, dropped } = useMemo(
+    () => trackPieces(puzzle.value.board, moves),
+    [puzzle.value.board, moves],
+  );
+
   const hasSolution = useMemo(
     () => mode.value === "solve" && isValidSolution(board),
     [board, mode.value],
   );
+
+  // A portal loop leaves the piece circling with nowhere to come to rest, so
+  // the board stops taking input until the move is undone.
+  const loop = useMemo(
+    () => getPortalLoop(puzzle.value.board, moves),
+    [puzzle.value.board, moves],
+  );
+
+  const isLocked = loop != null;
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -74,10 +107,10 @@ export default function Board(
 
   const guides = useMemo(
     () =>
-      mode.value === "solve"
+      mode.value === "solve" && !isLocked
         ? getGuides(board, { active: state.active, hint: state.hint })
         : [],
-    [state.active, state.hint, board, mode.value],
+    [state.active, state.hint, board, mode.value, isLocked],
   );
 
   const activePiece = useMemo(() => {
@@ -93,6 +126,46 @@ export default function Board(
 
   const [wiggle, setWiggle] = useState({ puck: isNew, blocker: isNew });
 
+  // A hole removes the piece outright, so there is nothing left to animate.
+  // Keep the one that just fell mounted for a beat and let it drop away.
+  const [fall, setFall] = useState<FallingPiece | null>(null);
+  const playedCount = useRef(moves.length);
+
+  // Arriving on a URL that already holds the move should show the finished
+  // board rather than replay it, so nothing animates on the very first render.
+  const hasMounted = useRef(false);
+
+  /**
+   * Replay animates only once hydration is done with the DOM. Server-rendering
+   * the animation means it is already running when Preact takes over, and
+   * whatever it touches on the way past restarts it a few frames in — the piece
+   * sets off, then jumps back and sets off again.
+   */
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    hasMounted.current = true;
+    setIsHydrated(true);
+  }, []);
+
+  /**
+   * Derived during the render that moves the piece, not in an effect. An effect
+   * runs a render too late: the piece has already been given its final position
+   * by then, and the plain transform transition has started dragging it
+   * straight there — so the slide played twice, once wrongly.
+   */
+  const warp = useMemo(
+    () => hasMounted.current ? getPortalWarp(puzzle.value.board, moves) : null,
+    [moves, puzzle.value.board],
+  );
+
+  useEffect(() => {
+    const isNewMove = moves.length > playedCount.current;
+    playedCount.current = moves.length;
+
+    if (isNewMove) setFall(getFallingPiece(puzzle.value.board, moves));
+  }, [moves, puzzle.value.board]);
+
   const onMove = useCallback(
     (src: Position, opts: {
       direction: Direction;
@@ -101,12 +174,7 @@ export default function Board(
     }) => {
       if (!src || !boardRef.current) return;
 
-      const possibleTargets = getTargets(src, {
-        pieces: board.pieces,
-        walls: board.walls,
-      });
-
-      const target = possibleTargets[opts.direction];
+      const target = getTargets(src, board)[opts.direction];
       let updatedHref = getActiveHref(src, { ...state, href: href.value });
 
       if (target) {
@@ -133,7 +201,7 @@ export default function Board(
     pieces: board.pieces,
     active: state.active,
     onMove,
-    isEnabled: mode.value === "solve",
+    isEnabled: mode.value === "solve" && !isLocked,
   });
 
   return (
@@ -168,10 +236,6 @@ export default function Board(
               {...space}
               destination={board.destination}
               hasSolution={hasSolution}
-              isActive={Boolean(
-                mode.value === "editor" && state.active &&
-                  isPositionSame(state.active, space),
-              )}
               href={mode.value === "editor"
                 ? getActiveHref(space, { ...state, href: href.value })
                 : undefined}
@@ -180,7 +244,19 @@ export default function Board(
           ))
         )}
 
-        <BoardDestination {...board.destination} />
+        {board.holes.map((hole) => (
+          <BoardHole key={`hole-${hole.x}-${hole.y}`} {...hole} />
+        ))}
+
+        {board.portals.map((portal) => (
+          <BoardPortal key={`portal-${portal.x}-${portal.y}`} {...portal} />
+        ))}
+
+        {mode.value === "editor" && state.active && (
+          <BoardActiveCell {...state.active} />
+        )}
+
+        {board.destination && <BoardDestination {...board.destination} />}
 
         {board.walls.map((wall) => (
           <BoardWall
@@ -204,14 +280,16 @@ export default function Board(
           />
         ))}
 
-        {board.pieces.map((piece, idx) => (
+        {pieces.map((piece) => (
           <BoardPiece
+            key={piece.id}
             {...piece}
             href={getActiveHref(piece, { ...state, href: href.value })}
-            id={getPieceId(piece, idx)}
+            warp={warp?.id === piece.id ? warp : undefined}
+            loop={loop?.id === piece.id ? loop : undefined}
             isActive={state.active && isPositionSame(piece, state.active)}
-            isReadonly={mode.value !== "solve"}
-            isReplay={mode.value === "replay"}
+            isReadonly={mode.value !== "solve" || isLocked}
+            isReplay={mode.value === "replay" && isHydrated}
             wiggle={mode.value === "solve" && wiggle[piece.type]}
             onFocus={(event) => {
               const href = (event.target as HTMLAnchorElement).href;
@@ -220,6 +298,35 @@ export default function Board(
             }}
           />
         ))}
+
+        {
+          /* Replay resolves the board to how it ends up, so a swallowed piece
+            would otherwise be missing for the whole playback rather than seen
+            to fall. Its keyframes hold it visible until the move that takes it. */
+        }
+        {mode.value === "replay" && dropped.map((piece) => (
+          <BoardPiece
+            key={piece.id}
+            {...piece}
+            href="#"
+            isReadonly
+            isReplay={isHydrated}
+            isDropped
+            onFocus={() => {}}
+          />
+        ))}
+
+        {warp && <style>{buildPortalKeyframes(warp)}</style>}
+
+        {loop && <style>{buildPortalLoopKeyframes(loop)}</style>}
+
+        {fall && (
+          <BoardFallingPiece
+            key={`fall-${fall.to.x}-${fall.to.y}-${moves.length}`}
+            {...fall}
+            onDone={() => setFall(null)}
+          />
+        )}
 
         {mode.value === "replay" && (
           <BoardReplayStyles
@@ -261,21 +368,20 @@ function BoardWall({ x, y, orientation }: Wall) {
 }
 
 type BoardSpaceProps = Position & {
-  isActive?: boolean;
   href?: string;
-  destination: Position;
+  destination?: Position;
   hasSolution: boolean;
 };
 
 function BoardSpace(
-  { x, y, href, isActive, destination, hasSolution }: BoardSpaceProps,
+  { x, y, href, destination, hasSolution }: BoardSpaceProps,
 ) {
   const tileStyle = {
     "--x": x,
     "--y": y,
-    "--ripple-tx": Math.sign(x - destination.x),
-    "--ripple-ty": Math.sign(y - destination.y),
-    "--ripple-delay": hasSolution
+    "--ripple-tx": destination ? Math.sign(x - destination.x) : 0,
+    "--ripple-ty": destination ? Math.sign(y - destination.y) : 0,
+    "--ripple-delay": hasSolution && destination
       ? `${getRippleDelay({ x, y }, destination)}ms`
       : undefined,
   };
@@ -288,7 +394,6 @@ function BoardSpace(
           "grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
           "border-1 border-stone-9 border-b-1 border-r-1 border-r-stone-7 border-b-stone-7",
           hasSolution && "tile-ripple",
-          isActive && "bg-brand/30 animate-blink",
         )}
         style={tileStyle}
         data-router="replace"
@@ -305,6 +410,62 @@ function BoardSpace(
       )}
       style={tileStyle}
     />
+  );
+}
+
+/**
+ * The editor's selection tint, drawn as its own cell rather than on the space
+ * beneath, because a hole or a portal fills its cell opaquely and would bury it.
+ */
+function BoardActiveCell({ x, y }: Position) {
+  return (
+    <div
+      className={clsx(
+        "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
+        // Positioned, because a portal's wrapper is — and a positioned sibling
+        // paints above a non-positioned one whatever the document order, which
+        // is what kept burying this.
+        "relative rounded-1 bg-brand/30 animate-blink pointer-events-none",
+      )}
+      style={{ "--x": x, "--y": y }}
+    />
+  );
+}
+
+function BoardHole({ x, y }: Position) {
+  return (
+    <div
+      className={clsx(
+        "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
+        "rounded-1 bg-hole overflow-hidden pointer-events-none",
+      )}
+      style={{ "--x": x, "--y": y }}
+    >
+      {
+        /* A fine hatch, so the void reads as a surface rather than a gap in the
+          render — the only cue on themes whose ground is already black. */
+      }
+      <div
+        className={clsx(
+          "size-full opacity-8",
+          "bg-[repeating-linear-gradient(45deg,#fff_0_1px,transparent_1px_5px)]",
+        )}
+      />
+    </div>
+  );
+}
+
+function BoardPortal({ x, y }: Position) {
+  return (
+    <div
+      className={clsx(
+        "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
+        "relative overflow-hidden rounded-1 pointer-events-none",
+      )}
+      style={{ "--x": x, "--y": y }}
+    >
+      <PortalRings />
+    </div>
   );
 }
 
@@ -330,9 +491,11 @@ type MoveGuideProps = Guide & {
   href: string;
 };
 
-function MoveGuide({ move, href, isHint }: MoveGuideProps) {
-  const [active, target] = move;
-  const isVertical = active.x === target.x;
+// `to` is the end of the slide's first leg, not where the piece comes to rest —
+// a slide through a portal is drawn only as far as the portal it goes in by.
+function MoveGuide({ move, to, href, isHint }: MoveGuideProps) {
+  const [active] = move;
+  const isVertical = active.x === to.x;
 
   return (
     <>
@@ -345,12 +508,12 @@ function MoveGuide({ move, href, isHint }: MoveGuideProps) {
         style={isVertical
           ? {
             gridColumnStart: `${active.x + 1}`,
-            gridRowStart: `${Math.min(active.y, target.y) + 1}`,
-            gridRowEnd: `${Math.max(active.y, target.y) + 2}`,
+            gridRowStart: `${Math.min(active.y, to.y) + 1}`,
+            gridRowEnd: `${Math.max(active.y, to.y) + 2}`,
           }
           : {
-            gridColumnStart: `${Math.min(active.x, target.x) + 1}`,
-            gridColumnEnd: `${Math.max(active.x, target.x) + 2}`,
+            gridColumnStart: `${Math.min(active.x, to.x) + 1}`,
+            gridColumnEnd: `${Math.max(active.x, to.x) + 2}`,
             gridRowStart: `${active.y + 1}`,
           }}
       />
@@ -364,10 +527,10 @@ function MoveGuide({ move, href, isHint }: MoveGuideProps) {
           isHint && "border-(--hint-bg) animate-blink",
         )}
         style={{
-          "--x": target.x,
-          "--y": target.y,
+          "--x": to.x,
+          "--y": to.y,
         }}
-        aria-label={`move to ${target.x},${target.y}`}
+        aria-label={`move to ${to.x},${to.y}`}
         tabIndex={-1}
         data-router="replace"
       />
@@ -384,6 +547,9 @@ type BoardPieceProps = {
   isActive?: boolean;
   isReadonly?: boolean;
   isReplay?: boolean;
+  isDropped?: boolean;
+  warp?: PortalWarp;
+  loop?: PortalLoop;
   wiggle?: boolean;
   onFocus: (event: FocusEvent) => void;
 };
@@ -397,7 +563,10 @@ function BoardPiece(
     type,
     isReadonly,
     isReplay,
+    isDropped,
     isActive,
+    warp,
+    loop,
     wiggle,
     onFocus,
   }: BoardPieceProps,
@@ -413,8 +582,21 @@ function BoardPiece(
         // replay-{id} keyframes are generated by BoardReplayStyles, only mounted
         // in replay mode. Setting the inline animation outside that mode would
         // shadow the board exit animation (inline > stylesheet specificity).
+        //
+        // `both` holds the piece at its opening keyframe until the replay
+        // reaches it. Without it the element paints once at the position the
+        // board resolves to — where the piece ends up — and twitches back to
+        // the start as the animation takes over.
         animation: isReplay
-          ? `replay-${id} var(--replay-duration) ease-in-out`
+          ? `replay-${id} var(--replay-duration) ease-in-out both`
+          // A slide through a portal is not a straight line, so it animates on
+          // generated keyframes rather than the plain transform transition,
+          // which would cut straight across the board.
+          : warp
+          ? `${warpName(warp)} ${warpDuration(warp)}ms linear`
+          // Caught between two portals: it circles until the move is undone.
+          : loop
+          ? `${loopName(loop.id)} ${loopDuration(loop)}ms linear infinite`
           : undefined,
         "--replay-duration": "calc(var(--replay-len) * var(--replay-speed))",
       }}
@@ -423,7 +605,10 @@ function BoardPiece(
         "grid col-start-1 row-start-1 w-full h-full p-(--pad)",
         "translate-x-[calc((var(--space-w)+var(--gap))*var(--x))]",
         "translate-y-[calc((var(--space-w)+var(--gap))*var(--y))]",
-        "transition-transform duration-(--piece-speed,200ms) ease-out",
+        // A keyframed piece drives --x/--y itself, so the transition would only
+        // smear the steps it is trying to make crisp.
+        !warp && !loop && !isReplay &&
+          "transition-transform duration-(--piece-speed,200ms) ease-out",
         isReadonly && "pointer-events-none",
       )}
       tabIndex={isReadonly ? -1 : 0}
@@ -433,6 +618,17 @@ function BoardPiece(
       aria-current={isActive ? true : undefined}
     >
       <div
+        style={{
+          animation: isDropped
+            ? `replay-${id}-drop var(--replay-duration) ease-in-out both`
+            : warp
+            ? `${warpName(warp)}-squish ${warpDuration(warp)}ms linear`
+            : loop
+            ? `${loopName(loop.id)}-squish ${
+              loopDuration(loop)
+            }ms linear infinite`
+            : undefined,
+        }}
         className={clsx(
           "w-full h-full",
           type === "puck" && "bg-ui-2 rounded-round",
@@ -442,6 +638,130 @@ function BoardPiece(
         )}
       />
     </a>
+  );
+}
+
+type FallingPiece = {
+  type: Piece["type"];
+  from: Position;
+  to: Position;
+};
+
+/** The piece the last move dropped in a hole, if it dropped one. */
+function getFallingPiece(
+  board: Puzzle["board"],
+  moves: Move[],
+): FallingPiece | null {
+  const lastMove = moves.at(-1);
+  if (!lastMove) return null;
+
+  const before = resolveMoves(board, moves.slice(0, -1));
+  const slide = getMoveSlide(lastMove, before);
+  if (slide?.outcome !== "dropped") return null;
+
+  const piece = before.pieces.find((item) => isPositionSame(item, lastMove[0]));
+  if (!piece) return null;
+
+  // Start from the last leg, so a piece that fell after a portal drops from
+  // where it came out rather than cutting across the board.
+  const lastLeg = slide.segments[slide.segments.length - 1];
+
+  return { type: piece.type, from: lastLeg[0], to: slide.target };
+}
+
+/**
+ * The circuit a piece is stuck on, if the last move ended in a portal loop.
+ *
+ * Derived from the move list rather than stored, so a reloaded or shared link
+ * arrives at the same locked board.
+ */
+function getPortalLoop(
+  board: Puzzle["board"],
+  moves: Move[],
+): PortalLoop | null {
+  const lastMove = moves.at(-1);
+  if (!lastMove) return null;
+
+  const { pieces } = trackPieces(board, moves.slice(0, -1));
+  const slide = getMoveSlide(lastMove, { ...board, pieces });
+  if (slide?.outcome !== "looped") return null;
+
+  const piece = pieces.find((item) => isPositionSame(item, lastMove[0]));
+  if (!piece) return null;
+
+  // The last leg runs from the portal it came out of back into the one it
+  // went in by — the circuit it now repeats.
+  return { id: piece.id, leg: slide.segments[slide.segments.length - 1] };
+}
+
+/** The slide the last move took through a portal, if it took one. */
+function getPortalWarp(
+  board: Puzzle["board"],
+  moves: Move[],
+): PortalWarp | null {
+  const lastMove = moves.at(-1);
+  if (!lastMove) return null;
+
+  const { pieces } = trackPieces(board, moves.slice(0, -1));
+  const slide = getMoveSlide(lastMove, { ...board, pieces });
+
+  // Only an ordinary slide that happens to pass through a portal warps. One leg
+  // means it never reached one; a dropped piece is the falling ghost's job; and
+  // a loop has no end to travel to, so it circles on getPortalLoop's animation
+  // instead — which this would otherwise mask, being picked first.
+  if (!slide || slide.segments.length < 2) return null;
+  if (slide.outcome !== "stopped") return null;
+
+  const piece = pieces.find((item) => isPositionSame(item, lastMove[0]));
+  if (!piece) return null;
+
+  return { id: piece.id, legs: slide.segments, nonce: moves.length };
+}
+
+type BoardFallingPieceProps = FallingPiece & {
+  onDone: () => void;
+};
+
+/**
+ * A piece on its way into a hole: it slides the last leg like any other move,
+ * then the inner shape scales away once it has arrived. Mounting at `from` and
+ * moving on the next frame is what gives the transition something to animate.
+ */
+function BoardFallingPiece(
+  { type, from, to, onDone }: BoardFallingPieceProps,
+) {
+  const [at, setAt] = useState(from);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setAt(to));
+    return () => cancelAnimationFrame(frame);
+  }, [to]);
+
+  return (
+    <div
+      style={{
+        "--x": at.x,
+        "--y": at.y,
+        "--pad": "min(20%,var(--size-2))",
+      }}
+      className={clsx(
+        "grid col-start-1 row-start-1 w-full h-full p-(--pad) pointer-events-none",
+        "translate-x-[calc((var(--space-w)+var(--gap))*var(--x))]",
+        "translate-y-[calc((var(--space-w)+var(--gap))*var(--y))]",
+        "transition-transform duration-(--piece-speed,200ms) ease-out",
+      )}
+    >
+      <div
+        onTransitionEnd={onDone}
+        className={clsx(
+          "w-full h-full origin-center",
+          type === "puck" && "bg-ui-2 rounded-round",
+          type === "blocker" && "bg-ui-3 rounded-1",
+          "transition-all ease-in duration-300 delay-(--piece-speed,200ms)",
+          at === from ? "scale-100 opacity-100" : "scale-0 opacity-0",
+        )}
+      />
+    </div>
   );
 }
 
@@ -457,13 +777,17 @@ function BoardReplayStyles({ puzzle, moves }: BoardReplayProps) {
   const stops: KeyframeStop[] = [];
   for (let idx = 0; idx < moves.length; idx++) {
     const move = moves[idx];
-    const state = resolveMoves(puzzle.board, moves.slice(0, idx));
-    const piece = state.pieces.find((item) => isPositionSame(item, move[0]));
+    const { pieces } = trackPieces(puzzle.board, moves.slice(0, idx));
+    const piece = pieces.find((item) => isPositionSame(item, move[0]));
+    const slide = getMoveSlide(move, { ...puzzle.board, pieces });
 
-    if (!piece) continue;
+    if (!piece || !slide) continue;
 
-    const id = getPieceId(piece, state.pieces.indexOf(piece));
-    stops.push({ id, from: move[0], to: move[1] });
+    stops.push({
+      id: piece.id,
+      legs: slide.segments,
+      dropped: slide.outcome === "dropped",
+    });
   }
 
   return (
@@ -477,4 +801,47 @@ function BoardReplayStyles({ puzzle, moves }: BoardReplayProps) {
 
 function getPieceId(piece: Piece, idx: number) {
   return `${piece.type === "puck" ? "p" : "b"}_${idx}`;
+}
+
+type TrackedPiece = Piece & { id: string };
+
+type TrackedBoard = {
+  pieces: TrackedPiece[];
+  /** The pieces a hole swallowed, each at the cell it fell into. */
+  dropped: TrackedPiece[];
+};
+
+/**
+ * Resolves the board while keeping hold of which piece is which, pinned to
+ * where each one started, and of the ones that left along the way.
+ *
+ * Array position cannot serve as identity now that a hole can remove a piece:
+ * every later slot shifts up, and a renderer keying on position would hand one
+ * piece's element to another and animate the wrong one.
+ */
+function trackPieces(board: Puzzle["board"], moves: Move[]): TrackedBoard {
+  let pieces: TrackedPiece[] = board.pieces.map((piece, idx) => ({
+    ...piece,
+    id: getPieceId(piece, idx),
+  }));
+  const dropped: TrackedPiece[] = [];
+
+  for (const move of moves) {
+    const slide = getMoveSlide(move, { ...board, pieces });
+    if (!slide) break;
+
+    if (slide.outcome === "dropped") {
+      const piece = pieces.find((item) => isPositionSame(item, move[0]));
+      if (piece) dropped.push({ ...piece, ...slide.target });
+
+      pieces = pieces.filter((item) => !isPositionSame(item, move[0]));
+      continue;
+    }
+
+    pieces = pieces.map((piece) =>
+      isPositionSame(piece, move[0]) ? { ...piece, ...move[1] } : piece
+    );
+  }
+
+  return { pieces, dropped };
 }
