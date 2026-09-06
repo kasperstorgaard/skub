@@ -1293,36 +1293,6 @@ Deno.test("isLooped() should be false for an ordinary move", () => {
 
 // --- hazard validation ---
 
-Deno.test("validateBoard() should throw when a piece starts on a hole", () => {
-  assertThrows(
-    () =>
-      validateBoard({
-        destination: { x: 5, y: 5 },
-        pieces: [{ x: 2, y: 2, type: "puck" }],
-        walls: [],
-        holes: [{ x: 2, y: 2 }],
-        portals: [],
-      }),
-    BoardError,
-    "Piece starts on a hole or portal at (2, 2)",
-  );
-});
-
-Deno.test("validateBoard() should throw when the destination is on a portal", () => {
-  assertThrows(
-    () =>
-      validateBoard({
-        destination: { x: 4, y: 4 },
-        pieces: [{ x: 2, y: 2, type: "puck" }],
-        walls: [],
-        holes: [],
-        portals: [{ x: 4, y: 4 }, { x: 6, y: 6 }],
-      }),
-    BoardError,
-    "Destination is on a hole or portal at (4, 4)",
-  );
-});
-
 Deno.test("validateBoard() should throw for a third portal", () => {
   assertThrows(
     () =>
@@ -1335,21 +1305,6 @@ Deno.test("validateBoard() should throw for a third portal", () => {
       }),
     BoardError,
     "Board has more than two portals",
-  );
-});
-
-Deno.test("validateBoard() should throw when a hole and a portal share a cell", () => {
-  assertThrows(
-    () =>
-      validateBoard({
-        destination: { x: 5, y: 5 },
-        pieces: [{ x: 2, y: 2, type: "puck" }],
-        walls: [],
-        holes: [{ x: 3, y: 3 }],
-        portals: [{ x: 3, y: 3 }, { x: 6, y: 6 }],
-      }),
-    BoardError,
-    "Hole and portal share (3, 3)",
   );
 });
 

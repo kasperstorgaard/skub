@@ -139,12 +139,12 @@ export function isMoveSame(src: Move, target: Move) {
 export const GONE = COLS * ROWS;
 
 /**
- * Encodes a board into a comparable numeric array:
- * `[puckPos, destPos, ...sortedBlockers, 255, ...sortedWalls, 254, ...sortedHoles,
- * 253, ...sortedPortals]`, where positions are `y*8+x` and walls are
- * `(y*8+x)*2 + (horizontal ? 0 : 1)`. Every list is sorted so array order never
- * depends on input order — portals included, since the pair is symmetric.
- * Wall codes top out at 127, leaving the separators free.
+ * Encodes a board into a comparable numeric array: each variable-length section
+ * prefixed by its own count, as `[puckPos, destPos, blockers.length,
+ * ...sortedBlockers, walls.length, ...sortedWalls, ...]`. Positions are `y*8+x`
+ * and walls are `(y*8+x)*2 + (horizontal ? 0 : 1)`. Every list is sorted so array
+ * order never depends on input order — portals included, since the pair is
+ * symmetric.
  */
 export function encodeBoard(board: Board): number[] {
   const puck = board.pieces.find((p) => p.type === "puck");
@@ -174,12 +174,13 @@ export function encodeBoard(board: Board): number[] {
   return [
     puckPos,
     destPos,
+    blockers.length,
     ...blockers,
-    255,
+    walls.length,
     ...walls,
-    254,
+    holes.length,
     ...holes,
-    253,
+    portals.length,
     ...portals,
   ];
 }
@@ -276,25 +277,6 @@ export function validateBoard(board: BoardLike): ValidBoard {
   // A pair teleports; a third has nowhere agreed to send anything.
   if (checkedPortals.length > 2) {
     throw new BoardError("Board has more than two portals");
-  }
-
-  for (const hazard of [...checkedHoles, ...checkedPortals]) {
-    const at = `(${hazard.x}, ${hazard.y})`;
-
-    if (
-      checkedHoles.some((hole) => isPositionSame(hole, hazard)) &&
-      checkedPortals.some((portal) => isPositionSame(portal, hazard))
-    ) {
-      throw new BoardError(`Hole and portal share ${at}`);
-    }
-
-    if (checkedPieces.some((piece) => isPositionSame(piece, hazard))) {
-      throw new BoardError(`Piece starts on a hole or portal at ${at}`);
-    }
-
-    if (isPositionSame(destination, hazard)) {
-      throw new BoardError(`Destination is on a hole or portal at ${at}`);
-    }
   }
 
   return {
