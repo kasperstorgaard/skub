@@ -32,7 +32,7 @@
   --color-ui-4: var(--orange-6);
   --color-ui-contrast: var(--pink-7);
   --color-hole: #05060a;
-  --color-portal: var(--blue-4);
+  --color-portal: var(--indigo-4);
   --color-portal-alt: var(--indigo-9);
 }
 
@@ -185,7 +185,7 @@
   --color-ui-contrast: #8839ef;
   --color-hole: #3b3f52;
   --color-portal: #1e66f5;
-  --color-portal-alt: #ccd6f4;
+  --color-portal-alt: #bcd6f4;
 }
 
 /* Catppuccin Latte, adjusted for print (catppuccin.com) */
