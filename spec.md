@@ -38,6 +38,20 @@ never carry a wall on its own edge, tiles combine in any rotation without seams
 needing special handling — and because `P`/`Z` tiles hold exactly one portal
 each, dealing them in pairs is what keeps a board's portal count at 0 or 2.
 
+## Later
+
+While arranging, there is no signal at all about how hard the board is likely to
+be — the solver only has something to say once puck and destination are down.
+Cheap computed stats, updated after each arrange action, would give a sense of
+that earlier.
+
+Lanes don't transfer to this: a lane is a 4-wide run within one tile, while a
+board-level straight run crosses two of them, so it measures something else.
+What the per-board metrics should be is still open — the promising direction is
+heatmaps rather than single numbers, since where a board is dead or busy is
+spatial and a person reading the board can act on it. Which quantities to shade
+is the open part. Not in this change.
+
 ## Non-goals
 
 - **The solver and the scoring engine are untouched.** They still measure every
