@@ -26,6 +26,8 @@ export type BoardSvgProps = SVGAttributes<SVGSVGElement> & {
   board: Board;
   width?: number;
   height?: number;
+  /** Cells per side. Four draws a tile; the drawing is otherwise the same. */
+  size?: number;
   colors?: ThumbnailColors;
   background?: string;
 };
@@ -37,12 +39,13 @@ export function Thumbnail({
   board,
   width = 400,
   height = 400,
+  size = 8,
   colors = CSS_VAR_COLORS,
   background,
   ...rest
 }: BoardSvgProps) {
   const gap = width * 0.02;
-  const cellSize = (width - (7 * gap)) / 8;
+  const cellSize = (width - ((size - 1) * gap)) / size;
   const pieceSize = cellSize * 0.7;
 
   const cellX = (x: number) => x * (cellSize + gap);
@@ -189,17 +192,16 @@ export function Thumbnail({
             />
           );
         } else {
-          const size = pieceSize;
-          const half = size / 2;
-          const cornerRadius = size * 0.15;
+          const half = pieceSize / 2;
+          const cornerRadius = pieceSize * 0.15;
           return (
             <rect
               className="svg-blocker"
               key={`piece-${idx}`}
               x={cx - half}
               y={cy - half}
-              width={size}
-              height={size}
+              width={pieceSize}
+              height={pieceSize}
               rx={cornerRadius}
               ry={cornerRadius}
               fill={colors.ui3}
@@ -215,4 +217,5 @@ export type ThumbnailProps = HTMLAttributes<SVGSVGElement> & {
   board: Board;
   width?: number;
   height?: number;
+  size?: number;
 };

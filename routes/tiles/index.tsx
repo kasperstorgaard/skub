@@ -2,7 +2,7 @@ import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
-import { TileThumbnail } from "#/components/tile-thumbnail.tsx";
+import { Thumbnail } from "#/components/thumbnail.tsx";
 import { define } from "#/core.ts";
 import { readTiles } from "#/game/tile-store.ts";
 import { TILE_CATEGORIES, type TileEntry } from "#/game/types.ts";
@@ -36,35 +36,47 @@ export default define.page<typeof handler>(function TilesPage(props) {
         </p>
       )}
 
-      {TILE_CATEGORIES.map((category) => {
-        const rows = props.data.filter((row) => row.category === category);
-        if (!rows.length) return null;
+      <div className="flex flex-col gap-fl-3">
+        {TILE_CATEGORIES.map((category) => {
+          const rows = props.data.filter((row) => row.category === category);
+          if (!rows.length) return null;
 
-        return (
-          <section key={category} className="mb-fl-3">
-            <h2 className="text-3 text-text-2 mb-fl-1 ms-0 pb-1 border-b border-text-3">
-              {category}
-            </h2>
+          return (
+            <section key={category}>
+              <h2 className="text-3 text-text-2 mb-fl-1 ms-0 pb-1 border-b border-text-3">
+                {category}
+              </h2>
 
-            {/* Nothing resets a list here, so the marker and indent are ours. */}
-            <ul className="flex flex-wrap gap-fl-2 list-none ps-0 my-0">
-              {rows.map((row) => (
-                <li key={row.id} className="min-w-40">
-                  <a
-                    href={`/tiles/edit?id=${row.id}`}
-                    className="flex flex-col items-center gap-1 no-underline"
-                  >
-                    <TileThumbnail tile={row.tile} className="size-24" />
-                    <span className="text-fl-0 text-link">
-                      {row.id.toUpperCase()}
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </section>
-        );
-      })}
+              {/* Nothing resets a list here, so the marker and indent are ours. */}
+              <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-fl-2 list-none ps-0 my-0">
+                {rows.map((row) => (
+                  <li key={row.id}>
+                    <a
+                      href={`/tiles/edit?id=${row.id}`}
+                      className="flex flex-col items-center gap-1 no-underline"
+                    >
+                      {
+                        /* Half the board's width for half its cells, so a tile's
+                          walls read at the same weight as the home page's. */
+                      }
+                      <Thumbnail
+                        board={row.tile}
+                        size={4}
+                        width={200}
+                        height={200}
+                        className="w-full aspect-square border-2 border-link rounded-1"
+                      />
+                      <span className="text-fl-0 text-link">
+                        {row.id.toUpperCase()}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
     </Main>
   );
 });
