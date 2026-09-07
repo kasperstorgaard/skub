@@ -49,12 +49,12 @@ export default define.page<typeof handler>(function TilesPage(props) {
             {/* Nothing resets a list here, so the marker and indent are ours. */}
             <ul className="flex flex-wrap gap-fl-2 list-none ps-0 my-0">
               {rows.map((row) => (
-                <li key={row.id}>
+                <li key={row.id} className="min-w-40">
                   <a
                     href={`/tiles/edit?id=${row.id}`}
                     className="flex flex-col items-center gap-1 no-underline"
                   >
-                    <TileThumbnail tile={row.tile} />
+                    <TileThumbnail tile={row.tile} className="size-24" />
                     <span className="text-fl-0 text-link">
                       {row.id.toUpperCase()}
                     </span>
