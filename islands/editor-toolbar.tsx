@@ -11,6 +11,9 @@ import { decodeState } from "#/game/url.ts";
 type EditorToolbarProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
+  /** A tile has neither, so its builder leaves both tools out. */
+  hidePuck?: boolean;
+  hideDestination?: boolean;
   className?: string;
 };
 
@@ -19,7 +22,9 @@ type EditorToolbarProps = {
  * On mobile: flows inline inside Main.
  * On desktop: breaks out to the right of Main via absolute positioning.
  */
-export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
+export function EditorToolbar(
+  { href, puzzle, hidePuck, hideDestination, className }: EditorToolbarProps,
+) {
   const active = useMemo(
     () => decodeState(href.value).active,
     [href.value],
@@ -89,15 +94,17 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         <div className="size-4 bg-ui-3 rounded-1" />
       </button>
 
-      <button
-        type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
-        aria-label="Puck"
-        disabled={disabled}
-        onClick={() => setCellContent("puck")}
-      >
-        <div className="size-4 bg-ui-2 rounded-round" />
-      </button>
+      {!hidePuck && (
+        <button
+          type="button"
+          className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+          aria-label="Puck"
+          disabled={disabled}
+          onClick={() => setCellContent("puck")}
+        >
+          <div className="size-4 bg-ui-2 rounded-round" />
+        </button>
+      )}
 
       <button
         type="button"
@@ -123,33 +130,40 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
 
       <div
         className={clsx(
-          "not-lg:hidden col-2 row-start-4 row-span-4 relative flex items-center justify-center p-1",
+          "not-lg:hidden col-2 row-start-4 relative flex items-center justify-center p-1",
+          // The bracket spans the cell buttons it belongs to, and a tile has no
+          // puck among them.
+          hidePuck ? "row-span-3" : "row-span-4",
         )}
       >
         <BracketBackground className="absolute inset-0" />
         <kbd className="relative z-0">P</kbd>
       </div>
 
-      <button
-        type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
-        aria-label="Destination"
-        disabled={disabled}
-        onClick={setDestination}
-      >
-        <div className="size-5 border-2 border-ui-1 flex items-center justify-center">
-          <Icon icon={X} className="text-ui-1 text-fl-0" />
-        </div>
-      </button>
+      {!hideDestination && (
+        <>
+          <button
+            type="button"
+            className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+            aria-label="Destination"
+            disabled={disabled}
+            onClick={setDestination}
+          >
+            <div className="size-5 border-2 border-ui-1 flex items-center justify-center">
+              <Icon icon={X} className="text-ui-1 text-fl-0" />
+            </div>
+          </button>
 
-      <div
-        className={clsx(
-          "not-lg:hidden col-2 relative flex items-center justify-center p-1",
-        )}
-      >
-        <BracketBackground className="absolute inset-0" />
-        <kbd className="relative z-0">D</kbd>
-      </div>
+          <div
+            className={clsx(
+              "not-lg:hidden col-2 relative flex items-center justify-center p-1",
+            )}
+          >
+            <BracketBackground className="absolute inset-0" />
+            <kbd className="relative z-0">D</kbd>
+          </div>
+        </>
+      )}
     </div>
   );
 }

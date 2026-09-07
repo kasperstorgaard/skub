@@ -36,3 +36,20 @@ export async function setUserPuzzleDraft(
 ): Promise<void> {
   await kv.set(["user", userId, "puzzle_draft"], puzzle);
 }
+
+/** The tile being built, kept apart from the puzzle draft it borrows its UI from. */
+export async function getUserTileDraft(
+  userId: string,
+): Promise<Puzzle | null> {
+  const res = await kv.get<Puzzle>(["user", userId, "tile_draft"]);
+  if (!res.value) return null;
+
+  return { ...res.value, board: normalizeBoard(res.value.board) };
+}
+
+export async function setUserTileDraft(
+  userId: string,
+  puzzle: Puzzle,
+): Promise<void> {
+  await kv.set(["user", userId, "tile_draft"], puzzle);
+}

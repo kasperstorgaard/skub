@@ -11,13 +11,20 @@ import {
   FlipHorizontal,
   FlipVertical,
   Icon,
-  Shuffle,
+  Repeat,
   Star,
   Trash,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { TileConfig } from "#/components/tile-config.tsx";
 import { flipBoard, rotateBoard } from "#/game/board.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
+import {
+  type ComposerConfig,
+  type DealtTile,
+  encodePlacements,
+  toPlacements,
+} from "#/game/tiles.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { useRouter } from "#/islands/router.tsx";
 
@@ -25,6 +32,10 @@ type EditorPanelProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   isDev: boolean;
+  /** The composer's settings, when there are tiles to deal from. */
+  config?: Signal<ComposerConfig>;
+  /** What the board was dealt from, carried to the candidate as provenance. */
+  dealt?: Signal<DealtTile[]>;
 };
 
 /**
@@ -34,7 +45,7 @@ type EditorPanelProps = {
  * the panel's only write; the corpus write lives behind Promote.
  */
 export function EditorPanel(
-  { puzzle, href, isDev }: EditorPanelProps,
+  { puzzle, href, isDev, config, dealt }: EditorPanelProps,
 ) {
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -56,8 +67,14 @@ export function EditorPanel(
     } catch {
       // Fall through: the draft in KV is the next best thing.
     }
-    globalThis.location.href = "/candidate/review";
-  }, []);
+    const tiles = dealt?.value.length
+      ? `?tiles=${
+        encodeURIComponent(encodePlacements(toPlacements(dealt.value)))
+      }`
+      : "";
+
+    globalThis.location.href = `/candidate/review${tiles}`;
+  }, [dealt]);
 
   const onClear = useCallback(() => {
     puzzle.value = {
@@ -145,11 +162,13 @@ export function EditorPanel(
           </button>
 
           {isDev && (
-            <a href="/puzzles/generate" className="btn">
-              <Icon icon={Shuffle} />
-              Generate
+            <a href="/tiles" className="btn">
+              <Icon icon={Repeat} />
+              Tiles
             </a>
           )}
+
+          {config && <TileConfig config={config} />}
         </div>
 
         <div className="flex flex-col flex-wrap gap-fl-1">

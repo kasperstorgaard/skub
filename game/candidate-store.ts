@@ -24,7 +24,8 @@ import {
   scoreBoard,
 } from "#/game/scoring.ts";
 import { solveExhaustiveSync } from "#/game/solver.ts";
-import type { Board, Puzzle } from "#/game/types.ts";
+import { GENERATOR_VERSION } from "#/game/tiles.ts";
+import type { Board, Puzzle, TilePlacement } from "#/game/types.ts";
 
 const candidatePath = (slug: string): string => `${CANDIDATES_DIR}/${slug}.md`;
 
@@ -187,7 +188,11 @@ export function staleAnalysis(
 export function mergeCandidate(
   puzzle: Puzzle,
   stored: Candidate | null,
-  options: { source?: CandidateSource; analysis?: Analysis } = {},
+  options: {
+    source?: CandidateSource;
+    analysis?: Analysis;
+    tiles?: TilePlacement[];
+  } = {},
 ): Candidate {
   const minMoves = options.analysis?.minMoves ?? stored?.minMoves ??
     puzzle.minMoves;
@@ -208,7 +213,15 @@ export function mergeCandidate(
     note: stored?.note,
     solutionTags: stored?.solutionTags,
     genOptions: stored?.genOptions,
-    generatorVersion: stored?.generatorVersion,
+    // A board that arrives with its tiles was just composed from them; one
+    // without keeps whatever the entry already recorded, and a board that never
+    // had any carries no such key at all.
+    ...(options.tiles ?? stored?.tiles
+      ? { tiles: options.tiles ?? stored?.tiles }
+      : {}),
+    generatorVersion: options.tiles
+      ? GENERATOR_VERSION
+      : stored?.generatorVersion,
     promotedAs: stored?.promotedAs,
     scoring: options.analysis?.scoring ?? stored?.scoring,
   };
@@ -222,13 +235,18 @@ export function mergeCandidate(
 export async function upsertCandidate(
   puzzle: Puzzle,
   source?: CandidateSource,
+  options: { tiles?: TilePlacement[] } = {},
 ): Promise<Candidate> {
   const stored = await readCandidate(puzzle.slug);
   const analysis = staleAnalysis(stored, puzzle.board)
     ? analyseBoard(puzzle.board)
     : undefined;
 
-  const candidate = mergeCandidate(puzzle, stored, { source, analysis });
+  const candidate = mergeCandidate(puzzle, stored, {
+    source,
+    analysis,
+    tiles: options.tiles,
+  });
   await writeCandidate(candidate);
   return candidate;
 }

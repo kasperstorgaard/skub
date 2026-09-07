@@ -576,3 +576,44 @@ export function toPlacements(dealt: DealtTile[]): TilePlacement[] {
     ...(flipped ? { flipped } : {}),
   }));
 }
+
+/** Where the composer's settings persist, and for how long. */
+export const TILE_OPTIONS_COOKIE = "tile_options";
+export const TILE_OPTIONS_MAX_AGE = 60 * 60 * 24 * 365;
+
+/** What the composer's sidebar holds: how to deal, and what a roll may return. */
+export type ComposerConfig = DealConfig & {
+  /** Accepted move count for a roll. Absent takes whatever the dice give. */
+  moves?: [number, number];
+};
+
+/**
+ * Placements as one URL parameter — `a-01:1,b-02:3f` — so a composed board can
+ * carry what it was dealt from through to the candidate it becomes. The `f`
+ * suffix marks a mirrored tile.
+ */
+export function encodePlacements(placements: TilePlacement[]): string {
+  return placements
+    .map(({ id, rotation, flipped }) =>
+      `${id}:${rotation}${flipped ? "f" : ""}`
+    )
+    .join(",");
+}
+
+/** Reads back `encodePlacements`. Anything malformed is dropped. */
+export function decodePlacements(value: string): TilePlacement[] {
+  return value.split(",").flatMap((part) => {
+    const [id, turn] = part.split(":");
+    const rotation = Number(turn?.replace("f", ""));
+
+    if (!id || !Number.isInteger(rotation) || rotation < 0 || rotation > 3) {
+      return [];
+    }
+
+    return [{
+      id,
+      rotation: rotation as Rotation,
+      ...(turn.endsWith("f") ? { flipped: true } : {}),
+    }];
+  });
+}

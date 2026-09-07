@@ -55,11 +55,13 @@ type BoardProps = {
   puzzle: Signal<Puzzle>;
   mode: Signal<"editor" | "replay" | "solve" | "readonly">;
   isNew?: boolean;
+  /** Grid width, for the tile builder's 4x4 board. */
+  size?: 4 | 8;
   className?: string;
 };
 
 export default function Board(
-  { href, puzzle, mode, isNew = false, className }: BoardProps,
+  { href, puzzle, mode, isNew = false, size = 8, className }: BoardProps,
 ) {
   const swipeRegionRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -103,7 +105,7 @@ export default function Board(
 
   const { updateLocation } = useRouter({ onLocationUpdated });
 
-  const spaces = useMemo(() => getGrid(), []);
+  const spaces = useMemo(() => getGrid(size), [size]);
 
   const guides = useMemo(
     () =>
@@ -225,7 +227,12 @@ export default function Board(
         }}
         className={clsx(
           // Relative for the touch region positioning
-          "relative grid gap-(--gap) w-full grid-cols-[repeat(8,var(--space-w))] grid-rows-[repeat(8,var(--space-w))]",
+          "relative grid gap-(--gap) w-full",
+          // Written out per size: Tailwind only sees class names it can read
+          // whole in the source.
+          size === 4
+            ? "grid-cols-[repeat(4,var(--space-w))] grid-rows-[repeat(4,var(--space-w))]"
+            : "grid-cols-[repeat(8,var(--space-w))] grid-rows-[repeat(8,var(--space-w))]",
           "print:[--space-w:62px]! print:[--gap:var(--size-2)]!",
           className,
         )}

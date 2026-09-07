@@ -4,6 +4,8 @@ import {
   categorizeTile,
   composeBoard,
   countLanes,
+  decodePlacements,
+  encodePlacements,
   extractQuadrant,
   flipTile,
   formatTile,
@@ -411,4 +413,22 @@ Deno.test("pickTiles() should say which category the catalog is missing", () => 
     TileError,
     "No P tiles in the catalog yet",
   );
+});
+
+Deno.test("encodePlacements() should write the tiles a board was dealt from", () => {
+  const result = encodePlacements([
+    { id: "a-01", rotation: 0 },
+    { id: "b-07", rotation: 3, flipped: true },
+  ]);
+
+  assertEquals(result, "a-01:0,b-07:3f");
+});
+
+Deno.test("decodePlacements() should read placements back, dropping anything malformed", () => {
+  const result = decodePlacements("a-01:0,b-07:3f,nonsense,z-01:9");
+
+  assertEquals(result, [
+    { id: "a-01", rotation: 0 },
+    { id: "b-07", rotation: 3, flipped: true },
+  ]);
 });

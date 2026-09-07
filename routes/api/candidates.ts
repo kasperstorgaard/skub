@@ -1,12 +1,6 @@
 import { define } from "#/core.ts";
+import { readCandidate, writeCandidate } from "#/game/candidate-store.ts";
 import {
-  pickCandidateName,
-  readCandidate,
-  writeCandidate,
-} from "#/game/candidate-store.ts";
-import {
-  type Candidate,
-  parseCandidate,
   REASON_TAG_VALUES,
   type ReasonTag,
   SOLUTION_TAG_VALUES,
@@ -14,7 +8,6 @@ import {
 } from "#/game/candidates.ts";
 import { isDev } from "#/lib/env.ts";
 
-type CreatePayload = { action: "create"; markdown: string };
 type FeedbackPayload = {
   action: "feedback";
   slug: string;
@@ -29,35 +22,7 @@ type SolutionPayload = {
   moves: string;
   tags: SolutionTag[];
 };
-type Payload = CreatePayload | FeedbackPayload | SolutionPayload;
-
-/**
- * Persists a freshly generated candidate under an unused Nordic name. The
- * analysis rides along in the posted markdown: the generation run measured it
- * already, and solving the same board a second time server-side would cost
- * seconds for a result we have.
- */
-async function create(markdown: string): Promise<Response> {
-  let candidate: Candidate;
-  try {
-    candidate = parseCandidate(markdown);
-  } catch {
-    return new Response("Invalid puzzle", { status: 400 });
-  }
-
-  const { name, slug } = await pickCandidateName();
-
-  await writeCandidate({
-    ...candidate,
-    name,
-    slug,
-    source: "generated",
-    // Numbers are the corpus schedule; the editor's empty board carries a 0.
-    number: undefined,
-  });
-
-  return Response.json({ slug, name });
-}
+type Payload = FeedbackPayload | SolutionPayload;
 
 /**
  * Sets a candidate's feedback — a full overwrite of rating/reasons/note, not a
@@ -119,9 +84,10 @@ async function saveSolutionTags(payload: SolutionPayload): Promise<Response> {
 }
 
 /**
- * Localhost-only API for the candidate store. Records a generated candidate
- * (`create`) and the curator's rating/tags/note (`feedback`, `solution`) into
- * the same markdown file. Forbidden in production (Deno Deploy's filesystem is
+ * Localhost-only API for the candidate store. Records the curator's
+ * rating/tags/note (`feedback`, `solution`) into the candidate's markdown file.
+ * A board reaches the store through the editor's Review action, not through
+ * here. Forbidden in production (Deno Deploy's filesystem is
  * read-only); nothing there reaches it, since candidacy is dev-only throughout.
  */
 export const handler = define.handlers({
@@ -135,13 +101,6 @@ export const handler = define.handlers({
       body = await ctx.req.json();
     } catch {
       return new Response("Invalid JSON", { status: 400 });
-    }
-
-    if (body.action === "create") {
-      if (!body.markdown) {
-        return new Response("Missing markdown", { status: 400 });
-      }
-      return await create(body.markdown);
     }
 
     if (body.action === "feedback") {

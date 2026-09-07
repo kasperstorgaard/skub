@@ -11,6 +11,7 @@ import {
 } from "#/game/candidate-store.ts";
 import type { CandidateSource } from "#/game/candidates.ts";
 import { getPuzzle } from "#/game/loader.ts";
+import { decodePlacements } from "#/game/tiles.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { isDev } from "#/lib/env.ts";
 
@@ -55,11 +56,17 @@ export const handler = define.handlers({
 
     const { name, slug, source } = await identify(draft);
 
+    // A board composed in the editor carries the tiles it was dealt from.
+    const dealt = new URL(ctx.req.url).searchParams.get("tiles");
+    const tiles = dealt ? decodePlacements(dealt) : undefined;
+
     // Analysis solves the board, and an unfinished one may not solve at all —
     // an ordinary state to be in mid-edit, so say so rather than throw a 500.
     let candidate;
     try {
-      candidate = await upsertCandidate({ ...draft, name, slug }, source);
+      candidate = await upsertCandidate({ ...draft, name, slug }, source, {
+        tiles: tiles?.length ? tiles : undefined,
+      });
     } catch (err) {
       throw new HttpError(
         400,
