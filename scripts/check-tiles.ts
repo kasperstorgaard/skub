@@ -5,7 +5,7 @@
  * Usage: `deno task check-tiles`
  */
 import { TILES_DIR } from "#/game/tile-store.ts";
-import { countLanes, parseTile } from "#/game/tiles.ts";
+import { countLanes, parseTile, TILE_SIZE } from "#/game/tiles.ts";
 
 const files = await Array.fromAsync(Deno.readDir(TILES_DIR))
   .then((entries) =>
@@ -31,8 +31,8 @@ for (const file of files) {
     const hazards = tile.holes.length + tile.portals.length;
 
     console.log(
-      `${id.padEnd(8)} ${category}  ${tile.walls.length} walls  ` +
-        `${blockers} blockers  ${hazards} hazards  ${countLanes(tile)} lanes`,
+      `${id.padEnd(8)} ${category} (${countLanes(tile)}/${TILE_SIZE * 2})  ` +
+        `${tile.walls.length} walls  ${blockers} blockers  ${hazards} hazards`,
     );
   } catch (err) {
     failures.push(`${file}: ${err instanceof Error ? err.message : err}`);

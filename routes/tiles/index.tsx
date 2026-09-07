@@ -74,7 +74,7 @@ export default define.page<typeof handler>(function TilesPage(props) {
                   <span className="text-fl-0 text-text-3">
                     {row.walls} walls · {row.blockers} blockers · {row.hazards}
                     {" "}
-                    hazards · {row.lanes} lanes
+                    hazards · {row.lanes}/8 lanes
                   </span>
                 </li>
               ))}

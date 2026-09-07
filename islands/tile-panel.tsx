@@ -125,10 +125,9 @@ export function TilePanel({ puzzle }: TilePanelProps) {
             : (
               <dl className="grid grid-cols-2 gap-x-fl-1 text-fl-0 text-text-3">
                 <dt>Category</dt>
-                <dd className="text-text-1">{reading.value.category}</dd>
-                <dt>Lanes</dt>
                 <dd className="text-text-1">
-                  {reading.value.lanes} of {TILE_SIZE * 2}
+                  {reading.value.category} ({reading.value.lanes}/{TILE_SIZE *
+                    2})
                 </dd>
                 <dt>Blockers</dt>
                 <dd className="text-text-1">{reading.value.blockers}</dd>
