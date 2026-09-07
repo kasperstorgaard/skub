@@ -13,6 +13,7 @@ import {
   isValidMove,
   isValidSolution,
   resolveMoves,
+  rollPuckAndDestination,
   rotateBoard,
   validateBoard,
 } from "./board.ts";
@@ -1395,4 +1396,35 @@ Deno.test("flipBoard() horizontal should mirror holes and portals", () => {
 
   assertEquals(result.holes, [{ x: 5, y: 3 }]);
   assertEquals(result.portals, [{ x: 3, y: 5 }, { x: 1, y: 7 }]);
+});
+
+Deno.test("getGrid() should size itself to a tile when asked", () => {
+  const result = getGrid(4);
+
+  assertEquals(result, [
+    [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }],
+    [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }],
+    [{ x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }],
+    [{ x: 0, y: 3 }, { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 3, y: 3 }],
+  ]);
+});
+
+Deno.test("rollPuckAndDestination() should skip blockers and hazards, and land on two cells", () => {
+  const result = rollPuckAndDestination({
+    pieces: [{ x: 0, y: 0, type: "blocker" }],
+    holes: [{ x: 1, y: 0 }],
+    portals: [{ x: 2, y: 0 }, { x: 3, y: 0 }],
+  }, { random: () => 0 });
+
+  assertEquals(result, { puck: { x: 4, y: 0 }, destination: { x: 5, y: 0 } });
+});
+
+Deno.test("rollPuckAndDestination() should re-roll over the puck already standing", () => {
+  const result = rollPuckAndDestination({
+    pieces: [{ x: 0, y: 0, type: "puck" }, { x: 1, y: 0, type: "blocker" }],
+    holes: [],
+    portals: [],
+  }, { random: () => 0 });
+
+  assertEquals(result, { puck: { x: 0, y: 0 }, destination: { x: 2, y: 0 } });
 });

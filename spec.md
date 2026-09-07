@@ -21,7 +21,11 @@ the same way puzzles do.
 Generation then becomes three deliberate steps instead of a search loop:
 
 1. **Deal** four tiles matching a configuration — a category pattern like `AAPP`,
-   or looser constraints (portals or not, holes or not).
+   or looser constraints (portals or not, holes or not), plus how many *distinct*
+   tiles to draw on. Four is all unique; one is the same tile in every quadrant,
+   turned differently in each. Fewer distinct tiles is how a board comes out
+   symmetric, which the tabletop version gets from its four-quadrant layout and
+   which is worth being able to ask for.
 2. **Arrange** them by hand: rotate, flip, or swap any tile, transform the whole
    board, reshuffle, or edit individual cells. This is where a board becomes
    worth playing, and it is a human judgement.

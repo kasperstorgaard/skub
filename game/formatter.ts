@@ -1,6 +1,6 @@
 import { stringify as stringifyYaml } from "@std/yaml";
 
-import { COLS, isPositionSame, ROWS } from "#/game/board.ts";
+import { COLS, isPositionSame } from "#/game/board.ts";
 import { Board, Position, type Puzzle } from "#/game/types.ts";
 
 // Combining low line character (U+0332)
@@ -27,31 +27,55 @@ export function formatPuzzle(puzzle: Puzzle): string {
   // Start code block to prevent markdown formatting
   markdown += "```\n";
 
-  // Header (chess x-axis notation)
-  markdown += "+ A B C D E F G H +\n";
+  const { header, footer } = formatGridBorder();
 
-  // Build rows
-  for (let y = 0; y < ROWS; y++) {
+  markdown += header + "\n";
+  markdown += formatGridBody(board);
+  markdown += footer + "\n";
+
+  // End code block
+  markdown += "```\n";
+
+  return markdown;
+}
+
+/**
+ * The chess-notation header and the matching footer rule.
+ *
+ * Both are derived from the grid width so they can't drift from the rows: a row
+ * is a digit, a space, two characters per cell, and the closing border.
+ */
+export function formatGridBorder(size = COLS) {
+  const letters = Array.from(
+    { length: size },
+    (_, x) => String.fromCharCode(65 + x),
+  );
+
+  return {
+    header: `+ ${letters.join(" ")} +`,
+    footer: `+${"-".repeat(size * 2 + 1)}+`,
+  };
+}
+
+// Renders the grid rows, one line each, closing border included.
+export function formatGridBody(board: Board, size = COLS): string {
+  let body = "";
+
+  for (let y = 0; y < size; y++) {
     // Use chess y-axis notation, 1-indexed
     let row = `${y + 1} `;
 
-    for (let x = 0; x < COLS; x++) {
+    for (let x = 0; x < size; x++) {
       // Add the cell contents and separator
       row += formatCell(board, { x, y });
       row += formatCellSeparator(board, { x, y });
     }
 
     // Add board border and newline
-    markdown += row + "|\n";
+    body += row + "|\n";
   }
 
-  // Footer
-  markdown += "+-----------------+\n";
-
-  // End code block
-  markdown += "```\n";
-
-  return markdown;
+  return body;
 }
 
 /**
