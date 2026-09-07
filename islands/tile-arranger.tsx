@@ -20,6 +20,7 @@ import {
   categorizeTile,
   composeDealt,
   type ComposerConfig,
+  type ComposerStep,
   type DealtTile,
   extractQuadrant,
   flipTile,
@@ -270,12 +271,14 @@ export function TileArranger(
         </>
       )}
 
-      {step.value !== "roll" && (
-        <button type="button" className="btn" onClick={shuffle}>
-          <Icon icon={Shuffle} />
-          {step.value === "deal" ? "Deal" : "Shuffle"}
-        </button>
-      )}
+      {
+        /* Always available: re-laying the tiles is also the way back out of a
+          roll to arranging them. */
+      }
+      <button type="button" className="btn" onClick={shuffle}>
+        <Icon icon={Shuffle} />
+        {step.value === "deal" ? "Deal" : "Shuffle"}
+      </button>
 
       {step.value !== "deal" && (
         <button
