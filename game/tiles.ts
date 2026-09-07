@@ -39,10 +39,12 @@ export const QUADRANT_ORIGINS: Position[] = [
 ];
 
 /**
- * A tile with no hazards is `A` when at least this many of its eight rows and
- * columns run clear. A first guess, to be tuned against a real sketchbook batch.
+ * A tile with no hazards is `A` from this much open running out of eight, and
+ * `B` below it. Set against the sketchbook: 2.5 still reads as simple, 2 reads
+ * as cluttered — so most of a tile can be closed off before it stops being an
+ * easy one to cross.
  */
-const OPEN_LANES_MIN = 4;
+const OPEN_LANES_MIN = 2.5;
 
 /**
  * Generator algorithm version, stamped onto every stored candidate so the

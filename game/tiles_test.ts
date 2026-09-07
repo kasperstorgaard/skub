@@ -197,17 +197,33 @@ Deno.test("categorizeTile() should file a hole tile as X", () => {
   assertEquals(result, "X");
 });
 
-Deno.test("categorizeTile() should file a cluttered tile as B", () => {
+Deno.test("categorizeTile() should still file a tile with 2.5 lanes open as A", () => {
   const result = categorizeTile({
     ...EMPTY_TILE,
     pieces: [
-      { x: 1, y: 1, type: "blocker" },
-      { x: 2, y: 2, type: "blocker" },
+      { x: 0, y: 2, type: "blocker" },
+      { x: 3, y: 3, type: "blocker" },
     ],
     walls: [
       { x: 1, y: 0, orientation: "vertical" },
-      { x: 2, y: 1, orientation: "horizontal" },
-      { x: 3, y: 3, orientation: "vertical" },
+      { x: 2, y: 1, orientation: "vertical" },
+      { x: 0, y: 1, orientation: "horizontal" },
+      { x: 1, y: 2, orientation: "horizontal" },
+    ],
+  });
+
+  assertEquals(result, "A");
+});
+
+Deno.test("categorizeTile() should file a tile closed down to 2 lanes as B", () => {
+  const result = categorizeTile({
+    ...EMPTY_TILE,
+    pieces: [{ x: 3, y: 3, type: "blocker" }],
+    walls: [
+      { x: 1, y: 0, orientation: "vertical" },
+      { x: 2, y: 1, orientation: "vertical" },
+      { x: 3, y: 2, orientation: "vertical" },
+      { x: 0, y: 1, orientation: "horizontal" },
       { x: 1, y: 2, orientation: "horizontal" },
     ],
   });
