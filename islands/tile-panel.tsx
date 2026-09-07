@@ -81,12 +81,7 @@ export function TilePanel({ puzzle }: TilePanelProps) {
 
   return (
     <Panel>
-      <p className="col-[2/3] text-fl-1 mb-fl-4 leading-tight lg:row-[1/3] lg:text-fl-0 lg:mb-0">
-        A tile is a quarter of a board. No puck, no destination, and never a
-        wall on its own edge.
-      </p>
-
-      <div className="flex flex-col col-[2/3] lg:row-[3/4] gap-fl-4 lg:gap-fl-1 place-content-between">
+      <div className="flex flex-col col-[2/3] lg:row-[1/4] gap-fl-4 lg:gap-fl-1 place-content-between">
         <div className="flex flex-col gap-fl-1">
           <div className="flex gap-fl-1 flex-wrap lg:justify-center">
             <button
