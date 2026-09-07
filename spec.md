@@ -37,7 +37,10 @@ difficulty is measured by the machine**. Step 3's output is already a candidate,
 so it hands straight to the existing review-and-promote flow.
 
 Tiles carry a category letter that the editor derives from the tile itself: `A`
-simple, `B` cluttered, `P` one portal, `X` holes, `Z` both. Because a tile may
+simple, `B` cluttered, `P` one portal, `X` holes, `Z` both. Deriving it means a
+tile can't be filed under a letter its contents contradict, which matters because
+dealing selects by letter. A tile can be reworked afterwards: editing replaces it
+in place and keeps its number, so `B7` stays the tile it was. Because a tile may
 never carry a wall on its own edge, tiles combine in any rotation without seams
 needing special handling — and because `P`/`Z` tiles hold exactly one portal
 each, dealing them in pairs is what keeps a board's portal count at 0 or 2.
