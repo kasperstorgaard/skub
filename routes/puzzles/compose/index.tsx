@@ -65,10 +65,11 @@ export const handler = define.handlers<ComposerData>({
 export default define.page<typeof handler>(function ComposerPage(props) {
   const puzzle = useSignal(props.data.puzzle);
   const href = useSignal(props.url.href);
-  const mode = useSignal<"editor">("editor");
+  const mode = useSignal<"compose">("compose");
 
   const config = useSignal(props.data.config);
   const dealt = useSignal<DealtTile[]>([]);
+  const quadrant = useSignal<number | null>(null);
   const step = useComputed(() => composerStep(puzzle.value.board));
 
   const url = new URL(props.req.url);
@@ -92,7 +93,13 @@ export default define.page<typeof handler>(function ComposerPage(props) {
         </div>
 
         <div className="relative max-lg:pb-fl-5">
-          <Board puzzle={puzzle} href={href} mode={mode} />
+          {/* Tiles are picked on the board itself, not from a set of proxies. */}
+          <Board
+            puzzle={puzzle}
+            href={href}
+            mode={mode}
+            quadrant={quadrant}
+          />
 
           {
             /* Tile controls only. Nudging a cell is the editor's job, and it
@@ -102,7 +109,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
             puzzle={puzzle}
             dealt={dealt}
             config={config}
-            step={step}
+            quadrant={quadrant}
             catalog={props.data.catalog}
             className="absolute max-lg:bottom-0 max-lg:left-1/2 max-lg:-translate-x-1/2 lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2"
           />
@@ -114,6 +121,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
         config={config}
         dealt={dealt}
         step={step}
+        catalog={props.data.catalog}
       />
       <EditorAutosave puzzle={puzzle} />
     </>

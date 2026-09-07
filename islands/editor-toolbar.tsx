@@ -4,6 +4,7 @@ import { useMemo } from "preact/hooks";
 
 import { useEditor } from "#/client/editor.ts";
 import { Icon, X } from "#/components/icons.tsx";
+import { KeyHint } from "#/components/key-hint.tsx";
 import { PortalRings } from "#/components/portal-rings.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
@@ -75,14 +76,7 @@ export function EditorToolbar(
         <div className="size-5 border-t-[3px] border-l-[3px] border-ui-4" />
       </button>
 
-      <div
-        className={clsx(
-          "not-lg:hidden col-2 row-[1/4] relative flex items-center justify-center p-1",
-        )}
-      >
-        <BracketBackground className="absolute inset-0" />
-        <kbd className="relative z-0">W</kbd>
-      </div>
+      <KeyHint rows={3} className="row-[1/4]">W</KeyHint>
 
       <button
         type="button"
@@ -128,17 +122,11 @@ export function EditorToolbar(
         </div>
       </button>
 
-      <div
-        className={clsx(
-          "not-lg:hidden col-2 row-start-4 relative flex items-center justify-center p-1",
-          // The bracket spans the cell buttons it belongs to, and a tile has no
-          // puck among them.
-          hidePuck ? "row-span-3" : "row-span-4",
-        )}
-      >
-        <BracketBackground className="absolute inset-0" />
-        <kbd className="relative z-0">P</kbd>
-      </div>
+      {
+        /* The bracket spans the cell buttons it belongs to, and a tile has no
+          puck among them. */
+      }
+      <KeyHint rows={hidePuck ? 3 : 4} className="row-start-4">P</KeyHint>
 
       {!hideDestination && (
         <>
@@ -154,43 +142,9 @@ export function EditorToolbar(
             </div>
           </button>
 
-          <div
-            className={clsx(
-              "not-lg:hidden col-2 relative flex items-center justify-center p-1",
-            )}
-          >
-            <BracketBackground className="absolute inset-0" />
-            <kbd className="relative z-0">D</kbd>
-          </div>
+          <KeyHint>D</KeyHint>
         </>
       )}
     </div>
-  );
-}
-
-type BracketProps = {
-  className?: string;
-};
-
-// Open-left bracket connecting button rows to their kbd shortcut on desktop.
-function BracketBackground({ className }: BracketProps) {
-  return (
-    <svg
-      className={clsx(
-        "size-full pointer-events-none py-1",
-        className,
-      )}
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M 0 2 H 50 V 98 H 0"
-        stroke="var(--color-text-3)"
-        fill="none"
-        stroke-width="1"
-        vector-effect="non-scaling-stroke"
-      />
-    </svg>
   );
 }

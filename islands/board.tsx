@@ -50,10 +50,23 @@ import {
   warpName,
 } from "#/lib/replay.ts";
 
+/**
+ * The four tile-sized areas of the board, for picking one to work on. Written
+ * out because Tailwind only sees class names it can read whole in the source.
+ */
+const QUADRANTS = [
+  { name: "north-west", area: "col-[1/5] row-[1/5]" },
+  { name: "north-east", area: "col-[5/9] row-[1/5]" },
+  { name: "south-west", area: "col-[1/5] row-[5/9]" },
+  { name: "south-east", area: "col-[5/9] row-[5/9]" },
+];
+
 type BoardProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  mode: Signal<"editor" | "replay" | "solve" | "readonly">;
+  mode: Signal<"editor" | "replay" | "solve" | "readonly" | "compose">;
+  /** Which quadrant is in hand, when composing. The board is the selector. */
+  quadrant?: Signal<number | null>;
   isNew?: boolean;
   /** Grid width, for the tile builder's 4x4 board. */
   size?: 4 | 8;
@@ -61,7 +74,15 @@ type BoardProps = {
 };
 
 export default function Board(
-  { href, puzzle, mode, isNew = false, size = 8, className }: BoardProps,
+  {
+    href,
+    puzzle,
+    mode,
+    isNew = false,
+    size = 8,
+    quadrant,
+    className,
+  }: BoardProps,
 ) {
   const swipeRegionRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -284,6 +305,27 @@ export default function Board(
               ...state,
               href: href.value,
             })}
+          />
+        ))}
+
+        {mode.value === "compose" && quadrant && QUADRANTS.map((
+          { name, area },
+          index,
+        ) => (
+          <button
+            key={name}
+            type="button"
+            className={clsx(
+              area,
+              "z-1 rounded-1 bg-transparent border-2 cursor-pointer",
+              quadrant.value === index
+                ? "border-brand"
+                : "border-transparent hover:border-link",
+            )}
+            aria-label={`Tile in the ${name}`}
+            aria-pressed={quadrant.value === index}
+            onClick={() =>
+              quadrant.value = quadrant.value === index ? null : index}
           />
         ))}
 

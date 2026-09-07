@@ -2,7 +2,8 @@ import { type Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useCallback } from "preact/hooks";
 
-import { Eye, Icon, PencilSimple, Star, Trash } from "#/components/icons.tsx";
+import { useComposer } from "#/client/composer.ts";
+import { Eye, Icon, Play, Shuffle, Star, Trash } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { TileConfig } from "#/components/tile-config.tsx";
 import { formatPuzzle } from "#/game/formatter.ts";
@@ -13,13 +14,14 @@ import {
   encodePlacements,
   toPlacements,
 } from "#/game/tiles.ts";
-import type { Puzzle } from "#/game/types.ts";
+import type { Puzzle, TileEntry } from "#/game/types.ts";
 
 type ComposerPanelProps = {
   puzzle: Signal<Puzzle>;
   config: Signal<ComposerConfig>;
   dealt: Signal<DealtTile[]>;
   step: Signal<ComposerStep>;
+  catalog: TileEntry[];
 };
 
 const EMPTY_BOARD = {
@@ -31,14 +33,15 @@ const EMPTY_BOARD = {
 };
 
 /**
- * Side panel for the composer: what to deal, and the ways out.
- *
- * Configuration only while there is something to configure — once tiles are
- * down, the acting is done beside the board.
+ * The composer's sidebar: how to deal, the two actions that move a board
+ * forward, and the ways out. Arranging what has been dealt happens beside the
+ * board, where the tiles are.
  */
 export function ComposerPanel(
-  { puzzle, config, dealt, step }: ComposerPanelProps,
+  { puzzle, config, dealt, step, catalog }: ComposerPanelProps,
 ) {
+  const { deal, roll } = useComposer({ puzzle, dealt, config, catalog });
+
   // Autosave is debounced and a navigation cancels the request in flight, so
   // Review stores the board on screen first.
   const onReview = useCallback(async (event: Event) => {
@@ -73,15 +76,20 @@ export function ComposerPanel(
       <div
         className={clsx(
           "flex flex-col col-[2/3] lg:row-[1/4] gap-fl-4",
-          "lg:gap-fl-1 place-content-between",
+          "lg:gap-fl-2 place-content-between",
         )}
       >
         <div className="flex flex-col gap-fl-2">
-          {step.value === "deal" && <TileConfig config={config} />}
+          <TileConfig config={config} />
+
+          <button type="button" className="btn" onClick={deal}>
+            <Icon icon={Shuffle} /> Generate
+          </button>
 
           {step.value !== "deal" && (
-            <button type="button" className="btn" onClick={onClear}>
-              <Icon icon={Trash} /> Clear
+            <button type="button" className="btn" onClick={roll}>
+              <Icon icon={Play} />
+              {step.value === "roll" ? "Roll again" : "Roll"}
             </button>
           )}
         </div>
@@ -99,10 +107,17 @@ export function ComposerPanel(
             </>
           )}
 
-          <a href="/puzzles/new" className="text-fl-0">
-            <Icon icon={PencilSimple} /> Edit by hand
-          </a>
+          {step.value !== "deal" && (
+            <button
+              type="button"
+              className="text-fl-0 bg-transparent border-0 cursor-pointer text-link"
+              onClick={onClear}
+            >
+              <Icon icon={Trash} /> Clear
+            </button>
+          )}
 
+          <a href="/puzzles/new" className="text-fl-0">Edit by hand</a>
           <a href="/tiles" className="text-fl-0">Tile library</a>
         </div>
       </div>
