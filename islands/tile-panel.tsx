@@ -118,14 +118,15 @@ export function TilePanel({ puzzle }: TilePanelProps) {
           {reading.value.error
             ? <p className="text-fl-0 text-brand">{reading.value.error}</p>
             : (
-              <dl className="grid grid-cols-2 gap-x-fl-1 text-fl-0 text-text-3">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-fl-1 text-fl-0 text-text-3">
                 <dt>Category</dt>
-                <dd className="text-text-1">
+                {/* The browser indents a dd by default, and nothing resets it. */}
+                <dd className="ms-0 text-text-1">
                   {reading.value.category} ({reading.value.lanes}/{TILE_SIZE *
                     2})
                 </dd>
                 <dt>Blockers</dt>
-                <dd className="text-text-1">{reading.value.blockers}</dd>
+                <dd className="ms-0 text-text-1">{reading.value.blockers}</dd>
               </dl>
             )}
 
