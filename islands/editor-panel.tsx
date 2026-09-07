@@ -21,6 +21,7 @@ import { flipBoard, rotateBoard } from "#/game/board.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
 import {
   type ComposerConfig,
+  type ComposerStep,
   type DealtTile,
   encodePlacements,
   toPlacements,
@@ -36,6 +37,11 @@ type EditorPanelProps = {
   config?: Signal<ComposerConfig>;
   /** What the board was dealt from, carried to the candidate as provenance. */
   dealt?: Signal<DealtTile[]>;
+  /**
+   * Which step the composer is on, when composing. Absent means the plain
+   * editor, which shows everything it always has.
+   */
+  step?: Signal<ComposerStep>;
 };
 
 /**
@@ -45,8 +51,13 @@ type EditorPanelProps = {
  * the panel's only write; the corpus write lives behind Promote.
  */
 export function EditorPanel(
-  { puzzle, href, isDev, config, dealt }: EditorPanelProps,
+  { puzzle, href, isDev, config, dealt, step }: EditorPanelProps,
 ) {
+  // Each step needs a different part of this panel, and an empty board has
+  // nothing to transform, preview or review.
+  const composing = step?.value;
+  const showTransforms = !composing || composing !== "deal";
+  const showPlayable = !composing || composing === "roll";
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
   }, []);
@@ -105,52 +116,54 @@ export function EditorPanel(
 
       <div className="flex flex-col col-[2/3] lg:row-[3/4] gap-fl-4 lg:gap-fl-1 place-content-between">
         <div className="flex flex-col gap-fl-1 flex-wrap">
-          <div className="flex gap-fl-1 flex-wrap lg:justify-center">
-            <button
-              type="button"
-              className="icon-btn"
-              data-size="sm"
-              onClick={() => {
-                puzzle.value = {
-                  ...puzzle.value,
-                  board: rotateBoard(puzzle.value.board, "right"),
-                };
-              }}
-            >
-              <Icon icon={ArrowClockwise} />
-              <span className="sr-only">Rotate 90°</span>
-            </button>
+          {showTransforms && (
+            <div className="flex gap-fl-1 flex-wrap lg:justify-center">
+              <button
+                type="button"
+                className="icon-btn"
+                data-size="sm"
+                onClick={() => {
+                  puzzle.value = {
+                    ...puzzle.value,
+                    board: rotateBoard(puzzle.value.board, "right"),
+                  };
+                }}
+              >
+                <Icon icon={ArrowClockwise} />
+                <span className="sr-only">Rotate 90°</span>
+              </button>
 
-            <button
-              type="button"
-              className="icon-btn"
-              data-size="sm"
-              onClick={() => {
-                puzzle.value = {
-                  ...puzzle.value,
-                  board: flipBoard(puzzle.value.board, "horizontal"),
-                };
-              }}
-            >
-              <Icon icon={FlipHorizontal} />
-              <span className="sr-only">Mirror Horizontally</span>
-            </button>
+              <button
+                type="button"
+                className="icon-btn"
+                data-size="sm"
+                onClick={() => {
+                  puzzle.value = {
+                    ...puzzle.value,
+                    board: flipBoard(puzzle.value.board, "horizontal"),
+                  };
+                }}
+              >
+                <Icon icon={FlipHorizontal} />
+                <span className="sr-only">Mirror Horizontally</span>
+              </button>
 
-            <button
-              type="button"
-              className="icon-btn"
-              data-size="sm"
-              onClick={() => {
-                puzzle.value = {
-                  ...puzzle.value,
-                  board: flipBoard(puzzle.value.board, "vertical"),
-                };
-              }}
-            >
-              <Icon icon={FlipVertical} />
-              <span className="sr-only">Mirror Vertically</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                className="icon-btn"
+                data-size="sm"
+                onClick={() => {
+                  puzzle.value = {
+                    ...puzzle.value,
+                    board: flipBoard(puzzle.value.board, "vertical"),
+                  };
+                }}
+              >
+                <Icon icon={FlipVertical} />
+                <span className="sr-only">Mirror Vertically</span>
+              </button>
+            </div>
+          )}
 
           <button
             type="button"
@@ -164,11 +177,13 @@ export function EditorPanel(
           {isDev && (
             <a href="/tiles" className="btn">
               <Icon icon={Repeat} />
-              Tiles
+              Tile library
             </a>
           )}
 
-          {config && <TileConfig config={config} />}
+          {config && (!composing || composing === "deal") && (
+            <TileConfig config={config} />
+          )}
         </div>
 
         <div className="flex flex-col flex-wrap gap-fl-1">
@@ -207,11 +222,13 @@ export function EditorPanel(
             </>
           )}
 
-          <a href="/puzzles/preview" className="btn" target="_blank">
-            <Icon icon={Eye} /> Preview
-          </a>
+          {showPlayable && (
+            <a href="/puzzles/preview" className="btn" target="_blank">
+              <Icon icon={Eye} /> Preview
+            </a>
+          )}
 
-          {isDev && (
+          {isDev && showPlayable && (
             <a href="/candidate/review" className="btn" onClick={onReview}>
               <Icon icon={Star} /> Review
             </a>

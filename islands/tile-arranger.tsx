@@ -35,6 +35,7 @@ type TileArrangerProps = {
   puzzle: Signal<Puzzle>;
   dealt: Signal<DealtTile[]>;
   config: Signal<ComposerConfig>;
+  step: Signal<ComposerStep>;
   catalog: TileEntry[];
   className?: string;
 };
@@ -52,7 +53,7 @@ const MAX_ROLL_ATTEMPTS = 30;
  * is a dihedral transform, so it never changes what the board is worth solving.
  */
 export function TileArranger(
-  { puzzle, dealt, config, catalog, className }: TileArrangerProps,
+  { puzzle, dealt, config, step, catalog, className }: TileArrangerProps,
 ) {
   const [focused, setFocused] = useState<number | null>(null);
 
@@ -206,77 +207,89 @@ export function TileArranger(
     return () => self.removeEventListener("keyup", onKeyUp);
   }, [deal, focused, shuffle, transform, wholeBoard]);
 
+  const arranging = step.value === "arrange";
+
   return (
     <div className={clsx("flex flex-col gap-fl-1", className)}>
-      <div className="grid grid-cols-2 gap-1 w-fit">
-        {QUADRANT_NAMES.map((name, index) => (
-          <button
-            key={name}
-            type="button"
-            className={clsx(
-              "size-8 border-2 rounded-1 bg-transparent",
-              focused === index ? "border-brand" : "border-link",
-            )}
-            aria-label={`Tile ${
-              dealt.value[index]?.entry.id ?? "quadrant"
-            }, ${name}`}
-            aria-pressed={focused === index}
-            onClick={() => setFocused(focused === index ? null : index)}
-          >
-            <span className="sr-only">{name}</span>
-          </button>
-        ))}
-      </div>
+      {arranging && (
+        <>
+          <div className="grid grid-cols-2 gap-1 w-fit">
+            {QUADRANT_NAMES.map((name, index) => (
+              <button
+                key={name}
+                type="button"
+                className={clsx(
+                  "size-8 border-2 rounded-1 bg-transparent",
+                  focused === index ? "border-brand" : "border-link",
+                )}
+                aria-label={`Tile ${
+                  dealt.value[index]?.entry.id ?? "quadrant"
+                }, ${name}`}
+                aria-pressed={focused === index}
+                onClick={() => setFocused(focused === index ? null : index)}
+              >
+                <span className="sr-only">{name}</span>
+              </button>
+            ))}
+          </div>
 
-      <div className="flex gap-fl-1 flex-wrap">
+          <div className="flex gap-fl-1 flex-wrap">
+            <button
+              type="button"
+              className="icon-btn"
+              data-size="sm"
+              disabled={focused == null}
+              onClick={() => focused != null && transform(focused, "rotate")}
+            >
+              <Icon icon={ArrowClockwise} />
+              <span className="sr-only">Rotate tile</span>
+            </button>
+
+            <button
+              type="button"
+              className="icon-btn"
+              data-size="sm"
+              disabled={focused == null}
+              onClick={() => focused != null && transform(focused, "flip")}
+            >
+              <Icon icon={FlipHorizontal} />
+              <span className="sr-only">Mirror tile</span>
+            </button>
+
+            <button
+              type="button"
+              className="icon-btn"
+              data-size="sm"
+              disabled={focused == null}
+              onClick={() => focused != null && swap(focused)}
+            >
+              <Icon icon={Repeat} />
+              <span className="sr-only">Swap tile</span>
+            </button>
+          </div>
+        </>
+      )}
+
+      {step.value !== "roll" && (
+        <button type="button" className="btn" onClick={shuffle}>
+          <Icon icon={Shuffle} />
+          {step.value === "deal" ? "Deal" : "Shuffle"}
+        </button>
+      )}
+
+      {step.value !== "deal" && (
         <button
           type="button"
-          className="icon-btn"
-          data-size="sm"
-          disabled={focused == null}
-          onClick={() => focused != null && transform(focused, "rotate")}
+          className="btn"
+          onClick={() => {
+            attempts.current = 0;
+            roll();
+          }}
         >
-          <Icon icon={ArrowClockwise} />
-          <span className="sr-only">Rotate tile</span>
+          <Icon icon={Play} />
+          {step.value === "roll" ? "Re-roll" : "Roll"}
         </button>
-
-        <button
-          type="button"
-          className="icon-btn"
-          data-size="sm"
-          disabled={focused == null}
-          onClick={() => focused != null && transform(focused, "flip")}
-        >
-          <Icon icon={FlipHorizontal} />
-          <span className="sr-only">Mirror tile</span>
-        </button>
-
-        <button
-          type="button"
-          className="icon-btn"
-          data-size="sm"
-          disabled={focused == null}
-          onClick={() => focused != null && swap(focused)}
-        >
-          <Icon icon={Repeat} />
-          <span className="sr-only">Swap tile</span>
-        </button>
-      </div>
-
-      <button type="button" className="btn" onClick={shuffle}>
-        <Icon icon={Shuffle} /> Shuffle
-      </button>
-
-      <button
-        type="button"
-        className="btn"
-        onClick={() => {
-          attempts.current = 0;
-          roll();
-        }}
-      >
-        <Icon icon={Play} /> Roll
-      </button>
+      )}
     </div>
   );
 }

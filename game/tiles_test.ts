@@ -3,6 +3,7 @@ import { assertEquals, assertThrows } from "@std/assert";
 import {
   categorizeTile,
   composeBoard,
+  composerStep,
   countLanes,
   decodePlacements,
   encodePlacements,
@@ -447,4 +448,26 @@ Deno.test("decodePlacements() should read placements back, dropping anything mal
     { id: "a-01", rotation: 0 },
     { id: "b-07", rotation: 3, flipped: true },
   ]);
+});
+
+Deno.test("composerStep() should ask for a deal when the board is empty", () => {
+  const result = composerStep(EMPTY_TILE);
+
+  assertEquals(result, "deal");
+});
+
+Deno.test("composerStep() should be arranging once tiles are down", () => {
+  const result = composerStep(composeBoard([TILE, TILE, TILE, TILE]));
+
+  assertEquals(result, "arrange");
+});
+
+Deno.test("composerStep() should be rolling once puck and destination are placed", () => {
+  const result = composerStep({
+    ...composeBoard([TILE, TILE, TILE, TILE]),
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+  });
+
+  assertEquals(result, "roll");
 });

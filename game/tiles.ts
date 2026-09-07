@@ -619,3 +619,23 @@ export function decodePlacements(value: string): TilePlacement[] {
     }];
   });
 }
+
+/** Which part of composing a board is in hand. */
+export type ComposerStep = "deal" | "arrange" | "roll";
+
+/**
+ * Where a board is in the three steps, read off the board itself.
+ *
+ * There is no step to store: an empty board can only be dealt, a composed one
+ * can only be arranged or rolled, and a board carrying both puck and
+ * destination is already a puzzle.
+ */
+export function composerStep(board: Board): ComposerStep {
+  const hasPuck = board.pieces.some((piece) => piece.type === "puck");
+  if (hasPuck && board.destination) return "roll";
+
+  const laid = board.walls.length + board.pieces.length + board.holes.length +
+    board.portals.length;
+
+  return laid ? "arrange" : "deal";
+}

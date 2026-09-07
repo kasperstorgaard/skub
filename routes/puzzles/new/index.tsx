@@ -1,4 +1,4 @@
-import { useSignal } from "@preact/signals";
+import { useComputed, useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
@@ -8,7 +8,11 @@ import { define } from "#/core.ts";
 import { getUserPuzzleDraft } from "#/db/user.ts";
 import { getTileOptions } from "#/game/cookies.ts";
 import { readTiles } from "#/game/tile-store.ts";
-import type { ComposerConfig, DealtTile } from "#/game/tiles.ts";
+import {
+  type ComposerConfig,
+  composerStep,
+  type DealtTile,
+} from "#/game/tiles.ts";
 import type { Puzzle, TileEntry } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
@@ -66,6 +70,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
 
   const config = useSignal(props.data.config);
   const dealt = useSignal<DealtTile[]>([]);
+  const step = useComputed(() => composerStep(puzzle.value.board));
 
   const url = new URL(props.req.url);
 
@@ -118,6 +123,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
               puzzle={puzzle}
               dealt={dealt}
               config={config}
+              step={step}
               catalog={props.data.catalog}
               className={clsx(
                 "max-lg:mt-fl-2",
@@ -133,6 +139,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
         isDev={isDev}
         config={props.data.catalog.length ? config : undefined}
         dealt={dealt}
+        step={props.data.catalog.length ? step : undefined}
       />
       <EditorAutosave puzzle={puzzle} />
       <EditorKeyboardShortcuts puzzle={puzzle} href={href} />
