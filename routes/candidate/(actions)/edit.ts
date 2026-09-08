@@ -29,7 +29,7 @@ export const handler = define.handlers({
     });
 
     return new Response("", {
-      headers: { Location: "/puzzles/new" },
+      headers: { Location: "/puzzles/build" },
       status: 303,
     });
   },

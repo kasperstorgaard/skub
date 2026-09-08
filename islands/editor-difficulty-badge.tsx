@@ -7,7 +7,7 @@ import {
   DifficultyBadge,
   type SolveState,
 } from "#/components/difficulty-badge.tsx";
-import { validateBoard } from "#/game/board.ts";
+import { isReadyToSolve, validateBoard } from "#/game/board.ts";
 import type { Board, Puzzle } from "#/game/types.ts";
 
 type EditorDifficultyBadgeProps = {
@@ -57,8 +57,9 @@ export function EditorDifficultyBadge(
     // A draft that already carries a count came from a solve, not an edit.
     if (minMoves) return;
 
-    // An empty canvas isn't a board that failed to solve.
-    if (!board.pieces.length) return;
+    // A board still being laid out is unfinished, not wrong — the composer
+    // sits here for the whole arrange step, and saying so in red is a lie.
+    if (!isReadyToSolve(board)) return;
 
     try {
       validateBoard(board);

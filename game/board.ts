@@ -17,12 +17,12 @@ import {
 export const COLS = 8;
 export const ROWS = 8;
 
-// Generates an ROWSxCOLS grid of Position objects.
-export function getGrid(): Position[][] {
+// Generates a square grid of Position objects, board-sized unless told otherwise.
+export function getGrid(size = COLS): Position[][] {
   const positions: Position[][] = [];
-  for (let y = 0; y < ROWS; y++) {
+  for (let y = 0; y < size; y++) {
     positions[y] = [];
-    for (let x = 0; x < COLS; x++) {
+    for (let x = 0; x < size; x++) {
       positions[y].push({ x, y });
     }
   }
@@ -70,16 +70,18 @@ const DELTAS: Record<Direction, Position> = {
 /**
  * Checks if a given position is out bounds of the board.
  * @param src The position to check
+ * @param size Grid width to check against, for tile-sized grids
  * @returns true if out of bounds, otherwise false
  */
 function isPositionOutOfBounds(
   src: Position,
+  size = COLS,
 ) {
   return (
     src.x < 0 ||
-    src.x >= COLS ||
+    src.x >= size ||
     src.y < 0 ||
-    src.y >= ROWS
+    src.y >= size
   );
 }
 
@@ -197,6 +199,22 @@ export function isBoardSame(src: Board, target: Board) {
 }
 
 /**
+ * Whether there is anything to solve for yet: something to move, and somewhere
+ * to move it.
+ *
+ * `validateBoard` answers a different question. It rejects a board with no puck
+ * or no destination alongside one that is genuinely wrong — a duplicate piece,
+ * a third portal — and a board being built is neither for most of its life. Ask
+ * this first, and a failure from that is a real one.
+ */
+export function isReadyToSolve(
+  board: Pick<Board, "destination" | "pieces">,
+): boolean {
+  return board.destination != null &&
+    board.pieces.some((piece) => piece.type === "puck");
+}
+
+/**
  * Validates the board structure and contents, returning a sanitized Board object.
  * Can be consumed as a truthy check or a means to get a properly typed Board.
  * Will throw BoardError if invalid.
@@ -240,35 +258,7 @@ export function validateBoard(board: BoardLike): ValidBoard {
   if (pucks.length === 0) throw new BoardError("Board has no puck");
   if (pucks.length > 1) throw new BoardError("Board has multiple pucks");
 
-  const checkedWalls: Wall[] = [];
-
-  for (const wall of walls ?? []) {
-    if (wall == null || !wall.orientation || wall.x == null || wall.y == null) {
-      throw new BoardError("Wall is invalid");
-    }
-
-    if (isPositionOutOfBounds(wall)) {
-      throw new BoardError(`Wall at (${wall.x}, ${wall.y}) is out of bounds`);
-    }
-
-    if (wall.orientation === "horizontal" && wall.y === 0) {
-      throw new BoardError(`Horizontal wall at y=0 duplicates board edge`);
-    }
-    if (wall.orientation === "vertical" && wall.x === 0) {
-      throw new BoardError(`Vertical wall at x=0 duplicates board edge`);
-    }
-
-    if (
-      checkedWalls.some((checkedWall) =>
-        isPositionSame(wall, checkedWall) &&
-        wall.orientation === checkedWall.orientation
-      )
-    ) {
-      throw new BoardError(`Duplicate wall at (${wall.x}, ${wall.y})`);
-    }
-
-    checkedWalls.push(wall);
-  }
+  const checkedWalls = validateWalls(walls ?? []);
 
   const checkedHoles = validatePositions(board.holes ?? [], "Hole");
   const checkedPortals = validatePositions(board.portals ?? [], "Portal");
@@ -306,10 +296,56 @@ export function validateBoard(board: BoardLike): ValidBoard {
   };
 }
 
+/**
+ * Bounds- and duplicate-checks a wall list, returning it sanitized.
+ *
+ * A wall sits on the cell it blocks entry into, so a wall along the low edge
+ * would have to be at 0, and one along the high edge would be out of bounds.
+ * Both are rejected here, which is what lets a tile-sized grid be composed with
+ * its neighbours without ever colliding at a seam.
+ */
+export function validateWalls(
+  walls: (Wall | null | undefined)[],
+  size = COLS,
+): Wall[] {
+  const checked: Wall[] = [];
+
+  for (const wall of walls) {
+    if (wall == null || !wall.orientation || wall.x == null || wall.y == null) {
+      throw new BoardError("Wall is invalid");
+    }
+
+    if (isPositionOutOfBounds(wall, size)) {
+      throw new BoardError(`Wall at (${wall.x}, ${wall.y}) is out of bounds`);
+    }
+
+    if (wall.orientation === "horizontal" && wall.y === 0) {
+      throw new BoardError(`Horizontal wall at y=0 duplicates board edge`);
+    }
+    if (wall.orientation === "vertical" && wall.x === 0) {
+      throw new BoardError(`Vertical wall at x=0 duplicates board edge`);
+    }
+
+    if (
+      checked.some((checkedWall) =>
+        isPositionSame(wall, checkedWall) &&
+        wall.orientation === checkedWall.orientation
+      )
+    ) {
+      throw new BoardError(`Duplicate wall at (${wall.x}, ${wall.y})`);
+    }
+
+    checked.push(wall);
+  }
+
+  return checked;
+}
+
 // Bounds- and duplicate-checks a hazard list, returning it sanitized.
-function validatePositions(
+export function validatePositions(
   positions: (Position | null | undefined)[],
   label: string,
+  size = COLS,
 ): Position[] {
   const checked: Position[] = [];
 
@@ -320,7 +356,7 @@ function validatePositions(
 
     const at = `(${position.x}, ${position.y})`;
 
-    if (isPositionOutOfBounds(position)) {
+    if (isPositionOutOfBounds(position, size)) {
       throw new BoardError(`${label} at ${at} is out of bounds`);
     }
 
@@ -585,6 +621,59 @@ export function isValidSolution(board: Pick<Board, "destination" | "pieces">) {
   return false;
 }
 
+/** Whether a cell has nothing standing on it that a piece could not share. */
+export function isCellFree(
+  board: Pick<Board, "pieces" | "holes" | "portals">,
+  position: Position,
+): boolean {
+  return !board.pieces.some((piece) =>
+    piece.type === "blocker" && isPositionSame(piece, position)
+  ) &&
+    !board.holes.some((hole) => isPositionSame(hole, position)) &&
+    !board.portals.some((portal) => isPositionSame(portal, position));
+}
+
+/** Enough throws to find two free cells; past that the board has none. */
+const MAX_DICE_ROLLS = 40;
+
+/**
+ * Throws the dice for a puck and a destination, the way the tabletop game does:
+ * one die for the column, one for the row.
+ *
+ * Every throw is kept, landings and misses alike — a die that comes down on a
+ * blocker is thrown again, and the sequence records that rather than hiding it.
+ * The last entry in each list is where the piece ends up.
+ */
+export function rollDice(
+  board: Pick<Board, "pieces" | "holes" | "portals">,
+  { random = Math.random }: { random?: () => number } = {},
+): { puck: Position[]; destination: Position[] } {
+  const rollUntil = (accepts: (position: Position) => boolean): Position[] => {
+    const thrown: Position[] = [];
+
+    for (let attempt = 0; attempt < MAX_DICE_ROLLS; attempt++) {
+      const position = {
+        x: Math.floor(random() * COLS),
+        y: Math.floor(random() * ROWS),
+      };
+
+      thrown.push(position);
+      if (accepts(position)) return thrown;
+    }
+
+    throw new BoardError("The dice found nowhere free to land");
+  };
+
+  const puck = rollUntil((position) => isCellFree(board, position));
+  const landed = puck[puck.length - 1];
+
+  const destination = rollUntil((position) =>
+    isCellFree(board, position) && !isPositionSame(position, landed)
+  );
+
+  return { puck, destination };
+}
+
 /**
  * Rotates a board 90° in the given direction.
  * Wall orientations swap (horizontal ↔ vertical) and positions shift
@@ -593,14 +682,21 @@ export function isValidSolution(board: Pick<Board, "destination" | "pieces">) {
 export function rotateBoard(
   board: Board,
   direction: "right" | "left",
+  { size = COLS }: { size?: number } = {},
 ): Board {
   const destination = board.destination &&
-    rotatePosition(board.destination, direction);
-  const pieces = board.pieces.map((piece) => rotatePosition(piece, direction));
-  const walls = board.walls.map((wall) => rotatePosition(wall, direction));
-  const holes = board.holes.map((hole) => rotatePosition(hole, direction));
+    rotatePosition(board.destination, direction, size);
+  const pieces = board.pieces.map((piece) =>
+    rotatePosition(piece, direction, size)
+  );
+  const walls = board.walls.map((wall) =>
+    rotatePosition(wall, direction, size)
+  );
+  const holes = board.holes.map((hole) =>
+    rotatePosition(hole, direction, size)
+  );
   const portals = board.portals.map((portal) =>
-    rotatePosition(portal, direction)
+    rotatePosition(portal, direction, size)
   );
 
   return { destination, pieces, walls, holes, portals };
@@ -610,10 +706,15 @@ export function rotateBoard(
 function rotatePosition<TItem extends Position | Wall>(
   item: TItem,
   direction: "right" | "left" = "right",
+  size = COLS,
 ): TItem {
   if (direction !== "right") {
     // Rotate right 3 times
-    return rotatePosition(rotatePosition(rotatePosition(item)));
+    return rotatePosition(
+      rotatePosition(rotatePosition(item, "right", size), "right", size),
+      "right",
+      size,
+    );
   }
 
   const wall = "orientation" in item ? item as Wall : null;
@@ -622,21 +723,21 @@ function rotatePosition<TItem extends Position | Wall>(
     if (wall.orientation === "horizontal") {
       return {
         ...item,
-        x: COLS - wall.y,
+        x: size - wall.y,
         y: wall.x,
         orientation: "vertical",
       };
     } else {
       return {
         ...item,
-        x: COLS - 1 - wall.y,
+        x: size - 1 - wall.y,
         y: wall.x,
         orientation: "horizontal",
       };
     }
   }
 
-  return { ...item, x: COLS - 1 - item.y, y: item.x };
+  return { ...item, x: size - 1 - item.y, y: item.x };
 }
 
 /**
@@ -647,13 +748,16 @@ function rotatePosition<TItem extends Position | Wall>(
 export function flipBoard(
   board: Board,
   axis: "horizontal" | "vertical",
+  { size = COLS }: { size?: number } = {},
 ): Board {
   const destination = board.destination &&
-    flipPosition(board.destination, axis);
-  const pieces = board.pieces.map((piece) => flipPosition(piece, axis));
-  const walls = board.walls.map((wall) => flipPosition(wall, axis));
-  const holes = board.holes.map((hole) => flipPosition(hole, axis));
-  const portals = board.portals.map((portal) => flipPosition(portal, axis));
+    flipPosition(board.destination, axis, size);
+  const pieces = board.pieces.map((piece) => flipPosition(piece, axis, size));
+  const walls = board.walls.map((wall) => flipPosition(wall, axis, size));
+  const holes = board.holes.map((hole) => flipPosition(hole, axis, size));
+  const portals = board.portals.map((portal) =>
+    flipPosition(portal, axis, size)
+  );
 
   return { destination, pieces, walls, holes, portals };
 }
@@ -662,6 +766,7 @@ export function flipBoard(
 function flipPosition<TItem extends Position | Wall>(
   item: TItem,
   axis: "horizontal" | "vertical",
+  size = COLS,
 ): TItem {
   const wall = "orientation" in item ? item as Wall : null;
 
@@ -670,14 +775,14 @@ function flipPosition<TItem extends Position | Wall>(
 
     return {
       ...item,
-      x: axis === "horizontal" ? COLS - 1 - item.x + offset : item.x,
-      y: axis === "vertical" ? ROWS - 1 - item.y + offset : item.y,
+      x: axis === "horizontal" ? size - 1 - item.x + offset : item.x,
+      y: axis === "vertical" ? size - 1 - item.y + offset : item.y,
     };
   }
 
   return {
     ...item,
-    x: axis === "horizontal" ? COLS - 1 - item.x : item.x,
-    y: axis === "vertical" ? ROWS - 1 - item.y : item.y,
+    x: axis === "horizontal" ? size - 1 - item.x : item.x,
+    y: axis === "vertical" ? size - 1 - item.y : item.y,
   };
 }

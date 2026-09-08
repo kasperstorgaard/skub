@@ -1,9 +1,8 @@
 import { formatPuzzle } from "#/game/formatter.ts";
-import type { WallSpread } from "#/game/generator.ts";
 import { parsePuzzle } from "#/game/parser.ts";
 import { CALIBRATION, type Metrics, type ScoredBoard } from "#/game/scoring.ts";
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
-import type { Difficulty, Move, Puzzle } from "#/game/types.ts";
+import type { Difficulty, Move, Puzzle, TilePlacement } from "#/game/types.ts";
 
 /**
  * The candidate store, relative to the project root (cwd). Tracked in git — the
@@ -55,18 +54,16 @@ export const REASON_TAG_VALUES: readonly string[] = [
 ];
 
 /**
- * The generator settings a candidate was produced with (provenance).
- * `difficulty` is historical — candidates generated before 0.7.0 were produced
- * against a difficulty band; generation now targets an exact move count and the
- * curator judges difficulty afterwards (see `Feedback.difficulty`).
+ * The settings a pre-1.0.0 candidate was generated with, when boards were random
+ * wall and blocker placement rather than composed tiles. Kept so those files
+ * still round-trip; nothing writes it any more.
  */
 export type GenOptions = {
-  wallsRange: [number, number];
-  blockersRange: [number, number];
-  wallSpread: WallSpread;
-  symmetry: number;
+  wallsRange?: [number, number];
+  blockersRange?: [number, number];
+  wallSpread?: string;
+  symmetry?: number;
   difficulty?: Difficulty;
-  /** Exact minMoves the run was after. Absent on pre-0.7.0 candidates. */
   targetMoves?: number;
 };
 
@@ -170,9 +167,8 @@ export type StoredScoring = {
 };
 
 /**
- * Where a candidate's board came from. Not de-duplication — the novelty gate
- * runs during generation, so a generated board is never a corpus copy. It's
- * that the calibration reports diff these populations against each other, and a
+ * Where a candidate's board came from. Not de-duplication — the calibration
+ * reports diff these populations against each other, and a
  * board rated through `/candidate` would otherwise land on more than one side.
  *
  * `generated` is the generator's own output and nothing else, so the reports
@@ -202,7 +198,10 @@ export type Candidate = Puzzle & Feedback & {
    * so "is there a puzzle called this?" answers about the wrong board.
    */
   promotedAs?: string;
+  /** Provenance for a pre-1.0.0 board; see `GenOptions`. */
   genOptions?: GenOptions;
+  /** The tiles a composed board was dealt from, and how each was turned. */
+  tiles?: TilePlacement[];
   /** Generator algorithm version that produced this board (e.g. "0.5"). */
   generatorVersion?: string;
   /** Scores and metrics as last analysed; stale across a calibration bump. */

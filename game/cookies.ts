@@ -1,6 +1,7 @@
 import { getCookies, setCookie } from "@std/http/cookie";
 
-import type { GenOptions } from "#/game/candidates.ts";
+import { type ComposerConfig, TILE_OPTIONS_COOKIE } from "#/game/tiles.ts";
+import { TILE_CATEGORIES, type TileCategory } from "#/game/types.ts";
 
 const TRACKING_ID_KEY = "tracking_id";
 // 1 year
@@ -9,6 +10,18 @@ const TRACKING_DURATION = 1000 * 60 * 60 * 24 * 365;
 const HINT_COUNT_KEY = "hint_count";
 // 24 h in seconds
 const HINT_COUNT_DURATION = 60 * 60 * 24;
+
+const BUILD_MODE_KEY = "build_mode";
+// 1 year in seconds
+const BUILD_MODE_DURATION = 60 * 60 * 24 * 365;
+
+/** The two ways to build a puzzle, and where each one lives. */
+export const BUILD_MODES = {
+  build: "/puzzles/build",
+  compose: "/puzzles/compose",
+} as const;
+
+export type BuildMode = keyof typeof BUILD_MODES;
 
 /**
  * Generates a tracking ID using Web Crypto API.
@@ -83,63 +96,71 @@ export function setHintCount(
   });
 }
 
-const GENERATOR_OPTIONS_KEY = "generator_options";
-// 1 year in seconds
-const GENERATOR_OPTIONS_DURATION = 60 * 60 * 24 * 365;
+/**
+ * The builder last opened, for /puzzles/new to send you back to. Unset means
+ * building by hand, which is the older of the two.
+ */
+export function getBuildMode(headers: Headers): BuildMode {
+  const stored = getCookies(headers)[BUILD_MODE_KEY];
 
-const SPREADS = ["mid", "balanced", "spread"];
+  // hasOwn, not `in`: "toString" is in every object, and would come back out
+  // here as a function for the redirect to set as a Location.
+  return stored != null && Object.hasOwn(BUILD_MODES, stored)
+    ? stored as BuildMode
+    : "build";
+}
+
+/** Written by each builder as it opens, so arriving is what records the choice. */
+export function setBuildMode(headers: Headers, mode: BuildMode) {
+  setCookie(headers, {
+    name: BUILD_MODE_KEY,
+    value: mode,
+    path: "/",
+    maxAge: BUILD_MODE_DURATION,
+    httpOnly: true,
+    sameSite: "Lax",
+  });
+}
 
 const isRange = (r: unknown): r is [number, number] =>
   Array.isArray(r) && r.length === 2 &&
   r.every((n) => typeof n === "number" && n >= 0) && r[0] <= r[1];
 
+const isPattern = (p: unknown): p is TileCategory[] =>
+  Array.isArray(p) && p.length === 4 &&
+  p.every((code) => TILE_CATEGORIES.includes(code));
+
 /**
- * Reads the generator's persisted knob values from the request cookies, so a
- * curation session's settings survive reloads. Set by `setGeneratorOptions` on
- * each /api/generate run; anything malformed or out of range is dropped
- * field-by-field rather than rejecting the whole cookie.
+ * Reads the composer's persisted settings from the request cookies, so a
+ * dealing session picks up where the last one left off. Written by the sidebar
+ * itself — dealing never touches the server — so anything malformed or out of
+ * range is dropped field by field rather than rejecting the whole cookie.
  */
-export function getGeneratorOptions(headers: Headers): Partial<GenOptions> {
-  const raw = getCookies(headers)[GENERATOR_OPTIONS_KEY];
+export function getTileOptions(headers: Headers): Partial<ComposerConfig> {
+  const raw = getCookies(headers)[TILE_OPTIONS_COOKIE];
   if (!raw) return {};
 
-  let stored: Partial<GenOptions>;
+  let stored: Partial<ComposerConfig>;
   try {
     stored = JSON.parse(decodeURIComponent(raw));
   } catch {
     return {};
   }
 
-  const options: Partial<GenOptions> = {};
-  if (isRange(stored.wallsRange)) options.wallsRange = stored.wallsRange;
-  if (isRange(stored.blockersRange)) {
-    options.blockersRange = stored.blockersRange;
+  const options: Partial<ComposerConfig> = {};
+  if (stored.mode === "pattern" || stored.mode === "random") {
+    options.mode = stored.mode;
   }
-  if (SPREADS.includes(stored.wallSpread!)) {
-    options.wallSpread = stored.wallSpread;
-  }
+  if (isPattern(stored.pattern)) options.pattern = stored.pattern;
+  if (typeof stored.portals === "boolean") options.portals = stored.portals;
+  if (typeof stored.holes === "boolean") options.holes = stored.holes;
   if (
-    typeof stored.symmetry === "number" &&
-    stored.symmetry >= 0 && stored.symmetry <= 1
+    typeof stored.distinct === "number" &&
+    stored.distinct >= 1 && stored.distinct <= 4
   ) {
-    options.symmetry = stored.symmetry;
+    options.distinct = stored.distinct;
   }
-  return options;
-}
+  if (isRange(stored.moves)) options.moves = stored.moves;
 
-/**
- * Persists the knob values a generation run actually used, on the response
- * headers of /api/generate — "persist on Generate", so idle slider twiddling
- * never sticks. Server-set and server-read only, hence httpOnly.
- */
-export function setGeneratorOptions(headers: Headers, options: GenOptions) {
-  setCookie(headers, {
-    name: GENERATOR_OPTIONS_KEY,
-    value: encodeURIComponent(JSON.stringify(options)),
-    path: "/puzzles",
-    maxAge: GENERATOR_OPTIONS_DURATION,
-    httpOnly: true,
-    sameSite: "Lax",
-  });
-  return headers;
+  return options;
 }

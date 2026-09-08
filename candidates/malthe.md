@@ -1,112 +1,94 @@
 ---
 name: Malthe
 slug: malthe
-createdAt: 2026-07-22T19:29:10.294Z
-difficulty: easy
-minMoves: 6
-source: generated
-genOptions:
-  wallsRange:
-    - 6
-    - 20
-  blockersRange:
-    - 3
-    - 8
-  wallSpread: spread
-  symmetry: 0.7
-  targetMoves: 6
-generatorVersion: 0.7.0
+createdAt: 2026-09-08T18:38:06.512Z
+difficulty: medium
+minMoves: 8
+source: edited
+tiles:
+  - id: p-01
+    rotation: 2
+  - id: a-01
+    rotation: 3
+    flipped: true
+  - id: p-01
+    rotation: 1
+    flipped: true
+  - id: b-01
+    rotation: 0
+generatorVersion: 1.0.0
 scoring:
-  score: 0.4375
-  mean: 0.4375
-  min: 0.4176
-  stddev: 0.02
+  score: 0.3962
+  mean: 0.3962
+  min: 0.3962
+  stddev: 0
   metrics:
-    setupRatio: 0.6667
-    coverage: 0.0781
+    setupRatio: 0.375
+    coverage: 0.1563
     deception: 0
-    reversals: 1
+    reversals: 0
     crossTrailOverlap: 5
-    totalDistance: 14
-    pieceUsage: 7.1699
-    stopWeighted: 16
+    totalDistance: 12
+    pieceUsage: 3.3219
+    stopWeighted: 19
     pointlessClearance: 0
     sameDirectionRepeat: 0
-    openingSetup: 4
-    uniqueSolutions: 2
-    wallUtilization: 0.2
-    deadSpace: 0.6875
-    puckPathVariety: 0.5
-    clumping: 0.1364
-    emptyRegion: 0.2813
-    wallSymmetry: 1
-    firstMovePrecision: 0.3333
-    searchProfile: 0.9652
-    isolationGap: 0
-    nearMissCount: 0
+    openingSetup: 0
+    uniqueSolutions: 1
+    wallUtilization: 0.16
+    deadSpace: 0.7813
+    puckPathVariety: 1
+    clumping: 0.0882
+    emptyRegion: 0.0469
+    wallSymmetry: 0.32
+    firstMovePrecision: 0.5
+    searchProfile: 0.9552
+    isolationGap: 1
+    nearMissCount: 4
   solutions:
-    - moves: F1F4-B4E4-E7-F6F5-B5E5-E6
-      score: 0.4176
+    - moves: G8G6-E6D6-A4-G6D6-A4C4-D6A4-B4-B5
+      score: 0.3962
       metrics:
-        setupRatio: 0.6667
-        coverage: 0.0781
+        setupRatio: 0.375
+        coverage: 0.1563
         deception: 0
         reversals: 0
-        crossTrailOverlap: 2
-        totalDistance: 14
-        pieceUsage: 7.1699
-        stopWeighted: 15
-        pointlessClearance: 0
-        sameDirectionRepeat: 0
-        openingSetup: 4
-        uniqueSolutions: 2
-        wallUtilization: 0.2
-        deadSpace: 0.6875
-        puckPathVariety: 0.5
-        clumping: 0.1364
-        emptyRegion: 0.2813
-        wallSymmetry: 1
-        firstMovePrecision: 0.3333
-        searchProfile: 0.9652
-        isolationGap: 0
-        nearMissCount: 0
-    - moves: G5C5-F6F5-C5E5-E7-B5E5-E6
-      score: 0.4575
-      metrics:
-        setupRatio: 0.6667
-        coverage: 0.0781
-        deception: 0
-        reversals: 1
         crossTrailOverlap: 5
-        totalDistance: 13
-        pieceUsage: 5.9069
-        stopWeighted: 16
+        totalDistance: 12
+        pieceUsage: 3.3219
+        stopWeighted: 19
         pointlessClearance: 0
         sameDirectionRepeat: 0
-        openingSetup: 4
-        uniqueSolutions: 2
-        wallUtilization: 0.2
-        deadSpace: 0.6875
-        puckPathVariety: 0.5
-        clumping: 0.1364
-        emptyRegion: 0.2813
-        wallSymmetry: 1
-        firstMovePrecision: 0.3333
-        searchProfile: 0.9652
-        isolationGap: 0
-        nearMissCount: 0
+        openingSetup: 0
+        uniqueSolutions: 1
+        wallUtilization: 0.16
+        deadSpace: 0.7813
+        puckPathVariety: 1
+        clumping: 0.0882
+        emptyRegion: 0.0469
+        wallSymmetry: 0.32
+        firstMovePrecision: 0.5
+        searchProfile: 0.9552
+        isolationGap: 1
+        nearMissCount: 4
   calibrationVersion: 5.0.0
+rating: 3.5
+reasons: []
+solutionTags:
+  G8G6-E6D6-A4-G6D6-A4C4-D6A4-B4-B5:
+    - too-easy
+    - boring
 ---
 
 ```
 + A B C D E F G H +
-1       _ #̲ #     |
-2                 |
-3      |   |  #   |
-4   # _     _     |
-5   @         #   |
-6      |  X|#     |
-7       _ _       |
-8           #     |
+1   _ #   _     _ |
+2  |        _     |
+3 _ _  |    # _   |
+4 P    |   |      |
+5   X̲  |P    |_|  |
+6  |   |  #̲     _ |
+7 #   _ _   _     |
+8          | |@   |
 +-----------------+
 ```

@@ -70,12 +70,6 @@ export type SolveOptions = {
   timeoutMs?: number;
   /** Called before a board is actually solved (cache misses only). */
   onProgress?: (slug: string) => void;
-  /**
-   * Re-solve entries cached before the gate verdict was recorded. Only the gate
-   * audit needs it, so only the gate audit pays for the one-off re-solve; every
-   * other report keeps using the cache as it stands.
-   */
-  withGates?: boolean;
 };
 
 export type SolveResult = {
@@ -90,7 +84,7 @@ export async function solveFiles(
   paths: string[],
   options: SolveOptions = {},
 ): Promise<SolveResult> {
-  const { timeoutMs = 60_000, onProgress, withGates = false } = options;
+  const { timeoutMs = 60_000, onProgress } = options;
   const cache = await readCache();
 
   const boards = new Map<string, SolvedBoard>();
@@ -101,7 +95,7 @@ export async function solveFiles(
     const hash = await contentHash(await Deno.readTextFile(path));
 
     const cached = cache[path]?.hash === hash ? cache[path].board : null;
-    if (cached && (!withGates || cached.quality)) {
+    if (cached) {
       boards.set(slug, cached);
       continue;
     }

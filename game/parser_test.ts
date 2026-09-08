@@ -409,3 +409,31 @@ slug: untitled
     "Board has no destination",
   );
 });
+
+Deno.test("parsePuzzle - names a draft only when it claims to be finished", () => {
+  const unnamed = `---
+number: 0
+name: ''
+slug: ''
+createdAt: 2026-01-01T00:00:00.000Z
+difficulty: medium
+minMoves: 0
+---
+
+\`\`\`
++ A B C D E F G H +
+1   _             |
+2                 |
+3                 |
+4                 |
+5                 |
+6                 |
+7                 |
+8                 |
++-----------------+
+\`\`\`
+`;
+
+  assertEquals(parsePuzzle(unnamed, { validate: false }).name, "");
+  assertThrows(() => parsePuzzle(unnamed), Error, "name");
+});

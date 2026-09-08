@@ -7,12 +7,15 @@ import {
   getSlide,
   getTargets,
   isBoardSame,
+  isCellFree,
   isLooped,
   isMoveSame,
   isPositionSame,
+  isReadyToSolve,
   isValidMove,
   isValidSolution,
   resolveMoves,
+  rollDice,
   rotateBoard,
   validateBoard,
 } from "./board.ts";
@@ -295,7 +298,7 @@ Deno.test("isBoardSame() should be false when the puck and a blocker swap roles"
 
 Deno.test("isBoardSame() should be false for a mirrored board", () => {
   // A mirror is a different layout to play, unlike the canonical hash the
-  // novelty gate uses, which folds the dihedral symmetries together.
+  // corpus check uses, which folds the dihedral symmetries together.
   assertEquals(
     isBoardSame({
       holes: [],
@@ -1395,4 +1398,83 @@ Deno.test("flipBoard() horizontal should mirror holes and portals", () => {
 
   assertEquals(result.holes, [{ x: 5, y: 3 }]);
   assertEquals(result.portals, [{ x: 3, y: 5 }, { x: 1, y: 7 }]);
+});
+
+Deno.test("getGrid() should size itself to a tile when asked", () => {
+  const result = getGrid(4);
+
+  assertEquals(result, [
+    [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }],
+    [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }],
+    [{ x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }],
+    [{ x: 0, y: 3 }, { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 3, y: 3 }],
+  ]);
+});
+
+Deno.test("isCellFree() should report a cell a hazard stands on as taken", () => {
+  const result = isCellFree({
+    pieces: [{ x: 0, y: 0, type: "blocker" }],
+    holes: [{ x: 1, y: 0 }],
+    portals: [{ x: 2, y: 0 }],
+  }, { x: 1, y: 0 });
+
+  assertEquals(result, false);
+});
+
+Deno.test("isCellFree() should ignore the puck, which is the piece being placed", () => {
+  const result = isCellFree({
+    pieces: [{ x: 3, y: 3, type: "puck" }],
+    holes: [],
+    portals: [],
+  }, { x: 3, y: 3 });
+
+  assertEquals(result, true);
+});
+
+Deno.test("rollDice() should throw again over a taken cell, keeping every throw", () => {
+  // Two throws per cell — column, then row.
+  const rolls = [0, 0, 0.5, 0, 0.5, 0, 0, 0.5];
+  let roll = 0;
+
+  const result = rollDice({
+    pieces: [{ x: 0, y: 0, type: "blocker" }],
+    holes: [],
+    portals: [],
+  }, { random: () => rolls[roll++] });
+
+  assertEquals(result, {
+    puck: [{ x: 0, y: 0 }, { x: 4, y: 0 }],
+    destination: [{ x: 4, y: 0 }, { x: 0, y: 4 }],
+  });
+});
+
+Deno.test("isReadyToSolve() should hold off on a board still being laid out", () => {
+  // The composer's arrange step: blockers down, nothing to move yet.
+  const arranging = {
+    destination: undefined,
+    pieces: [{ x: 2, y: 2, type: "blocker" as const }],
+  };
+
+  assertEquals(isReadyToSolve(arranging), false);
+});
+
+Deno.test("isReadyToSolve() should hold off on a puck with nowhere to go", () => {
+  const result = isReadyToSolve({
+    destination: undefined,
+    pieces: [{ x: 0, y: 0, type: "puck" as const }],
+  });
+
+  assertEquals(result, false);
+});
+
+Deno.test("isReadyToSolve() should say yes once a puck has a destination", () => {
+  const result = isReadyToSolve({
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" as const },
+      { x: 3, y: 3, type: "blocker" as const },
+    ],
+  });
+
+  assertEquals(result, true);
 });

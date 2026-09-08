@@ -24,7 +24,7 @@ export const handler = define.handlers({
     try {
       // Lands in the editor, so an unfinished board is a valid thing to open.
       const puzzle = parsePuzzle(markdown, { validate: false });
-      const redirect = ctx.req.headers.get("Referer") ?? "/puzzles/new";
+      const redirect = ctx.req.headers.get("Referer") ?? "/puzzles/build";
 
       await setUserPuzzleDraft(ctx.state.userId, puzzle);
 

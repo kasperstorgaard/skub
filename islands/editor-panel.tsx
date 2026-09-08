@@ -11,7 +11,6 @@ import {
   FlipHorizontal,
   FlipVertical,
   Icon,
-  Shuffle,
   Star,
   Trash,
 } from "#/components/icons.tsx";
@@ -145,9 +144,8 @@ export function EditorPanel(
           </button>
 
           {isDev && (
-            <a href="/puzzles/generate" className="btn">
-              <Icon icon={Shuffle} />
-              Generate
+            <a href="/puzzles/compose" className="text-fl-0">
+              Compose from tiles
             </a>
           )}
         </div>

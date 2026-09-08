@@ -38,6 +38,12 @@ import {
 } from "#/game/url.ts";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
+  buildDiceKeyframes,
+  diceDuration,
+  diceName,
+  type DiceThrows,
+} from "#/lib/dice.ts";
+import {
   buildPortalKeyframes,
   buildPortalLoopKeyframes,
   buildReplayKeyframes,
@@ -50,16 +56,42 @@ import {
   warpName,
 } from "#/lib/replay.ts";
 
+/**
+ * The four tile-sized areas of the board, for picking one to work on. Written
+ * out because Tailwind only sees class names it can read whole in the source.
+ */
+const QUADRANTS = [
+  { name: "north-west", area: "col-[1/5] row-[1/5]" },
+  { name: "north-east", area: "col-[5/9] row-[1/5]" },
+  { name: "south-west", area: "col-[1/5] row-[5/9]" },
+  { name: "south-east", area: "col-[5/9] row-[5/9]" },
+];
+
 type BoardProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  mode: Signal<"editor" | "replay" | "solve" | "readonly">;
+  mode: Signal<"editor" | "replay" | "solve" | "readonly" | "compose">;
+  /** Which quadrant is in hand, when composing. The board is the selector. */
+  quadrant?: Signal<number | null>;
+  /** The throws of the last roll, when composing. The board plays them out. */
+  dice?: Signal<DiceThrows | null>;
   isNew?: boolean;
+  /** Grid width, for the tile builder's 4x4 board. */
+  size?: 4 | 8;
   className?: string;
 };
 
 export default function Board(
-  { href, puzzle, mode, isNew = false, className }: BoardProps,
+  {
+    href,
+    puzzle,
+    mode,
+    isNew = false,
+    size = 8,
+    quadrant,
+    dice,
+    className,
+  }: BoardProps,
 ) {
   const swipeRegionRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
@@ -103,7 +135,7 @@ export default function Board(
 
   const { updateLocation } = useRouter({ onLocationUpdated });
 
-  const spaces = useMemo(() => getGrid(), []);
+  const spaces = useMemo(() => getGrid(size), [size]);
 
   const guides = useMemo(
     () =>
@@ -225,7 +257,12 @@ export default function Board(
         }}
         className={clsx(
           // Relative for the touch region positioning
-          "relative grid gap-(--gap) w-full grid-cols-[repeat(8,var(--space-w))] grid-rows-[repeat(8,var(--space-w))]",
+          "relative grid gap-(--gap) w-full",
+          // Written out per size: Tailwind only sees class names it can read
+          // whole in the source.
+          size === 4
+            ? "grid-cols-[repeat(4,var(--space-w))] grid-rows-[repeat(4,var(--space-w))]"
+            : "grid-cols-[repeat(8,var(--space-w))] grid-rows-[repeat(8,var(--space-w))]",
           "print:[--space-w:62px]! print:[--gap:var(--size-2)]!",
           className,
         )}
@@ -256,7 +293,9 @@ export default function Board(
           <BoardActiveCell {...state.active} />
         )}
 
-        {board.destination && <BoardDestination {...board.destination} />}
+        {board.destination && (
+          <BoardDestination {...board.destination} dice={dice?.value} />
+        )}
 
         {board.walls.map((wall) => (
           <BoardWall
@@ -280,6 +319,27 @@ export default function Board(
           />
         ))}
 
+        {mode.value === "compose" && quadrant && QUADRANTS.map((
+          { name, area },
+          index,
+        ) => (
+          <button
+            key={name}
+            type="button"
+            className={clsx(
+              area,
+              "z-1 rounded-1 bg-transparent border-2 cursor-pointer",
+              quadrant.value === index
+                ? "border-brand"
+                : "border-transparent hover:border-link",
+            )}
+            aria-label={`Tile in the ${name}`}
+            aria-pressed={quadrant.value === index}
+            onClick={() =>
+              quadrant.value = quadrant.value === index ? null : index}
+          />
+        ))}
+
         {pieces.map((piece) => (
           <BoardPiece
             key={piece.id}
@@ -287,6 +347,7 @@ export default function Board(
             href={getActiveHref(piece, { ...state, href: href.value })}
             warp={warp?.id === piece.id ? warp : undefined}
             loop={loop?.id === piece.id ? loop : undefined}
+            dice={piece.type === "puck" ? dice?.value : undefined}
             isActive={state.active && isPositionSame(piece, state.active)}
             isReadonly={mode.value !== "solve" || isLocked}
             isReplay={mode.value === "replay" && isHydrated}
@@ -315,6 +376,17 @@ export default function Board(
             onFocus={() => {}}
           />
         ))}
+
+        {dice && dice.value && (
+          <style>
+            {buildDiceKeyframes("puck", dice.value.puck, dice.value.nonce)}
+            {buildDiceKeyframes(
+              "destination",
+              dice.value.destination,
+              dice.value.nonce,
+            )}
+          </style>
+        )}
 
         {warp && <style>{buildPortalKeyframes(warp)}</style>}
 
@@ -469,7 +541,20 @@ function BoardPortal({ x, y }: Position) {
   );
 }
 
-function BoardDestination({ x, y }: Position) {
+type BoardDestinationProps = Position & {
+  dice?: DiceThrows | null;
+};
+
+function BoardDestination({ x, y, dice }: BoardDestinationProps) {
+  // Both animations sit on the one element: the cell it is on comes from --x/--y
+  // and the drop from `scale`, so neither overwrites the other.
+  const rolling = dice &&
+    `${diceName("destination", dice.nonce)} ${
+      diceDuration(dice.destination)
+    }ms linear both, ${diceName("destination", dice.nonce)}-drop ${
+      diceDuration(dice.destination)
+    }ms linear both`;
+
   return (
     <div
       className={clsx(
@@ -480,6 +565,7 @@ function BoardDestination({ x, y }: Position) {
       style={{
         "--x": x,
         "--y": y,
+        animation: rolling || undefined,
       }}
     >
       <Icon icon={X} className="text-ui-1 text-[calc(var(--space-w)-4px)]" />
@@ -550,6 +636,7 @@ type BoardPieceProps = {
   isDropped?: boolean;
   warp?: PortalWarp;
   loop?: PortalLoop;
+  dice?: DiceThrows | null;
   wiggle?: boolean;
   onFocus: (event: FocusEvent) => void;
 };
@@ -567,6 +654,7 @@ function BoardPiece(
     isActive,
     warp,
     loop,
+    dice,
     wiggle,
     onFocus,
   }: BoardPieceProps,
@@ -597,6 +685,11 @@ function BoardPiece(
           // Caught between two portals: it circles until the move is undone.
           : loop
           ? `${loopName(loop.id)} ${loopDuration(loop)}ms linear infinite`
+          // Just thrown: it comes down on each cell the roll tried.
+          : dice
+          ? `${diceName("puck", dice.nonce)} ${
+            diceDuration(dice.puck)
+          }ms linear both`
           : undefined,
         "--replay-duration": "calc(var(--replay-len) * var(--replay-speed))",
       }}
@@ -607,7 +700,7 @@ function BoardPiece(
         "translate-y-[calc((var(--space-w)+var(--gap))*var(--y))]",
         // A keyframed piece drives --x/--y itself, so the transition would only
         // smear the steps it is trying to make crisp.
-        !warp && !loop && !isReplay &&
+        !warp && !loop && !isReplay && !dice &&
           "transition-transform duration-(--piece-speed,200ms) ease-out",
         isReadonly && "pointer-events-none",
       )}
@@ -627,6 +720,10 @@ function BoardPiece(
             ? `${loopName(loop.id)}-squish ${
               loopDuration(loop)
             }ms linear infinite`
+            : dice
+            ? `${diceName("puck", dice.nonce)}-drop ${
+              diceDuration(dice.puck)
+            }ms linear both`
             : undefined,
         }}
         className={clsx(

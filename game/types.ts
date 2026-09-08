@@ -61,6 +61,33 @@ export type Puzzle = {
   hidden?: boolean;
 };
 
+// A tile's kind, from the sketchbook's own shorthand. Derived from contents:
+// hazards decide P/X/Z, and an unhazarded tile is A or B by how open it is.
+export const TILE_CATEGORIES = ["A", "B", "P", "X", "Z"] as const;
+export type TileCategory = typeof TILE_CATEGORIES[number];
+
+// A quarter-turn count, clockwise.
+export type Rotation = 0 | 1 | 2 | 3;
+
+// A 4x4 board fragment. Structurally a board, but never holds a puck or a
+// destination — those are rolled onto the composed board, not authored here.
+export type Tile = Board;
+
+// A tile as stored in the catalog.
+export type TileEntry = {
+  id: string;
+  name?: string;
+  category: TileCategory;
+  tile: Tile;
+};
+
+// How one dealt tile ended up on the board, kept as provenance.
+export type TilePlacement = {
+  id: string;
+  rotation: Rotation;
+  flipped?: boolean;
+};
+
 // Lightweight puzzle entry used in the manifest index
 export type PuzzleManifestEntry = Pick<
   Puzzle,

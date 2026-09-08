@@ -4,6 +4,7 @@ import { useMemo } from "preact/hooks";
 
 import { useEditor } from "#/client/editor.ts";
 import { Icon, X } from "#/components/icons.tsx";
+import { KeyHint } from "#/components/key-hint.tsx";
 import { PortalRings } from "#/components/portal-rings.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
@@ -11,6 +12,9 @@ import { decodeState } from "#/game/url.ts";
 type EditorToolbarProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
+  /** A tile has neither, so its builder leaves both tools out. */
+  hidePuck?: boolean;
+  hideDestination?: boolean;
   className?: string;
 };
 
@@ -19,7 +23,9 @@ type EditorToolbarProps = {
  * On mobile: flows inline inside Main.
  * On desktop: breaks out to the right of Main via absolute positioning.
  */
-export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
+export function EditorToolbar(
+  { href, puzzle, hidePuck, hideDestination, className }: EditorToolbarProps,
+) {
   const active = useMemo(
     () => decodeState(href.value).active,
     [href.value],
@@ -70,14 +76,7 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         <div className="size-5 border-t-[3px] border-l-[3px] border-ui-4" />
       </button>
 
-      <div
-        className={clsx(
-          "not-lg:hidden col-2 row-[1/4] relative flex items-center justify-center p-1",
-        )}
-      >
-        <BracketBackground className="absolute inset-0" />
-        <kbd className="relative z-0">W</kbd>
-      </div>
+      <KeyHint className="row-[1/4]">W</KeyHint>
 
       <button
         type="button"
@@ -89,15 +88,17 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         <div className="size-4 bg-ui-3 rounded-1" />
       </button>
 
-      <button
-        type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
-        aria-label="Puck"
-        disabled={disabled}
-        onClick={() => setCellContent("puck")}
-      >
-        <div className="size-4 bg-ui-2 rounded-round" />
-      </button>
+      {!hidePuck && (
+        <button
+          type="button"
+          className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+          aria-label="Puck"
+          disabled={disabled}
+          onClick={() => setCellContent("puck")}
+        >
+          <div className="size-4 bg-ui-2 rounded-round" />
+        </button>
+      )}
 
       <button
         type="button"
@@ -121,62 +122,29 @@ export function EditorToolbar({ href, puzzle, className }: EditorToolbarProps) {
         </div>
       </button>
 
-      <div
-        className={clsx(
-          "not-lg:hidden col-2 row-start-4 row-span-4 relative flex items-center justify-center p-1",
-        )}
-      >
-        <BracketBackground className="absolute inset-0" />
-        <kbd className="relative z-0">P</kbd>
-      </div>
+      {
+        /* The bracket spans the cell buttons it belongs to, and a tile has no
+          puck among them. */
+      }
+      <KeyHint className={hidePuck ? "row-[4/7]" : "row-[4/8]"}>P</KeyHint>
 
-      <button
-        type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
-        aria-label="Destination"
-        disabled={disabled}
-        onClick={setDestination}
-      >
-        <div className="size-5 border-2 border-ui-1 flex items-center justify-center">
-          <Icon icon={X} className="text-ui-1 text-fl-0" />
-        </div>
-      </button>
+      {!hideDestination && (
+        <>
+          <button
+            type="button"
+            className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+            aria-label="Destination"
+            disabled={disabled}
+            onClick={setDestination}
+          >
+            <div className="size-5 border-2 border-ui-1 flex items-center justify-center">
+              <Icon icon={X} className="text-ui-1 text-fl-0" />
+            </div>
+          </button>
 
-      <div
-        className={clsx(
-          "not-lg:hidden col-2 relative flex items-center justify-center p-1",
-        )}
-      >
-        <BracketBackground className="absolute inset-0" />
-        <kbd className="relative z-0">D</kbd>
-      </div>
-    </div>
-  );
-}
-
-type BracketProps = {
-  className?: string;
-};
-
-// Open-left bracket connecting button rows to their kbd shortcut on desktop.
-function BracketBackground({ className }: BracketProps) {
-  return (
-    <svg
-      className={clsx(
-        "size-full pointer-events-none py-1",
-        className,
+          <KeyHint>D</KeyHint>
+        </>
       )}
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M 0 2 H 50 V 98 H 0"
-        stroke="var(--color-text-3)"
-        fill="none"
-        stroke-width="1"
-        vector-effect="non-scaling-stroke"
-      />
-    </svg>
+    </div>
   );
 }

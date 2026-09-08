@@ -1,6 +1,6 @@
 import { extractYaml } from "@std/front-matter";
 
-import { ROWS, validateBoard } from "#/game/board.ts";
+import { COLS, ROWS, validateBoard } from "#/game/board.ts";
 import { Board, Piece, Position, type Puzzle, Wall } from "#/game/types.ts";
 
 /**
@@ -81,9 +81,13 @@ const COMBINING_LOW_LINE = "\u0332";
 const COMBINING_CIRCUMFLEX = "\u0302";
 
 /**
- * Parses the board grid into pieces, walls, and destination
+ * Parses the board grid into pieces, walls, and destination.
+ *
+ * Always returns the raw contents — a draft is stored mid-build, before it has a
+ * puck or a destination, and a tile never gets either — so validating is the
+ * caller's call. `size` covers the 4x4 tile grid, which uses the same grammar.
  */
-function parseBoard(rows: string[], validate = true): Board {
+export function parseGrid(rows: string[], size = COLS): Board {
   const pieces: Piece[] = [];
   let destination: Position | undefined;
   const walls: Wall[] = [];
@@ -99,7 +103,7 @@ function parseBoard(rows: string[], validate = true): Board {
     // Track the actual string index as we process combined characters
     let stringIndex = 0;
 
-    for (let x = 0; x < 8; x++) {
+    for (let x = 0; x < size; x++) {
       // Each cell should be at position x*2, but combining characters shift the indices
       if (stringIndex >= cellContent.length) break;
 
@@ -246,18 +250,7 @@ function parseBoard(rows: string[], validate = true): Board {
     }
   }
 
-  // A draft is stored mid-build, before it has a puck or a destination. Say so,
-  // rather than inventing a destination in the corner that the player then has
-  // to notice and undo.
-  if (!validate) return { destination, pieces, walls, holes, portals };
-
-  return validateBoard({
-    destination,
-    pieces,
-    walls,
-    holes,
-    portals,
-  });
+  return { destination, pieces, walls, holes, portals };
 }
 
 /**
@@ -269,7 +262,9 @@ export function parsePuzzle(
 ): Puzzle {
   const { attrs, body } = extractYaml<Omit<Puzzle, "board">>(content);
 
-  if (!attrs.name) {
+  // A draft is stored before it is named — a board earns a name when it becomes
+  // a candidate — so only a puzzle claiming to be finished must carry one.
+  if (options.validate !== false && !attrs.name) {
     throw new ParserError("Metadata must include 'name' field");
   }
 
@@ -278,7 +273,11 @@ export function parsePuzzle(
     throw new ParserError(`Expected ${ROWS} board rows, found ${rows.length}`);
   }
 
-  const board = parseBoard(rows, options.validate ?? true);
+  const grid = parseGrid(rows);
+  // A draft is stored mid-build, before it has a puck or a destination. Say so,
+  // rather than inventing a destination in the corner that the player then has
+  // to notice and undo.
+  const board = options.validate === false ? grid : validateBoard(grid);
 
   return {
     ...attrs,
@@ -289,7 +288,7 @@ export function parsePuzzle(
 /**
  * Extracts the board rows from the content.
  */
-function extractRows(content: string): string[] {
+export function extractRows(content: string): string[] {
   const lines = content.split(/[\r\n]/);
   const rows: string[] = [];
 

@@ -13,7 +13,6 @@ import {
   enumerateSolutions,
   firstSolutionFrom,
   optimalFirstMoves,
-  solveExhaustiveSync,
   type SolverResult,
 } from "#/game/solver.ts";
 import { encodeMove, getCanonicalMoveKey } from "#/game/strings.ts";
@@ -27,7 +26,7 @@ import type {
 } from "#/game/types.ts";
 
 /**
- * Puzzle scoring — gates and scores a board from its exhaustive solve.
+ * Puzzle scoring — scores a board from its exhaustive solve.
  *
  * Consumes the shortest-path DAG from `solveExhaustiveSync` (see `solver.ts`) and
  * canonicalizes solutions before measuring, so metrics reflect distinct routes
@@ -950,21 +949,6 @@ export function computeMetrics(board: Board, result: SolverResult): Metrics {
   };
 }
 
-export type GateResult = {
-  passed: boolean;
-  failedGate?:
-    | "G1"
-    | "G2"
-    | "G3"
-    | "G4"
-    | "G5"
-    | "G6"
-    | "G7"
-    | "G8"
-    | "G9"
-    | "G10";
-};
-
 /**
  * Inclusive minMoves band per difficulty. `ultra` has no band. No longer a
  * generation input — generation targets an exact move count (see
@@ -978,16 +962,6 @@ export const DIFFICULTY_BANDS: Partial<Record<Difficulty, [number, number]>> = {
 };
 
 /**
- * The move counts generation targets, one picked per run. Replaces the
- * difficulty selector: the old bands made the curator commit to a difficulty
- * up front, and `hard` (10–13) was effectively ungeneratable — under 3% of
- * random boards reach 10 moves and the branchy ones time out the gate solve.
- * 6–10 is the range that produces boards at a workable rate, and what the
- * curator says about the result afterwards is the signal worth having.
- */
-export const MOVE_TARGETS = [6, 7, 8, 9, 10] as const;
-
-/**
  * The difficulty a board's move count suggests, from `DIFFICULTY_BANDS` — the
  * default the curator's post-generation difficulty control opens on. Counts
  * past the bands clamp to the nearest end.
@@ -997,247 +971,6 @@ export function difficultyForMoves(minMoves: number): Difficulty {
     if (minMoves >= low && minMoves <= high) return difficulty as Difficulty;
   }
   return minMoves < 5 ? "easy" : "ultra";
-}
-
-/**
- * G9: whether any blocker is boxed in on all four sides by walls or the board
- * edge. Pieces are ignored — they can move away, walls can't. A permanently
- * immobile blocker reads as a wall wearing a blocker's costume; curation
- * flagged it as a gimmick.
- */
-function hasTrappedBlocker(board: Board): boolean {
-  const directions: Direction[] = ["up", "down", "left", "right"];
-  return board.pieces.some((piece) =>
-    piece.type === "blocker" &&
-    directions.every((direction) => {
-      const beyond = beyondCell(piece, direction);
-      return !inBounds(beyond) || wallBeyond(board.walls, piece, direction);
-    })
-  );
-}
-
-/**
- * G6 length gate: every route must travel at least `minMoves * LENGTH_FACTOR`
- * cells. A deliberately conservative floor — it rejects only genuinely cramped,
- * short-slide boards and leaves good/varied puzzles well clear (their worst route
- * may be legitimately shorter). Tunable.
- */
-const LENGTH_FACTOR = 2;
-
-/**
- * G7 economy gate: at least this fraction of interior walls must stop a piece in
- * some solution. Deliberately loose — walls can legitimately shape reachability
- * without being an optimal-move stop cause (see `wallUtilization`). Tunable.
- */
-const MIN_WALL_UTILIZATION = 0.2;
-
-/**
- * Floor on the *number* of walls that must stop a piece, used by G7 for
- * wall-heavy requests. 0.2 × the default wallsRange top (15) = 3, so the fraction
- * and the count agree at the default and only diverge (looser) beyond it.
- */
-const MIN_USEFUL_WALLS = 3;
-
-/**
- * G5 unused-blocker allowance, conditional on the board's blocker count. The
- * gate's intent is "blockers should matter", but asking for a denser board
- * legitimately places more of them, so the fixed ≤2 over-rejects dense requests.
- * The allowance scales to keep at least half the blockers in use: fixed 2 for the
- * default counts (≤5), then 6→3, 8→4, … Conservative — never below 2, so it only
- * ever loosens.
- */
-export function maxUnusedBlockers(blockerCount: number): number {
-  return Math.max(2, Math.floor(blockerCount / 2));
-}
-
-/**
- * G7 wall-utilization floor, conditional on the board's wall count. A request for
- * many walls inevitably makes some decorative, dragging the utilization *fraction*
- * down even when plenty of walls do real work — so past the default wallsRange top
- * the floor relaxes from a fixed 0.2 fraction to "at least `MIN_USEFUL_WALLS`
- * walls stop a piece". Unchanged (0.2) up to 15 walls; looser beyond. Never
- * tighter, so it only ever loosens.
- */
-export function minWallUtilization(wallCount: number): number {
-  return Math.min(MIN_WALL_UTILIZATION, MIN_USEFUL_WALLS / wallCount);
-}
-
-/**
- * G8 economy gate: at most this fraction of the board may be dead — cells no
- * trail enters that hold no piece or destination. Equivalently a 20% *live*
- * floor (mirrors G7's 0.2). Very conservative: the hand-built corpus runs
- * 0.44–0.81 dead, so this rejects only boards that touch under a fifth of the
- * grid. A placeholder until scores are surfaced in the generator for tuning.
- */
-const MAX_DEAD_SPACE = 0.8;
-
-/**
- * G10 clutter gate: reject boards whose `clumping` (share of same-kind
- * wall/blocker pairs bunched within one cell) exceeds this. Static, so it runs
- * before the solve. Deliberately a *tail-catcher*, not the main clutter lever —
- * clumping is the strongest human-complaint signal (calibration ρ −0.35, the
- * "clumped" tag) but bad and good boards overlap heavily on it, so mild clutter
- * is shaped softly by the composite negative; only egregious cases are hard
- * rejected. At 0.25 the hand-built corpus loses ~1% (its p99 is 0.23; one
- * outlier `pil` at 0.41). Tunable.
- */
-const MAX_CLUMPING = 0.25;
-
-/** Whether a blocker (by initial-piece id) is used in a solution — moves or stops. */
-function usedBlockerIds(board: Board, moves: Move[]): Set<number> {
-  const used = new Set<number>();
-  for (const a of analyzeMoves(board, moves)) {
-    if (board.pieces[a.moverId].type === "blocker") used.add(a.moverId);
-    if (
-      a.cause === "piece" && a.stoppingId !== null &&
-      board.pieces[a.stoppingId].type === "blocker"
-    ) used.add(a.stoppingId);
-  }
-  return used;
-}
-
-/**
- * The static half of the quality gates — the ones the layout alone answers, so
- * they run before any solve:
- *  - G9 no trapped blocker (walled in on all four sides)
- *  - G10 clumping <= MAX_CLUMPING (egregious clutter)
- *
- * Split out so the generation loop can reject a hopeless layout without paying
- * for a solve; {@link checkQualityGates} runs it again as part of the full
- * verdict.
- */
-export function checkStaticGates(board: Board): GateResult {
-  if (hasTrappedBlocker(board)) return { passed: false, failedGate: "G9" };
-  if (clumping(board) > MAX_CLUMPING) {
-    return { passed: false, failedGate: "G10" };
-  }
-  return { passed: true };
-}
-
-/**
- * The solve-dependent quality gates, cheapest-first, short-circuiting on the
- * first fail:
- *  - G4 every optimal solution moves at least one blocker (blockers matter)
- *  - G5 unused blockers <= maxUnusedBlockers(count) (dense requests allowed more)
- *  - G6 every route travels >= minMoves * LENGTH_FACTOR cells (not cramped/trivial)
- *  - G7 wall utilization >= minWallUtilization(count) (wall-heavy requests looser)
- *  - G8 dead space <= MAX_DEAD_SPACE (action doesn't huddle in one corner)
- *
- * G7–G8 gate board economy — clutter and wasted space — but like G4–G6 are
- * measured across the puzzle's solutions, not from the static layout alone.
- */
-function checkSolvedGates(board: Board, result: SolverResult): GateResult {
-  const solutions = deduplicateSolutions(enumerateSolutions(result.dag));
-
-  const everyUsesBlocker = solutions.every((moves) =>
-    moveRoles(board, moves).some((r) => r === "blocker")
-  );
-  if (!everyUsesBlocker) return { passed: false, failedGate: "G4" };
-
-  const used = new Set<number>();
-  for (const moves of solutions) {
-    for (const id of usedBlockerIds(board, moves)) used.add(id);
-  }
-  const blockerCount = board.pieces.filter((p) => p.type === "blocker").length;
-  const unused = board.pieces
-    .filter((p, i) => p.type === "blocker" && !used.has(i))
-    .length;
-  if (unused > maxUnusedBlockers(blockerCount)) {
-    return { passed: false, failedGate: "G5" };
-  }
-
-  let minTravel = Infinity;
-  for (const moves of solutions) {
-    minTravel = Math.min(minTravel, totalDistance(board, moves));
-  }
-  if (minTravel < result.minMoves * LENGTH_FACTOR) {
-    return { passed: false, failedGate: "G6" };
-  }
-
-  if (
-    wallUtilization(board, solutions) < minWallUtilization(board.walls.length)
-  ) {
-    return { passed: false, failedGate: "G7" };
-  }
-
-  if (deadSpace(board, solutions) > MAX_DEAD_SPACE) {
-    return { passed: false, failedGate: "G8" };
-  }
-
-  return { passed: true };
-}
-
-/**
- * Whether a board is good enough to be a candidate, whatever made it: G9–G10
- * on the layout, then G4–G8 across its optimal solutions. Nothing here asks
- * where the board came from.
- *
- * Gate numbers are historical, order is by cost. Hard rejects during
- * generation, but no constraint on manual editing.
- */
-export function checkQualityGates(
-  board: Board,
-  result: SolverResult,
-): GateResult {
-  const staticGate = checkStaticGates(board);
-  if (!staticGate.passed) return staticGate;
-  return checkSolvedGates(board, result);
-}
-
-/** A generation run's verdict — the solve is handed back on a pass. */
-export type GenerationGateResult =
-  | { passed: false; failedGate: GateResult["failedGate"] }
-  | { passed: true; result: SolverResult };
-
-/**
- * The gates that only mean something inside a generation run:
- *  - G1 solvable within the target depth
- *  - G2 minMoves is exactly `targetMoves`
- *  - G3 canonical hash not already in the corpus or this batch
- *
- * Meaningless for a board that already exists — a corpus puzzle fails G3 by
- * definition — so they are no part of candidacy; see {@link checkQualityGates}.
- * The solve rides along on a pass, being the expensive part.
- */
-export function checkGenerationGates(
-  board: Board,
-  options: {
-    /** Exact minMoves the board must solve in (G2) — see `MOVE_TARGETS`. */
-    targetMoves: number;
-    corpus: Set<string>;
-    batchHashes: Set<string>;
-    /**
-     * BFS state budget for the gate solve. The generation loop passes a tight
-     * cap so pathologically branchy candidates reject fast (G1) instead of
-     * blocking the loop for seconds; omitted elsewhere for the full solver limit.
-     */
-    maxStates?: number;
-  },
-): GenerationGateResult {
-  let result: SolverResult;
-  try {
-    // Capping the search at the target is what makes an exact-target run
-    // affordable: a board that needs more moves blows the depth limit and
-    // rejects as G1 instead of being solved in full only to fail G2. The
-    // branchy deep boards were most of the old loop's cost.
-    result = solveExhaustiveSync(board, {
-      maxDepth: options.targetMoves,
-      maxStates: options.maxStates,
-    });
-  } catch {
-    return { passed: false, failedGate: "G1" };
-  }
-
-  if (result.minMoves !== options.targetMoves) {
-    return { passed: false, failedGate: "G2" };
-  }
-
-  const hash = boardCanonicalHash(board);
-  if (options.corpus.has(hash) || options.batchHashes.has(hash)) {
-    return { passed: false, failedGate: "G3" };
-  }
-
-  return { passed: true, result };
 }
 
 /** A single distinct solution with its own metrics and composite score. */
@@ -1287,7 +1020,7 @@ type Bound = (ctx: BoundCtx) => number;
  *    (−0.07), `totalDistance` and `setupRatio` (~0) — anti-signal or noise
  *    that diluted the composite as equal-weight positives;
  *  - dropped `deadSpace` from the negatives (raw ρ +0.01 — board economy is
- *    gate territory, G8 keeps it); kept the two zero-variance penalties as
+ *    not what the composite is for); kept the two zero-variance penalties as
  *    safety rails against degenerate routes.
  *
  * v4 promoted `clumping` into the negatives: measured on the same labeled set
