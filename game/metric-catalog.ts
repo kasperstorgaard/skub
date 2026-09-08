@@ -54,8 +54,7 @@ export const METRIC_CATALOG = [
     key: "wallUtilization",
     scope: "board",
     label: "Wall use",
-    hint:
-      "Share of interior walls that ever stop a piece across solutions (gate G7).",
+    hint: "Share of interior walls that ever stop a piece across solutions.",
     aggregate: "max",
     percent: true,
   },
@@ -145,8 +144,7 @@ export const METRIC_CATALOG = [
     key: "deadSpace",
     scope: "board",
     label: "Dead space",
-    hint:
-      "Share of cells no trail enters and no piece or goal occupies (gate G8).",
+    hint: "Share of cells no trail enters and no piece or goal occupies.",
     aggregate: "max",
     percent: true,
   },

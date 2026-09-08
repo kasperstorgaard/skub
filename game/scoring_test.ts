@@ -4,9 +4,6 @@ import { flipBoard } from "./board.ts";
 import {
   boardCanonicalHash,
   boardSelfSymmetries,
-  checkGenerationGates,
-  checkQualityGates,
-  checkStaticGates,
   clumping,
   computeMetrics,
   computeTrails,
@@ -18,8 +15,6 @@ import {
   emptyRegion,
   firstMovePrecision,
   genuineNearMisses,
-  maxUnusedBlockers,
-  minWallUtilization,
   openingSetup,
   pieceUsage,
   pointlessClearance,
@@ -648,114 +643,6 @@ Deno.test("puckPathVariety() halves when two routes share a puck path", () => {
       [raiseRight, clearLeft, puckRight],
     ]),
     0.5,
-  );
-});
-
-const noCorpus = { corpus: new Set<string>(), batchHashes: new Set<string>() };
-
-Deno.test("checkQualityGates() passes the ingrid puzzle", () => {
-  assertEquals(
-    checkQualityGates(ingridBoard, solveExhaustiveSync(ingridBoard)),
-    { passed: true },
-  );
-});
-
-Deno.test("checkGenerationGates() passes the ingrid puzzle at its own move count", () => {
-  const gate = checkGenerationGates(ingridBoard, {
-    targetMoves: 7,
-    ...noCorpus,
-  });
-
-  assertEquals(gate.passed, true);
-});
-
-Deno.test("checkGenerationGates() fails G2 when the board solves short of the target", () => {
-  // ingrid solves in 7; a run after 9-move boards must not settle for it.
-  assertEquals(
-    checkGenerationGates(ingridBoard, { targetMoves: 9, ...noCorpus }),
-    { passed: false, failedGate: "G2" },
-  );
-});
-
-Deno.test("checkGenerationGates() fails G1 when the board needs more moves than the target", () => {
-  // The gate solve caps its depth at the target, so a board that needs more
-  // rejects on depth rather than being solved in full to fail G2.
-  assertEquals(
-    checkGenerationGates(ingridBoard, { targetMoves: 6, ...noCorpus }),
-    { passed: false, failedGate: "G1" },
-  );
-});
-
-Deno.test("checkStaticGates() fails G9 for a blocker walled in on all four sides", () => {
-  const trapped: Board = {
-    ...ingridBoard,
-    pieces: [...ingridBoard.pieces, { x: 3, y: 3, type: "blocker" }],
-    walls: [
-      ...ingridBoard.walls,
-      { x: 3, y: 3, orientation: "horizontal" }, // above
-      { x: 3, y: 4, orientation: "horizontal" }, // below
-      { x: 3, y: 3, orientation: "vertical" }, // left
-      { x: 4, y: 3, orientation: "vertical" }, // right
-    ],
-  };
-
-  assertEquals(
-    checkStaticGates(trapped),
-    { passed: false, failedGate: "G9" },
-  );
-});
-
-Deno.test("maxUnusedBlockers() holds at 2 for default counts, loosens past them", () => {
-  // <=5 blockers (the default blockersRange top) keep the fixed allowance of 2;
-  // denser requests scale to keep at least half the blockers in use.
-  assertEquals([3, 4, 5, 6, 7, 8].map(maxUnusedBlockers), [2, 2, 2, 3, 3, 4]);
-});
-
-Deno.test("minWallUtilization() holds at 0.2 up to 15 walls, relaxes beyond", () => {
-  // 0.2 fraction up to the default wallsRange top (15); past it the floor
-  // relaxes toward "at least 3 walls stop a piece".
-  assertEquals(minWallUtilization(5), 0.2);
-  assertEquals(minWallUtilization(15), 0.2);
-  assertEquals(minWallUtilization(20), 0.15);
-  assertEquals(minWallUtilization(30), 0.1);
-});
-
-Deno.test("checkStaticGates() fails G10 for an egregiously clumped board", () => {
-  // Three mutually adjacent blockers + an adjacent wall pair → clumping 1.0,
-  // well past MAX_CLUMPING 0.25. None is walled in on four sides (G9 passes),
-  // so the static G10 check rejects it before the solve.
-  const clumped: Board = {
-    holes: [],
-    portals: [],
-    destination: { x: 7, y: 7 },
-    pieces: [
-      { x: 0, y: 0, type: "puck" },
-      { x: 4, y: 4, type: "blocker" },
-      { x: 5, y: 4, type: "blocker" },
-      { x: 5, y: 5, type: "blocker" },
-    ],
-    walls: [
-      { x: 2, y: 2, orientation: "horizontal" },
-      { x: 2, y: 2, orientation: "vertical" },
-    ],
-  };
-
-  assertEquals(
-    checkStaticGates(clumped),
-    { passed: false, failedGate: "G10" },
-  );
-});
-
-Deno.test("checkGenerationGates() fails G3 when the board is already in the corpus", () => {
-  const corpus = new Set([boardCanonicalHash(ingridBoard)]);
-
-  assertEquals(
-    checkGenerationGates(ingridBoard, {
-      targetMoves: 7,
-      corpus,
-      batchHashes: new Set(),
-    }),
-    { passed: false, failedGate: "G3" },
   );
 });
 

@@ -106,14 +106,14 @@ type SolverOptions = {
   maxDepth?: number;
   // Hard cap on BFS states before bailing with SolverDepthExceededError
   // (default: BFS_STATE_LIMIT). A tighter budget also shrinks the pre-allocated
-  // typed arrays — the generation gate check passes a small value so branchy
-  // boards reject fast instead of grinding through millions of states.
+  // typed arrays, so a caller that would rather give up than grind through
+  // millions of states can say so.
   maxStates?: number;
   // Exhaustive mode only: keep exploring this many depths past the optimal
   // depth (still capped by maxDepth) so `goalsPerDepth` records suboptimal
   // near-miss solutions — the isolation signal. Costs geometrically more
-  // states, so it's for the offline scoring path, never gameplay or the
-  // generation gate loop. Hitting maxStates during overshoot truncates
+  // states, so it's for the offline scoring path, never gameplay. Hitting
+  // maxStates during overshoot truncates
   // (`searchedDepth` reflects it) instead of failing the solve. Default 0.
   overshoot?: number;
 };

@@ -167,9 +167,8 @@ export type StoredScoring = {
 };
 
 /**
- * Where a candidate's board came from. Not de-duplication — the novelty gate
- * runs during generation, so a generated board is never a corpus copy. It's
- * that the calibration reports diff these populations against each other, and a
+ * Where a candidate's board came from. Not de-duplication — the calibration
+ * reports diff these populations against each other, and a
  * board rated through `/candidate` would otherwise land on more than one side.
  *
  * `generated` is the generator's own output and nothing else, so the reports

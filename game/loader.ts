@@ -46,8 +46,9 @@ export function invalidateCorpus(): void {
 }
 
 /**
- * Canonical hashes of every puzzle board in the corpus, for the generator's G3
- * novelty gate. Reads and parses each markdown once (the manifest is a
+ * Canonical hashes of every puzzle board in the corpus, so /api/solve can
+ * refuse a board that already ships. Reads and parses each markdown once (the
+ * manifest is a
  * lightweight index without boards), then caches — the corpus is static between
  * requests.
  */

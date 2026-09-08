@@ -2,10 +2,11 @@
 
 ## The problem
 
-Board generation scatters walls and blockers at random within zones, then gates
-the result on an exact move count. It produces solvable boards, but nothing about
-the layout is *authored* — whether a board looks good is an accident that the
-composite score then tries to detect after the fact. That is backwards, and it is
+Board generation scattered walls and blockers at random within zones, then
+rejected the result unless it solved in an exact number of moves and cleared ten
+quality gates. It produced solvable boards, but nothing about the layout was
+*authored* — whether a board looked good was an accident that the composite
+score then tried to detect after the fact. That is backwards, and it is
 the same tension the calibration work keeps running into: a board can be pretty
 and too easy, or fair and dull, and no metric settles it as well as a person
 looking at it.
@@ -79,10 +80,13 @@ is the open part. Not in this change.
 
 ## Non-goals
 
-- **The solver and the scoring engine are untouched.** They still measure every
-  board this produces; only the way boards come into existence changes. The
-  planned recalibration toward per-solution scoring is separate work, and a
-  larger corpus of tile-composed boards should make it easier, not redundant.
-- **No automatic quality gate on layout.** Gates stay an advisory readout. A gate
-  rejecting a board a person composed on purpose indicts the gate.
+- **The solver and the scoring engine stay.** They still measure every board this
+  produces; only the way boards come into existence changes. The planned
+  recalibration toward per-solution scoring is separate work, and a larger corpus
+  of tile-composed boards should make it easier, not redundant.
+- **The quality gates go.** G1–G10 existed to let the generation loop reject its
+  own output unattended. Nothing generates unattended any more, and a gate
+  rejecting a board a person composed on purpose indicts the gate — so they are
+  deleted rather than demoted, along with the corpus audit that tuned them. The
+  metrics they read stay, since the composite score still uses them.
 - **No new curation surface.** Review, rating, and promotion are as they were.

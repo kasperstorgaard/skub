@@ -298,7 +298,7 @@ Deno.test("isBoardSame() should be false when the puck and a blocker swap roles"
 
 Deno.test("isBoardSame() should be false for a mirrored board", () => {
   // A mirror is a different layout to play, unlike the canonical hash the
-  // novelty gate uses, which folds the dihedral symmetries together.
+  // corpus check uses, which folds the dihedral symmetries together.
   assertEquals(
     isBoardSame({
       holes: [],
