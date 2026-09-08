@@ -19,8 +19,8 @@ Deno.test("contribute page — editor link navigates to puzzle editor", async ()
   try {
     await page.goto(`${BASE_URL}/contribute`);
 
-    await page.getByRole("link", { name: /\/puzzles\/new/i }).click();
-    await expect(page).toHaveURL(/\/puzzles\/new/);
+    await page.getByRole("link", { name: /\/puzzles\/build/i }).click();
+    await expect(page).toHaveURL(/\/puzzles\/build/);
   } finally {
     await teardown();
   }
