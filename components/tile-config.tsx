@@ -23,6 +23,16 @@ const QUADRANT_LABELS = ["NW", "NE", "SW", "SE"];
  * a cookie so a session picks up where the last one left off; dealing happens
  * client-side, so this writes the cookie itself.
  */
+/**
+ * A move bound off an input. An emptied field reads as 0, which is an ordinary
+ * step in retyping a number rather than a bound anyone means — and a range
+ * starting at 0 accepts a board the solver failed on, since a failure counts as
+ * no moves.
+ */
+function boundOf(value: string): number {
+  return Math.max(1, Number(value) || 1);
+}
+
 export function TileConfig({ config }: TileConfigProps) {
   const update = useCallback((patch: Partial<ComposerConfig>) => {
     const next = { ...config.value, ...patch };
@@ -159,7 +169,7 @@ export function TileConfig({ config }: TileConfigProps) {
               value={moves[0]}
               onInput={(event) =>
                 update({
-                  moves: [Number(event.currentTarget.value), moves[1]],
+                  moves: [boundOf(event.currentTarget.value), moves[1]],
                 })}
             />
             <span aria-hidden="true">–</span>
@@ -172,7 +182,7 @@ export function TileConfig({ config }: TileConfigProps) {
               value={moves[1]}
               onInput={(event) =>
                 update({
-                  moves: [moves[0], Number(event.currentTarget.value)],
+                  moves: [moves[0], boundOf(event.currentTarget.value)],
                 })}
             />
           </div>

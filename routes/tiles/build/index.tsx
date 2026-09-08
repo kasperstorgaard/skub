@@ -9,7 +9,6 @@ import {
   newPuzzleDraft,
   setUserTileDraft,
 } from "#/db/user.ts";
-import { setBuildMode } from "#/game/cookies.ts";
 import { readTile } from "#/game/tile-store.ts";
 import { CELL_CONTENTS, type Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
@@ -23,37 +22,44 @@ import { isDev } from "#/lib/env.ts";
 const TILE_CONTENTS = CELL_CONTENTS.filter((content) => content !== "puck");
 
 /**
- * The tile builder, on the draft in KV. A slug opens a stored tile instead —
- * loaded once and then left alone, so a reload does not throw away edits made
- * since, the way re-reading the file each time would.
+ * The tile builder. The URL says which tile is being worked on: a slug opens
+ * that one, no slug is a new tile.
+ *
+ * A stored tile is read once and then left alone, so returning to its URL
+ * resumes the edits rather than reloading over them. A draft still carrying an
+ * id has to be dropped when no slug is asked for, though — otherwise "New tile"
+ * reopens the last one and saving writes the new drawing over it.
  */
 export const handler = define.handlers<Puzzle>({
   async GET(ctx) {
     // Dev-only: tiles are authored, and production's filesystem is read-only.
     if (!isDev) throw new HttpError(404, "Not found");
 
-    const headers = new Headers();
-    setBuildMode(headers, "tile");
-
     const slug = ctx.url.searchParams.get("slug");
     const draft = await getUserTileDraft(ctx.state.userId);
 
-    if (slug && draft?.slug !== slug) {
-      const entry = await readTile(slug);
-      if (!entry) throw new HttpError(404, "Not found");
+    // The draft stands only when it is the tile the URL asks for: a new tile
+    // when there is no slug, that stored tile when there is one.
+    if (draft && (draft.slug || "") === (slug || "")) return page(draft);
 
-      const opened: Puzzle = {
-        ...newPuzzleDraft(),
-        name: entry.name ?? entry.id,
-        slug: entry.id,
-        board: entry.tile,
-      };
-
-      await setUserTileDraft(ctx.state.userId, opened);
-      return page(opened, { headers });
+    if (!slug) {
+      const fresh = newPuzzleDraft();
+      await setUserTileDraft(ctx.state.userId, fresh);
+      return page(fresh);
     }
 
-    return page(draft ?? newPuzzleDraft(), { headers });
+    const entry = await readTile(slug);
+    if (!entry) throw new HttpError(404, "Not found");
+
+    const opened: Puzzle = {
+      ...newPuzzleDraft(),
+      name: entry.name ?? entry.id,
+      slug: entry.id,
+      board: entry.tile,
+    };
+
+    await setUserTileDraft(ctx.state.userId, opened);
+    return page(opened);
   },
 });
 

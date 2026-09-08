@@ -40,10 +40,10 @@ difficulty is measured by the machine**. Step 3's output is already a candidate,
 so it hands straight to the existing review-and-promote flow.
 
 The three builders read as one family — `/puzzles/build`, `/puzzles/compose` and
-`/tiles/build`, the last taking an optional slug to reopen a stored tile. `/new`
-is the way in: it keeps no page of its own, reads which builder was last opened
-and sends you back to it, so nothing linking there has to know how many
-builders there are.
+`/tiles/build`, the last taking an optional slug to reopen a stored tile.
+`/puzzles/new` is the way in to the two that make a puzzle: it keeps no page of
+its own, reads which of them was last opened and sends you back to it, so
+nothing linking there has to know how many builders there are.
 
 None of them names what it is building: a board earns a name when it becomes a
 candidate, so a draft carries none and the parser only insists on one from a
@@ -52,7 +52,7 @@ puzzle claiming to be finished.
 Composing runs in production; authoring tiles does not. Dealing only reads the
 catalog, while building a tile writes a file, and production's filesystem is
 read-only — so the library stays browsable everywhere and only loses its edit
-links, and `/new` never lands there.
+links.
 
 Tiles carry a category letter that the editor derives from the tile itself: `A`
 simple, `B` cluttered, `P` one portal, `X` holes, `Z` both. Deriving it means a

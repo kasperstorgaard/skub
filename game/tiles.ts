@@ -3,6 +3,7 @@ import { stringify as stringifyYaml } from "@std/yaml";
 
 import {
   flipBoard,
+  isBoardSame,
   isPositionSame,
   rotateBoard,
   validatePositions,
@@ -569,6 +570,61 @@ export function composeDealt(dealt: DealtTile[]): Board {
 export function toTile({ entry, rotation, flipped }: DealtTile): Tile {
   return rotateTile(flipped ? flipTile(entry.tile) : entry.tile, rotation);
 }
+
+/**
+ * Which catalog tile a quadrant holds, and how it is turned. A composed board
+ * records nothing about where its quadrants came from, so anything arriving
+ * without the deal behind it — a reload, a draft picked back up — has to read
+ * them back off the board to carry on arranging it.
+ *
+ * Null for a quadrant no tile explains, which is what a hand-edited cell makes.
+ */
+export function identifyTile(
+  tile: Tile,
+  catalog: TileEntry[],
+): DealtTile | null {
+  for (const entry of catalog) {
+    for (const flipped of [false, true]) {
+      for (let turn = 0; turn < 4; turn++) {
+        const rotation = turn as Rotation;
+        if (isBoardSame(toTile({ entry, rotation, flipped }), tile)) {
+          return { entry, rotation, flipped };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * How a tile's own placement changes when the board beneath it turns.
+ *
+ * `toTile` mirrors before it turns, so a mirror applied *after* a turn is the
+ * same placement turned the other way — without that the record and the board
+ * part company on any odd rotation.
+ */
+export function turnPlacement(
+  placement: DealtTile,
+  turn: "rotate" | "flip",
+): DealtTile {
+  return turn === "rotate"
+    ? { ...placement, rotation: ((placement.rotation + 1) % 4) as Rotation }
+    : {
+      ...placement,
+      rotation: ((4 - placement.rotation) % 4) as Rotation,
+      flipped: !placement.flipped,
+    };
+}
+
+/**
+ * Where each quadrant's tile comes from when the whole board turns: rotating
+ * right carries NW to NE, mirroring swaps the two columns.
+ */
+export const WHOLE_BOARD_ORDER = {
+  rotate: [2, 0, 3, 1],
+  flip: [1, 0, 3, 2],
+} as const;
 
 /** The provenance record for a dealt board. */
 export function toPlacements(dealt: DealtTile[]): TilePlacement[] {

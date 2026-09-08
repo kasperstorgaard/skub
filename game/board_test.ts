@@ -11,6 +11,7 @@ import {
   isLooped,
   isMoveSame,
   isPositionSame,
+  isReadyToSolve,
   isValidMove,
   isValidSolution,
   resolveMoves,
@@ -1445,4 +1446,35 @@ Deno.test("rollDice() should throw again over a taken cell, keeping every throw"
     puck: [{ x: 0, y: 0 }, { x: 4, y: 0 }],
     destination: [{ x: 4, y: 0 }, { x: 0, y: 4 }],
   });
+});
+
+Deno.test("isReadyToSolve() should hold off on a board still being laid out", () => {
+  // The composer's arrange step: blockers down, nothing to move yet.
+  const arranging = {
+    destination: undefined,
+    pieces: [{ x: 2, y: 2, type: "blocker" as const }],
+  };
+
+  assertEquals(isReadyToSolve(arranging), false);
+});
+
+Deno.test("isReadyToSolve() should hold off on a puck with nowhere to go", () => {
+  const result = isReadyToSolve({
+    destination: undefined,
+    pieces: [{ x: 0, y: 0, type: "puck" as const }],
+  });
+
+  assertEquals(result, false);
+});
+
+Deno.test("isReadyToSolve() should say yes once a puck has a destination", () => {
+  const result = isReadyToSolve({
+    destination: { x: 7, y: 7 },
+    pieces: [
+      { x: 0, y: 0, type: "puck" as const },
+      { x: 3, y: 3, type: "blocker" as const },
+    ],
+  });
+
+  assertEquals(result, true);
 });

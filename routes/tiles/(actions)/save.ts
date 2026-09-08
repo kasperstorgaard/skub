@@ -37,16 +37,15 @@ export const handler = define.handlers({
 
     const category = categorizeTile(tile);
 
-    // A draft carries the id it was opened from; anything else is a new tile.
-    const existing = draft.slug === "untitled"
-      ? null
-      : await readTile(draft.slug);
+    // A draft carries the id it was opened from; without one it is a new tile.
+    const existing = draft.slug ? await readTile(draft.slug) : null;
 
     const id = existing
       ? await renumbered(existing.id, existing.category, category)
       : await nextId(category);
 
-    await writeTile({ id, category, tile });
+    // The builder has no name field, so an edit keeps whatever it was filed under.
+    await writeTile({ id, category, tile, name: existing?.name });
     // A category change renames the file, so the old one goes.
     if (existing && id !== existing.id) await removeTile(existing.id);
 

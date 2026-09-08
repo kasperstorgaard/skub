@@ -1,8 +1,11 @@
 import { assertEquals, assertThrows } from "@std/assert";
 
+import { flipBoard, isBoardSame, rotateBoard } from "#/game/board.ts";
+
 import {
   categorizeTile,
   composeBoard,
+  composeDealt,
   composerStep,
   countLanes,
   decodePlacements,
@@ -10,6 +13,7 @@ import {
   extractQuadrant,
   flipTile,
   formatTile,
+  identifyTile,
   nextTileId,
   parseTile,
   pickTiles,
@@ -18,10 +22,13 @@ import {
   rotateTile,
   TileError,
   toPlacements,
+  toTile,
+  turnPlacement,
   validatePattern,
   validateTile,
+  WHOLE_BOARD_ORDER,
 } from "./tiles.ts";
-import type { Tile, TileEntry } from "#/game/types.ts";
+import type { Rotation, Tile, TileEntry } from "#/game/types.ts";
 
 // The tile from the sketchbook's own notation: a blocker at B2, a vertical wall
 // right of B3, and a horizontal wall below C3.
@@ -470,4 +477,124 @@ Deno.test("composerStep() should be rolling once puck and destination are placed
   });
 
   assertEquals(result, "roll");
+});
+
+/** A tile with no symmetry, so every orientation of it is distinguishable. */
+const LOPSIDED = {
+  destination: undefined,
+  pieces: [{ x: 1, y: 0, type: "blocker" as const }],
+  walls: [
+    { x: 0, y: 0, orientation: "horizontal" as const },
+    { x: 2, y: 1, orientation: "vertical" as const },
+  ],
+  holes: [],
+  portals: [],
+};
+
+const ENTRY = {
+  id: "a-99",
+  category: "A" as const,
+  tile: LOPSIDED,
+};
+
+Deno.test("turnPlacement() should describe the board a rotate actually leaves", () => {
+  for (let rotation = 0; rotation < 4; rotation++) {
+    for (const flipped of [false, true]) {
+      const placement = {
+        entry: ENTRY,
+        rotation: rotation as Rotation,
+        flipped,
+      };
+      const turned = turnPlacement(placement, "rotate");
+
+      assertEquals(
+        toTile(turned),
+        rotateTile(toTile(placement), 1),
+        `rotate on rotation ${rotation}, flipped ${flipped}`,
+      );
+    }
+  }
+});
+
+Deno.test("turnPlacement() should describe the board a flip actually leaves", () => {
+  // The one that used to drift: mirroring an odd rotation is not the same as
+  // setting `flipped` and keeping the turn.
+  for (let rotation = 0; rotation < 4; rotation++) {
+    for (const flipped of [false, true]) {
+      const placement = {
+        entry: ENTRY,
+        rotation: rotation as Rotation,
+        flipped,
+      };
+      const turned = turnPlacement(placement, "flip");
+
+      assertEquals(
+        toTile(turned),
+        flipTile(toTile(placement)),
+        `flip on rotation ${rotation}, flipped ${flipped}`,
+      );
+    }
+  }
+});
+
+Deno.test("identifyTile() should read a turned tile back off the board", () => {
+  const placement = { entry: ENTRY, rotation: 3 as Rotation, flipped: true };
+
+  assertEquals(identifyTile(toTile(placement), [ENTRY]), placement);
+});
+
+Deno.test("identifyTile() should give up on a quadrant no tile explains", () => {
+  const edited = { ...LOPSIDED, holes: [{ x: 3, y: 3 }] };
+
+  assertEquals(identifyTile(edited, [ENTRY]), null);
+});
+
+/** Four tiles that differ, so a quadrant landing in the wrong place shows. */
+function fourDealt() {
+  return [0, 1, 2, 3].map((n) => ({
+    entry: {
+      id: `a-9${n}`,
+      category: "A" as const,
+      tile: {
+        ...LOPSIDED,
+        pieces: [{ x: n % 4, y: 0, type: "blocker" as const }],
+      },
+    },
+    rotation: n as Rotation,
+    flipped: n % 2 === 1,
+  }));
+}
+
+Deno.test("WHOLE_BOARD_ORDER should carry the record across a board rotation", () => {
+  const dealt = fourDealt();
+
+  const turned = WHOLE_BOARD_ORDER.rotate.map((from) =>
+    turnPlacement(dealt[from], "rotate")
+  );
+
+  // Same layout, not the same array order: composeBoard emits by quadrant and
+  // rotateBoard leaves the lists where they were.
+  assertEquals(
+    isBoardSame(
+      composeDealt(turned),
+      rotateBoard(composeDealt(dealt), "right"),
+    ),
+    true,
+  );
+});
+
+Deno.test("WHOLE_BOARD_ORDER should carry the record across a board flip", () => {
+  const dealt = fourDealt();
+
+  const turned = WHOLE_BOARD_ORDER.flip.map((from) =>
+    turnPlacement(dealt[from], "flip")
+  );
+
+  assertEquals(
+    isBoardSame(
+      composeDealt(turned),
+      flipBoard(composeDealt(dealt), "horizontal"),
+    ),
+    true,
+  );
 });

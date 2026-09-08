@@ -34,8 +34,9 @@ export const handler = define.handlers({
 
     await setUserTileDraft(ctx.state.userId, {
       number: 0,
-      name: body.id ?? "Untitled",
-      slug: body.id ?? "untitled",
+      // An unfiled tile carries no id, the same as an unnamed puzzle draft.
+      name: body.id ?? "",
+      slug: body.id ?? "",
       createdAt: new Date(Date.now()),
       difficulty: "medium",
       minMoves: 0,

@@ -15,11 +15,10 @@ const BUILD_MODE_KEY = "build_mode";
 // 1 year in seconds
 const BUILD_MODE_DURATION = 60 * 60 * 24 * 365;
 
-/** The builders, and where each one lives. */
+/** The two ways to build a puzzle, and where each one lives. */
 export const BUILD_MODES = {
   build: "/puzzles/build",
   compose: "/puzzles/compose",
-  tile: "/tiles/build",
 } as const;
 
 export type BuildMode = keyof typeof BUILD_MODES;
@@ -98,13 +97,15 @@ export function setHintCount(
 }
 
 /**
- * The builder last opened, for /new to send you back to. Unset means building
- * a puzzle by hand, which is the oldest of the three.
+ * The builder last opened, for /puzzles/new to send you back to. Unset means
+ * building by hand, which is the older of the two.
  */
 export function getBuildMode(headers: Headers): BuildMode {
   const stored = getCookies(headers)[BUILD_MODE_KEY];
 
-  return stored != null && stored in BUILD_MODES
+  // hasOwn, not `in`: "toString" is in every object, and would come back out
+  // here as a function for the redirect to set as a Location.
+  return stored != null && Object.hasOwn(BUILD_MODES, stored)
     ? stored as BuildMode
     : "build";
 }

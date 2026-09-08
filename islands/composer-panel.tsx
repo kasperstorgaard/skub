@@ -46,7 +46,13 @@ export function ComposerPanel(
   // the value it had when the island was rendered, and stops tracking.
   const step = useComputed(() => composerStep(puzzle.value.board));
 
-  const { deal, roll } = useComposer({ puzzle, dealt, config, catalog, dice });
+  const { deal, dealError, roll } = useComposer({
+    puzzle,
+    dealt,
+    config,
+    catalog,
+    dice,
+  });
 
   // Autosave is debounced and a navigation cancels the request in flight, so
   // Review stores the board on screen first.
@@ -88,6 +94,10 @@ export function ComposerPanel(
             <button type="button" className="btn" onClick={deal}>
               <Icon icon={Shuffle} /> Generate
             </button>
+
+            {dealError.value && (
+              <p className="text-fl-0 text-brand">{dealError.value}</p>
+            )}
 
             {step.value !== "deal" && (
               <button type="button" className="btn" onClick={roll}>

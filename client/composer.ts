@@ -1,4 +1,4 @@
-import { type Signal } from "@preact/signals";
+import { type Signal, useSignal } from "@preact/signals";
 import { useCallback, useRef } from "preact/hooks";
 
 import { useSolveStream } from "#/client/use-solve-stream.ts";
@@ -10,11 +10,14 @@ import {
   type DealtTile,
   extractQuadrant,
   flipTile,
+  identifyTile,
   pickTiles,
   QUADRANT_ORIGINS,
   replaceQuadrant,
   rotateTile,
   toTile,
+  turnPlacement,
+  WHOLE_BOARD_ORDER,
 } from "#/game/tiles.ts";
 import type { Board, Puzzle, Rotation, TileEntry } from "#/game/types.ts";
 import type { DiceThrows } from "#/lib/dice.ts";
@@ -49,12 +52,39 @@ export function useComposer(
     puzzle.value = { ...puzzle.value, board, minMoves: 0 };
   }, [puzzle]);
 
+  /**
+   * Laying the board out again invalidates where the dice came down — a puck
+   * can end up inside a wall it never had to cross — so arranging takes both
+   * back off and the board returns to waiting for a roll.
+   */
+  const setArrangedBoard = useCallback((board: Board) => {
+    setBoard({
+      ...board,
+      destination: undefined,
+      pieces: board.pieces.filter((piece) => piece.type !== "puck"),
+    });
+
+    if (dice) dice.value = null;
+  }, [dice, setBoard]);
+
+  // What the last deal could not do, for the sidebar to show. Asking for a
+  // pattern the catalog cannot cover is an ordinary thing to try.
+  const dealError = useSignal<string | null>(null);
+
   const deal = useCallback(() => {
-    const tiles = pickTiles(catalog, config.value);
+    let tiles;
+    try {
+      tiles = pickTiles(catalog, config.value);
+    } catch (err) {
+      dealError.value = err instanceof Error ? err.message : "Could not deal";
+      return;
+    }
+
+    dealError.value = null;
     dealt.value = tiles;
     if (dice) dice.value = null;
     setBoard(composeDealt(tiles));
-  }, [catalog, config, dealt, dice, setBoard]);
+  }, [catalog, config, dealError, dealt, dice, setBoard]);
 
   // Keeps the tiles and re-lays them: new quadrants, new rotations.
   const shuffle = useCallback(() => {
@@ -68,68 +98,78 @@ export function useComposer(
       }));
 
     dealt.value = tiles;
-    setBoard(composeDealt(tiles));
-  }, [deal, dealt, setBoard]);
+    setArrangedBoard(composeDealt(tiles));
+  }, [deal, dealt, setArrangedBoard]);
 
   const transform = useCallback(
     (index: number, turn: "rotate" | "flip") => {
       const origin = QUADRANT_ORIGINS[index];
       const tile = extractQuadrant(puzzle.value.board, origin);
 
-      setBoard(replaceQuadrant(
+      setArrangedBoard(replaceQuadrant(
         puzzle.value.board,
         turn === "rotate" ? rotateTile(tile, 1) : flipTile(tile),
         origin,
       ));
 
-      dealt.value = dealt.value.map((entry, at) =>
-        at === index
-          ? turn === "rotate"
-            ? { ...entry, rotation: ((entry.rotation + 1) % 4) as Rotation }
-            : { ...entry, flipped: !entry.flipped }
-          : entry
+      dealt.value = dealt.value.map((placement, at) =>
+        at === index ? turnPlacement(placement, turn) : placement
       );
     },
-    [dealt, puzzle, setBoard],
+    [dealt, puzzle, setArrangedBoard],
   );
 
   // Brings in a different tile of the same kind, so the pattern still holds.
   const swap = useCallback((index: number) => {
     const origin = QUADRANT_ORIGINS[index];
-    const category = categorizeTile(
-      extractQuadrant(puzzle.value.board, origin),
-    );
+    const standing = extractQuadrant(puzzle.value.board, origin);
 
-    const options = catalog.filter((entry) => entry.category === category);
+    const options = catalog.filter((entry) =>
+      entry.category === categorizeTile(standing)
+    );
     if (!options.length) return;
 
-    const at = options.findIndex((entry) =>
-      entry.id === dealt.value[index]?.entry.id
-    );
+    // Without the deal behind it — a reload, a draft picked back up — which
+    // tile is standing here has to be read off the board, or every press
+    // installs the same first option rather than moving along the list.
+    const placement = dealt.value[index] ?? identifyTile(standing, catalog);
+
+    const at = options.findIndex((entry) => entry.id === placement?.entry.id);
 
     const replacement: DealtTile = {
       entry: options[(at + 1) % options.length],
-      rotation: dealt.value[index]?.rotation ?? 0,
-      flipped: dealt.value[index]?.flipped ?? false,
+      rotation: placement?.rotation ?? 0,
+      flipped: placement?.flipped ?? false,
     };
 
-    // Nothing dealt means the board was built by hand; the swap still stands.
+    // Nothing dealt means the board was built by hand; the swap still stands,
+    // and the next press reads the replacement back off the board.
     if (dealt.value.length) {
       dealt.value = dealt.value.map((entry, spot) =>
         spot === index ? replacement : entry
       );
     }
 
-    setBoard(replaceQuadrant(puzzle.value.board, toTile(replacement), origin));
-  }, [catalog, dealt, puzzle, setBoard]);
+    setArrangedBoard(
+      replaceQuadrant(puzzle.value.board, toTile(replacement), origin),
+    );
+  }, [catalog, dealt, puzzle, setArrangedBoard]);
 
   const wholeBoard = useCallback((turn: "rotate" | "flip") => {
-    setBoard(
+    setArrangedBoard(
       turn === "rotate"
         ? rotateBoard(puzzle.value.board, "right")
         : flipBoard(puzzle.value.board, "horizontal"),
     );
-  }, [puzzle, setBoard]);
+
+    // Every quadrant moves and every tile turns with it, so the record has to
+    // be carried across rather than left describing the board from before.
+    if (dealt.value.length) {
+      dealt.value = WHOLE_BOARD_ORDER[turn].map((from) =>
+        turnPlacement(dealt.value[from], turn)
+      );
+    }
+  }, [dealt, puzzle, setArrangedBoard]);
 
   // A move range asks for re-rolls until one lands in it; without one, a roll is
   // a roll, and the difficulty badge solves it like any other edit.
@@ -140,11 +180,16 @@ export function useComposer(
     const range = config.value.moves;
     if (!range || event.type === "progress") return;
 
-    const moves = event.type === "solution" ? event.moves.length : 0;
+    // A board that would not solve has no move count to judge — rolling again
+    // is the answer, not scoring it as nothing and letting a range that starts
+    // low take it.
+    if (event.type === "solution") {
+      const moves = event.moves.length;
 
-    if (moves >= range[0] && moves <= range[1]) {
-      puzzle.value = { ...puzzle.value, minMoves: moves };
-      return;
+      if (moves >= range[0] && moves <= range[1]) {
+        puzzle.value = { ...puzzle.value, minMoves: moves };
+        return;
+      }
     }
 
     if (attempts.current++ < MAX_ROLL_ATTEMPTS) rollAgain.current();
@@ -180,5 +225,5 @@ export function useComposer(
     rollOnce();
   }, [rollOnce]);
 
-  return { deal, shuffle, transform, swap, roll, wholeBoard };
+  return { deal, dealError, shuffle, transform, swap, roll, wholeBoard };
 }

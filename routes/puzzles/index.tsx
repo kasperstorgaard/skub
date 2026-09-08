@@ -200,7 +200,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
         >
           <span className="text-text-2 text-2">Feeling creative?</span>
           <a
-            href="/new"
+            href="/puzzles/new"
             className="btn"
           >
             <Icon icon={Pencil} />

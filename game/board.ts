@@ -199,6 +199,22 @@ export function isBoardSame(src: Board, target: Board) {
 }
 
 /**
+ * Whether there is anything to solve for yet: something to move, and somewhere
+ * to move it.
+ *
+ * `validateBoard` answers a different question. It rejects a board with no puck
+ * or no destination alongside one that is genuinely wrong — a duplicate piece,
+ * a third portal — and a board being built is neither for most of its life. Ask
+ * this first, and a failure from that is a real one.
+ */
+export function isReadyToSolve(
+  board: Pick<Board, "destination" | "pieces">,
+): boolean {
+  return board.destination != null &&
+    board.pieces.some((piece) => piece.type === "puck");
+}
+
+/**
  * Validates the board structure and contents, returning a sanitized Board object.
  * Can be consumed as a truthy check or a means to get a properly typed Board.
  * Will throw BoardError if invalid.
