@@ -29,12 +29,21 @@ Generation then becomes three deliberate steps instead of a search loop:
 2. **Arrange** them by hand: rotate, flip, or swap any tile, transform the whole
    board, reshuffle, or edit individual cells. This is where a board becomes
    worth playing, and it is a human judgement.
-3. **Roll** puck and destination, the way the physical game rolls two dice.
-   Re-roll freely, or place either by hand.
+3. **Roll** puck and destination, the way the physical game rolls two dice: one
+   for the column, one for the row. A throw that comes down on a blocker or a
+   hazard is thrown again, and the board plays the whole sequence out — misses
+   included — rather than snapping to the result. Re-roll freely, or place
+   either by hand.
 
 The order matters more than the mechanism: **layout is judged by a person before
 difficulty is measured by the machine**. Step 3's output is already a candidate,
 so it hands straight to the existing review-and-promote flow.
+
+Composing runs in production; authoring tiles does not. Dealing only reads the
+catalog, while building a tile writes a file, and production's filesystem is
+read-only — so the library stays browsable everywhere and only loses its edit
+links. Which of the two builders was last used is kept in a cookie, so "Build a
+puzzle" opens the one you were in.
 
 Tiles carry a category letter that the editor derives from the tile itself: `A`
 simple, `B` cluttered, `P` one portal, `X` holes, `Z` both. Deriving it means a

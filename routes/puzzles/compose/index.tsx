@@ -1,11 +1,11 @@
 import { useComputed, useSignal } from "@preact/signals";
-import { HttpError, page } from "fresh";
+import { page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft } from "#/db/user.ts";
-import { getTileOptions } from "#/game/cookies.ts";
+import { getTileOptions, setBuildMode } from "#/game/cookies.ts";
 import { readTiles } from "#/game/tile-store.ts";
 import {
   type ComposerConfig,
@@ -18,7 +18,7 @@ import { ComposerPanel } from "#/islands/composer-panel.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
 import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { TileArranger } from "#/islands/tile-arranger.tsx";
-import { isDev } from "#/lib/env.ts";
+import type { DiceThrows } from "#/lib/dice.ts";
 
 type ComposerData = {
   puzzle: Puzzle;
@@ -35,9 +35,6 @@ const DEFAULT_CONFIG: ComposerConfig = { mode: "random", distinct: 4 };
  */
 export const handler = define.handlers<ComposerData>({
   async GET(ctx) {
-    // Dev-only: tiles are authored, and production's filesystem is read-only.
-    if (!isDev) throw new HttpError(404, "Not found");
-
     const puzzle = await getUserPuzzleDraft(ctx.state.userId) ?? {
       number: 0,
       name: "Untitled",
@@ -54,11 +51,14 @@ export const handler = define.handlers<ComposerData>({
       },
     };
 
+    const headers = new Headers();
+    setBuildMode(headers, "compose");
+
     return page({
       puzzle,
       catalog: await readTiles(),
       config: { ...DEFAULT_CONFIG, ...getTileOptions(ctx.req.headers) },
-    });
+    }, { headers });
   },
 });
 
@@ -70,6 +70,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
   const config = useSignal(props.data.config);
   const dealt = useSignal<DealtTile[]>([]);
   const quadrant = useSignal<number | null>(null);
+  const dice = useSignal<DiceThrows | null>(null);
   const step = useComputed(() => composerStep(puzzle.value.board));
 
   const url = new URL(props.req.url);
@@ -99,6 +100,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
             href={href}
             mode={mode}
             quadrant={quadrant}
+            dice={dice}
           />
 
           {
@@ -121,6 +123,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
         config={config}
         dealt={dealt}
         step={step}
+        dice={dice}
         catalog={props.data.catalog}
       />
       <EditorAutosave puzzle={puzzle} />

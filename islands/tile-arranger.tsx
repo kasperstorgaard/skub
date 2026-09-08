@@ -86,7 +86,7 @@ export function TileArranger(
     >
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2"
+        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2 text-4 text-text-1"
         aria-label="Rotate tile"
         disabled={disabled}
         onClick={() => inHand != null && transform(inHand, "rotate")}
@@ -98,7 +98,7 @@ export function TileArranger(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2"
+        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2 text-4 text-text-1"
         aria-label="Mirror tile"
         disabled={disabled}
         onClick={() => inHand != null && transform(inHand, "flip")}
@@ -110,7 +110,7 @@ export function TileArranger(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2"
+        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2 text-4 text-text-1"
         aria-label="Swap tile"
         disabled={disabled}
         onClick={() => inHand != null && swap(inHand)}
@@ -122,7 +122,7 @@ export function TileArranger(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2"
+        className="flex items-center justify-center bg-transparent border-2 border-link rounded-2 text-4 text-text-1"
         aria-label="Shuffle the tiles"
         onClick={shuffle}
       >

@@ -76,7 +76,7 @@ export function EditorToolbar(
         <div className="size-5 border-t-[3px] border-l-[3px] border-ui-4" />
       </button>
 
-      <KeyHint rows={3} className="row-[1/4]">W</KeyHint>
+      <KeyHint className="row-[1/4]">W</KeyHint>
 
       <button
         type="button"
@@ -126,7 +126,7 @@ export function EditorToolbar(
         /* The bracket spans the cell buttons it belongs to, and a tile has no
           puck among them. */
       }
-      <KeyHint rows={hidePuck ? 3 : 4} className="row-start-4">P</KeyHint>
+      <KeyHint className={hidePuck ? "row-[4/7]" : "row-[4/8]"}>P</KeyHint>
 
       {!hideDestination && (
         <>

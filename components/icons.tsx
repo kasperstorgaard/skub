@@ -22,7 +22,7 @@ export function Icon({ icon, className, "aria-label": label }: Props) {
       height="1em"
       viewBox="0 0 256 256"
       fill="currentColor"
-      className={clsx("inline align-middle", className)}
+      className={clsx("inline align-middle max-w-none", className)}
       aria-hidden={label ? undefined : true}
       aria-label={label}
       // deno-lint-ignore react-no-danger

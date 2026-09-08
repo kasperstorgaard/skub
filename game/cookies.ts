@@ -11,6 +11,18 @@ const HINT_COUNT_KEY = "hint_count";
 // 24 h in seconds
 const HINT_COUNT_DURATION = 60 * 60 * 24;
 
+const BUILD_MODE_KEY = "build_mode";
+// 1 year in seconds
+const BUILD_MODE_DURATION = 60 * 60 * 24 * 365;
+
+/** The two ways to make a puzzle, and where each one lives. */
+export const BUILD_MODES = {
+  compose: "/puzzles/compose",
+  editor: "/puzzles/new",
+} as const;
+
+export type BuildMode = keyof typeof BUILD_MODES;
+
 /**
  * Generates a tracking ID using Web Crypto API.
  * @returns a UUID string
@@ -81,6 +93,28 @@ export function setHintCount(
     path,
     maxAge: HINT_COUNT_DURATION,
     httpOnly: true,
+  });
+}
+
+/**
+ * The way a puzzle was last built, so "Build a puzzle" opens where the last one
+ * was left. Unset means the editor, which is the older of the two.
+ */
+export function getBuildMode(headers: Headers): BuildMode {
+  return getCookies(headers)[BUILD_MODE_KEY] === "compose"
+    ? "compose"
+    : "editor";
+}
+
+/** Written by each builder as it opens, so arriving is what records the choice. */
+export function setBuildMode(headers: Headers, mode: BuildMode) {
+  setCookie(headers, {
+    name: BUILD_MODE_KEY,
+    value: mode,
+    path: "/",
+    maxAge: BUILD_MODE_DURATION,
+    httpOnly: true,
+    sameSite: "Lax",
   });
 }
 

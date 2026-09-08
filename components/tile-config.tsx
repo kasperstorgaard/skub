@@ -94,7 +94,7 @@ export function TileConfig({ config }: TileConfigProps) {
           <fieldset className="flex flex-col gap-1 text-fl-0">
             <legend>Include</legend>
 
-            <label className="flex gap-1 items-center">
+            <label className="flex gap-2 items-center">
               <input
                 type="checkbox"
                 checked={Boolean(config.value.portals)}
@@ -104,7 +104,7 @@ export function TileConfig({ config }: TileConfigProps) {
               Portals
             </label>
 
-            <label className="flex gap-1 items-center">
+            <label className="flex gap-2 items-center">
               <input
                 type="checkbox"
                 checked={Boolean(config.value.holes)}
@@ -136,7 +136,7 @@ export function TileConfig({ config }: TileConfigProps) {
       <fieldset className="flex flex-col gap-1 text-fl-0">
         <legend>Moves</legend>
 
-        <label className="flex gap-1 items-center">
+        <label className="flex gap-2 items-center">
           <input
             type="checkbox"
             checked={Boolean(moves)}

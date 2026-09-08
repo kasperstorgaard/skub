@@ -6,6 +6,7 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft } from "#/db/user.ts";
+import { setBuildMode } from "#/game/cookies.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
@@ -34,7 +35,10 @@ export const handler = define.handlers<Puzzle>({
       },
     };
 
-    return page(puzzle);
+    const headers = new Headers();
+    setBuildMode(headers, "editor");
+
+    return page(puzzle, { headers });
   },
 });
 

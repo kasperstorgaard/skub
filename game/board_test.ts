@@ -7,13 +7,14 @@ import {
   getSlide,
   getTargets,
   isBoardSame,
+  isCellFree,
   isLooped,
   isMoveSame,
   isPositionSame,
   isValidMove,
   isValidSolution,
   resolveMoves,
-  rollPuckAndDestination,
+  rollDice,
   rotateBoard,
   validateBoard,
 } from "./board.ts";
@@ -1409,22 +1410,39 @@ Deno.test("getGrid() should size itself to a tile when asked", () => {
   ]);
 });
 
-Deno.test("rollPuckAndDestination() should skip blockers and hazards, and land on two cells", () => {
-  const result = rollPuckAndDestination({
+Deno.test("isCellFree() should report a cell a hazard stands on as taken", () => {
+  const result = isCellFree({
     pieces: [{ x: 0, y: 0, type: "blocker" }],
     holes: [{ x: 1, y: 0 }],
-    portals: [{ x: 2, y: 0 }, { x: 3, y: 0 }],
-  }, { random: () => 0 });
+    portals: [{ x: 2, y: 0 }],
+  }, { x: 1, y: 0 });
 
-  assertEquals(result, { puck: { x: 4, y: 0 }, destination: { x: 5, y: 0 } });
+  assertEquals(result, false);
 });
 
-Deno.test("rollPuckAndDestination() should re-roll over the puck already standing", () => {
-  const result = rollPuckAndDestination({
-    pieces: [{ x: 0, y: 0, type: "puck" }, { x: 1, y: 0, type: "blocker" }],
+Deno.test("isCellFree() should ignore the puck, which is the piece being placed", () => {
+  const result = isCellFree({
+    pieces: [{ x: 3, y: 3, type: "puck" }],
     holes: [],
     portals: [],
-  }, { random: () => 0 });
+  }, { x: 3, y: 3 });
 
-  assertEquals(result, { puck: { x: 0, y: 0 }, destination: { x: 2, y: 0 } });
+  assertEquals(result, true);
+});
+
+Deno.test("rollDice() should throw again over a taken cell, keeping every throw", () => {
+  // Two throws per cell — column, then row.
+  const rolls = [0, 0, 0.5, 0, 0.5, 0, 0, 0.5];
+  let roll = 0;
+
+  const result = rollDice({
+    pieces: [{ x: 0, y: 0, type: "blocker" }],
+    holes: [],
+    portals: [],
+  }, { random: () => rolls[roll++] });
+
+  assertEquals(result, {
+    puck: [{ x: 0, y: 0 }, { x: 4, y: 0 }],
+    destination: [{ x: 4, y: 0 }, { x: 0, y: 4 }],
+  });
 });

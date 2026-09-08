@@ -3,7 +3,15 @@ import { clsx } from "clsx/lite";
 import { useCallback } from "preact/hooks";
 
 import { useComposer } from "#/client/composer.ts";
-import { Eye, Icon, Play, Shuffle, Star, Trash } from "#/components/icons.tsx";
+import {
+  Eye,
+  Icon,
+  PencilSimple,
+  Play,
+  Repeat,
+  Shuffle,
+  Star,
+} from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { TileConfig } from "#/components/tile-config.tsx";
 import { formatPuzzle } from "#/game/formatter.ts";
@@ -15,21 +23,16 @@ import {
   toPlacements,
 } from "#/game/tiles.ts";
 import type { Puzzle, TileEntry } from "#/game/types.ts";
+import type { DiceThrows } from "#/lib/dice.ts";
 
 type ComposerPanelProps = {
   puzzle: Signal<Puzzle>;
   config: Signal<ComposerConfig>;
   dealt: Signal<DealtTile[]>;
   step: Signal<ComposerStep>;
+  /** Where a roll leaves its throws, for the board to play out. */
+  dice: Signal<DiceThrows | null>;
   catalog: TileEntry[];
-};
-
-const EMPTY_BOARD = {
-  destination: undefined,
-  pieces: [],
-  walls: [],
-  holes: [],
-  portals: [],
 };
 
 /**
@@ -38,9 +41,9 @@ const EMPTY_BOARD = {
  * board, where the tiles are.
  */
 export function ComposerPanel(
-  { puzzle, config, dealt, step, catalog }: ComposerPanelProps,
+  { puzzle, config, dealt, step, dice, catalog }: ComposerPanelProps,
 ) {
-  const { deal, roll } = useComposer({ puzzle, dealt, config, catalog });
+  const { deal, roll } = useComposer({ puzzle, dealt, config, catalog, dice });
 
   // Autosave is debounced and a navigation cancels the request in flight, so
   // Review stores the board on screen first.
@@ -66,11 +69,6 @@ export function ComposerPanel(
     globalThis.location.href = `/candidate/review${tiles}`;
   }, [dealt, puzzle]);
 
-  const onClear = useCallback(() => {
-    puzzle.value = { ...puzzle.value, board: { ...EMPTY_BOARD }, minMoves: 0 };
-    dealt.value = [];
-  }, [dealt, puzzle]);
-
   return (
     <Panel>
       <div
@@ -82,43 +80,37 @@ export function ComposerPanel(
         <div className="flex flex-col gap-fl-2">
           <TileConfig config={config} />
 
-          <button type="button" className="btn" onClick={deal}>
-            <Icon icon={Shuffle} /> Generate
-          </button>
-
-          {step.value !== "deal" && (
-            <button type="button" className="btn" onClick={roll}>
-              <Icon icon={Play} />
-              {step.value === "roll" ? "Roll again" : "Roll"}
+          {/* The two actions that move a board on, read as one pair. */}
+          <div className="flex flex-col gap-fl-1">
+            <button type="button" className="btn" onClick={deal}>
+              <Icon icon={Shuffle} /> Generate
             </button>
-          )}
+
+            {step.value !== "deal" && (
+              <button type="button" className="btn" onClick={roll}>
+                <Icon icon={Play} />
+                {step.value === "roll" ? "Roll again" : "Roll"}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-col gap-fl-1 items-start">
-          {step.value === "roll" && (
-            <>
-              <a href="/puzzles/preview" className="btn" target="_blank">
-                <Icon icon={Eye} /> Preview
-              </a>
+        <div className="flex flex-col gap-fl-1">
+          <a href="/puzzles/new" className="btn">
+            <Icon icon={PencilSimple} /> Edit by hand
+          </a>
 
-              <a href="/candidate/review" className="btn" onClick={onReview}>
-                <Icon icon={Star} /> Review
-              </a>
-            </>
-          )}
+          <a href="/tiles" className="btn">
+            <Icon icon={Repeat} /> Tile library
+          </a>
 
-          {step.value !== "deal" && (
-            <button
-              type="button"
-              className="text-fl-0 bg-transparent border-0 cursor-pointer text-link"
-              onClick={onClear}
-            >
-              <Icon icon={Trash} /> Clear
-            </button>
-          )}
+          <a href="/puzzles/preview" className="btn" target="_blank">
+            <Icon icon={Eye} /> Preview
+          </a>
 
-          <a href="/puzzles/new" className="text-fl-0">Edit by hand</a>
-          <a href="/tiles" className="text-fl-0">Tile library</a>
+          <a href="/candidate/review" className="btn" onClick={onReview}>
+            <Icon icon={Star} /> Review
+          </a>
         </div>
       </div>
     </Panel>

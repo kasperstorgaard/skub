@@ -2,11 +2,7 @@ import { type Signal } from "@preact/signals";
 import { useCallback, useRef } from "preact/hooks";
 
 import { useSolveStream } from "#/client/use-solve-stream.ts";
-import {
-  flipBoard,
-  rollPuckAndDestination,
-  rotateBoard,
-} from "#/game/board.ts";
+import { flipBoard, rollDice, rotateBoard } from "#/game/board.ts";
 import {
   categorizeTile,
   composeDealt,
@@ -21,6 +17,7 @@ import {
   toTile,
 } from "#/game/tiles.ts";
 import type { Board, Puzzle, Rotation, TileEntry } from "#/game/types.ts";
+import type { DiceThrows } from "#/lib/dice.ts";
 
 type UseComposerOptions = {
   // The board being composed, in the shape the editor's components speak
@@ -31,6 +28,9 @@ type UseComposerOptions = {
   config: Signal<ComposerConfig>;
   // The tiles there are to deal from
   catalog: TileEntry[];
+  // Where a roll leaves its throws, for the board to play out. Only the
+  // sidebar rolls, so the board-side controls leave it out.
+  dice?: Signal<DiceThrows | null>;
 };
 
 /** Enough re-rolls to find a board in range; past that the range is the problem. */
@@ -43,7 +43,7 @@ const MAX_ROLL_ATTEMPTS = 30;
  * the board's own controls arrange and roll.
  */
 export function useComposer(
-  { puzzle, dealt, config, catalog }: UseComposerOptions,
+  { puzzle, dealt, config, catalog, dice }: UseComposerOptions,
 ) {
   const setBoard = useCallback((board: Board) => {
     puzzle.value = { ...puzzle.value, board, minMoves: 0 };
@@ -52,8 +52,9 @@ export function useComposer(
   const deal = useCallback(() => {
     const tiles = pickTiles(catalog, config.value);
     dealt.value = tiles;
+    if (dice) dice.value = null;
     setBoard(composeDealt(tiles));
-  }, [catalog, config, dealt, setBoard]);
+  }, [catalog, config, dealt, dice, setBoard]);
 
   // Keeps the tiles and re-lays them: new quadrants, new rotations.
   const shuffle = useCallback(() => {
@@ -151,20 +152,26 @@ export function useComposer(
 
   const rollOnce = useCallback(() => {
     const board = puzzle.value.board;
-    const { puck, destination } = rollPuckAndDestination(board);
+    const { puck, destination } = rollDice(board);
 
     const rolled: Board = {
       ...board,
-      destination,
+      destination: destination[destination.length - 1],
       pieces: [
         ...board.pieces.filter((piece) => piece.type === "blocker"),
-        { ...puck, type: "puck" as const },
+        { ...puck[puck.length - 1], type: "puck" as const },
       ],
     };
 
+    // The board takes where the dice came to rest; the throws that got them
+    // there are the board's to play out.
+    if (dice) {
+      dice.value = { puck, destination, nonce: (dice.value?.nonce ?? 0) + 1 };
+    }
+
     setBoard(rolled);
     if (config.value.moves) start(rolled);
-  }, [config, puzzle, setBoard, start]);
+  }, [config, dice, puzzle, setBoard, start]);
 
   rollAgain.current = rollOnce;
 

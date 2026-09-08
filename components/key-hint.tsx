@@ -3,27 +3,21 @@ import { clsx } from "clsx/lite";
 type KeyHintProps = {
   /** The key that does what the buttons beside it do. */
   children: preact.ComponentChildren;
-  /** How many button rows the hint belongs to, on large screens. */
-  rows?: 1 | 3 | 4;
   className?: string;
-};
-
-const SPANS = {
-  1: "",
-  3: "row-span-3",
-  4: "row-span-4",
 };
 
 /**
  * The keyboard shortcut beside a toolbar's buttons, bracketed to the rows it
  * belongs to. Desktop only: there is no key to press on a touch screen.
+ *
+ * Which rows it spans is the toolbar's to say — it knows which buttons it drew
+ * and how many — so placement comes in through className.
  */
-export function KeyHint({ children, rows = 1, className }: KeyHintProps) {
+export function KeyHint({ children, className }: KeyHintProps) {
   return (
     <div
       className={clsx(
         "not-lg:hidden col-2 relative flex items-center justify-center p-1",
-        SPANS[rows],
         className,
       )}
     >

@@ -605,31 +605,55 @@ export function isValidSolution(board: Pick<Board, "destination" | "pieces">) {
   return false;
 }
 
+/** Whether a cell has nothing standing on it that a piece could not share. */
+export function isCellFree(
+  board: Pick<Board, "pieces" | "holes" | "portals">,
+  position: Position,
+): boolean {
+  return !board.pieces.some((piece) =>
+    piece.type === "blocker" && isPositionSame(piece, position)
+  ) &&
+    !board.holes.some((hole) => isPositionSame(hole, position)) &&
+    !board.portals.some((portal) => isPositionSame(portal, position));
+}
+
+/** Enough throws to find two free cells; past that the board has none. */
+const MAX_DICE_ROLLS = 40;
+
 /**
- * Rolls a puck and a destination onto free cells, the way the tabletop game
- * rolls two dice for them.
+ * Throws the dice for a puck and a destination, the way the tabletop game does:
+ * one die for the column, one for the row.
  *
- * Blockers and hazards are skipped — a piece may not start on a hazard and a
- * destination may not sit on one — but any puck already down is not, since it is
- * the thing being re-rolled.
+ * Every throw is kept, landings and misses alike — a die that comes down on a
+ * blocker is thrown again, and the sequence records that rather than hiding it.
+ * The last entry in each list is where the piece ends up.
  */
-export function rollPuckAndDestination(
+export function rollDice(
   board: Pick<Board, "pieces" | "holes" | "portals">,
   { random = Math.random }: { random?: () => number } = {},
-): { puck: Position; destination: Position } {
-  const blockers = board.pieces.filter((piece) => piece.type === "blocker");
-  const taken = [...blockers, ...board.holes, ...board.portals];
+): { puck: Position[]; destination: Position[] } {
+  const rollUntil = (accepts: (position: Position) => boolean): Position[] => {
+    const thrown: Position[] = [];
 
-  const free = getGrid().flat().filter((cell) =>
-    !taken.some((item) => isPositionSame(item, cell))
+    for (let attempt = 0; attempt < MAX_DICE_ROLLS; attempt++) {
+      const position = {
+        x: Math.floor(random() * COLS),
+        y: Math.floor(random() * ROWS),
+      };
+
+      thrown.push(position);
+      if (accepts(position)) return thrown;
+    }
+
+    throw new BoardError("The dice found nowhere free to land");
+  };
+
+  const puck = rollUntil((position) => isCellFree(board, position));
+  const landed = puck[puck.length - 1];
+
+  const destination = rollUntil((position) =>
+    isCellFree(board, position) && !isPositionSame(position, landed)
   );
-
-  if (free.length < 2) {
-    throw new BoardError("Board has too few free cells to roll onto");
-  }
-
-  const [puck] = free.splice(Math.floor(random() * free.length), 1);
-  const destination = free[Math.floor(random() * free.length)];
 
   return { puck, destination };
 }
