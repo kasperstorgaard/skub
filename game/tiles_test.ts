@@ -1,7 +1,5 @@
 import { assertEquals, assertThrows } from "@std/assert";
 
-import { flipBoard, isBoardSame, rotateBoard } from "#/game/board.ts";
-
 import {
   categorizeTile,
   composeBoard,
@@ -28,6 +26,7 @@ import {
   validateTile,
   WHOLE_BOARD_ORDER,
 } from "./tiles.ts";
+import { flipBoard, isBoardSame, rotateBoard } from "#/game/board.ts";
 import type { Rotation, Tile, TileEntry } from "#/game/types.ts";
 
 // The tile from the sketchbook's own notation: a blocker at B2, a vertical wall
