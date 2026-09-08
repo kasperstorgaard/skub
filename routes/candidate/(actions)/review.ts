@@ -23,6 +23,11 @@ import { isDev } from "#/lib/env.ts";
 async function identify(
   draft: Puzzle,
 ): Promise<{ name: string; slug: string; source?: CandidateSource }> {
+  // Nothing to match an unnamed draft against — this is where it earns a name.
+  if (!draft.name) {
+    return { ...await pickCandidateName(), source: "edited" };
+  }
+
   const corpus = await getPuzzle(draft.slug);
   if (corpus && isBoardSame(corpus.board, draft.board)) {
     return { name: corpus.name, slug: corpus.slug, source: "corpus" };

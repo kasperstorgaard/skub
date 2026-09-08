@@ -11,7 +11,6 @@ import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard } from "#/components/puzzle-card.tsx";
 import { define } from "#/core.ts";
 import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
-import { BUILD_MODES, type BuildMode, getBuildMode } from "#/game/cookies.ts";
 import { getAvailableEntries, getPuzzleByDate } from "#/game/loader.ts";
 import { Difficulty, Puzzle, PuzzleManifestEntry } from "#/game/types.ts";
 import { getArchiveDate } from "#/game/url.ts";
@@ -25,8 +24,6 @@ type PageData = {
   difficultyBreakdown: Record<Difficulty, number>;
   totalPuzzles: number;
   entries: PuzzleManifestEntry[];
-  /** Which builder the last puzzle was made in, so the CTA opens that one. */
-  buildMode: BuildMode;
 };
 
 export const handler = define.handlers<PageData>({
@@ -75,7 +72,6 @@ export const handler = define.handlers<PageData>({
       difficultyBreakdown,
       totalPuzzles,
       entries,
-      buildMode: getBuildMode(ctx.req.headers),
     });
   },
 });
@@ -204,7 +200,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
         >
           <span className="text-text-2 text-2">Feeling creative?</span>
           <a
-            href={BUILD_MODES[props.data.buildMode]}
+            href="/new"
             className="btn"
           >
             <Icon icon={Pencil} />

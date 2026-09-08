@@ -365,7 +365,7 @@ export function CandidatePanel(
               </a>
             )}
 
-          <a href="/puzzles/new/reset" className="btn">
+          <a href="/puzzles/build/reset" className="btn">
             <Icon icon={PlusSquare} /> New
           </a>
         </div>

@@ -5,7 +5,7 @@ import { page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
-import { getUserPuzzleDraft } from "#/db/user.ts";
+import { getUserPuzzleDraft, newPuzzleDraft } from "#/db/user.ts";
 import { setBuildMode } from "#/game/cookies.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
@@ -19,24 +19,11 @@ import { isDev } from "#/lib/env.ts";
 
 export const handler = define.handlers<Puzzle>({
   async GET(ctx) {
-    const puzzle = await getUserPuzzleDraft(ctx.state.userId) ?? {
-      number: 0,
-      name: "Untitled",
-      slug: "untitled",
-      createdAt: new Date(Date.now()),
-      difficulty: "medium",
-      minMoves: 0,
-      board: {
-        destination: { x: 0, y: 0 },
-        pieces: [],
-        walls: [],
-        holes: [],
-        portals: [],
-      },
-    };
+    const puzzle = await getUserPuzzleDraft(ctx.state.userId) ??
+      newPuzzleDraft();
 
     const headers = new Headers();
-    setBuildMode(headers, "editor");
+    setBuildMode(headers, "build");
 
     return page(puzzle, { headers });
   },

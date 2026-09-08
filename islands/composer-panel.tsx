@@ -1,4 +1,4 @@
-import { type Signal } from "@preact/signals";
+import { type Signal, useComputed } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useCallback } from "preact/hooks";
 
@@ -17,7 +17,7 @@ import { TileConfig } from "#/components/tile-config.tsx";
 import { formatPuzzle } from "#/game/formatter.ts";
 import {
   type ComposerConfig,
-  type ComposerStep,
+  composerStep,
   type DealtTile,
   encodePlacements,
   toPlacements,
@@ -29,7 +29,6 @@ type ComposerPanelProps = {
   puzzle: Signal<Puzzle>;
   config: Signal<ComposerConfig>;
   dealt: Signal<DealtTile[]>;
-  step: Signal<ComposerStep>;
   /** Where a roll leaves its throws, for the board to play out. */
   dice: Signal<DiceThrows | null>;
   catalog: TileEntry[];
@@ -41,8 +40,12 @@ type ComposerPanelProps = {
  * board, where the tiles are.
  */
 export function ComposerPanel(
-  { puzzle, config, dealt, step, dice, catalog }: ComposerPanelProps,
+  { puzzle, config, dealt, dice, catalog }: ComposerPanelProps,
 ) {
+  // Derived here rather than handed in: a computed made on the page arrives as
+  // the value it had when the island was rendered, and stops tracking.
+  const step = useComputed(() => composerStep(puzzle.value.board));
+
   const { deal, roll } = useComposer({ puzzle, dealt, config, catalog, dice });
 
   // Autosave is debounced and a navigation cancels the request in flight, so
@@ -96,7 +99,7 @@ export function ComposerPanel(
         </div>
 
         <div className="flex flex-col gap-fl-1">
-          <a href="/puzzles/new" className="btn">
+          <a href="/puzzles/build" className="btn">
             <Icon icon={PencilSimple} /> Edit by hand
           </a>
 

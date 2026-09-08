@@ -31,7 +31,7 @@ export default define.page<typeof handler>(function TilesPage(props) {
         <h1 className="text-5 text-brand leading-flat">Tiles</h1>
 
         {props.data.canAuthor && (
-          <a href="/tiles/new" className="btn">New tile</a>
+          <a href="/tiles/build" className="btn">New tile</a>
         )}
       </div>
 
@@ -62,7 +62,7 @@ export default define.page<typeof handler>(function TilesPage(props) {
                     <TileCard
                       entry={row}
                       href={props.data.canAuthor
-                        ? `/tiles/edit?id=${row.id}`
+                        ? `/tiles/build?slug=${row.id}`
                         : undefined}
                     />
                   </li>

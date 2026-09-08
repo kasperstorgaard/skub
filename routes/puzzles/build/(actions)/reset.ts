@@ -3,7 +3,7 @@ import { setUserPuzzleDraft } from "#/db/user.ts";
 
 /**
  * Empties the editor draft and opens the editor on a blank board. Its own
- * action because `/puzzles/new` resumes whatever draft is in KV.
+ * action because `/puzzles/build` resumes whatever draft is in KV.
  */
 export const handler = define.handlers({
   async GET(ctx) {
@@ -24,7 +24,7 @@ export const handler = define.handlers({
     });
 
     return new Response("", {
-      headers: { Location: "/puzzles/new" },
+      headers: { Location: "/puzzles/build" },
       status: 303,
     });
   },

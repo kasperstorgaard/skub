@@ -30,8 +30,8 @@ export default define.page<typeof handler>(function ContributePage(props) {
             <h2 className="text-3 text-text-1">1. Create your puzzle</h2>
             <p className="text-text-2">
               Go to{" "}
-              <a href="/puzzles/new">
-                /puzzles/new
+              <a href="/puzzles/build">
+                /puzzles/build
               </a>{" "}
               and use the editor to design your puzzle. Click a cell to select
               it, then use the toolbar buttons or keyboard shortcuts to place

@@ -4,7 +4,13 @@ import { HttpError, page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
-import { getUserTileDraft } from "#/db/user.ts";
+import {
+  getUserTileDraft,
+  newPuzzleDraft,
+  setUserTileDraft,
+} from "#/db/user.ts";
+import { setBuildMode } from "#/game/cookies.ts";
+import { readTile } from "#/game/tile-store.ts";
 import { CELL_CONTENTS, type Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
@@ -16,28 +22,38 @@ import { isDev } from "#/lib/env.ts";
 /** A tile has no puck, so the cell cycle skips it. */
 const TILE_CONTENTS = CELL_CONTENTS.filter((content) => content !== "puck");
 
+/**
+ * The tile builder, on the draft in KV. A slug opens a stored tile instead —
+ * loaded once and then left alone, so a reload does not throw away edits made
+ * since, the way re-reading the file each time would.
+ */
 export const handler = define.handlers<Puzzle>({
   async GET(ctx) {
     // Dev-only: tiles are authored, and production's filesystem is read-only.
     if (!isDev) throw new HttpError(404, "Not found");
 
-    const draft = await getUserTileDraft(ctx.state.userId) ?? {
-      number: 0,
-      name: "Untitled",
-      slug: "untitled",
-      createdAt: new Date(Date.now()),
-      difficulty: "medium" as const,
-      minMoves: 0,
-      board: {
-        destination: undefined,
-        pieces: [],
-        walls: [],
-        holes: [],
-        portals: [],
-      },
-    };
+    const headers = new Headers();
+    setBuildMode(headers, "tile");
 
-    return page(draft);
+    const slug = ctx.url.searchParams.get("slug");
+    const draft = await getUserTileDraft(ctx.state.userId);
+
+    if (slug && draft?.slug !== slug) {
+      const entry = await readTile(slug);
+      if (!entry) throw new HttpError(404, "Not found");
+
+      const opened: Puzzle = {
+        ...newPuzzleDraft(),
+        name: entry.name ?? entry.id,
+        slug: entry.id,
+        board: entry.tile,
+      };
+
+      await setUserTileDraft(ctx.state.userId, opened);
+      return page(opened, { headers });
+    }
+
+    return page(draft ?? newPuzzleDraft(), { headers });
   },
 });
 
@@ -56,7 +72,7 @@ export default define.page<typeof handler>(function TileBuilderPage(props) {
         <div className="flex justify-between items-center gap-fl-1 mt-2">
           <div className="flex flex-col">
             <h1 className="text-5 text-brand pr-1 leading-flat">
-              {props.data.slug === "untitled" ? "New tile" : props.data.slug}
+              {props.data.slug || "New tile"}
             </h1>
             <p className="text-text-3 leading-tight ml-1">tile</p>
           </div>

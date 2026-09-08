@@ -262,7 +262,9 @@ export function parsePuzzle(
 ): Puzzle {
   const { attrs, body } = extractYaml<Omit<Puzzle, "board">>(content);
 
-  if (!attrs.name) {
+  // A draft is stored before it is named — a board earns a name when it becomes
+  // a candidate — so only a puzzle claiming to be finished must carry one.
+  if (options.validate !== false && !attrs.name) {
     throw new ParserError("Metadata must include 'name' field");
   }
 

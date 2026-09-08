@@ -1,20 +1,19 @@
-import { useComputed, useSignal } from "@preact/signals";
+import { useSignal } from "@preact/signals";
+import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
-import { getUserPuzzleDraft } from "#/db/user.ts";
+import { getUserPuzzleDraft, newPuzzleDraft } from "#/db/user.ts";
 import { getTileOptions, setBuildMode } from "#/game/cookies.ts";
 import { readTiles } from "#/game/tile-store.ts";
-import {
-  type ComposerConfig,
-  composerStep,
-  type DealtTile,
-} from "#/game/tiles.ts";
+import { type ComposerConfig, type DealtTile } from "#/game/tiles.ts";
 import type { Puzzle, TileEntry } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
+import { ComposerKeyboardShortcuts } from "#/islands/composer-keyboard-shortcuts.tsx";
 import { ComposerPanel } from "#/islands/composer-panel.tsx";
+import { EditableName } from "#/islands/editable-name.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
 import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { TileArranger } from "#/islands/tile-arranger.tsx";
@@ -35,21 +34,8 @@ const DEFAULT_CONFIG: ComposerConfig = { mode: "random", distinct: 4 };
  */
 export const handler = define.handlers<ComposerData>({
   async GET(ctx) {
-    const puzzle = await getUserPuzzleDraft(ctx.state.userId) ?? {
-      number: 0,
-      name: "Untitled",
-      slug: "untitled",
-      createdAt: new Date(Date.now()),
-      difficulty: "medium" as const,
-      minMoves: 0,
-      board: {
-        destination: undefined,
-        pieces: [],
-        walls: [],
-        holes: [],
-        portals: [],
-      },
-    };
+    const puzzle = await getUserPuzzleDraft(ctx.state.userId) ??
+      newPuzzleDraft();
 
     const headers = new Headers();
     setBuildMode(headers, "compose");
@@ -71,19 +57,28 @@ export default define.page<typeof handler>(function ComposerPage(props) {
   const dealt = useSignal<DealtTile[]>([]);
   const quadrant = useSignal<number | null>(null);
   const dice = useSignal<DiceThrows | null>(null);
-  const step = useComputed(() => composerStep(puzzle.value.board));
 
   const url = new URL(props.req.url);
 
   return (
     <>
       <Main className="lg:relative">
-        <Header url={url} back={{ href: "/puzzles/new" }} />
+        <Header url={url} back={{ href: "/puzzles/build" }} />
 
         <div className="flex justify-between items-center gap-fl-1 mt-2">
-          <div className="flex flex-col">
-            <h1 className="text-5 text-brand pr-1 leading-flat">Compose</h1>
-            <p className="text-text-3 leading-tight ml-1">
+          <div className="flex flex-col group">
+            <EditableName
+              puzzle={puzzle}
+              defaultValue="Untitled"
+              className="text-5 text-brand pr-1 leading-flat"
+            />
+
+            <p
+              className={clsx(
+                "text-text-3 leading-tight ml-1",
+                "group-focus-within:opacity-0 transition-opacity",
+              )}
+            >
               {props.data.catalog.length
                 ? `${props.data.catalog.length} tiles`
                 : "no tiles yet"}
@@ -122,11 +117,17 @@ export default define.page<typeof handler>(function ComposerPage(props) {
         puzzle={puzzle}
         config={config}
         dealt={dealt}
-        step={step}
         dice={dice}
         catalog={props.data.catalog}
       />
       <EditorAutosave puzzle={puzzle} />
+      <ComposerKeyboardShortcuts
+        puzzle={puzzle}
+        dealt={dealt}
+        config={config}
+        quadrant={quadrant}
+        catalog={props.data.catalog}
+      />
     </>
   );
 });

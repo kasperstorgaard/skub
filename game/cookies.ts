@@ -15,10 +15,11 @@ const BUILD_MODE_KEY = "build_mode";
 // 1 year in seconds
 const BUILD_MODE_DURATION = 60 * 60 * 24 * 365;
 
-/** The two ways to make a puzzle, and where each one lives. */
+/** The builders, and where each one lives. */
 export const BUILD_MODES = {
+  build: "/puzzles/build",
   compose: "/puzzles/compose",
-  editor: "/puzzles/new",
+  tile: "/tiles/build",
 } as const;
 
 export type BuildMode = keyof typeof BUILD_MODES;
@@ -97,13 +98,15 @@ export function setHintCount(
 }
 
 /**
- * The way a puzzle was last built, so "Build a puzzle" opens where the last one
- * was left. Unset means the editor, which is the older of the two.
+ * The builder last opened, for /new to send you back to. Unset means building
+ * a puzzle by hand, which is the oldest of the three.
  */
 export function getBuildMode(headers: Headers): BuildMode {
-  return getCookies(headers)[BUILD_MODE_KEY] === "compose"
-    ? "compose"
-    : "editor";
+  const stored = getCookies(headers)[BUILD_MODE_KEY];
+
+  return stored != null && stored in BUILD_MODES
+    ? stored as BuildMode
+    : "build";
 }
 
 /** Written by each builder as it opens, so arriving is what records the choice. */
