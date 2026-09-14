@@ -5,6 +5,7 @@ createdAt: 2026-08-29T14:58:35.627Z
 difficulty: medium
 minMoves: 6
 source: generated
+promotedAs: magne
 scoring:
   score: 0.3879
   mean: 0.3879
