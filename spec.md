@@ -1,82 +1,69 @@
-# Multi-solving in the editor
+# Portal routes, and the notation that tells them apart
 
 ## The problem
 
-While building a board the editor tells you one number: the shortest solution's
-length. That is the only thing you learn without leaving the editor.
+A move is recorded as two positions: where a piece started, and where it came to
+rest. That pair is what the URL carries, what a stored solution holds, and what
+the solver emits — and on a board with portals it is not always enough to say
+what happened.
 
-Everything else you might want to know — how the board is actually solved,
-whether there is one route or thirty, which squares the solutions lean on and
-which never get touched — lives behind the candidate flow: store the board,
-review it, score it, rate it. That is the right weight for curating a corpus and
-far too much for the question "is this board any good?", asked twenty times while
-laying out walls.
+Put a portal on a board edge and two different slides out of one cell can end on
+the same square. With portals in the SW and NE corners, a piece on H8 slides west
+along the bottom row, into the portal on A8, out at H1, and on west along the top
+row to A1. The same piece slides north up the right-hand column, into H1, out at
+A8, and on north to A1. Two routes, two directions, one destination — and one
+pair of endpoints describing both.
 
-So the board in hand is judged on a single integer, and boards that are too open
-or too forced only reveal themselves later, after they have been filed.
+Replaying such a move meant re-running all four directions and taking the first
+whose endpoint matched. So a move made westward was drawn northward: the piece
+set off up the wrong edge and surfaced at the wrong corner. It reached the right
+square, which is why nothing downstream ever noticed.
+
+It needs an edge to happen. Across every portal pair on the board there are 144
+colliding direction-pairs when a portal sits on an edge, 52 of those on a corner,
+and none at all when both portals are interior. No collision anywhere disagrees
+about where the piece lands or whether it dropped or looped, so move counts,
+difficulty, loop detection and stored solutions were never affected. Only the
+picture was wrong.
 
 ## The approach
 
-Ask the board for its first solutions and watch them play, on the board you are
-already looking at.
+A move that teleports records the portal it went in by, written into the move
+notation as `A8xA1` — the path as far as the portal, then `x`, then where the
+piece came to rest. `H7H8-A8xA1` reads as "H7 to H8, then west into the portal on
+A8 and on to A1".
 
-**Where it starts.** The difficulty badge. It already owns the solve — it holds
-the move count, runs the debounced solve as you edit, and shows search depth
-while it works — so the thing that reports one solution is the natural place to
-ask for ten. It becomes a real button rather than a `<span>` with `cursor-help`,
-which it should have been regardless.
+The portal is enough on its own: going in by a given portal fixes which one it
+comes out of, and the direction follows from the start and the entry. Recording
+the exit as well would only repeat what the board already knows. Recording the
+direction instead would be a character shorter but would put something that isn't
+a square into a notation where every token is one.
 
-**Getting the solutions.** `/api/solve` streams one solution today and its worker
-stops at the first. Both learn a limit. The solver already builds the complete
-shortest-path DAG in exhaustive mode, but `enumerateSolutions` materialises every
-optimal route, which is exponential on an open board. It needs a bounded walk
-instead: yield solutions off the DAG until the limit is reached, never building
-the full set. `deduplicateSolutions` then applies the same order-independent key
-the KV path uses, so ten solutions are ten genuinely different ones rather than
-reorderings of the same three moves.
+Only a slide that teleports grows the suffix, so every URL and stored solution
+that exists today encodes and replays byte-for-byte as it did. A move carrying no
+portal falls back to the old first-match behaviour, which is also what an edited
+board gets when the portal it recorded is no longer there.
 
-Exhaustive search costs materially more than the single-solution path — it drains
-the whole optimal depth and tracks every same-depth arrival — so it stays behind
-the editor's existing state budget and reports overruns the way the badge already
-reports solver errors.
+Canonical move keys stay on the endpoints alone. They feed solution grouping and
+the aggregates built on it, and folding the route into them would split existing
+groups apart.
 
-**Watching them.** Each solution that arrives is written into the URL as moves and
-replayed. The board already has a replay mode driven entirely by `moves` and
-`cursor`, so this is existing machinery: replace the URL state, let it play, move
-on to the next. Replacing rather than pushing keeps ten solutions out of the
-history stack. The editor page's mode signal is typed to `"editor"` alone and has
-to widen so it can flip to replay while the stream runs and back when it ends.
+## Also in here
 
-**The heatmap.** As solutions arrive their trails accumulate into a count per
-square, drawn as an underlay: above the board's ground, beneath the pieces. A
-square used by many solutions reads darker, one no solution ever touches stays
-bare — so the shape of the board's answer space is visible at a glance, and dead
-space shows up as exactly that.
+Two editor fixes that came out of the same session. The toolbar had wrapped onto
+a second row on mobile ever since holes and portals added two tools to a
+four-column grid; its columns flow now, so the row fits however many tools got
+drawn. And the hint link no longer explains itself when a portal loop has locked
+the board — it was already disabled, and the label now only claims a hint was
+used when one actually was.
 
-`computeTrails` already returns what this needs: every square a solution sweeps,
-tagged with the piece, the direction and the move index, taken from the slide
-itself so a portal leg is included rather than interpolated across the board. The
-overlay counts them; it does not compute them.
-
-The colour is a new theme token, set per theme so it can't collide with colours
-that theme already uses for pieces, walls or hazards. Opacity scales with the
-count. It is an editor instrument, not a showpiece — legible beats handsome.
+Plus a batch of new puzzles and the candidates behind them.
 
 ## Non-goals
 
-- **No scoring, rating or persistence.** Nothing is written. This is a lens on the
-  board in hand; the candidate flow stays the way a board gets filed and rated.
-- **Never shown to players.** Editor and composer only. Solution trails on a
-  puzzle page would give the game away.
-- **Not a solution browser.** Solutions stream past and accumulate into the
-  heatmap. Stepping through them one at a time is a different feature.
-
-## Open questions
-
-- **Optimal only, or near misses too?** The solver can collect suboptimal
-  solutions within a window (`nearDag`), which is what says whether a board is
-  forced or merely long. Starting with optimal-length solutions only, since those
-  are what "the first ten solutions" most obviously means.
-- **Ten, or as many as arrive?** Ten is a readable heatmap and a bounded cost. A
-  board with thousands of optimal routes may deserve a count alongside the
-  sample, so the ten aren't mistaken for all of them.
+- **The solver still emits plain pairs.** Hints and the solutions replay take
+  whatever route direction order lands on, exactly as before. Same endpoints and
+  same move count, possibly the other picture. `walkSlide` knows the direction,
+  so it is a contained follow-up rather than a redesign.
+- **No change to how moves are grouped, scored or stored.** The notation is
+  additive; nothing already written needs migrating.
