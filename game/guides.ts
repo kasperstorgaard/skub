@@ -34,10 +34,15 @@ export function getGuides(
   if (active) {
     for (const slide of Object.values(getSlides(active, board))) {
       const [firstLeg] = slide.segments;
+      const entry = firstLeg[firstLeg.length - 1];
 
       result.push({
-        move: [active, slide.target],
-        to: firstLeg[firstLeg.length - 1],
+        // A teleporting slide records the portal it took, so clicking the guide
+        // replays the route it was drawn for rather than one that shares its end.
+        move: slide.segments.length > 1
+          ? [active, slide.target, entry]
+          : [active, slide.target],
+        to: entry,
         isHint: false,
       });
     }
