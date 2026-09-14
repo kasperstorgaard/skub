@@ -41,7 +41,9 @@ export function EditorToolbar(
   return (
     <div
       className={clsx(
-        "grid grid-cols-[repeat(4,2.5rem)] h-fit place-content-center gap-1",
+        "grid h-fit place-content-center gap-1",
+        // Columns flow, so the row fits however many tools got drawn.
+        "max-lg:w-full max-lg:grid-flow-col max-lg:auto-cols-[minmax(0,2.5rem)]",
         "lg:grid-cols-[auto_1.5rem] lg:auto-rows-[2.5rem]",
         className,
       )}

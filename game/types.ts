@@ -45,8 +45,8 @@ export type Difficulty = typeof DIFFICULTIES[number];
 
 export type SkillLevel = "beginner" | "intermediate" | "expert";
 
-// A move represented as a pair of positions [from, to]
-export type Move = [Position, Position];
+// A move as [from, to], plus the portal it went in by when the slide teleported.
+export type Move = [Position, Position, Position?];
 
 // A complete puzzle with metadata and board configuration
 export type Puzzle = {

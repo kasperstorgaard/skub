@@ -4,7 +4,9 @@ import {
   BoardError,
   flipBoard,
   getGrid,
+  getMoveSlide,
   getSlide,
+  getSlides,
   getTargets,
   isBoardSame,
   isCellFree,
@@ -1232,6 +1234,47 @@ Deno.test("getSlide() should slide over a portal that has no pair", () => {
     outcome: "stopped",
     target: { x: 7, y: 0 },
   });
+});
+
+Deno.test("getSlides() should offer both routes a corner portal gives the same end", () => {
+  // Out of 0,1 two routes end on 7,0: up into the corner portal and on from its
+  // pair, or right into the pair and on from the corner. Both are real moves.
+  const slides = getSlides({ x: 0, y: 1 }, {
+    pieces: [{ x: 0, y: 1, type: "puck" as const }],
+    walls: [],
+    holes: [],
+    portals: [{ x: 0, y: 0 }, { x: 7, y: 1 }],
+  });
+
+  assertEquals(
+    Object.entries(slides).map(([direction, slide]) => [
+      direction,
+      slide.target,
+    ]),
+    [
+      ["up", { x: 7, y: 0 }],
+      ["right", { x: 7, y: 0 }],
+      ["down", { x: 0, y: 7 }],
+    ],
+  );
+});
+
+Deno.test("getMoveSlide() should take the route the move went in by", () => {
+  const slide = getMoveSlide(
+    // Sliding right, in by the pair on 7,1 — not up, in by the corner on 0,0.
+    [{ x: 0, y: 1 }, { x: 7, y: 0 }, { x: 7, y: 1 }],
+    {
+      pieces: [{ x: 0, y: 1, type: "puck" as const }],
+      walls: [],
+      holes: [],
+      portals: [{ x: 0, y: 0 }, { x: 7, y: 1 }],
+    },
+  );
+
+  assertEquals(slide?.segments.map((leg) => [leg[0], leg[leg.length - 1]]), [
+    [{ x: 0, y: 1 }, { x: 7, y: 1 }],
+    [{ x: 0, y: 0 }, { x: 7, y: 0 }],
+  ]);
 });
 
 Deno.test("getSlide() should loop when the slide re-enters the portal it came in by", () => {

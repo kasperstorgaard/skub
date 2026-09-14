@@ -16,7 +16,7 @@ import { PortalRings } from "#/components/portal-rings.tsx";
 import {
   getGrid,
   getMoveSlide,
-  getTargets,
+  getSlides,
   isPositionSame,
   isValidSolution,
   resolveMoves,
@@ -206,17 +206,21 @@ export default function Board(
     }) => {
       if (!src || !boardRef.current) return;
 
-      const target = getTargets(src, board)[opts.direction];
+      const slide = getSlides(src, board)[opts.direction];
       let updatedHref = getActiveHref(src, { ...state, href: href.value });
 
-      if (target) {
-        const speed = calculateMoveSpeed(src, target, opts);
+      if (slide) {
+        const speed = calculateMoveSpeed(src, slide.target, opts);
         boardRef.current.style.setProperty("--piece-speed", `${speed}ms`);
 
-        updatedHref = getMovesHref([[src, target]], {
-          ...state,
-          href: updatedHref,
-        });
+        // A teleporting slide records the portal it went in by, so the swipe
+        // replays the way it was made rather than a route sharing its end.
+        const [firstLeg] = slide.segments;
+        const move: Move = slide.segments.length > 1
+          ? [src, slide.target, firstLeg[firstLeg.length - 1]]
+          : [src, slide.target];
+
+        updatedHref = getMovesHref([move], { ...state, href: updatedHref });
       }
 
       updateLocation(updatedHref, { replace: true });

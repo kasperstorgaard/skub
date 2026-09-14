@@ -529,22 +529,33 @@ export function getTargets(src: Position, board: SlideBoard): Targets {
 /**
  * Recovers the slide a move describes.
  *
- * A move only records where a piece ended, so the direction has to be found by
- * matching endpoints. First match in `DIRECTIONS` order wins, which only becomes
- * a choice at all on boards where two portal routes share an endpoint.
+ * A move records where a piece ended, so the direction has to be found by
+ * matching endpoints. On a board with portals two routes can share both ends —
+ * which is what the portal the move went in by settles. A move that records
+ * none falls back to the first match in `DIRECTIONS` order.
  */
 export function getMoveSlide(
   move: Move,
   board: SlideBoard,
 ): Slide | undefined {
   const slides = getSlides(move[0], board);
+  const entry = move[2];
 
   for (const direction of DIRECTIONS) {
     const slide = slides[direction];
-    if (slide && isPositionSame(slide.target, move[1])) return slide;
+    if (!slide || !isPositionSame(slide.target, move[1])) continue;
+
+    const [firstLeg] = slide.segments;
+    if (entry && !isPositionSame(firstLeg[firstLeg.length - 1], entry)) {
+      continue;
+    }
+
+    return slide;
   }
 
-  return undefined;
+  // An edited board can leave a recorded portal nowhere to be found; the
+  // endpoints still describe a move that may well be playable.
+  return entry ? getMoveSlide([move[0], move[1]], board) : undefined;
 }
 
 /**

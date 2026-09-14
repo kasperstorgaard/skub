@@ -59,8 +59,10 @@ export function ControlsPanel(
   const hintLimit = 1;
   // Mirrors the hint route's gate. hintCount is server-rendered and the
   // enhanced path never reloads, so a hint taken here shows up in the signal.
-  const hintDisabled = isLocked || (!isDev && !isPreview &&
-    (hintCount ?? 0) + (hintUsed.value ? 1 : 0) >= hintLimit);
+  const hintSpent = !isDev && !isPreview &&
+    (hintCount ?? 0) + (hintUsed.value ? 1 : 0) >= hintLimit;
+
+  const hintDisabled = isLocked || hintSpent;
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -186,11 +188,7 @@ export function ControlsPanel(
                   onHint();
                 }}
               >
-                {isLocked
-                  ? "Stuck in a portal"
-                  : hintDisabled
-                  ? "Hint used"
-                  : "Get a hint"}
+                {hintSpent ? "Hint used" : "Get a hint"}
               </a>
             )}
 

@@ -118,6 +118,34 @@ Deno.test("decodeMoves() should decode shorthand notation", () => {
   ]);
 });
 
+Deno.test("encodeMoves() should write the portal a slide went in by", () => {
+  const result = encodeMoves([
+    [{ x: 7, y: 6 }, { x: 7, y: 7 }],
+    [{ x: 7, y: 7 }, { x: 0, y: 0 }, { x: 0, y: 7 }],
+  ]);
+
+  // Slid west off H8 into the portal on A8, and came to rest on A1.
+  assertEquals(result, "H7H8-A8xA1");
+});
+
+Deno.test("encodeMoves() should write a portal slide in full when it starts fresh", () => {
+  const result = encodeMoves([
+    [{ x: 0, y: 0 }, { x: 0, y: 5 }],
+    [{ x: 7, y: 7 }, { x: 0, y: 0 }, { x: 0, y: 7 }],
+  ]);
+
+  assertEquals(result, "A1A6-H8A8xA1");
+});
+
+Deno.test("decodeMoves() should read back the portal a slide went in by", () => {
+  const result = decodeMoves("H7H8-A8xA1");
+
+  assertEquals(result, [
+    [{ x: 7, y: 6 }, { x: 7, y: 7 }],
+    [{ x: 7, y: 7 }, { x: 0, y: 0 }, { x: 0, y: 7 }],
+  ]);
+});
+
 Deno.test("decodeMoves() should decode mixed full and shorthand notation", () => {
   const result = decodeMoves("A1A6-F6-C4F4");
 
