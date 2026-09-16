@@ -47,6 +47,11 @@ export async function pickRecommendedPuzzle(
   // schedule, and a puzzle nobody could have played is neither perfected nor
   // worth recommending.
   const released = entries.filter((entry) => !entry.isFuture);
+
+  const playedSlugs = released
+    .filter((entry) => bestMoves[entry.slug])
+    .map((entry) => entry.slug);
+
   const optimalSlugs = released
     .filter((entry) => bestMoves[entry.slug] === entry.minMoves)
     .map((entry) => entry.slug);
@@ -64,18 +69,22 @@ export async function pickRecommendedPuzzle(
     return puzzle;
   }
 
-  const excludeSlugs = [
-    ...(dailyPuzzle ? [dailyPuzzle.slug] : []),
-    ...optimalSlugs,
-  ];
-
-  const puzzle = await getRandomPuzzle({
-    excludeSlugs,
+  const unplayedPuzzle = await getRandomPuzzle({
+    excludeSlugs: [...playedSlugs, dailyPuzzle?.slug ?? ""],
     difficulty: user.skillLevel === "expert"
       ? ["easy", "medium", "hard"]
       : ["easy", "medium"],
   });
 
-  if (!puzzle) throw new Error("Unable to get random puzzle");
-  return puzzle;
+  if (unplayedPuzzle) return unplayedPuzzle;
+
+  const subOptimalPuzzle = await getRandomPuzzle({
+    excludeSlugs: [...optimalSlugs, dailyPuzzle?.slug ?? ""],
+    difficulty: user.skillLevel === "expert"
+      ? ["easy", "medium", "hard"]
+      : ["easy", "medium"],
+  });
+
+  if (!subOptimalPuzzle) throw new Error("Unable to get random puzzle");
+  return subOptimalPuzzle;
 }
