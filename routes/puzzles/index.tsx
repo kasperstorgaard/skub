@@ -4,7 +4,6 @@ import { HttpError, page } from "fresh";
 
 import { CalendarGrid } from "#/components/calendar-grid.tsx";
 import { Header } from "#/components/header.tsx";
-import { Icon, Pencil } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { MonthStrip } from "#/components/month-strip.tsx";
 import { Panel } from "#/components/panel.tsx";
@@ -190,22 +189,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
               <span className="text-3 text-text-2">Easy</span>
             </div>
           </div>
-        </div>
-
-        <div
-          className={clsx(
-            "col-[2/3] flex flex-col items-start text-2 text-text-2 mt-auto gap-fl-1",
-            "lg:col-auto lg:row-start-3",
-          )}
-        >
-          <span className="text-text-2 text-2">Feeling creative?</span>
-          <a
-            href="/puzzles/new"
-            className="btn"
-          >
-            <Icon icon={Pencil} />
-            Build a puzzle
-          </a>
         </div>
       </Panel>
     </>

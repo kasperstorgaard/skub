@@ -9,9 +9,11 @@ import { assertExists } from "@std/assert/exists";
 import { isValidMove, isValidSolution, resolveMoves } from "./board.ts";
 import {
   enumerateSolutions,
+  isSolverBudgetError,
   optimalFirstMoves,
   solve,
   solveExhaustiveSync,
+  SOLVER_UNSOLVABLE,
   SolverDepthExceededError,
   solveSync,
 } from "./solver.ts";
@@ -546,4 +548,31 @@ Deno.test("solveSync() should only emit moves the board itself accepts", () => {
   }
 
   assertEquals(isValidSolution(current), true);
+});
+
+Deno.test("isSolverBudgetError() is true when the solver runs out of depth", () => {
+  const board: Board = {
+    holes: [],
+    portals: [],
+    destination: { x: 7, y: 7 },
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    walls: [],
+  };
+
+  const err = assertThrows(() => solveSync(board, { maxDepth: 1 }));
+  assertEquals(isSolverBudgetError((err as Error).message), true);
+});
+
+Deno.test("isSolverBudgetError() is false when the board is ruled out", () => {
+  const board: Board = {
+    holes: [],
+    portals: [],
+    destination: { x: 5, y: 5 },
+    pieces: [{ x: 1, y: 1, type: "puck" }],
+    walls: [],
+  };
+
+  const err = assertThrows(() => solveSync(board));
+  assertEquals((err as Error).message, SOLVER_UNSOLVABLE);
+  assertEquals(isSolverBudgetError((err as Error).message), false);
 });

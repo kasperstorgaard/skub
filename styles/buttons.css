@@ -77,9 +77,10 @@
     filter: brightness(1.3);
   }
 
-  .btn[data-primary]:is([disabled], [aria-disabled]),
-  .icon-btn[data-primary]:is([disabled], [aria-disabled]) {
+  .btn:is([disabled], [aria-disabled]),
+  .icon-btn:is([disabled], [aria-disabled]) {
     filter: opacity(0.4);
+    cursor: not-allowed;
   }
 
   .btn:active:not(:focus-visible),

@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
+import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
@@ -16,6 +17,7 @@ import { ComposerPanel } from "#/islands/composer-panel.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
 import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
+import { EditorSolver } from "#/islands/editor-solver.tsx";
 import { TileArranger } from "#/islands/tile-arranger.tsx";
 import type { DiceThrows } from "#/lib/dice.ts";
 
@@ -57,6 +59,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
   const dealt = useSignal<DealtTile[]>([]);
   const quadrant = useSignal<number | null>(null);
   const dice = useSignal<DiceThrows | null>(null);
+  const solveState = useSignal<SolveState | undefined>(undefined);
 
   const url = new URL(props.req.url);
 
@@ -85,7 +88,11 @@ export default define.page<typeof handler>(function ComposerPage(props) {
             </p>
           </div>
 
-          <EditorDifficultyBadge puzzle={puzzle} className="lg:mt-1" />
+          <EditorDifficultyBadge
+            puzzle={puzzle}
+            solveState={solveState}
+            className="lg:mt-1"
+          />
         </div>
 
         <div className="relative max-lg:pb-fl-5">
@@ -120,6 +127,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
         dice={dice}
         catalog={props.data.catalog}
       />
+      <EditorSolver puzzle={puzzle} solveState={solveState} />
       <EditorAutosave puzzle={puzzle} />
       <ComposerKeyboardShortcuts
         puzzle={puzzle}

@@ -8,37 +8,44 @@ already have my address. Most players won't do either.
 
 ## Approach
 
-A **Submit** button in the editor panel (non-dev only, next to Download) posts the
-draft to the server, which emails it to me and returns the player to the editor
-with a confirmation dialog.
+A **Submit** button in the editor panel opens a dialog that sets
+expectations, takes an optional note, and sends the puzzle to me by email.
 
-- **Ready state** — the button is disabled until the board has a solution. The
-  editor's difficulty badge already solves the board as it's built; it writes the
-  move count back onto the puzzle signal (as the composer does), and the panel
-  enables Submit when `minMoves > 0`.
+- **Ready state** — Submit is disabled until the board has a solution, and the
+  dialog won't open without one either. The editor's solve stream moves out
+  of the difficulty badge into a no-UI `EditorSolver` island: it writes progress
+  and errors to a `solveState` signal and a solution's move count onto the
+  puzzle; the badge and the dialog only read them. A solve that gives up on its
+  budget (depth or the editor's state cap) lets the board through unconfirmed —
+  only boards the solver rules out stay disabled.
+- **Dialog** — `?submit=compose` opens "Submit a puzzle": what happens next (I
+  play every one and do my best to reply; if it makes it in, it keeps the name
+  the submitter gave it) and an optional note. Guests get an optional email
+  field; logged-in players get an "Include my email" checkbox (on by default) —
+  unticked, the submission is anonymous, with no Reply-To and no username.
 - **Action** — `POST /puzzles/build/submit`, alongside the existing `reset`
-  action. It reads the board from the request (the on-screen board, since
-  autosave is debounced), re-validates it server-side and solves it with the
-  editor's state budget. Invalid, unsolvable, or already-shipping boards (corpus
-  canonical hash, same check as `/api/solve`) are skipped — that is the spam
-  filter.
-- **Email** — sent through Resend's HTTP API from `submissions@skub.app` to me.
-  Body has the name, move count and ASCII board; the formatted `.md` is attached
-  so it can be dropped into `static/puzzles/`. Uses its own sending-only key,
-  `RESEND_API_KEY`, separate from Auth0's.
-- **Reply-To** — logged-in players' account email is used automatically, with a
-  note by the button saying so. Anonymous players get an optional email field.
-  Without either, the email has no Reply-To.
-- **Confirmation** — the action redirects (303) to `/puzzles/build?submitted`,
-  and the page opens a dialog stating the puzzle was sent.
-- **Analytics** — one server-side `puzzle_submitted` event.
-- **Contribute page** — "3b. Send me an email" points at the Submit button.
+  action. It takes the on-screen board from the dialog's form (autosave is
+  debounced) and only checks that it parses. No server-side solve: it can take
+  up to a minute on busy boards, and the disabled button already keeps honest
+  players to solvable ones. Lenient on purpose — the goal is to see anything
+  from players at all.
+- **Email** — sent through Resend's HTTP API from `submissions@skub.app` to me,
+  with name, move count, sender, note and the board; the `.md` is attached so it
+  can be dropped into `static/puzzles/`. Uses its own sending-only key,
+  `RESEND_API_KEY`; without it the Submit button is hidden.
+- **Confirmation** — the action redirects (303) to `?submit=sent` or
+  `?submit=failed`, which the same dialog island renders.
+- **Analytics** — one server-side `puzzle_submitted` event, with `has_reply_to`
+  and `has_note`.
+- **Entry point** — the "Feeling creative? Build a puzzle" button moves from the
+  archives panel to the homepage panel, so players find the editor at all.
+- **Contribute page removed** — Submit replaces its email step, and the editor
+  is the guide now; the page can come back later for deeper tips.
 
 ## Non-goals
 
-- **Rate limiting / dedupe.** Skipping invalid boards is the first line. Note:
-  submission emails share Resend's daily quota with Auth0 login codes, so a flood
-  of valid submissions could block logins. Revisit if it happens.
-- **Homepage "Feeling creative?" entry point and an editor rebrand.** Separate
-  branch.
+- **Abuse handling** — no rate limiting, dedupe or server-side validation beyond
+  parsing. Note: submission emails share Resend's daily quota with Auth0 login
+  codes, so a flood could block logins. Revisit if it happens.
+- **An editor rebrand.** Separate branch.
 - **Receiving email** (Cloudflare Email Routing / Resend inbound).

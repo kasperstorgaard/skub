@@ -56,6 +56,7 @@ export function DifficultyBadge(
             ? "solve the puzzle to reveal"
             : "shortest possible solution")}
       >
+        {/* TODO: distinguish budget exceeded (isSolverBudgetError) from unsolvable with its own icon */}
         {error
           ? <Icon icon={Warning} />
           : depth !== null

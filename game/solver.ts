@@ -15,6 +15,18 @@ const DEFAULT_MAX_DEPTH = 15;
  */
 const BFS_STATE_LIMIT = 10_000_000;
 
+/** Error message for a board the solver has ruled out. */
+export const SOLVER_UNSOLVABLE = "Unsolvable puzzle";
+
+/**
+ * Whether a solver error means it gave up on its budget (depth or states)
+ * rather than ruling the board out. Matches SolverDepthExceededError's message,
+ * which is all that survives the stream from /api/solve.
+ */
+export function isSolverBudgetError(message: string) {
+  return /^Solver depth \d+ exceeded$/.test(message);
+}
+
 // Error thrown when the solver exceeds the maximum search depth or state limit
 export class SolverDepthExceededError extends Error {
   constructor(depth: number) {
@@ -307,7 +319,7 @@ function* bfsExplore(
 ): Generator<number, SolverResult> {
   const { destination } = board;
   // Nothing to solve toward on a board that is still being built.
-  if (!destination) throw new Error("Unsolvable puzzle");
+  if (!destination) throw new Error(SOLVER_UNSOLVABLE);
 
   const destPos = destination.y * COLS + destination.x;
   const initialState = initState(board);
@@ -478,7 +490,7 @@ function* bfsExplore(
 
   if (goalDepth === -1) {
     if (hitMaxDepth) throw new SolverDepthExceededError(maxDepth);
-    throw new Error("Unsolvable puzzle");
+    throw new Error(SOLVER_UNSOLVABLE);
   }
 
   return toResult(goalDepth);

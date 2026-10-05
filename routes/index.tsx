@@ -8,6 +8,7 @@ import {
   GithubLogo,
   Icon,
   LinkedinLogo,
+  Pencil,
 } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
@@ -184,6 +185,14 @@ export default define.page<typeof handler>(function Home(ctx) {
           {userStats && (
             <StatsSummary stats={userStats} className="lg:w-full" />
           )}
+
+          <div className="flex flex-col items-start gap-fl-1">
+            <span className="text-text-2 text-2">Feeling creative?</span>
+            <a href="/puzzles/new" className="btn">
+              <Icon icon={Pencil} />
+              Build a puzzle
+            </a>
+          </div>
 
           <div className="flex gap-2 lg:flex-col lg:mt-auto">
             <a
