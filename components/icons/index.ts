@@ -20,6 +20,7 @@ export * from "./flip-vertical.ts";
 export * from "./github-logo.ts";
 export * from "./info.ts";
 export * from "./linkedin-logo.ts";
+export * from "./paper-plane-tilt.ts";
 export * from "./pencil.ts";
 export * from "./pencil-simple.ts";
 export * from "./play.ts";

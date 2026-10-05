@@ -19,10 +19,6 @@ class EditorPage {
     return this.heading.locator("[contenteditable]");
   }
 
-  get guideLink() {
-    return this.page.getByRole("link", { name: /how to add puzzles/i });
-  }
-
   async goto() {
     await this.page.goto(`${BASE_URL}/puzzles/build`);
     return this;
@@ -53,18 +49,6 @@ Deno.test("editor — editing the name updates the heading", async () => {
     await page.keyboard.press("Tab");
 
     await expect(editor.heading).toHaveText(/My Puzzle/);
-  } finally {
-    await teardown();
-  }
-});
-
-Deno.test("editor — guide link points to contribute page", async () => {
-  const { page, asUser, teardown } = await setup();
-  try {
-    await asUser({ name: "e2emma" });
-    const editor = await new EditorPage(page).goto();
-
-    await expect(editor.guideLink).toHaveAttribute("href", "/contribute");
   } finally {
     await teardown();
   }

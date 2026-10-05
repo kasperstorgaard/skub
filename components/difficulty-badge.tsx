@@ -1,12 +1,13 @@
 import { clsx } from "clsx/lite";
 
 import { Icon, Warning } from "#/components/icons.tsx";
+import type { SolverErrorReason } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 
 /** Where a board being edited is in its solve; a fixed puzzle has no state. */
 export type SolveState =
   | { type: "solving"; depth: number }
-  | { type: "error"; message: string };
+  | { type: "error"; reason: SolverErrorReason; message: string };
 
 type DifficultyBadgeProps = {
   puzzle: Puzzle;
@@ -56,6 +57,7 @@ export function DifficultyBadge(
             ? "solve the puzzle to reveal"
             : "shortest possible solution")}
       >
+        {/* TODO: give each solveState.reason its own icon (budget vs unsolvable) */}
         {error
           ? <Icon icon={Warning} />
           : depth !== null

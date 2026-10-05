@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
+import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
@@ -14,7 +15,10 @@ import { EditorAutosave } from "#/islands/editor-autosave.tsx";
 import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
 import { EditorPanel } from "#/islands/editor-panel.tsx";
+import { EditorSolver } from "#/islands/editor-solver.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
+import { SubmitDialog } from "#/islands/submit-dialog.tsx";
+import { canSendEmail } from "#/lib/email.ts";
 import { isDev } from "#/lib/env.ts";
 
 export const handler = define.handlers<Puzzle>({
@@ -33,6 +37,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
   const puzzle = useSignal(props.data);
   const href = useSignal(props.url.href);
   const mode = useSignal<"editor">("editor");
+  const solveState = useSignal<SolveState | undefined>(undefined);
 
   const url = new URL(props.req.url);
 
@@ -59,7 +64,11 @@ export default define.page<typeof handler>(function EditorPage(props) {
             </p>
           </div>
 
-          <EditorDifficultyBadge puzzle={puzzle} className="lg:mt-1" />
+          <EditorDifficultyBadge
+            puzzle={puzzle}
+            solveState={solveState}
+            className="lg:mt-1"
+          />
         </div>
 
         <div className="relative max-lg:pb-fl-5">
@@ -81,7 +90,21 @@ export default define.page<typeof handler>(function EditorPage(props) {
           />
         </div>
       </Main>
-      <EditorPanel puzzle={puzzle} href={href} isDev={isDev} />
+      <EditorPanel
+        puzzle={puzzle}
+        href={href}
+        isDev={isDev}
+        submissionsEnabled={canSendEmail &&
+          Deno.env.has("SUBMISSIONS_EMAIL")}
+        solveState={solveState}
+      />
+      <SubmitDialog
+        puzzle={puzzle}
+        href={href}
+        solveState={solveState}
+        userEmail={props.state.user.email}
+      />
+      <EditorSolver puzzle={puzzle} solveState={solveState} />
       <EditorAutosave puzzle={puzzle} />
       <EditorKeyboardShortcuts puzzle={puzzle} href={href} />
     </>

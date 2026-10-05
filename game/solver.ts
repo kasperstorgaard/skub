@@ -23,6 +23,31 @@ export class SolverDepthExceededError extends Error {
   }
 }
 
+// Error thrown when the search runs out of states without reaching the goal
+export class UnsolvablePuzzleError extends Error {
+  constructor() {
+    super("Unsolvable puzzle");
+    this.name = "UnsolvablePuzzleError";
+  }
+}
+
+/**
+ * Why a solve ended without a solution. Sent on the error event, since error
+ * classes don't survive the stream from /api/solve:
+ * - `budget` — gave up on depth or states; the board may still have an answer
+ * - `unsolvable` — ruled out
+ * - `invalid` — the board was refused before solving
+ * - `failed` — the solve itself broke (worker crash, network)
+ */
+export type SolverErrorReason = "budget" | "unsolvable" | "invalid" | "failed";
+
+/** Classifies an error thrown while solving. */
+export function getSolverErrorReason(err: unknown): SolverErrorReason {
+  if (err instanceof SolverDepthExceededError) return "budget";
+  if (err instanceof UnsolvablePuzzleError) return "unsolvable";
+  return "failed";
+}
+
 /**
  * Result of an exhaustive solve. Exposes the shortest-path DAG rather than a
  * materialized solution list: every optimal move sequence can be walked out of
@@ -69,7 +94,7 @@ export type SolverProgress = { depth: number };
 export type SolverEvent =
   | { type: "progress" } & SolverProgress
   | { type: "solution"; moves: Move[] }
-  | { type: "error"; message: string };
+  | { type: "error"; reason: SolverErrorReason; message: string };
 
 type WallLookup = {
   /** hWalls[x] = y-values of horizontal walls that block vertical movement in column x */
@@ -181,7 +206,7 @@ export function solveSync(
  * (which stays on the faster single-solution `solveSync`). The DAG is bounded by
  * the states explored; consumers canonicalize or enumerate off it as needed.
  *
- * Throws SolverDepthExceededError / "Unsolvable puzzle" with the same semantics
+ * Throws SolverDepthExceededError / UnsolvablePuzzleError with the same semantics
  * as `solveSync`.
  */
 export function solveExhaustiveSync(
@@ -296,7 +321,7 @@ function firstSolution(dag: SolutionDag): Move[] {
  *    full shortest-path DAG — every optimal solution — can be reconstructed.
  *
  * Throws SolverDepthExceededError if maxDepth or BFS_STATE_LIMIT is reached
- * without a solution, or "Unsolvable puzzle" when the queue drains with no goal.
+ * without a solution, or UnsolvablePuzzleError when the queue drains with no goal.
  */
 function* bfsExplore(
   board: Board,
@@ -307,7 +332,7 @@ function* bfsExplore(
 ): Generator<number, SolverResult> {
   const { destination } = board;
   // Nothing to solve toward on a board that is still being built.
-  if (!destination) throw new Error("Unsolvable puzzle");
+  if (!destination) throw new UnsolvablePuzzleError();
 
   const destPos = destination.y * COLS + destination.x;
   const initialState = initState(board);
@@ -478,7 +503,7 @@ function* bfsExplore(
 
   if (goalDepth === -1) {
     if (hitMaxDepth) throw new SolverDepthExceededError(maxDepth);
-    throw new Error("Unsolvable puzzle");
+    throw new UnsolvablePuzzleError();
   }
 
   return toResult(goalDepth);

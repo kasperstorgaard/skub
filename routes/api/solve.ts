@@ -54,7 +54,11 @@ export const handler = define.handlers({
         };
 
         worker.onerror = (e) => {
-          const event: SolverEvent = { type: "error", message: e.message };
+          const event: SolverEvent = {
+            type: "error",
+            reason: "failed",
+            message: e.message,
+          };
           controller.enqueue(encode(`data: ${JSON.stringify(event)}\n\n`));
           worker.terminate();
           controller.close();

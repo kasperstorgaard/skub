@@ -1,7 +1,7 @@
 import { type Signal } from "@preact/signals";
-import { clsx } from "clsx/lite";
 import { useCallback } from "preact/hooks";
 
+import type { SolveState } from "#/components/difficulty-badge.tsx";
 import {
   ArrowClockwise,
   ArrowRight,
@@ -11,6 +11,7 @@ import {
   FlipHorizontal,
   FlipVertical,
   Icon,
+  PaperPlaneTilt,
   Star,
   Trash,
 } from "#/components/icons.tsx";
@@ -19,11 +20,15 @@ import { flipBoard, rotateBoard } from "#/game/board.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { useRouter } from "#/islands/router.tsx";
+import { canSubmit } from "#/islands/submit-dialog.tsx";
 
 type EditorPanelProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   isDev: boolean;
+  // Submissions are emailed, so the button needs somewhere to send them.
+  submissionsEnabled: boolean;
+  solveState: Signal<SolveState | undefined>;
 };
 
 /**
@@ -33,7 +38,7 @@ type EditorPanelProps = {
  * the panel's only write; the corpus write lives behind Promote.
  */
 export function EditorPanel(
-  { puzzle, href, isDev }: EditorPanelProps,
+  { puzzle, href, isDev, submissionsEnabled, solveState }: EditorPanelProps,
 ) {
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -74,19 +79,9 @@ export function EditorPanel(
 
   return (
     <Panel>
-      <a
-        href="/contribute"
-        target="_blank"
-        className={clsx(
-          "col-[2/3] text-fl-1 mb-fl-4 leading-tight",
-          "lg:row-[1/3] lg:text-fl-0 lg:mb-0",
-        )}
-      >
-        Guide: How to add puzzles
-      </a>
-
       <div className="flex flex-col col-[2/3] lg:row-[3/4] gap-fl-4 lg:gap-fl-1 place-content-between">
         <div className="flex flex-col gap-fl-1 flex-wrap">
+          {/* TODO: add a shake/shuffle button that does something random to the board */}
           <div className="flex gap-fl-1 flex-wrap lg:justify-center">
             <button
               type="button"
@@ -151,6 +146,10 @@ export function EditorPanel(
         </div>
 
         <div className="flex flex-col flex-wrap gap-fl-1">
+          {submissionsEnabled && (
+            <SubmitButton puzzle={puzzle} href={href} solveState={solveState} />
+          )}
+
           {!isDev && (
             <>
               <a
@@ -198,5 +197,31 @@ export function EditorPanel(
         </div>
       </div>
     </Panel>
+  );
+}
+
+type SubmitButtonProps = {
+  puzzle: Signal<Puzzle>;
+  href: Signal<string>;
+  solveState: Signal<SolveState | undefined>;
+};
+
+/** Opens the submit dialog, once the board can be submitted. */
+function SubmitButton({ puzzle, href, solveState }: SubmitButtonProps) {
+  if (!canSubmit(puzzle.value, solveState.value)) {
+    return (
+      <button type="button" className="btn" disabled>
+        <Icon icon={PaperPlaneTilt} /> Submit
+      </button>
+    );
+  }
+
+  const url = new URL(href.value);
+  url.searchParams.set("submit", "compose");
+
+  return (
+    <a href={url.href} data-router className="btn">
+      <Icon icon={PaperPlaneTilt} /> Submit
+    </a>
   );
 }
