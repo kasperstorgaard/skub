@@ -27,7 +27,7 @@ type EditorPanelProps = {
   puzzle: Signal<Puzzle>;
   isDev: boolean;
   // Submissions are emailed, so the button needs somewhere to send them.
-  canEmail: boolean;
+  submissionsEnabled: boolean;
   solveState: Signal<SolveState | undefined>;
 };
 
@@ -38,7 +38,7 @@ type EditorPanelProps = {
  * the panel's only write; the corpus write lives behind Promote.
  */
 export function EditorPanel(
-  { puzzle, href, isDev, canEmail, solveState }: EditorPanelProps,
+  { puzzle, href, isDev, submissionsEnabled, solveState }: EditorPanelProps,
 ) {
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -146,7 +146,7 @@ export function EditorPanel(
         </div>
 
         <div className="flex flex-col flex-wrap gap-fl-1">
-          {canEmail && (
+          {submissionsEnabled && (
             <SubmitButton puzzle={puzzle} href={href} solveState={solveState} />
           )}
 

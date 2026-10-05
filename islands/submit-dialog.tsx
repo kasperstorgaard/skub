@@ -4,7 +4,6 @@ import { useCallback, useMemo } from "preact/hooks";
 import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { Icon, PaperPlaneTilt } from "#/components/icons.tsx";
 import { formatPuzzle } from "#/game/formatter.ts";
-import { isSolverBudgetError } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 import { useRouter } from "#/islands/router.tsx";
@@ -50,7 +49,7 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
           <p>
             {step === "sent"
               ? "Nice! It's in my inbox. I'll take a look soon, and hopefully you'll see it in the game."
-              : "The email didn't go through. Try again, or download the puzzle and email it to me."}
+              : "The email didn't go through. Try again."}
           </p>
         </div>
 
@@ -146,6 +145,5 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
 export function canSubmit(puzzle: Puzzle, solveState?: SolveState) {
   if (puzzle.minMoves) return true;
 
-  return solveState?.type === "error" &&
-    isSolverBudgetError(solveState.message);
+  return solveState?.type === "error" && solveState.reason === "budget";
 }

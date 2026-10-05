@@ -15,24 +15,37 @@ const DEFAULT_MAX_DEPTH = 15;
  */
 const BFS_STATE_LIMIT = 10_000_000;
 
-/** Error message for a board the solver has ruled out. */
-export const SOLVER_UNSOLVABLE = "Unsolvable puzzle";
-
-/**
- * Whether a solver error means it gave up on its budget (depth or states)
- * rather than ruling the board out. Matches SolverDepthExceededError's message,
- * which is all that survives the stream from /api/solve.
- */
-export function isSolverBudgetError(message: string) {
-  return /^Solver depth \d+ exceeded$/.test(message);
-}
-
 // Error thrown when the solver exceeds the maximum search depth or state limit
 export class SolverDepthExceededError extends Error {
   constructor(depth: number) {
     super(`Solver depth ${depth} exceeded`);
     this.name = "SolverDepthExceededError";
   }
+}
+
+// Error thrown when the search runs out of states without reaching the goal
+export class UnsolvablePuzzleError extends Error {
+  constructor() {
+    super("Unsolvable puzzle");
+    this.name = "UnsolvablePuzzleError";
+  }
+}
+
+/**
+ * Why a solve ended without a solution. Sent on the error event, since error
+ * classes don't survive the stream from /api/solve:
+ * - `budget` — gave up on depth or states; the board may still have an answer
+ * - `unsolvable` — ruled out
+ * - `invalid` — the board was refused before solving
+ * - `failed` — the solve itself broke (worker crash, network)
+ */
+export type SolverErrorReason = "budget" | "unsolvable" | "invalid" | "failed";
+
+/** Classifies an error thrown while solving. */
+export function getSolverErrorReason(err: unknown): SolverErrorReason {
+  if (err instanceof SolverDepthExceededError) return "budget";
+  if (err instanceof UnsolvablePuzzleError) return "unsolvable";
+  return "failed";
 }
 
 /**
@@ -81,7 +94,7 @@ export type SolverProgress = { depth: number };
 export type SolverEvent =
   | { type: "progress" } & SolverProgress
   | { type: "solution"; moves: Move[] }
-  | { type: "error"; message: string };
+  | { type: "error"; reason: SolverErrorReason; message: string };
 
 type WallLookup = {
   /** hWalls[x] = y-values of horizontal walls that block vertical movement in column x */
@@ -193,7 +206,7 @@ export function solveSync(
  * (which stays on the faster single-solution `solveSync`). The DAG is bounded by
  * the states explored; consumers canonicalize or enumerate off it as needed.
  *
- * Throws SolverDepthExceededError / "Unsolvable puzzle" with the same semantics
+ * Throws SolverDepthExceededError / UnsolvablePuzzleError with the same semantics
  * as `solveSync`.
  */
 export function solveExhaustiveSync(
@@ -308,7 +321,7 @@ function firstSolution(dag: SolutionDag): Move[] {
  *    full shortest-path DAG — every optimal solution — can be reconstructed.
  *
  * Throws SolverDepthExceededError if maxDepth or BFS_STATE_LIMIT is reached
- * without a solution, or "Unsolvable puzzle" when the queue drains with no goal.
+ * without a solution, or UnsolvablePuzzleError when the queue drains with no goal.
  */
 function* bfsExplore(
   board: Board,
@@ -319,7 +332,7 @@ function* bfsExplore(
 ): Generator<number, SolverResult> {
   const { destination } = board;
   // Nothing to solve toward on a board that is still being built.
-  if (!destination) throw new Error(SOLVER_UNSOLVABLE);
+  if (!destination) throw new UnsolvablePuzzleError();
 
   const destPos = destination.y * COLS + destination.x;
   const initialState = initState(board);
@@ -490,7 +503,7 @@ function* bfsExplore(
 
   if (goalDepth === -1) {
     if (hitMaxDepth) throw new SolverDepthExceededError(maxDepth);
-    throw new Error(SOLVER_UNSOLVABLE);
+    throw new UnsolvablePuzzleError();
   }
 
   return toResult(goalDepth);

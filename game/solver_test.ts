@@ -9,13 +9,13 @@ import { assertExists } from "@std/assert/exists";
 import { isValidMove, isValidSolution, resolveMoves } from "./board.ts";
 import {
   enumerateSolutions,
-  isSolverBudgetError,
+  getSolverErrorReason,
   optimalFirstMoves,
   solve,
   solveExhaustiveSync,
-  SOLVER_UNSOLVABLE,
   SolverDepthExceededError,
   solveSync,
+  UnsolvablePuzzleError,
 } from "./solver.ts";
 import type { Board, Puzzle } from "#/game/types.ts";
 
@@ -550,7 +550,7 @@ Deno.test("solveSync() should only emit moves the board itself accepts", () => {
   assertEquals(isValidSolution(current), true);
 });
 
-Deno.test("isSolverBudgetError() is true when the solver runs out of depth", () => {
+Deno.test("getSolverErrorReason() is budget when the solver runs out of depth", () => {
   const board: Board = {
     holes: [],
     portals: [],
@@ -560,10 +560,10 @@ Deno.test("isSolverBudgetError() is true when the solver runs out of depth", () 
   };
 
   const err = assertThrows(() => solveSync(board, { maxDepth: 1 }));
-  assertEquals(isSolverBudgetError((err as Error).message), true);
+  assertEquals(getSolverErrorReason(err), "budget");
 });
 
-Deno.test("isSolverBudgetError() is false when the board is ruled out", () => {
+Deno.test("getSolverErrorReason() is unsolvable when the board is ruled out", () => {
   const board: Board = {
     holes: [],
     portals: [],
@@ -572,7 +572,10 @@ Deno.test("isSolverBudgetError() is false when the board is ruled out", () => {
     walls: [],
   };
 
-  const err = assertThrows(() => solveSync(board));
-  assertEquals((err as Error).message, SOLVER_UNSOLVABLE);
-  assertEquals(isSolverBudgetError((err as Error).message), false);
+  const err = assertThrows(() => solveSync(board), UnsolvablePuzzleError);
+  assertEquals(getSolverErrorReason(err), "unsolvable");
+});
+
+Deno.test("getSolverErrorReason() is failed for anything else", () => {
+  assertEquals(getSolverErrorReason(new Error("worker crashed")), "failed");
 });

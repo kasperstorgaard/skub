@@ -4,11 +4,10 @@ import type { Puzzle } from "#/game/types.ts";
 import { sendEmail } from "#/lib/email.ts";
 import { trackPuzzleSubmitted } from "#/lib/tracking.ts";
 
-const SUBMISSIONS_TO = "kasper.storgaard@gmail.com";
 const SUBMISSIONS_FROM = "Skub <submissions@skub.app>";
 
 /**
- * Emails the editor's board to Kasper. Lenient on purpose: the board is only
+ * Emails the editor's board to `SUBMISSIONS_EMAIL`. Lenient on purpose: the board is only
  * parsed, not solved — the editor keeps the button disabled until it solves.
  * No rate limiting either; revisit if submissions get abused.
  */
@@ -34,9 +33,12 @@ export const handler = define.handlers({
     const name = puzzle.name || "Untitled";
 
     try {
+      const to = Deno.env.get("SUBMISSIONS_EMAIL");
+      if (!to) throw new Error("SUBMISSIONS_EMAIL is not set");
+
       await sendEmail({
         from: SUBMISSIONS_FROM,
-        to: SUBMISSIONS_TO,
+        to,
         subject: `Puzzle submission: ${name}`,
         replyTo,
         text: [

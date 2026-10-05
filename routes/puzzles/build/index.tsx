@@ -94,7 +94,8 @@ export default define.page<typeof handler>(function EditorPage(props) {
         puzzle={puzzle}
         href={href}
         isDev={isDev}
-        canEmail={canSendEmail}
+        submissionsEnabled={canSendEmail &&
+          Deno.env.has("SUBMISSIONS_EMAIL")}
         solveState={solveState}
       />
       <SubmitDialog

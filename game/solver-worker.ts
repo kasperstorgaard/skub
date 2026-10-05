@@ -1,4 +1,4 @@
-import { solve } from "#/game/solver.ts";
+import { getSolverErrorReason, solve } from "#/game/solver.ts";
 import type { SolverEvent } from "#/game/solver.ts";
 import type { Board } from "#/game/types.ts";
 
@@ -24,6 +24,7 @@ self.onmessage = (e: MessageEvent<Board>) => {
   } catch (err) {
     const event: SolverEvent = {
       type: "error",
+      reason: getSolverErrorReason(err),
       message: err instanceof Error ? err.message : "Solver failed",
     };
     self.postMessage(event);

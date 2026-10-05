@@ -31,8 +31,9 @@ expectations, takes an optional note, and sends the puzzle to me by email.
   from players at all.
 - **Email** — sent through Resend's HTTP API from `submissions@skub.app` to me,
   with name, move count, sender, note and the board; the `.md` is attached so it
-  can be dropped into `static/puzzles/`. Uses its own sending-only key,
-  `RESEND_API_KEY`; without it the Submit button is hidden.
+  can be dropped into `static/puzzles/`. The recipient comes from `SUBMISSIONS_EMAIL`, so the address isn't in the
+  repo. Uses its own sending-only key,
+  `RESEND_API_KEY`; without either, the Submit button is hidden.
 - **Confirmation** — the action redirects (303) to `?submit=sent` or
   `?submit=failed`, which the same dialog island renders.
 - **Analytics** — one server-side `puzzle_submitted` event, with `has_reply_to`

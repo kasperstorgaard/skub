@@ -27,7 +27,11 @@ export function EditorSolver({ puzzle, solveState }: EditorSolverProps) {
       puzzle.value = { ...puzzle.value, minMoves: event.moves.length };
       solveState.value = undefined;
     } else {
-      solveState.value = { type: "error", message: event.message };
+      solveState.value = {
+        type: "error",
+        reason: event.reason,
+        message: event.message,
+      };
     }
   });
 
@@ -46,14 +50,17 @@ export function EditorSolver({ puzzle, solveState }: EditorSolverProps) {
     // A draft that already carries a count came from a solve, not an edit.
     if (minMoves) return;
 
-    // A board still being laid out is unfinished, not wrong — the composer
-    // sits here for the whole arrange step, and saying so in red is a lie.
+    // No puck or destination yet: unfinished, not an error.
     if (!isReadyToSolve(board)) return;
 
     try {
       validateBoard(board);
     } catch (err) {
-      solveState.value = { type: "error", message: (err as Error).message };
+      solveState.value = {
+        type: "error",
+        reason: "invalid",
+        message: (err as Error).message,
+      };
       return;
     }
 

@@ -37,13 +37,19 @@ export function useSolveStream(
         });
 
         if (!response.ok) {
-          onEventRef.current({ type: "error", message: await response.text() });
+          // 400 and 403 are the board being refused; anything else broke.
+          onEventRef.current({
+            type: "error",
+            reason: response.status < 500 ? "invalid" : "failed",
+            message: await response.text(),
+          });
           return;
         }
 
         if (!response.body) {
           onEventRef.current({
             type: "error",
+            reason: "failed",
             message: "Solve returned no events",
           });
           return;
@@ -73,6 +79,7 @@ export function useSolveStream(
         if (!controller.signal.aborted) {
           onEventRef.current({
             type: "error",
+            reason: "failed",
             message: err instanceof Error ? err.message : "Solve failed",
           });
         }
