@@ -55,6 +55,7 @@
     "@std/cli": "jsr:@std/cli@^1.0.28",
     "@std/async": "jsr:@std/async@^1.2.0",
     "@std/async/debounce": "jsr:@std/async@^1.2.0/debounce",
+    "@std/async/unstable-semaphore": "jsr:@std/async@^1.2.0/unstable-semaphore",
     "@std/http/cookie": "jsr:@std/http@^1.0.25/cookie",
     "@std/front-matter": "jsr:@std/front-matter@^1.0.9",
     "@std/text": "jsr:@std/text@^1.0.17",

@@ -1,3 +1,5 @@
+import { Semaphore } from "@std/async/unstable-semaphore";
+
 import { define } from "#/core.ts";
 import { type BoardLike, validateBoard } from "#/game/board.ts";
 import { getCorpusHashes } from "#/game/loader.ts";
@@ -11,6 +13,9 @@ import { isDev } from "#/lib/env.ts";
 const workerUrl = isDev
   ? new URL("../../game/solver-worker.ts", import.meta.url).href
   : new URL("./solver-worker.js", import.meta.url);
+
+// One solve at a time per isolate, so memory stays bounded by one budget.
+const solveLock = new Semaphore(1);
 
 const encoder = new TextEncoder();
 const encode = encoder.encode.bind(encoder);
@@ -41,33 +46,70 @@ export const handler = define.handlers({
       });
     }
 
-    const worker = new Worker(workerUrl, { type: "module" });
+    let worker: Worker | undefined;
+    let permit: Disposable | undefined;
+    let closed = false;
 
-    const stream = new ReadableStream({
+    // Disposing a permit twice would hand out an extra one, so only once.
+    const release = () => {
+      permit?.[Symbol.dispose]();
+      permit = undefined;
+    };
+
+    const stream = new ReadableStream<Uint8Array>({
       start(controller) {
-        worker.onmessage = (e: MessageEvent<SolverEvent>) => {
-          controller.enqueue(encode(`data: ${JSON.stringify(e.data)}\n\n`));
-          if (e.data.type === "solution" || e.data.type === "error") {
-            worker.terminate();
-            controller.close();
+        const send = (event: SolverEvent) => {
+          if (!closed) {
+            controller.enqueue(encode(`data: ${JSON.stringify(event)}\n\n`));
           }
         };
 
-        worker.onerror = (e) => {
-          const event: SolverEvent = {
-            type: "error",
-            reason: "failed",
-            message: e.message,
-          };
-          controller.enqueue(encode(`data: ${JSON.stringify(event)}\n\n`));
-          worker.terminate();
+        const end = () => {
+          worker?.terminate();
+          release();
+          if (closed) return;
+          closed = true;
           controller.close();
         };
 
-        worker.postMessage(board);
+        const run = async () => {
+          permit = solveLock.tryAcquire();
+          if (!permit) {
+            send({ type: "queued" });
+            permit = await solveLock.acquire();
+          }
+
+          // Cancelled while waiting: pass the permit straight on.
+          if (closed) return release();
+
+          worker = new Worker(workerUrl, { type: "module" });
+
+          worker.onmessage = (e: MessageEvent<SolverEvent>) => {
+            send(e.data);
+            if (e.data.type === "solution" || e.data.type === "error") end();
+          };
+
+          worker.onerror = (e) => {
+            send({ type: "error", reason: "failed", message: e.message });
+            end();
+          };
+
+          worker.postMessage(board);
+        };
+
+        run().catch((err) => {
+          send({
+            type: "error",
+            reason: "failed",
+            message: err instanceof Error ? err.message : "Solve failed",
+          });
+          end();
+        });
       },
       cancel() {
-        worker.terminate();
+        closed = true;
+        worker?.terminate();
+        release();
       },
     });
 
