@@ -29,6 +29,31 @@ cookies, this cannot be essential for their experience, but rather an
 enhancement. Fx. a list of which puzzles the user has completed: fine for
 cookies, you can easily play the game without it.
 
+## KV-backed cookies
+
+Per-user state that should also follow a login to another device (profile,
+progress) lives in both places with different jobs: the cookie is what a request
+reads, KV is the durable copy that writes go to and that a login rebuilds the
+cookie from.
+
+Why this works well here:
+
+- **The request has everything it needs on arrival.** A server-rendered page can
+  be assembled from the cookie, the URL and static data without waiting on a
+  store. KV is far away in network terms; a cookie is already in the request.
+- **It keeps the anonymous-first model.** No account is needed for the cookie to
+  work, and when someone does log in, KV is where their state waits for the next
+  device.
+- **Degradation is graceful.** A missing, stale or tampered cookie is treated as
+  absent: rebuild it from KV once and carry on. Nothing is lost, because KV
+  always has the full copy.
+- **It migrates itself.** Old clients get the cookie on their next request;
+  rolling back ignores the cookie and reads KV as before.
+
+Two constraints come with it: sign anything that gates behaviour so it cannot be
+forged, and keep the encoding compact, since cookies are small and travel with
+every request.
+
 ## Deno KV
 
 Anything that needs to be shared between users. Given we don't have sign in,
