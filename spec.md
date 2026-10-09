@@ -40,6 +40,12 @@ current user, and a cookieless client gets a fresh user per request.
    of real hint requests then queues instead of blocking the isolate or exhausting
    its memory.
 
+### Optional
+
+3. **Audit other links for side effects.** Find any other GET route reached by a
+   plain link that writes state (KV, cookies, analytics) or does expensive work,
+   and move it to a form request the same way.
+
 Depends on `fix/solver-memory` (growable solver arrays and `solveLock`). Rebase
 onto `main` once that merges.
 
