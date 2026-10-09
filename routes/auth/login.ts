@@ -1,6 +1,7 @@
 import { define } from "#/core.ts";
 import { setOAuthState } from "#/db/auth.ts";
 import { pkce } from "#/lib/pkce.ts";
+import { getReturnTo } from "#/lib/return-to.ts";
 
 export const handler = define.handlers({
   async GET(ctx) {
@@ -11,11 +12,11 @@ export const handler = define.handlers({
       return new Response("Auth not configured", { status: 503 });
     }
 
-    // Only allow same-origin paths to prevent open redirect.
-    const returnTo = ctx.url.searchParams.get("return_to") ?? "/";
-    if (!returnTo.startsWith("/")) {
-      return new Response("Invalid return_to", { status: 400 });
-    }
+    // Same-origin only, so the callback cannot be used as an open redirect.
+    const returnTo = getReturnTo(
+      ctx.url.searchParams.get("return_to"),
+      ctx.url.origin,
+    );
 
     // PKCE verifier/challenge + one-time state, verified in /auth/callback.
     const { verifier, challenge, state } = await pkce();
