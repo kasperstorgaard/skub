@@ -15,6 +15,12 @@ const DEFAULT_MAX_DEPTH = 15;
  */
 const BFS_STATE_LIMIT = 10_000_000;
 
+/**
+ * Starting state capacity: 65,536 (2^16), about 650KB on a 3-piece board. The
+ * BFS arrays double from here, reaching a 3M cap in six steps.
+ */
+const INITIAL_CAPACITY = 1 << 16;
+
 // Error thrown when the solver exceeds the maximum search depth or state limit
 export class SolverDepthExceededError extends Error {
   constructor(depth: number) {
@@ -92,6 +98,7 @@ export type SolutionDag = {
 
 export type SolverProgress = { depth: number };
 export type SolverEvent =
+  | { type: "queued" }
   | { type: "progress" } & SolverProgress
   | { type: "solution"; moves: Move[] }
   | { type: "error"; reason: SolverErrorReason; message: string };
@@ -150,6 +157,16 @@ type Metadata = {
   toPositions: Uint8Array;
   depths: Uint8Array;
 };
+
+/** Copies `array` into a new one of `length`, for growing the BFS arrays. */
+function growArray<T extends Uint8Array | Int32Array>(
+  array: T,
+  length: number,
+): T {
+  const grown = new (array.constructor as new (length: number) => T)(length);
+  grown.set(array);
+  return grown;
+}
 
 /** An alternative optimal-length arrival into a state: which parent and move. */
 type ParentEdge = { parent: number; from: number; to: number };
@@ -354,15 +371,17 @@ function* bfsExplore(
     pieceCount: initialState.length,
   };
 
-  // State pool: all states packed flat — no heap object per state
-  const statePool = new Uint8Array(stateLimit * config.pieceCount);
+  // State pool: all states packed flat — no heap object per state. Starts small
+  // and doubles up to `stateLimit`, so memory follows the states actually found.
+  let capacity = Math.min(stateLimit, INITIAL_CAPACITY);
+  let statePool = new Uint8Array(capacity * config.pieceCount);
   statePool.set(initialState, 0);
 
   const metadata: Metadata = {
-    parentIndexes: new Int32Array(stateLimit).fill(-1),
-    fromPositions: new Uint8Array(stateLimit),
-    toPositions: new Uint8Array(stateLimit),
-    depths: new Uint8Array(stateLimit), // max depth 15 fits in u8
+    parentIndexes: new Int32Array(capacity).fill(-1),
+    fromPositions: new Uint8Array(capacity),
+    toPositions: new Uint8Array(capacity),
+    depths: new Uint8Array(capacity), // max depth 15 fits in u8
   };
 
   // Pre-allocated moves buffer: 4 directions × n pieces × 2 values (from + to)
@@ -440,16 +459,26 @@ function* bfsExplore(
 
     // Each move is a [fromPos, toPos] pair packed consecutively in buffer.
     for (let idx = 0; idx < moveCount; idx += 2) {
-      if (tail >= stateLimit) {
-        // Expanding at depth >= goalDepth means every optimal state (and its
-        // same-depth alternative parents) is already recorded — only overshoot
-        // exploration remains, so truncate instead of failing. Below goalDepth
-        // the optimal DAG is still incomplete: fail exactly as before.
-        if (goalDepth !== -1 && depth >= goalDepth) {
+      if (tail >= capacity) {
+        if (capacity < stateLimit) {
+          // Inline, not a closure: capturing the pool would slow the hot loop.
+          capacity = Math.min(capacity * 2, stateLimit);
+          statePool = growArray(statePool, capacity * config.pieceCount);
+          metadata.parentIndexes = growArray(metadata.parentIndexes, capacity);
+          metadata.parentIndexes.fill(-1, tail);
+          metadata.fromPositions = growArray(metadata.fromPositions, capacity);
+          metadata.toPositions = growArray(metadata.toPositions, capacity);
+          metadata.depths = growArray(metadata.depths, capacity);
+        } else if (goalDepth !== -1 && depth >= goalDepth) {
+          // Expanding at depth >= goalDepth means every optimal state (and its
+          // same-depth alternative parents) is already recorded — only overshoot
+          // exploration remains, so truncate instead of failing. Below goalDepth
+          // the optimal DAG is still incomplete: fail exactly as before.
           truncated = true;
           break outer;
+        } else {
+          throw new SolverDepthExceededError(maxDepth);
         }
-        throw new SolverDepthExceededError(maxDepth);
       }
 
       const fromPos = buffer[idx];

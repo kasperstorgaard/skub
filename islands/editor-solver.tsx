@@ -5,7 +5,7 @@ import { useDebouncedCallback } from "#/client/use-debounced-callback.ts";
 import { useSolveStream } from "#/client/use-solve-stream.ts";
 import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { isReadyToSolve, validateBoard } from "#/game/board.ts";
-import type { Board, Puzzle } from "#/game/types.ts";
+import type { Puzzle } from "#/game/types.ts";
 
 type EditorSolverProps = {
   puzzle: Signal<Puzzle>;
@@ -13,7 +13,7 @@ type EditorSolverProps = {
 };
 
 /** Long enough that a board mid-edit isn't solved on every change. */
-const DEBOUNCE_MS = 3000;
+const DEBOUNCE_MS = 2000;
 
 /**
  * Solves the editor's board as it's built: a solution lands on the puzzle as
@@ -21,7 +21,9 @@ const DEBOUNCE_MS = 3000;
  */
 export function EditorSolver({ puzzle, solveState }: EditorSolverProps) {
   const { start, cancel } = useSolveStream((event) => {
-    if (event.type === "progress") {
+    if (event.type === "queued") {
+      solveState.value = { type: "waiting" };
+    } else if (event.type === "progress") {
       solveState.value = { type: "solving", depth: event.depth };
     } else if (event.type === "solution") {
       puzzle.value = { ...puzzle.value, minMoves: event.moves.length };
@@ -35,10 +37,7 @@ export function EditorSolver({ puzzle, solveState }: EditorSolverProps) {
     }
   });
 
-  const solveLater = useDebouncedCallback((board: Board) => {
-    solveState.value = { type: "solving", depth: 0 };
-    start(board);
-  }, DEBOUNCE_MS);
+  const solveLater = useDebouncedCallback(start, DEBOUNCE_MS);
 
   useEffect(() => {
     const { board, minMoves } = puzzle.value;
@@ -64,6 +63,7 @@ export function EditorSolver({ puzzle, solveState }: EditorSolverProps) {
       return;
     }
 
+    solveState.value = { type: "waiting" };
     solveLater(board);
   }, [puzzle.value.board, puzzle.value.minMoves]);
 
