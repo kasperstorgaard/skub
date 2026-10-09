@@ -4,9 +4,9 @@ import type { Board } from "#/game/types.ts";
 
 /**
  * BFS state budget for an editor solve. The worker runs per request behind
- * /api/solve, and `bfsExplore` pre-allocates the whole pool up front, so the cap
- * is what a request costs — roughly 11 bytes a state on a four-piece board, so
- * ~33MB of server memory per concurrent solve.
+ * /api/solve, one at a time per isolate. `bfsExplore` grows its pool as states
+ * are found, so the cap is a request's worst case — roughly 11 bytes a state on
+ * a four-piece board, so ~33MB.
  *
  * That doubles as the bound on a public endpoint, which is why it stays well
  * under the analysis budget. A hand-built board rarely passes 100K, but a

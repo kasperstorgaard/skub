@@ -178,7 +178,7 @@ export function useComposer(
 
   const { start } = useSolveStream((event) => {
     const range = config.value.moves;
-    if (!range || event.type === "progress") return;
+    if (!range || event.type === "progress" || event.type === "queued") return;
 
     // A board that would not solve has no move count to judge — rolling again
     // is the answer, not scoring it as nothing and letting a range that starts

@@ -98,6 +98,7 @@ export type SolutionDag = {
 
 export type SolverProgress = { depth: number };
 export type SolverEvent =
+  | { type: "queued" }
   | { type: "progress" } & SolverProgress
   | { type: "solution"; moves: Move[] }
   | { type: "error"; reason: SolverErrorReason; message: string };
