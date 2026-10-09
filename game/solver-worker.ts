@@ -5,8 +5,8 @@ import type { Board } from "#/game/types.ts";
 /**
  * BFS state budget for an editor solve. The worker runs per request behind
  * /api/solve, one at a time per isolate. `bfsExplore` grows its pool as states
- * are found, so the cap is a request's worst case — roughly 11 bytes a state on
- * a four-piece board, so ~33MB.
+ * are found, so the cap is a request's worst case — a board that runs it out
+ * measures ~175MB, visited set included.
  *
  * That doubles as the bound on a public endpoint, which is why it stays well
  * under the analysis budget. A hand-built board rarely passes 100K, but a
