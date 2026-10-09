@@ -5,9 +5,8 @@
 The hint route ran `solveSync` inside the request handler: on the isolate's only
 thread, with the default 10M-state budget, outside the per-isolate `solveLock`
 that guards `/api/solve`. Each hint blocked every other request on the isolate
-for the length of the solve. During the 2026-10-09 crawler burst (see
-`fix/hint-crawlers`) that showed up as multi-second CPU spikes and isolates
-killed for memory.
+for the length of the solve. During the 2026-10-09 crawler burst (see #237)
+that showed up as multi-second CPU spikes and isolates killed for memory.
 
 ## Approach
 
@@ -22,12 +21,9 @@ Hints get the editor's protections:
 - **Abort on disconnect.** A hint whose request goes away stops its worker and
   releases the lock.
 
-Depends on `fix/solver-memory` (growable solver arrays and `solveLock`). Rebase
-onto `main` once that merges.
-
 ## Non-goals
 
-- Crawler protection — hint and clone become POST forms in `fix/hint-crawlers`.
+- Crawler protection — hint and clone became POST forms in #237.
 - Moving hint solving to the browser. The hint allowance is enforced
   server-side, so that's a separate product call.
 - Caching hints by board.
