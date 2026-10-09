@@ -3,7 +3,7 @@ import { HttpError } from "fresh";
 import { incrementHintUsageCount } from "#/db/stats.ts";
 import { isLooped, resolveMoves } from "#/game/board.ts";
 import { getHintCount, setHintCount } from "#/game/cookies.ts";
-import { solveSync } from "#/game/solver.ts";
+import { HINT_MAX_STATES, solveInWorker } from "#/game/solver-queue.ts";
 import { encodeMove } from "#/game/strings.ts";
 import type { Board, Move } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
@@ -58,7 +58,10 @@ export const handler = define.handlers({
     // is a bad request, not a server error.
     let solution: Move[];
     try {
-      solution = solveSync(board);
+      solution = await solveInWorker(board, {
+        maxStates: HINT_MAX_STATES,
+        signal: ctx.req.signal,
+      });
     } catch {
       throw new HttpError(400, "No hint available from here");
     }

@@ -1,21 +1,14 @@
-import { Semaphore } from "@std/async/unstable-semaphore";
-
 import { define } from "#/core.ts";
 import { type BoardLike, validateBoard } from "#/game/board.ts";
 import { getCorpusHashes } from "#/game/loader.ts";
 import { boardCanonicalHash } from "#/game/scoring.ts";
+import {
+  EDITOR_MAX_STATES,
+  solveLock,
+  type SolveRequest,
+  workerUrl,
+} from "#/game/solver-queue.ts";
 import type { SolverEvent } from "#/game/solver.ts";
-import { isDev } from "#/lib/env.ts";
-
-// Resolves to a file:// URL at runtime, bypassing Deno Deploy's
-// --cached-only restriction (which only blocks HTTP module fetches).
-// The Vite plugin copies solver-worker.js to _fresh/server/assets/
-const workerUrl = isDev
-  ? new URL("../../game/solver-worker.ts", import.meta.url).href
-  : new URL("./solver-worker.js", import.meta.url);
-
-// One solve at a time per isolate, so memory stays bounded by one budget.
-const solveLock = new Semaphore(1);
 
 const encoder = new TextEncoder();
 const encode = encoder.encode.bind(encoder);
@@ -94,7 +87,9 @@ export const handler = define.handlers({
             end();
           };
 
-          worker.postMessage(board);
+          worker.postMessage(
+            { board, maxStates: EDITOR_MAX_STATES } satisfies SolveRequest,
+          );
         };
 
         run().catch((err) => {

@@ -1,23 +1,11 @@
+import type { SolveRequest } from "#/game/solver-queue.ts";
 import { getSolverErrorReason, solve } from "#/game/solver.ts";
 import type { SolverEvent } from "#/game/solver.ts";
-import type { Board } from "#/game/types.ts";
 
-/**
- * BFS state budget for an editor solve. The worker runs per request behind
- * /api/solve, one at a time per isolate. `bfsExplore` grows its pool as states
- * are found, so the cap is a request's worst case — a board that runs it out
- * measures ~175MB, visited set included.
- *
- * That doubles as the bound on a public endpoint, which is why it stays well
- * under the analysis budget. A hand-built board rarely passes 100K, but a
- * composed one carries hazards and more reachable geometry, and 500K was running
- * out on boards that do have an answer.
- */
-const EDITOR_MAX_STATES = 3_000_000;
-
-self.onmessage = (e: MessageEvent<Board>) => {
+self.onmessage = (e: MessageEvent<SolveRequest>) => {
+  const { board, maxStates } = e.data;
   try {
-    for (const event of solve(e.data, { maxStates: EDITOR_MAX_STATES })) {
+    for (const event of solve(board, { maxStates })) {
       self.postMessage(event);
       if (event.type === "solution") return;
     }
