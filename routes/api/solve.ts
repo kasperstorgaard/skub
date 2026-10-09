@@ -66,40 +66,42 @@ export const handler = define.handlers({
         };
 
         const run = async () => {
-          permit = solveLock.tryAcquire();
-          if (!permit) {
-            send({ type: "queued" });
-            permit = await solveLock.acquire();
-          }
+          try {
+            permit = solveLock.tryAcquire();
+            if (!permit) {
+              send({ type: "queued" });
+              permit = await solveLock.acquire();
+            }
 
-          // Cancelled while waiting: pass the permit straight on.
-          if (closed) return release();
+            // Cancelled while waiting: pass the permit straight on.
+            if (closed) return release();
 
-          worker = new Worker(workerUrl, { type: "module" });
+            worker = new Worker(workerUrl, { type: "module" });
 
-          worker.onmessage = (e: MessageEvent<SolverEvent>) => {
-            send(e.data);
-            if (e.data.type === "solution" || e.data.type === "error") end();
-          };
+            worker.onmessage = (e: MessageEvent<SolverEvent>) => {
+              send(e.data);
+              if (e.data.type === "solution" || e.data.type === "error") end();
+            };
 
-          worker.onerror = (e) => {
-            send({ type: "error", reason: "failed", message: e.message });
+            worker.onerror = (e) => {
+              send({ type: "error", reason: "failed", message: e.message });
+              end();
+            };
+
+            worker.postMessage(
+              { board, maxStates: EDITOR_MAX_STATES } satisfies SolveRequest,
+            );
+          } catch (err) {
+            send({
+              type: "error",
+              reason: "failed",
+              message: err instanceof Error ? err.message : "Solve failed",
+            });
             end();
-          };
-
-          worker.postMessage(
-            { board, maxStates: EDITOR_MAX_STATES } satisfies SolveRequest,
-          );
+          }
         };
 
-        run().catch((err) => {
-          send({
-            type: "error",
-            reason: "failed",
-            message: err instanceof Error ? err.message : "Solve failed",
-          });
-          end();
-        });
+        run();
       },
       cancel() {
         closed = true;
