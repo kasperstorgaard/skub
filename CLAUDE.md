@@ -63,6 +63,8 @@ On merge to main, the `archive-spec` workflow automatically moves `spec.md` to `
 
 Past specs live in `specs/` — excluded from context by default, reference them explicitly if needed.
 
+Agreed-but-unscheduled work lives in `TODO.md`, phrased as user-level outcomes. The PR that finishes an item deletes it from there in the same change.
+
 **Spec content:** describe *intent* — the problem, the approach, and non-goals if helpful. Don't enumerate changed files; `git diff` and the PR Files tab are the authoritative record and won't drift. The exception is pre-implementation planning when the files don't exist yet and listing them communicates scope.
 
 **Agent behaviour:**

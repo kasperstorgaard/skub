@@ -3,6 +3,12 @@
 Standing backlog — things agreed as worth doing, but not scheduled. Not a spec;
 each item needs its own `spec.md` when it gets picked up.
 
+Lifecycle: picking an item up leaves it here while the branch and `spec.md`
+exist. The PR that finishes it deletes the item in the same change; `specs/` is
+the record of what was built, this file is only what remains. An item that turns
+out not worth doing is deleted too, with the reason in the commit message. If a
+PR finishes only part of an item, trim the item to what is left.
+
 ## Scoring
 
 - **Revamp scoring now that we have better data.** Weight fitting was previously
