@@ -63,6 +63,7 @@ export async function solveInWorker(
     });
   } finally {
     worker?.terminate();
+    // Disposing the permit releases the lock for the next queued solve.
     permit[Symbol.dispose]();
   }
 }
