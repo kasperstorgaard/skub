@@ -34,20 +34,17 @@ current user, and a cookieless client gets a fresh user per request.
    without JavaScript (progressive enhancement holds), and crawlers don't submit
    forms. The hint dialog's client-side fetch switches to POST and keeps asking for
    JSON. The handlers move from `GET` to `POST`.
-2. **Hint solves get the editor's protections.** Use the editor budget (3M states)
-   instead of the default 10M, run the solve in the solver Worker instead of on the
-   main thread, and take the same per-isolate `solveLock` as `/api/solve`. A burst
-   of real hint requests then queues instead of blocking the isolate or exhausting
-   its memory.
-
-### Optional
-
-3. **Audit other links for side effects.** Find any other GET route reached by a
+2. **Audit other links for side effects.** Find any other GET route reached by a
    plain link that writes state (KV, cookies, analytics) or does expensive work,
    and move it to a form request the same way.
 
-Depends on `fix/solver-memory` (growable solver arrays and `solveLock`). Rebase
-onto `main` once that merges.
+   Outcome: nothing else needed moving. `/puzzles/build/reset` and
+   `/candidate/edit` write drafts but are linked only from the dev-only
+   candidate page. `/auth/login` writes an OAuth state, but it expires on a TTL
+   and an OAuth start is a GET by convention.
+
+The main-thread solve is fixed separately in `fix/hint-worker`, which moves hint
+solves into the solver worker behind `solveLock`.
 
 ## Non-goals
 

@@ -78,8 +78,8 @@ export function ControlsPanel(
   ]);
 
   // Opens the dialog straight away and lets it fetch the hint, rather than
-  // waiting on the route's redirect. The anchor keeps its href so the no-JS
-  // path still navigates and comes back with the hint in the URL.
+  // waiting on the route's redirect. Without JS the form posts to the route
+  // and comes back with the hint in the URL.
   const onHint = useCallback(() => {
     if (hintDisabled) return;
     const url = new URL(href.value);
@@ -176,20 +176,29 @@ export function ControlsPanel(
             {
               /*
             The /hint route solves server-side and redirects back with the hint
-            in the query params. Solving is expensive, so it stays on demand.
+            in the query params. A form, not a link, so crawlers can't trigger
+            the solve.
           */
             }
             {puzzle.value.slug !== "preview" && (
-              <a
-                href={hintDisabled ? "#" : getHintHref(href.value)}
-                aria-disabled={hintDisabled ? true : undefined}
-                onClick={(event) => {
+              <form
+                method="post"
+                action={getHintHref(href.value)}
+                className="contents"
+                onSubmit={(event) => {
                   event.preventDefault();
                   onHint();
                 }}
               >
-                {hintSpent ? "Hint used" : "Get a hint"}
-              </a>
+                <button
+                  type="submit"
+                  className="link p-0 bg-transparent cursor-pointer"
+                  disabled={hintDisabled}
+                  aria-disabled={hintDisabled ? true : undefined}
+                >
+                  {hintSpent ? "Hint used" : "Get a hint"}
+                </button>
+              </form>
             )}
 
             <a
@@ -228,12 +237,15 @@ export function ControlsPanel(
           )}
 
           {showEdit && (
-            <a
-              href={`/puzzles/${puzzle.value.slug}/clone`}
-              className="btn"
+            <form
+              method="post"
+              action={`/puzzles/${puzzle.value.slug}/clone`}
+              className="contents"
             >
-              <Icon icon={Pencil} /> Edit
-            </a>
+              <button type="submit" className="btn">
+                <Icon icon={Pencil} /> Edit
+              </button>
+            </form>
           )}
 
           {

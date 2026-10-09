@@ -145,6 +145,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
     );
 
     fetch(getHintHref(href.value), {
+      method: "POST",
       headers: { Accept: "application/json" },
       signal: controller.signal,
     })
