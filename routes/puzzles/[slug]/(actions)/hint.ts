@@ -15,9 +15,12 @@ import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
  * The one place a hint comes from, so the allowance is checked wherever one is
  * produced. Serves two representations of the same result — JSON for the
  * dialog's client-side enhancement, a 303 back to the puzzle without JS.
+ *
+ * POST, not GET: it spends the allowance and runs a solve, so a crawler
+ * following links must not reach it.
  */
 export const handler = define.handlers({
-  async GET(ctx) {
+  async POST(ctx) {
     const slug = ctx.params.slug;
     const { puzzle } = ctx.state;
 
