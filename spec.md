@@ -70,6 +70,13 @@ Lazy, backwards compatible, rollback-safe:
 Logged-in sync across devices is unchanged: login claims the user id from KV
 and the next request seeds the cookie from the KV record.
 
+One gap to decide deliberately: a logged-in user who changes theme or name on
+one device keeps the stale cookie on another until they log in there again.
+If that matters, add a `refreshedAt` claim and re-read KV for logged-in users
+when it is older than a day: one read per device per day, none for anonymous
+visitors. Theme and display name probably do not need it; email does not
+change outside the callback.
+
 ## Tests
 
 - `lib/signed-cookie_test.ts`: round trip; a flipped byte in the payload or
