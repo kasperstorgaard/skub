@@ -29,7 +29,8 @@ export default define.page(
       <html
         className="min-h-dvh"
         lang="en"
-        data-theme={state.user.theme ?? "skub"}
+        // user is unset when middleware throws before it runs (error page)
+        data-theme={state.user?.theme ?? "skub"}
       >
         <head>
           <meta charset="utf-8" />
