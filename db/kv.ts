@@ -20,17 +20,19 @@ export function withKvUsage<T>(usage: KvUsage, fn: () => T): T {
  * Counts one op. `ms` is wall-clock time with any op pending, so parallel ops
  * count once.
  */
-function track() {
+function track(): Disposable {
   const tracker = context.active().getValue(trackerKey) as Tracker | undefined;
-  if (!tracker) return () => {};
+  if (!tracker) return { [Symbol.dispose]() {} };
 
   tracker.usage.ops++;
   if (tracker.pending++ === 0) tracker.since = performance.now();
 
-  return () => {
-    if (--tracker.pending === 0) {
-      tracker.usage.ms += performance.now() - tracker.since;
-    }
+  return {
+    [Symbol.dispose]() {
+      if (--tracker.pending === 0) {
+        tracker.usage.ms += performance.now() - tracker.since;
+      }
+    },
   };
 }
 
@@ -44,12 +46,9 @@ function traced<T>(
     if (typeof key?.[0] === "string") {
       span.setAttribute("kv.key_prefix", key[0]);
     }
-    const done = track();
-    try {
-      return await fn();
-    } finally {
-      done();
-    }
+    using _ = track();
+    // Awaited so the op stays pending until it settles.
+    return await fn();
   });
 }
 

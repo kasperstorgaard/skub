@@ -75,6 +75,11 @@ request scope: keep it on the OTEL context (a context key set in
 `middleware/telemetry.ts`, read by the wrapper), not on a module global, or
 concurrent requests share one counter.
 
+`kv.ms` is wall-clock time with any KV op pending, so parallel reads count
+once. The same numbers go out as `Server-Timing: kv;dur=…;desc="N ops"`, so KV
+cost shows in DevTools and is readable client-side via
+`PerformanceNavigationTiming.serverTiming` — the TTFB breakdown PostHog lacks.
+
 Span naming follows `/observability`: `db.kv.get`, `db.kv.list`,
 `db.kv.commit`. No verbs beyond the op itself.
 
