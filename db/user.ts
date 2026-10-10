@@ -15,15 +15,16 @@ export function newUser(userId: string): User {
 }
 
 /**
- * Writes `user` with `patch` merged in, without reading first, and returns the
- * result. Pass the record already in hand (`ctx.state.user`).
+ * Merges `patch` into the stored record and returns the result. Reads first:
+ * the request's copy can be behind another device, and writing it back would
+ * undo that device's changes.
  */
 export async function setUser(
-  user: User,
-  patch: Partial<Omit<User, "id">> = {},
+  userId: string,
+  patch: Partial<Omit<User, "id">>,
 ): Promise<User> {
-  const updated = { ...user, ...patch };
-  await kv.set(["user", user.id], updated);
+  const updated = { ...(await getUser(userId) ?? newUser(userId)), ...patch };
+  await kv.set(["user", userId], updated);
   return updated;
 }
 

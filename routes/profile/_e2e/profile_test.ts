@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 
 import { expect, setup } from "#/e2e/base.ts";
-import { BASE_URL, getTestUser } from "#/e2e/helpers.ts";
+import { BASE_URL, clearTestUser, getTestUser } from "#/e2e/helpers.ts";
 
 class ProfilePage {
   constructor(private page: Page) {}
@@ -62,6 +62,25 @@ Deno.test("a new visitor's record is stored only once they save a username", asy
 
     expect({ before, after: (await getTestUser(userId))?.name })
       .toEqual({ before: null, after: "e2eve" });
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("a returning player keeps their theme from the profile cookie alone", async () => {
+  const { page, asUser, teardown } = await setup();
+  try {
+    const user = await asUser({ name: "e2eli", theme: "dracula" });
+    await new ProfilePage(page).goto();
+    const cookies = await page.context().cookies();
+
+    await clearTestUser(user.id);
+    await page.reload();
+
+    expect({
+      hasProfileCookie: cookies.some((cookie) => cookie.name === "profile"),
+      theme: await page.locator("html").getAttribute("data-theme"),
+    }).toEqual({ hasProfileCookie: true, theme: "dracula" });
   } finally {
     await teardown();
   }

@@ -9,6 +9,8 @@ import type { User } from "#/db/types.ts";
 export type State = {
   // Stable anonymous user identity (UUID, httpOnly cookie)
   userId: string;
+  // The auth session id, when logged in
+  sessionId?: string;
 
   // The users current cookie choice;
   cookieChoice: "accepted" | "declined" | null;

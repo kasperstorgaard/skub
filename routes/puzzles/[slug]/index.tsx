@@ -120,7 +120,7 @@ export const handler = define.handlers<PageData>({
         span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
       }),
-      setUser(ctx.state.user, { name }),
+      setUser(ctx.state.userId, { name }),
     ]);
     ctx.state.user = user;
 
@@ -131,7 +131,7 @@ export const handler = define.handlers<PageData>({
       const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
       if (newLevel && newLevel !== skillLevel) {
-        ctx.state.user = await setUser(ctx.state.user, {
+        ctx.state.user = await setUser(ctx.state.userId, {
           skillLevel: newLevel,
         });
         trackSkillLevelUp(ctx.state, puzzle, {
