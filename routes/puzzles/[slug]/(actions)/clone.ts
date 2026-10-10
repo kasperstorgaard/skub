@@ -6,11 +6,12 @@ import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 // writes a draft to KV.
 export const handler = define.handlers({
   async POST(ctx) {
-    const { puzzle } = ctx.state;
-    if (!isDev) puzzle.name = "Untitled";
-
-    puzzle.createdAt = new Date(Date.now());
-    puzzle.minMoves = 0;
+    const puzzle = {
+      ...ctx.state.puzzle,
+      name: isDev ? ctx.state.puzzle.name : "Untitled",
+      createdAt: new Date(Date.now()),
+      minMoves: 0,
+    };
 
     await setUserPuzzleDraft(ctx.state.userId, puzzle);
 

@@ -9,16 +9,22 @@ export async function getUser(userId: string): Promise<User | null> {
   return { ...res.value, id: userId };
 }
 
+/** Defaults for a visitor with no record. Not stored until the first write. */
+export function newUser(userId: string): User {
+  return { id: userId, skillLevel: null, theme: "skub" };
+}
+
 /**
- * Merges a partial update into the existing user record.
- * Creates a new record with defaults if none exists.
+ * Writes `user` with `patch` merged in, without reading first, and returns the
+ * result. Pass the record already in hand (`ctx.state.user`).
  */
 export async function setUser(
-  userId: string,
-  patch: Partial<Omit<User, "id">>,
-): Promise<void> {
-  const existing = (await kv.get<User>(["user", userId])).value ?? {};
-  await kv.set(["user", userId], { ...existing, ...patch });
+  user: User,
+  patch: Partial<Omit<User, "id">> = {},
+): Promise<User> {
+  const updated = { ...user, ...patch };
+  await kv.set(["user", user.id], updated);
+  return updated;
 }
 
 /**

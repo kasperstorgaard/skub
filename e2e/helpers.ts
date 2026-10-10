@@ -31,6 +31,21 @@ export async function seedUser(input: SeedUserInput): Promise<User> {
 }
 
 /**
+ * Reads the stored user record, or `null` if none has been written.
+ */
+export async function getTestUser(userId: string): Promise<User | null> {
+  const res = await fetch(`${BASE_URL}/api/e2e/users/${userId}`, {
+    headers: seedHeaders(),
+  });
+  if (res.status === 404) {
+    await res.body?.cancel();
+    return null;
+  }
+  if (!res.ok) throw new Error(`Get user failed: ${res.status}`);
+  return res.json();
+}
+
+/**
  * Deletes all KV entries for the given test user (including solutions).
  * Idempotent.
  */

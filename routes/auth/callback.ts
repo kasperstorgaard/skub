@@ -2,7 +2,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 
 import { define } from "#/core.ts";
 import { claimUserId, consumeOAuthState, setAuthSession } from "#/db/auth.ts";
-import { setUser } from "#/db/user.ts";
+import { getUser, newUser, setUser } from "#/db/user.ts";
 import { setAuthSessionCookie } from "#/lib/auth-cookie.ts";
 
 export const handler = define.handlers({
@@ -89,7 +89,11 @@ export const handler = define.handlers({
     // On subsequent logins the existing userId wins —
     // the mapping can never be overwritten, so history always follows the account.
     const userId = await claimUserId(sub, ctx.state.userId);
-    await setUser(userId, { email });
+    // Logging in on another device: the account's id isn't this device's id.
+    const user = userId === ctx.state.userId
+      ? ctx.state.user
+      : await getUser(userId) ?? newUser(userId);
+    await setUser(user, { email });
 
     const sessionId = crypto.randomUUID();
     await setAuthSession(sessionId, { sub, userId });

@@ -8,6 +8,7 @@ import {
   Puzzle,
   PuzzleManifestEntry,
 } from "#/game/types.ts";
+import { deepFreeze } from "#/lib/deep-freeze.ts";
 import { isDev } from "#/lib/env.ts";
 import { sortList } from "#/lib/list.ts";
 
@@ -36,13 +37,17 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
 
 let corpusHashCache: Set<string> | null = null;
 
+// Parsed puzzles by slug, frozen so stray writes throw.
+const puzzleCache = new Map<string, Puzzle>();
+
 /**
- * Drops both corpus caches, for the one thing that changes `static/puzzles`
+ * Drops the corpus caches, for the one thing that changes `static/puzzles`
  * while the server runs: promoting a candidate.
  */
 export function invalidateCorpus(): void {
   manifestCache = null;
   corpusHashCache = null;
+  puzzleCache.clear();
 }
 
 /**
@@ -109,9 +114,13 @@ export async function getFutureEntries() {
 }
 
 /**
- * Loads a puzzle from a markdown file by slug.
+ * Loads a puzzle from a markdown file by slug. Frozen and shared across
+ * requests: copy before changing it.
  */
 export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
+  const cached = puzzleCache.get(puzzleSlug);
+  if (cached) return cached;
+
   let content: string;
   try {
     content = await Deno.readTextFile(`${PUZZLES_DIR}/${puzzleSlug}.md`);
@@ -119,7 +128,10 @@ export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
     if (err instanceof Deno.errors.NotFound) return null;
     throw err;
   }
-  return parsePuzzle(content);
+
+  const puzzle = deepFreeze(parsePuzzle(content));
+  puzzleCache.set(puzzleSlug, puzzle);
+  return puzzle;
 }
 
 type ListOptions = Pick<PaginationState, "page" | "itemsPerPage"> & {
