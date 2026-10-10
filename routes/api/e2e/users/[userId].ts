@@ -1,10 +1,20 @@
 import { define } from "#/core.ts";
 import { kv } from "#/db/kv.ts";
 import type { Solution } from "#/db/types.ts";
+import { getUser } from "#/db/user.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { isAuthorized } from "#/routes/api/e2e/_auth.ts";
 
 export const handler = define.handlers({
+  async GET(ctx) {
+    if (!isAuthorized(ctx.req)) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    const user = await getUser(ctx.params.userId);
+    if (!user) return new Response("Not found", { status: 404 });
+    return Response.json(user);
+  },
   async DELETE(ctx) {
     if (!isAuthorized(ctx.req)) {
       return new Response("Forbidden", { status: 403 });

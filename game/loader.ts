@@ -36,13 +36,17 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
 
 let corpusHashCache: Set<string> | null = null;
 
+// Parsed puzzles by slug. Shared across requests — callers must not mutate.
+const puzzleCache = new Map<string, Puzzle>();
+
 /**
- * Drops both corpus caches, for the one thing that changes `static/puzzles`
+ * Drops the corpus caches, for the one thing that changes `static/puzzles`
  * while the server runs: promoting a candidate.
  */
 export function invalidateCorpus(): void {
   manifestCache = null;
   corpusHashCache = null;
+  puzzleCache.clear();
 }
 
 /**
@@ -109,9 +113,13 @@ export async function getFutureEntries() {
 }
 
 /**
- * Loads a puzzle from a markdown file by slug.
+ * Loads a puzzle from a markdown file by slug. Cached; the result is shared,
+ * so copy before changing it.
  */
 export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
+  const cached = puzzleCache.get(puzzleSlug);
+  if (cached) return cached;
+
   let content: string;
   try {
     content = await Deno.readTextFile(`${PUZZLES_DIR}/${puzzleSlug}.md`);
@@ -119,7 +127,10 @@ export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
     if (err instanceof Deno.errors.NotFound) return null;
     throw err;
   }
-  return parsePuzzle(content);
+
+  const puzzle = parsePuzzle(content);
+  puzzleCache.set(puzzleSlug, puzzle);
+  return puzzle;
 }
 
 type ListOptions = Pick<PaginationState, "page" | "itemsPerPage"> & {

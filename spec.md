@@ -29,7 +29,9 @@ go through `setUser`, so the change is local to `db/user.ts`.
 
 **`setUser` stops reading.** The middleware has already read the record into
 `ctx.state.user`; pass it in rather than reading again:
-`setUser(user, patch)` writes `{ ...user, ...patch }`. The one caller without a
+`setUser(user, patch)` writes `{ ...user, ...patch }` and returns it, so a
+handler that writes twice (the solve POST: name, then skill level) carries the
+first write into the second. The one caller without a
 record in hand is the auth callback, which keeps a read. Argument order per
 CLAUDE.md: target (the user) first, then the patch.
 
@@ -39,8 +41,9 @@ and keep the no-mutation contract; `clone.ts` currently mutates
 `ctx.state.puzzle` in place and must copy first, or the cache leaks a renamed
 puzzle to the next request.
 
-Drop the `/api/migrate` guards in `middleware/auth.ts` and `middleware/user.ts`;
-the route does not exist.
+The `/api/migrate` guards in `middleware/auth.ts` and `middleware/user.ts`
+stay: the route is added temporarily when a migration runs. A comment now says
+so.
 
 ## Migration
 
@@ -49,15 +52,12 @@ than before sees no difference: defaults were already applied in memory.
 
 ## Tests
 
-- `db/user_test.ts` against `Deno.openKv(":memory:")`: `setUser` on a user
-  with no record creates it with the patch applied; `setUser` on an existing
-  record merges; a GET-shaped flow (read, no write) leaves KV empty. One
-  scenario per test, single deep equality.
-- e2e integration (`routes/_e2e`): a fresh context loads `/`, then
-  `/api/e2e/users/[userId]` reports no record; after saving a name on
-  `/profile` the record exists. The e2e user endpoint already exists.
-- `game/loader_test.ts`: `getPuzzle` returns the same object twice and a fresh
-  one after `invalidateCorpus()`.
+One e2e integration test in `routes/profile/_e2e/profile_test.ts`: a fresh
+visitor loads `/profile` and `/api/e2e/users/[userId]` reports no record; after
+saving a username the record exists. The endpoint gains a `GET` for this.
+
+No unit tests: `db/` and the loader cache are thin wrappers, which `/testing`
+leaves to e2e.
 
 ## Acceptance
 

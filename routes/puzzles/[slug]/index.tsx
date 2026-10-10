@@ -108,7 +108,7 @@ export const handler = define.handlers<PageData>({
     const activeSpan = trace.getActiveSpan();
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const [{ isNew, isNewPath }] = await Promise.all([
+    const [{ isNew, isNewPath }, user] = await Promise.all([
       withSpan("puzzle.save_solution", async (span) => {
         const result = await saveSolution({
           puzzleSlug: slug,
@@ -120,8 +120,9 @@ export const handler = define.handlers<PageData>({
         span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
       }),
-      setUser(ctx.state.userId, { name }),
+      setUser(ctx.state.user, { name }),
     ]);
+    ctx.state.user = user;
 
     if (isNew) {
       trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
@@ -130,7 +131,9 @@ export const handler = define.handlers<PageData>({
       const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
       if (newLevel && newLevel !== skillLevel) {
-        await setUser(ctx.state.userId, { skillLevel: newLevel });
+        ctx.state.user = await setUser(ctx.state.user, {
+          skillLevel: newLevel,
+        });
         trackSkillLevelUp(ctx.state, puzzle, {
           moves,
           url: referer,

@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 
 import { expect, setup } from "#/e2e/base.ts";
-import { BASE_URL } from "#/e2e/helpers.ts";
+import { BASE_URL, getTestUser } from "#/e2e/helpers.ts";
 
 class ProfilePage {
   constructor(private page: Page) {}
@@ -12,6 +12,10 @@ class ProfilePage {
 
   get usernameInput() {
     return this.page.getByRole("textbox", { name: /username/i });
+  }
+
+  get saveButton() {
+    return this.page.getByRole("button", { name: "Save", exact: true });
   }
 
   async goto() {
@@ -39,6 +43,25 @@ Deno.test("a signed-in player who visits their profile sees their saved username
 
     await expect(profilePage.usernameInput).toBeVisible();
     await expect(profilePage.usernameInput).toHaveValue("e2ezra");
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("a new visitor's record is stored only once they save a username", async () => {
+  const { page, teardown } = await setup();
+  try {
+    const profilePage = await new ProfilePage(page).goto();
+    const userId = (await page.context().cookies())
+      .find((cookie) => cookie.name === "user_id")?.value ?? "";
+    const before = await getTestUser(userId);
+
+    await profilePage.usernameInput.fill("e2eve");
+    await profilePage.saveButton.click();
+    await expect(profilePage.usernameInput).toHaveValue("e2eve");
+
+    expect({ before, after: (await getTestUser(userId))?.name })
+      .toEqual({ before: null, after: "e2eve" });
   } finally {
     await teardown();
   }

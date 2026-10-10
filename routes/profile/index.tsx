@@ -26,10 +26,14 @@ export const handler = define.handlers<PageData>({
     const form = await ctx.req.formData();
 
     const name = form.get("name")?.toString().trim();
-    if (name) await setUser(ctx.state.userId, { name });
-
     const theme = form.get("theme")?.toString();
-    if (theme) await setUser(ctx.state.userId, { theme });
+
+    if (name || theme) {
+      await setUser(ctx.state.user, {
+        ...(name && { name }),
+        ...(theme && { theme }),
+      });
+    }
 
     return new Response(null, {
       status: 303,
