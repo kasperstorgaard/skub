@@ -38,9 +38,8 @@ CLAUDE.md: target (the user) first, then the patch.
 **Cache parsed puzzles.** A module-level `Map<slug, Puzzle>` in `loader.ts`,
 cleared by the existing `invalidateCorpus()`. Cached puzzles are deep-frozen,
 so an in-place change throws instead of leaking to the next request;
-`clone.ts` mutated `ctx.state.puzzle` and now copies. Dev skips the cache
-(boards are hand-edited before release) but still freezes, so mutations
-surface locally.
+`clone.ts` mutated `ctx.state.puzzle` and now copies. Boards are only
+edited as candidates, before promotion, so the cache applies in dev too.
 
 The `/api/migrate` guards in `middleware/auth.ts` and `middleware/user.ts`
 stay: the route is added temporarily when a migration runs. A comment now says

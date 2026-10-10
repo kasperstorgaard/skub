@@ -37,7 +37,7 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
 
 let corpusHashCache: Set<string> | null = null;
 
-// Parsed puzzles by slug, frozen. Skipped in dev, where boards are hand-edited.
+// Parsed puzzles by slug, frozen so stray writes throw.
 const puzzleCache = new Map<string, Puzzle>();
 
 /**
@@ -130,7 +130,7 @@ export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
   }
 
   const puzzle = deepFreeze(parsePuzzle(content));
-  if (!isDev) puzzleCache.set(puzzleSlug, puzzle);
+  puzzleCache.set(puzzleSlug, puzzle);
   return puzzle;
 }
 
