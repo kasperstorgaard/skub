@@ -73,8 +73,9 @@ Deno.test("a returning player's visit stores their profile in a cookie", async (
     await asUser({ name: "e2eli", theme: "dracula" });
     await new ProfilePage(page).goto();
 
-    const cookies = await page.context().cookies();
-    expect(cookies.map((cookie) => cookie.name)).toContain("profile");
+    const cookieNames = (await page.context().cookies())
+      .map((cookie) => cookie.name);
+    expect(cookieNames).toContain("profile");
   } finally {
     await teardown();
   }
@@ -89,7 +90,8 @@ Deno.test("a returning player's theme renders from the cookie once their record 
     await clearTestUser(user.id);
     await page.reload();
 
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dracula");
+    const html = page.locator("html");
+    await expect(html).toHaveAttribute("data-theme", "dracula");
   } finally {
     await teardown();
   }
