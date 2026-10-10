@@ -20,7 +20,7 @@ same without it.
 ## Approach
 
 **A `profile` cookie carries the record.** Value: base64url JSON
-`{ v: 1, id, sessionId?, theme, skillLevel, name, email }` followed by `.` and an HMAC-SHA256
+`{ v: 1, id, sessionId?, syncedAt, theme, skillLevel, name, email }` followed by `.` and an HMAC-SHA256
 tag (Web Crypto, first 16 bytes, base64url) keyed by a new `COOKIE_SECRET`
 env var. Signing matters because `skillLevel` gates the recommendation and
 `email` must not be spoofable. `httpOnly`, `secure` outside dev, `SameSite=Lax`,
@@ -81,13 +81,16 @@ Lazy, backwards compatible, rollback-safe:
 Logged-in sync across devices is unchanged: login claims the user id from KV
 and the next request seeds the cookie from the KV record.
 
-**Devices drift apart, deliberately.** A cookie is only refreshed when its
-device writes or logs in. So theme, name and skill level are effectively per
-device: change the theme on the phone and the laptop keeps its own until it
-saves something or logs in again. Chosen over syncing. It looks
-odd for theme in particular, which is why it is written down. Email changes
-only in the auth callback, which rewrites the cookie. KV never regresses,
-because writes merge the patch rather than the device's copy.
+**Devices converge within ten minutes.** Only a logged-in player can have two
+devices on one account; an anonymous id is one browser. So anonymous visitors
+never re-read, and a logged-in visitor's cookie is re-read from KV when its
+`syncedAt` is older than ten minutes. A device switch (phone, then laptop
+later) syncs on the laptop's first request; two devices in use within the same
+ten minutes can disagree until the window passes. Skill level, streak and
+calendar must agree across devices eventually, not instantly. A device's own
+writes show immediately, since the cookie is re-issued from the merged record.
+Email changes only in the auth callback, which clears the cookie. KV never
+regresses, because writes merge the patch rather than the device's copy.
 
 ## Tests
 
@@ -101,8 +104,8 @@ because writes merge the patch rather than the device's copy.
 
 ## Acceptance
 
-`db.kv.*` spans: zero on any GET for anonymous visitors, zero for logged-in
-visitors after their first request. TTFB on `/puzzles/:slug` within 50 ms of
+`db.kv.*` spans: zero on any GET for anonymous visitors after their first
+request; for logged-in visitors, at most one read per device per ten minutes. TTFB on `/puzzles/:slug` within 50 ms of
 `/robots.txt`.
 
 ## Region note
