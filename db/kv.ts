@@ -1,112 +1,70 @@
-import {
-  context,
-  createContextKey,
-  type Span,
-  SpanStatusCode,
-  trace,
-} from "@opentelemetry/api";
+import { context, createContextKey } from "@opentelemetry/api";
+
+import { withSpan } from "#/lib/tracing.ts";
 
 type KvUsage = { ops: number; ms: number };
+type Tracker = { usage: KvUsage; pending: number; since: number };
 
-const tracer = trace.getTracer("skub");
-const usageKey = createContextKey("skub.kv_usage");
+const trackerKey = createContextKey("skub.kv_tracker");
 
 /**
- * Runs `fn` with a request-scoped KV counter; every traced KV op inside it
- * adds to `usage`.
+ * Runs `fn` with a request-scoped KV counter; every KV op inside it adds to
+ * `usage`.
  */
 export function withKvUsage<T>(usage: KvUsage, fn: () => T): T {
-  return context.with(context.active().setValue(usageKey, usage), fn);
-}
-
-function getKeyPrefix(key: Deno.KvKey | undefined) {
-  const part = key?.[0];
-  return typeof part === "string" ? part : "unknown";
+  const tracker: Tracker = { usage, pending: 0, since: 0 };
+  return context.with(context.active().setValue(trackerKey, tracker), fn);
 }
 
 /**
- * Starts a `db.kv.<op>` span; the returned callback ends it and records the
- * op on the request's KV counter. Only the first key segment is recorded —
- * keys carry user ids.
+ * Counts one op. `ms` is wall-clock time with any op pending, so parallel ops
+ * count once.
  */
-function startKvSpan(op: string, key: Deno.KvKey | undefined) {
-  const span = tracer.startSpan(`db.kv.${op}`, {
-    attributes: { "kv.key_prefix": getKeyPrefix(key) },
-  });
-  const usage = context.active().getValue(usageKey) as KvUsage | undefined;
-  const start = performance.now();
+function track() {
+  const tracker = context.active().getValue(trackerKey) as Tracker | undefined;
+  if (!tracker) return () => {};
 
-  return (err?: unknown) => {
-    if (usage) {
-      usage.ops++;
-      usage.ms += performance.now() - start;
+  tracker.usage.ops++;
+  if (tracker.pending++ === 0) tracker.since = performance.now();
+
+  return () => {
+    if (--tracker.pending === 0) {
+      tracker.usage.ms += performance.now() - tracker.since;
     }
-    if (err) recordError(span, err);
-    span.end();
   };
 }
 
-function recordError(span: Span, err: unknown) {
-  span.recordException(err as Error);
-  span.setStatus({ code: SpanStatusCode.ERROR });
-}
-
-async function traced<T>(
+/** Runs a KV call in a `db.kv.<op>` span. Only the first key segment is recorded — keys carry user ids. */
+function traced<T>(
   op: string,
   key: Deno.KvKey | undefined,
   fn: () => Promise<T>,
 ) {
-  const end = startKvSpan(op, key);
-  try {
-    const result = await fn();
-    end();
-    return result;
-  } catch (err) {
-    end(err);
-    throw err;
-  }
+  return withSpan(`db.kv.${op}`, async (span) => {
+    if (typeof key?.[0] === "string") {
+      span.setAttribute("kv.key_prefix", key[0]);
+    }
+    const done = track();
+    try {
+      return await fn();
+    } finally {
+      done();
+    }
+  });
 }
 
-function traceList<T>(
-  iter: Deno.KvListIterator<T>,
+/** Reads the whole list inside the span, so loop bodies aren't timed as KV. No `cursor`. */
+async function* tracedList<T>(
+  kv: Deno.Kv,
   selector: Deno.KvListSelector,
+  options?: Deno.KvListOptions,
 ) {
   const key = "prefix" in selector ? selector.prefix : selector.start;
-  const end = startKvSpan("list", key);
-  const next = iter.next.bind(iter);
-
-  // Spans the whole iteration; every caller exhausts the iterator.
-  iter.next = async () => {
-    try {
-      const res = await next();
-      if (res.done) end();
-      return res;
-    } catch (err) {
-      end(err);
-      throw err;
-    }
-  };
-  return iter;
-}
-
-function traceAtomic(op: Deno.AtomicOperation) {
-  let key: Deno.KvKey | undefined;
-  const { check, set, delete: del, commit } = op;
-
-  op.check = (...checks) => {
-    key ??= checks[0]?.key;
-    return check.apply(op, checks);
-  };
-  op.set = (k, ...rest) => {
-    key ??= k;
-    return set.call(op, k, ...rest);
-  };
-  op.delete = (k) => {
-    key ??= k;
-    return del.call(op, k);
-  };
-  op.commit = () => traced("commit", key, () => commit.call(op));
-  return op;
+  yield* await traced(
+    "list",
+    key,
+    () => Array.fromAsync(kv.list<T>(selector, options)),
+  );
 }
 
 function instrument(kv: Deno.Kv): Deno.Kv {
@@ -114,31 +72,27 @@ function instrument(kv: Deno.Kv): Deno.Kv {
     get(target, prop) {
       switch (prop) {
         case "get":
-          return (
-            key: Deno.KvKey,
-            options?: { consistency?: Deno.KvConsistencyLevel },
-          ) => traced("get", key, () => target.get(key, options));
+          return (...args: Parameters<Deno.Kv["get"]>) =>
+            traced("get", args[0], () => target.get(...args));
         case "getMany":
-          return (
-            keys: Deno.KvKey[],
-            options?: { consistency?: Deno.KvConsistencyLevel },
-          ) => traced("get_many", keys[0], () => target.getMany(keys, options));
+          return (...args: Parameters<Deno.Kv["getMany"]>) =>
+            traced("get_many", args[0][0], () => target.getMany(...args));
         case "set":
-          return (
-            key: Deno.KvKey,
-            value: unknown,
-            options?: { expireIn?: number },
-          ) => traced("set", key, () => target.set(key, value, options));
+          return (...args: Parameters<Deno.Kv["set"]>) =>
+            traced("set", args[0], () => target.set(...args));
         case "delete":
-          return (key: Deno.KvKey) =>
-            traced("delete", key, () => target.delete(key));
+          return (...args: Parameters<Deno.Kv["delete"]>) =>
+            traced("delete", args[0], () => target.delete(...args));
         case "list":
-          return (
-            selector: Deno.KvListSelector,
-            options?: Deno.KvListOptions,
-          ) => traceList(target.list(selector, options), selector);
+          return (...args: Parameters<Deno.Kv["list"]>) =>
+            tracedList(target, ...args);
         case "atomic":
-          return () => traceAtomic(target.atomic());
+          return () => {
+            const op = target.atomic();
+            const commit = op.commit.bind(op);
+            op.commit = () => traced("commit", undefined, commit);
+            return op;
+          };
       }
       const value = Reflect.get(target, prop, target);
       return typeof value === "function" ? value.bind(target) : value;
