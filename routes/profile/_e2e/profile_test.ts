@@ -90,8 +90,7 @@ Deno.test("a returning player's theme renders from the cookie once their record 
     await clearTestUser(user.id);
     await page.reload();
 
-    const html = page.locator("html");
-    await expect(html).toHaveAttribute("data-theme", "dracula");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dracula");
   } finally {
     await teardown();
   }
