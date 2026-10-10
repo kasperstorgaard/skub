@@ -22,7 +22,7 @@ same without it.
 **A `profile` cookie carries the record.** Value: base64url JSON
 `{ v: 1, id, sessionId?, skillLevel, theme, name, email }`, `.`, and a
 base64url HMAC-SHA256 tag (Web Crypto, full 32 bytes so `crypto.subtle.verify`
-does the constant-time compare) keyed by a new `COOKIE_SECRET` env var.
+does the constant-time compare) keyed by a new `COOKIE_SIGNING_KEY` env var.
 Signing matters because `skillLevel` gates the recommendation and `email` must
 not be spoofable. `httpOnly`, `secure` outside dev, `SameSite=Lax`, 5 years,
 same as `user_id`. A profile too large for a cookie (a pathological name) is
@@ -30,7 +30,7 @@ not set, and that visitor keeps reading KV.
 
 The codec is in `lib/signed-cookie.ts` (portable, no game knowledge), the
 profile shape in `lib/user-cookie.ts` next to the user id cookie. Outside dev a
-missing `COOKIE_SECRET` is a startup error, not a silent unsigned cookie.
+missing `COOKIE_SIGNING_KEY` is a startup error, not a silent unsigned cookie.
 
 **The payload is bound to its user and login.** It is trusted only when `id`
 matches the request's user id and `sessionId` matches the request's login

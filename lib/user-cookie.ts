@@ -31,9 +31,11 @@ const SESSION_DURATION = 60 * 30;
 // Leave headroom under the 4 KB cookie cap; a bigger profile stays in KV only.
 const PROFILE_MAX_LENGTH = 3800;
 
-const COOKIE_SECRET = Deno.env.get("COOKIE_SECRET") ??
+const COOKIE_SIGNING_KEY = Deno.env.get("COOKIE_SIGNING_KEY") ??
   (isDev ? "skub-dev-cookie-secret" : undefined);
-if (!COOKIE_SECRET) throw new Error("COOKIE_SECRET must be set outside dev");
+if (!COOKIE_SIGNING_KEY) {
+  throw new Error("COOKIE_SIGNING_KEY must be set outside dev");
+}
 
 /** The user record as carried by the `profile` cookie, bound to its user id. */
 export type Profile = User & { sessionId?: string };
@@ -54,7 +56,7 @@ async function readProfile(headers: Headers): Promise<Profile | null> {
   const value = getCookies(headers)[PROFILE_KEY];
   if (!value) return null;
 
-  const payload = await verifyValue(value, COOKIE_SECRET!);
+  const payload = await verifyValue(value, COOKIE_SIGNING_KEY!);
   if (!payload) return null;
 
   try {
@@ -84,7 +86,7 @@ export async function setProfileCookie(
   headers: Headers,
   payload: string,
 ): Promise<void> {
-  const value = await signValue(payload, COOKIE_SECRET!);
+  const value = await signValue(payload, COOKIE_SIGNING_KEY!);
   if (value.length > PROFILE_MAX_LENGTH) return;
 
   setCookie(headers, {
