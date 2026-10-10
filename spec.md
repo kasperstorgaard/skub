@@ -66,6 +66,10 @@ spans from `perf/kv-tracing` show one `get` and no `set` on a GET.
 
 ## Non-goals
 
+- Guarding `setUser` against concurrent writes. It writes the record read at
+  request start, so a second tab or device writing in the same second (in
+  practice: during a solve that levels up) can be overwritten. Accepted; the
+  old read-then-write had the same race with a shorter window.
 - Removing the remaining KV read on GET. That is `perf/profile-cookie`.
 - Purging existing ghost records. Harmless, and a one-shot script can follow
   if KV size ever matters.
