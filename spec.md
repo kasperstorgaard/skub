@@ -20,11 +20,15 @@ same without it.
 ## Approach
 
 **A `profile` cookie carries the record.** Value: base64url JSON
-`{ v: 1, theme, skillLevel, name, email }` followed by `.` and an HMAC-SHA256
+`{ v: 1, id, sessionId?, theme, skillLevel, name, email }` followed by `.` and an HMAC-SHA256
 tag (Web Crypto, first 16 bytes, base64url) keyed by a new `COOKIE_SECRET`
 env var. Signing matters because `skillLevel` gates the recommendation and
 `email` must not be spoofable. `httpOnly`, `secure` outside dev, `SameSite=Lax`,
 5 years, same as `user_id`.
+
+The payload is bound to its user: it is trusted only when `id` matches the
+request's user id. A cookie left behind by a logout or an account switch is
+then ignored rather than believed.
 
 Put the codec in `lib/signed-cookie.ts` (portable, no game knowledge) and the
 profile shape in `lib/user-cookie.ts` next to the existing user id cookie.
@@ -34,23 +38,30 @@ unsigned cookie.
 **Middleware reads the cookie, falls back to KV once.** Order in
 `middleware/user.ts`:
 
-1. Valid `profile` cookie: `ctx.state.user` comes from it. No KV.
-2. No cookie but a `user_id` cookie: read KV once (the migration read), set the
-   cookie on the response. Returning visitors pay the old cost exactly once.
+1. Valid `profile` cookie for this user id: `ctx.state.user` comes from it. No
+   KV.
+2. Otherwise, with a `user_id` cookie: read KV once (the migration read) and
+   set the cookie on the response, defaults included when there is no record.
+   Returning visitors pay the old cost exactly once.
 3. Neither: defaults in memory, no KV, no cookie until something is stored.
 
-**Writes go to both.** `setUser` keeps writing KV, which stays the durable copy
-for login sync and the e2e seed routes, and the middleware re-serialises the
-cookie after `ctx.next()` when `ctx.state.user` changed. Handlers mutate
+**Writes go to both, merged in KV.** `setUser` keeps writing KV, which stays
+the durable copy for login sync and the e2e seed routes. It reads the KV record
+and applies only the patch, because the cookie can be behind another device:
+writing the whole cookie copy back would undo that device's changes. Page loads
+stay KV-free; a write costs one read again. The middleware re-serialises the
+cookie from the merged record after `ctx.next()` when `ctx.state.user` changed. Handlers mutate
 `ctx.state.user` through `setUser` and never touch the cookie themselves; that
 keeps one writer. Redirect responses have immutable headers, so clone them the
 way `middleware/auth.ts` already does for `user_id`.
 
 **Auth session joins the cookie.** On login the callback writes `userId` and
-the session id into the signed profile payload. `middleware/auth.ts` trusts a
-valid signature and skips the KV read; the KV session record is kept and
-deleted on logout as today. Revocation from another device is not a feature,
-so no per-request check is lost.
+the session id into the signed profile payload. `middleware/auth.ts` takes the
+user id from the payload when its `sessionId` equals the `auth_session` cookie,
+and skips the KV read; the KV session record is kept and deleted on logout as
+today. Logout also clears the `profile` cookie, so the next request re-seeds it
+for the anonymous id. Revocation from another device is not a feature, so no
+per-request check is lost.
 
 **Theme in `_app.tsx`.** Unchanged: it reads `state.user.theme`, which is now
 cookie-backed. The error page gets a theme too, which it loses today when
@@ -70,20 +81,19 @@ Lazy, backwards compatible, rollback-safe:
 Logged-in sync across devices is unchanged: login claims the user id from KV
 and the next request seeds the cookie from the KV record.
 
-One gap to decide deliberately: a logged-in user who changes theme or name on
-one device keeps the stale cookie on another until they log in there again.
-If that matters, add a `refreshedAt` claim and re-read KV for logged-in users
-when it is older than a day: one read per device per day, none for anonymous
-visitors. Theme and display name probably do not need it; email does not
-change outside the callback.
+**Devices drift apart, deliberately.** A cookie is only refreshed when its
+device writes or logs in. So theme, name and skill level are effectively per
+device: change the theme on the phone and the laptop keeps its own until it
+saves something or logs in again. Chosen over syncing. It looks
+odd for theme in particular, which is why it is written down. Email changes
+only in the auth callback, which rewrites the cookie. KV never regresses,
+because writes merge the patch rather than the device's copy.
 
 ## Tests
 
 - `lib/signed-cookie_test.ts`: round trip; a flipped byte in the payload or
   the tag is rejected; a payload signed with another secret is rejected. Pure
   code, test exhaustively.
-- `lib/user-cookie_test.ts`: profile encode/decode including optional fields;
-  oversize name is truncated at the limit chosen (cookies cap at 4 KB).
 - e2e integration: load `/` with a `user_id` cookie that has a KV record but no
   `profile` cookie, assert the response sets `profile`; load again, assert the
   theme renders without the record (delete it via the e2e user route between
