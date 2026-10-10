@@ -89,7 +89,7 @@ export const handler = define.handlers({
     // On subsequent logins the existing userId wins —
     // the mapping can never be overwritten, so history always follows the account.
     const userId = await claimUserId(sub, ctx.state.userId);
-    // The claimed account may not be this request's user.
+    // Logging in on another device: the account's id isn't this device's id.
     const user = userId === ctx.state.userId
       ? ctx.state.user
       : await getUser(userId) ?? newUser(userId);
