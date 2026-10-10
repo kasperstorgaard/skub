@@ -12,8 +12,7 @@ import { getUserIdCookie, setUserIdCookie } from "#/lib/user-cookie.ts";
 export const auth = define.middleware(async (ctx) => {
   const url = new URL(ctx.req.url);
 
-  // Skip migrations, or we risk weird catch-22s. /api/migrate is added
-  // temporarily when a migration runs; keep this guard when it's absent.
+  // /api/migrate is added temporarily for migrations; keep this skip.
   if (url.pathname.startsWith("/api/migrate")) return ctx.next();
 
   const sessionId = getAuthSessionId(ctx.req.headers);

@@ -8,6 +8,7 @@ import {
   Puzzle,
   PuzzleManifestEntry,
 } from "#/game/types.ts";
+import { deepFreeze } from "#/lib/deep-freeze.ts";
 import { isDev } from "#/lib/env.ts";
 import { sortList } from "#/lib/list.ts";
 
@@ -36,7 +37,7 @@ async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
 
 let corpusHashCache: Set<string> | null = null;
 
-// Parsed puzzles by slug. Shared across requests — callers must not mutate.
+// Parsed puzzles by slug, frozen. Skipped in dev, where boards are hand-edited.
 const puzzleCache = new Map<string, Puzzle>();
 
 /**
@@ -113,8 +114,8 @@ export async function getFutureEntries() {
 }
 
 /**
- * Loads a puzzle from a markdown file by slug. Cached; the result is shared,
- * so copy before changing it.
+ * Loads a puzzle from a markdown file by slug. Frozen and shared across
+ * requests: copy before changing it.
  */
 export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
   const cached = puzzleCache.get(puzzleSlug);
@@ -128,8 +129,8 @@ export async function getPuzzle(puzzleSlug: string): Promise<Puzzle | null> {
     throw err;
   }
 
-  const puzzle = parsePuzzle(content);
-  puzzleCache.set(puzzleSlug, puzzle);
+  const puzzle = deepFreeze(parsePuzzle(content));
+  if (!isDev) puzzleCache.set(puzzleSlug, puzzle);
   return puzzle;
 }
 

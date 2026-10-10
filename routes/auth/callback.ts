@@ -89,8 +89,10 @@ export const handler = define.handlers({
     // On subsequent logins the existing userId wins —
     // the mapping can never be overwritten, so history always follows the account.
     const userId = await claimUserId(sub, ctx.state.userId);
-    // The claimed account may not be this request's user, so read it.
-    const user = await getUser(userId) ?? newUser(userId);
+    // The claimed account may not be this request's user.
+    const user = userId === ctx.state.userId
+      ? ctx.state.user
+      : await getUser(userId) ?? newUser(userId);
     await setUser(user, { email });
 
     const sessionId = crypto.randomUUID();
