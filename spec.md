@@ -15,21 +15,31 @@ puzzle page lists the user's solutions for that puzzle just to learn
 
 ## Approach
 
-**A `progress` cookie holds solved puzzles and best move counts.** Encoding,
-in `game/progress.ts` (pure, no browser or KV knowledge):
+**A `progress` cookie holds solved puzzles and best move counts.** Only the
+counts: the solutions themselves stay in KV, read and written on solve and on
+the solutions page. Encoding, in `game/progress.ts` (pure, no browser or KV
+knowledge):
 
-- Numbered puzzles: pairs of `(number, bestMoves)` as a byte string, `number`
-  as a varint, `bestMoves` as one byte. Three bytes per solved puzzle, so a
-  thousand solves fit well under the 4 KB cookie cap.
-- Unnumbered puzzles (tutorial, onboarding): a short slug list appended after a
-  separator. They matter only for onboarding recommendation.
-- Base64url, prefixed `v1.`, signed with the `lib/signed-cookie.ts` helper from
-  `perf/profile-cookie`. An empty-but-present cookie (`v1.` and a tag) means
-  "backfilled, nothing solved", so empty users are not re-scanned.
+- One byte per puzzle, the best move count, 0 meaning unsolved. Slots 0–3 are
+  reserved for the unnumbered puzzles (tutorial, lars, lone, loke, append
+  only); daily `n` follows at slot `3 + n`. The array ends at the highest
+  solved puzzle.
+- The cookie payload is a version byte, the user id, then that array deflated
+  with the built-in `CompressionStream`, signed with `signBytes`, the binary
+  sibling of the profile's `signValue`. Bumping the version rebuilds every
+  device once.
+- Deflate rather than bit packing: on simulated play it beats 5-bit packing
+  (1.25 KB vs 1.69 KB for 2,700 puzzles at 95% solved) without capping move
+  counts, and empty slots of casual players compress to almost nothing. That
+  leaves room for about 6,000 puzzles, 16 years of dailies. Today's full
+  manifest, all solved, is a 124 character cookie.
+- An empty-but-present cookie means "backfilled, nothing solved", so empty
+  users are not re-scanned.
 
-A `Progress` type: `{ bestMoves: Record<slug, number>, solvedSlugs: Set }`,
+`Progress` is `Record<slug, bestMoves>`; solved slugs are its keys. It is
 resolved against the manifest at read time because the cookie stores numbers,
-not slugs.
+not slugs. A slug with neither a number nor a reserved slot is dropped. A
+cookie that fails to inflate gives `null`, so the visitor is rebuilt from KV.
 
 **Consumers switch to `Progress`.**
 
@@ -42,9 +52,11 @@ not slugs.
 - Puzzle page: `hasSolved` is `slug in progress.bestMoves`. Zero KV.
 
 **Writes.** The solve POST, after `saveSolution` returns `isNew`, updates the
-cookie: `bestMoves[slug] = min(existing, moves.length)`. The tutorial solve
-does the same for its slug. The login callback rebuilds the cookie from KV for
-the claimed user id, which is how progress follows a login across devices.
+cookie: `bestMoves[slug] = min(existing, moves.length)`, through
+`ctx.state.progress`; the middleware is the only writer, as with the profile.
+The tutorial solve is not saved to KV, so it stays out of the cookie too.
+Progress is bound to its user id, so a login (which can claim another id)
+rebuilds it from KV on the next request, together with the profile.
 
 **Logged-in devices resync every 30 minutes.** Same rule as the profile
 cookie (`perf/profile-cookie`): when the profile's `syncedAt` is over 30
@@ -58,10 +70,10 @@ immediately.
 **Logout clears it.** Logout is a full reset (`perf/profile-cookie`): add the
 `progress` cookie to what it clears, so the device starts over with nothing.
 
-**Backfill, once.** `middleware/user.ts` (or a sibling `progress` middleware
-so each stays small) does: no `progress` cookie but a `user_id` cookie means
-run the old `listUserSolutions` scan one time and set the cookie. That is the
-whole migration.
+**Backfill, once.** `middleware/user.ts`, beside the profile read so both can
+share one round trip: no valid `progress` cookie but a known visitor means run
+the old `listUserSolutions` scan one time and set the cookie. A brand-new
+visitor gets the empty cookie without a scan. That is the whole migration.
 
 ## Migration
 
@@ -72,28 +84,29 @@ signature and falls back to a backfill.
 
 One e2e consideration: the seed endpoint `/api/e2e/solutions` writes KV
 directly, so a test that seeds after its first navigation would hold a stale
-cookie. Have the seed endpoint also clear the `progress` cookie on its
-response, which forces a backfill on the next page. Tests that seed before the
-first `goto` need nothing.
+cookie. Seeding is a plain `fetch`, outside the browser's cookie jar, so the
+`addSolution` fixture clears the `progress` cookie from the browser context
+instead, which forces a backfill on the next page.
 
 ## Tests
 
 Game logic, test exhaustively with realistic scenarios:
 
-- `game/progress_test.ts`: encode/decode round trip for 0, 1, 50 and 1,000
-  solves; a numbered puzzle that later gains a better score keeps the minimum;
-  unnumbered slugs round trip; a cookie from a manifest that has since gained
-  puzzles still resolves; decode of a truncated or garbage value yields the
-  empty progress, never a throw.
+- `game/progress_test.ts`: best of several attempts wins; a better solve
+  replaces, a worse one is a no-op; round trips of empty progress and of
+  dailies with gaps plus the reserved puzzles; a manifest that gained puzzles
+  still resolves, a dropped number is skipped, a slug with no slot is dropped;
+  size is one byte per puzzle up to the highest solved.
 - `game/streak_test.ts`: existing scenarios rewritten to feed `Progress`,
   asserting identical outputs to today's.
 - `game/recommendation_test.ts` (new): new user, beginner with onboarding left,
   beginner who exhausted onboarding, everything perfected, random pool
-  excludes the daily. Pure given a manifest and a progress; inject the loader
-  functions or extract the pure decision from the file reads.
-- e2e: `returning-user-flow_test.ts` already walks solve → home best-moves;
-  keep it green and add one integration test that loads `/` with seeded KV
-  solutions and no cookie, asserting best moves render and the cookie is set.
+  excludes the daily. Runs against the real manifest with scenarios that leave
+  exactly one valid pick, so the random choice is deterministic.
+- e2e: `returning-user-flow_test.ts` already walks solve → home best-moves,
+  and the home stats tests already load `/` with seeded KV solutions and no
+  cookie. One storage-exception test deletes the player's KV solutions after
+  the first load and asserts the stats still render on reload.
 
 ## Acceptance
 

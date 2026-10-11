@@ -1,4 +1,5 @@
-import { Move, PuzzleManifestEntry } from "#/game/types.ts";
+import type { Progress } from "#/game/progress.ts";
+import type { PuzzleManifestEntry } from "#/game/types.ts";
 
 // TODO: replace perfect % with a player score (e.g. points per solve,
 // bonus for optimal/streak) and add a global highscore leaderboard.
@@ -14,18 +15,14 @@ export type UserStats = {
 };
 
 /**
- * Pure computation: derives streak and solve stats from entries and solutions.
+ * Pure computation: derives streak and solve stats from entries and progress.
  * Entries must be newest-first.
  */
 export function computeUserStats(
   entries: Pick<PuzzleManifestEntry, "slug" | "minMoves">[],
-  solutions: { puzzleSlug: string; moves: Move[] }[],
+  progress: Progress,
 ): UserStats {
-  // Build a set of solved slugs for O(1) lookup
-  const solvedSlugs = new Set<string>();
-  for (const solution of solutions) {
-    solvedSlugs.add(solution.puzzleSlug);
-  }
+  const solvedSlugs = new Set(Object.keys(progress));
 
   // totalSolves: unique puzzle slugs solved
   const totalSolves = solvedSlugs.size;
@@ -62,16 +59,9 @@ export function computeUserStats(
   // optimalSolves: solutions where moves.length === entry.minMoves
   // TODO: onboarding puzzles are excluded here (not in entries) but should count.
   // Tricky because they don't belong to the date-based archive system.
-  const entryBySlug = new Map(entries.map((e) => [e.slug, e]));
-  // Track optimal per puzzle (best attempt wins)
-  const optimalBySlug = new Set<string>();
-  for (const solution of solutions) {
-    const entry = entryBySlug.get(solution.puzzleSlug);
-    if (entry && solution.moves.length === entry.minMoves) {
-      optimalBySlug.add(solution.puzzleSlug);
-    }
-  }
-  const optimalSolves = optimalBySlug.size;
+  const optimalSolves = entries
+    .filter((entry) => progress[entry.slug] === entry.minMoves)
+    .length;
 
   return { currentStreak, bestStreak, totalSolves, optimalSolves };
 }

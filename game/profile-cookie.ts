@@ -2,22 +2,17 @@ import { deleteCookie, getCookies, setCookie } from "@std/http/cookie";
 
 import type { User } from "#/db/types.ts";
 import { isDev } from "#/lib/env.ts";
-import { signValue, verifyValue } from "#/lib/signed-cookie.ts";
+import {
+  COOKIE_SIGNING_KEY,
+  signValue,
+  verifyValue,
+} from "#/lib/signed-cookie.ts";
 
 const PROFILE_KEY = "profile";
 // 5 years in seconds, same as user_id
 const PROFILE_DURATION = 60 * 60 * 24 * 365 * 5;
 // Leave headroom under the 4 KB cookie cap; a bigger profile stays in KV only.
 const PROFILE_MAX_LENGTH = 3800;
-
-const COOKIE_SIGNING_KEY = getSigningKey();
-
-function getSigningKey(): string {
-  const key = Deno.env.get("COOKIE_SIGNING_KEY") ??
-    (isDev ? "skub-dev-cookie-signing-key" : undefined);
-  if (!key) throw new Error("COOKIE_SIGNING_KEY must be set outside dev");
-  return key;
-}
 
 /** The user record as carried by the `profile` cookie, bound to its user id. */
 export type Profile = User & {

@@ -47,15 +47,18 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
       currentUser = user;
       return user;
     },
-    addSolution(input: AddSolutionInput) {
+    async addSolution(input: AddSolutionInput) {
       if (!currentUser?.name) {
         throw new Error("Call asUser() before addSolution()");
       }
-      return seedSolution({
+      const solution = await seedSolution({
         name: currentUser.name,
         userId: currentUser.id,
         ...input,
       });
+      // Seeding skips the app, so drop the stale cookie to force a rebuild.
+      await context.clearCookies({ name: "progress" });
+      return solution;
     },
     teardown: async () => {
       // Clean up the seeded user, or fall back to the cookie for users

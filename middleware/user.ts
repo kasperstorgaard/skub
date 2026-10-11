@@ -1,4 +1,5 @@
 import { define } from "#/core.ts";
+import { listUserSolutions } from "#/db/solutions.ts";
 import type { User } from "#/db/types.ts";
 import { getUser, newUser } from "#/db/user.ts";
 import {
@@ -7,6 +8,12 @@ import {
   setProfileCookie,
   signProfile,
 } from "#/game/profile-cookie.ts";
+import {
+  getProgressCookie,
+  setProgressCookie,
+  signProgress,
+} from "#/game/progress-cookie.ts";
+import { getProgress } from "#/game/progress.ts";
 import { updateHeaders } from "#/lib/headers.ts";
 import { getUserIdCookie } from "#/lib/user-cookie.ts";
 
@@ -14,10 +21,11 @@ import { getUserIdCookie } from "#/lib/user-cookie.ts";
 const SYNC_INTERVAL_MS = 30 * 60 * 1000;
 
 /**
- * Populates ctx.state.user from the signed `profile` cookie, reading KV only
- * when the cookie is missing, belongs to another user or login, or a logged-in
- * device last synced over 30 minutes ago (so devices converge). Re-issues the
- * cookie when the user changed. Requires auth middleware to run first.
+ * Populates ctx.state.user and ctx.state.progress from the signed `profile`
+ * and `progress` cookies, reading KV only when a cookie is missing, belongs to
+ * another user or login, or a logged-in device last synced over 30 minutes ago
+ * (so devices converge). Re-issues the cookies when they changed. Requires
+ * auth middleware to run first.
  */
 export const user = define.middleware(async (ctx) => {
   const url = new URL(ctx.req.url);
@@ -28,40 +36,68 @@ export const user = define.middleware(async (ctx) => {
   const { userId, sessionId } = ctx.state;
   const { headers } = ctx.req;
 
-  const profile = await getProfileCookie(ctx.req);
+  const [profile, cookieProgress] = await Promise.all([
+    getProfileCookie(ctx.req),
+    getProgressCookie(ctx.req, userId),
+  ]);
   const isOwnLogin = profile?.sessionId === sessionId;
   const isOwnProfile = profile?.id === userId && isOwnLogin;
   const syncAge = Date.now() - (profile?.syncedAt ?? 0);
   const isDue = !!sessionId && syncAge > SYNC_INTERVAL_MS;
+  const isFresh = isOwnProfile && !isDue;
   const isKnown = !!sessionId || !!getUserIdCookie(headers);
+
+  // Progress resyncs with the profile, in the same round trip.
+  const [stored, solutions] = await Promise.all([
+    !isFresh && isKnown ? getUser(userId) : null,
+    isKnown && (!isFresh || !cookieProgress)
+      ? listUserSolutions(userId, { limit: "max" })
+      : null,
+  ]);
 
   let syncedAt = profile?.syncedAt;
   let user: User;
-  if (isOwnProfile && !isDue) {
+  if (isFresh) {
     // Strip the cookie-only fields; the rest is the user record.
     const { sessionId: _, syncedAt: __, ...profileUser } = profile;
     user = profileUser;
   } else {
     syncedAt = Date.now();
-    const stored = isKnown ? await getUser(userId) : null;
     user = stored ?? newUser(userId);
   }
+  const progress = solutions ? getProgress(solutions) : cookieProgress ?? {};
+
   ctx.state.user = user;
+  ctx.state.progress = progress;
 
   const res = await ctx.next();
 
   // A write (setUser) read KV just now, so the device is in sync again.
   if (ctx.state.user !== user) syncedAt = Date.now();
 
-  // A handler that set the cookie itself (logout clears it) has the last word.
+  // A handler that set a cookie itself (logout clears them) has the last word.
   const cookiesSet = res.headers.getSetCookie();
-  if (cookiesSet.some((cookie) => cookie.startsWith("profile="))) return res;
+  const isSet = (name: string) =>
+    cookiesSet.some((cookie) => cookie.startsWith(`${name}=`));
 
+  let profileValue: string | null = null;
   const payload = encodeProfile({ ...ctx.state.user, sessionId, syncedAt });
-  if (isOwnProfile && payload === encodeProfile(profile)) return res;
+  const isProfileSame = isOwnProfile && payload === encodeProfile(profile);
+  if (!isSet("profile") && !isProfileSame) {
+    profileValue = await signProfile(payload);
+  }
 
-  const value = await signProfile(payload);
-  if (!value) return res;
+  let progressValue: string | null = null;
+  const isProgressSame = cookieProgress && !solutions &&
+    ctx.state.progress === progress;
+  if (!isSet("progress") && !isProgressSame) {
+    progressValue = await signProgress(ctx.state.progress, userId);
+  }
 
-  return updateHeaders(res, (headers) => setProfileCookie(headers, value));
+  if (!profileValue && !progressValue) return res;
+
+  return updateHeaders(res, (headers) => {
+    if (profileValue) setProfileCookie(headers, profileValue);
+    if (progressValue) setProgressCookie(headers, progressValue);
+  });
 });

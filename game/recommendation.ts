@@ -1,5 +1,3 @@
-import { getBestMoves } from "#/db/solutions.ts";
-import type { Solution } from "#/db/types.ts";
 import {
   getAvailableEntries,
   getOnboardingPuzzle,
@@ -8,6 +6,7 @@ import {
   getTodaysPuzzle,
   getTutorialPuzzle,
 } from "#/game/loader.ts";
+import type { Progress } from "#/game/progress.ts";
 import type { SkillLevel } from "#/game/types.ts";
 
 /**
@@ -23,7 +22,7 @@ import type { SkillLevel } from "#/game/types.ts";
  */
 export async function pickRecommendedPuzzle(
   user: { skillLevel: SkillLevel | null },
-  solutions: Solution[],
+  bestMoves: Progress,
 ) {
   if (user.skillLevel === null) {
     const puzzle = await getTutorialPuzzle();
@@ -32,13 +31,12 @@ export async function pickRecommendedPuzzle(
   }
 
   if (user.skillLevel === "beginner") {
-    const solvedSlugs = solutions.map((s) => s.puzzleSlug);
+    const solvedSlugs = Object.keys(bestMoves);
     const puzzle = await getOnboardingPuzzle({ excludeSlugs: solvedSlugs });
     if (!puzzle) throw new Error("Unable to get onboarding puzzle");
     return puzzle;
   }
 
-  const bestMoves = getBestMoves(solutions);
   const [entries, dailyPuzzle] = await Promise.all([
     getAvailableEntries(),
     getTodaysPuzzle(),

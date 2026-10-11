@@ -26,7 +26,7 @@ let manifestCache: PuzzleManifestEntry[] | null = null;
  * static between requests, with one exception: promoting a candidate writes a
  * new puzzle, and that path calls {@link invalidateCorpus}.
  */
-async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
+export async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
   if (manifestCache) return manifestCache;
 
   const text = await Deno.readTextFile(`${PUZZLES_DIR}/manifest.json`);

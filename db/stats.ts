@@ -1,8 +1,5 @@
 import { kv } from "#/db/kv.ts";
-import { listUserSolutions } from "#/db/solutions.ts";
-import { PuzzleStats, Solution } from "#/db/types.ts";
-import { getAvailableEntries } from "#/game/loader.ts";
-import { computeUserStats, UserStats } from "#/game/streak.ts";
+import { PuzzleStats } from "#/db/types.ts";
 
 export async function getPuzzleStats(
   puzzleSlug: string,
@@ -72,23 +69,6 @@ export async function updatePuzzleStats(
  * Increments the hint usage count for a puzzle.
  * Called as best-effort fire-and-forget from the hint route.
  */
-/**
- * Fetches data and computes streak/solve stats for a user.
- */
-export async function getUserStats(
-  userId: string,
-  solutions?: Solution[],
-): Promise<UserStats> {
-  const [entries, resolvedSolutions] = await Promise.all([
-    getAvailableEntries(),
-    solutions
-      ? Promise.resolve(solutions)
-      : listUserSolutions(userId, { limit: "max" }),
-  ]);
-
-  return computeUserStats(entries, resolvedSolutions);
-}
-
 export async function incrementHintUsageCount(
   puzzleSlug: string,
 ): Promise<void> {

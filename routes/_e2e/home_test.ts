@@ -1,6 +1,6 @@
 import { HomePage } from "./home-page.ts";
 import { expect, setup } from "#/e2e/base.ts";
-import { solvePuzzle } from "#/e2e/helpers.ts";
+import { clearTestUser, solvePuzzle } from "#/e2e/helpers.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
 
 Deno.test("home — share button is visible", async () => {
@@ -155,6 +155,34 @@ Deno.test("home — stats show streak and solve count after solving multiple dai
     await expect(homePage.stat("Streak")).toContainText("3 / 3");
     await expect(homePage.stat("Solves")).toContainText("3");
     await expect(homePage.stat("Perfect")).toContainText("3 / 100%");
+  } finally {
+    await teardown();
+  }
+});
+
+// -- Storage check: an exception to user-centric e2e ---
+// Inspects the store directly instead of what a player sees. Kept because
+// home renders progress from the cookie; a regression is silent in the UI
+// until KV latency shows.
+
+Deno.test("home — a returning player's stats render from the cookie once their solutions are gone", async () => {
+  const { page, asUser, addSolution, teardown } = await setup();
+  try {
+    const [user, entries] = await Promise.all([
+      asUser({ name: "e2esben" }),
+      getAvailableEntries(),
+    ]);
+    const [entry] = entries.filter((entry) => !entry.isFuture);
+    await addSolution({
+      puzzleSlug: entry.slug,
+      moves: await solvePuzzle(entry.slug),
+    });
+    const homePage = await new HomePage(page).goto();
+
+    await clearTestUser(user.id);
+    await page.reload();
+
+    await expect(homePage.stat("Solves")).toContainText("1");
   } finally {
     await teardown();
   }

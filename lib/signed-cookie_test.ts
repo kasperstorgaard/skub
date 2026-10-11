@@ -1,6 +1,11 @@
 import { assertEquals } from "@std/assert";
 
-import { signValue, verifyValue } from "./signed-cookie.ts";
+import {
+  signBytes,
+  signValue,
+  verifyBytes,
+  verifyValue,
+} from "./signed-cookie.ts";
 
 const SECRET = "test-secret";
 const PAYLOAD = JSON.stringify({ id: "a1", theme: "dracula", name: "Ada ✨" });
@@ -43,4 +48,11 @@ Deno.test("verifyValue() rejects malformed values instead of throwing", async ()
   );
 
   assertEquals(results, [null, null, null, null, null]);
+});
+
+Deno.test("verifyBytes() returns the binary payload a signed value carries", async () => {
+  const payload = new Uint8Array([1, 0, 0x80, 0xff, 7]);
+  const value = await signBytes(payload, SECRET);
+
+  assertEquals(await verifyBytes(value, SECRET), payload);
 });

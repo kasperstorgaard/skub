@@ -1,5 +1,4 @@
 import { define } from "#/core.ts";
-import { listUserSolutions } from "#/db/solutions.ts";
 import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
 
 /**
@@ -10,13 +9,9 @@ import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
  */
 export const handler = define.handlers({
   async GET(ctx) {
-    const solutions = await listUserSolutions(ctx.state.userId, {
-      limit: "max",
-    });
-
     const recommended = await pickRecommendedPuzzle(
       ctx.state.user,
-      solutions,
+      ctx.state.progress,
     );
 
     const target = recommended

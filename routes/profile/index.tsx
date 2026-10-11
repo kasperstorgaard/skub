@@ -6,9 +6,9 @@ import { EnvelopeSimple, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { define } from "#/core.ts";
-import { getUserStats } from "#/db/stats.ts";
 import { setUser } from "#/db/user.ts";
-import type { UserStats } from "#/game/streak.ts";
+import { getAvailableEntries } from "#/game/loader.ts";
+import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import { THEMES } from "#/lib/themes.ts";
 
 type PageData = {
@@ -17,7 +17,8 @@ type PageData = {
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
-    const stats = await getUserStats(ctx.state.userId);
+    const entries = await getAvailableEntries();
+    const stats = computeUserStats(entries, ctx.state.progress);
     return page({
       userStats: stats.totalSolves > 0 ? stats : null,
     });
