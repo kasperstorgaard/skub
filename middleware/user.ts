@@ -8,15 +8,15 @@ import {
   setProfileCookie,
 } from "#/lib/user-cookie.ts";
 
+// Logged-in devices resync from KV after this long, so devices converge.
+const SYNC_INTERVAL_MS = 30 * 60 * 1000;
+
 /**
  * Populates ctx.state.user from the signed `profile` cookie, reading KV only
  * when the cookie is missing, belongs to another user or login, or a logged-in
  * device last synced over 30 minutes ago (so devices converge). Re-issues the
  * cookie when the user changed. Requires auth middleware to run first.
  */
-// Logged-in devices resync from KV after this long, so devices converge.
-const SYNC_INTERVAL_MS = 30 * 60 * 1000;
-
 export const user = define.middleware(async (ctx) => {
   const url = new URL(ctx.req.url);
 

@@ -120,7 +120,9 @@ export const handler = define.handlers<PageData>({
         span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
       }),
-      setUser(ctx.state.userId, { name }),
+      name === ctx.state.user.name
+        ? ctx.state.user
+        : setUser(ctx.state.userId, { name }),
     ]);
     ctx.state.user = user;
 
