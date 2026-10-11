@@ -1,81 +1,77 @@
 # Client JS budget
 
-Brings the home page to ≤ 25 KB and the puzzle page to ≤ 40 KB of gzipped JS.
-Today they are about 77 KB and 95 KB.
+Target: home ≤ 25 KB and puzzle page ≤ 40 KB of gzipped JS on the critical
+path. Today they are 78.2 KB and 95.5 KB.
 
 ## Problem
 
-Measured from the production build (`_fresh/client`), gzipped:
+Measured from the production build: the server handler is called in-process
+for `/` and `/puzzles/yrsa` (first visit, no cookies), every script the HTML
+loads is followed through its static imports in `_fresh/client`, and each file
+is gzipped (level 9). Dynamic imports are listed separately, not counted.
 
-| Chunk                                   | gz      | On every page |
-| --------------------------------------- | ------- | ------------- |
-| `fresh-island__tracking_script` (posthog-js) | 58.7 KB | yes      |
-| `client-entry` (Fresh runtime)          | 5.6 KB  | yes           |
-| `preact.module` + `hooks` + `signals`   | 9.0 KB  | yes           |
-| `router`, `cookie_banner`, `share_button` | ~3 KB | yes           |
-| `fresh-island__board` + `board`/`url`/`strings` libs | ~12 KB | puzzle |
-| `controls_panel`, `hint_dialog`, `solution_dialog`, `celebration_dialog`, `auto_post` | ~9 KB | puzzle |
-| `zingtouch` (dynamic, touch devices)    | 6.8 KB  | puzzle, touch |
+| Chunk                                          | gz      | Pages        |
+| ---------------------------------------------- | ------- | ------------ |
+| `fresh-island__tracking_script` (posthog-js)   | 57.5 KB | all          |
+| `client-entry` (Fresh runtime)                 | 9.4 KB  | all          |
+| `preact` + `hooks` + `signals` + `jsxRuntime`  | 9.2 KB  | all          |
+| `cookie_banner` island                         | 0.8 KB  | all, until a cookie choice |
+| `router`, `share_button`, `icons`              | 1.3 KB  | all          |
+| board island + puzzle islands + shared libs    | 17.4 KB | puzzle       |
+| `zingtouch` (dynamic, touch devices only)      | 6.6 KB  | puzzle, after hydration |
 
-posthog-js alone is three quarters of the home page's JS, and it hydrates as
-an island, so it sits on the critical path of every page's boot. From the July
-Lighthouse run it then lazy-loads the session recorder (~73 KB) and surveys
-(~44 KB). Server-side events (`puzzle_solved`, `hint_requested`, …) do not
-need it at all; what it provides is pageviews, web vitals and replay.
+posthog-js is three quarters of the home page's JS and hydrates as an island,
+so it sits on the critical path of every page's boot. Without it both pages
+are already inside budget.
 
-`islands/cookie-banner.tsx` ships as an island but has no client code: it is a
-form that POSTs. `zingtouch` is a general gesture library used for one swipe
-direction and a tap passthrough.
+## What this branch does
 
-## Approach
+**Cookie banner is a component.** It never had client code: it is a form that
+POSTs to `/api/consent`. It now renders from `components/`, same markup, one
+less island chunk and hydration. Works without JS as before.
 
-**PostHog: pick one of three, with the impact spelled out.**
+| Page            | Before  | After   |
+| --------------- | ------- | ------- |
+| `/`             | 78.2 KB | 77.3 KB |
+| `/puzzles/yrsa` | 95.5 KB | 94.7 KB |
 
-| Option | JS on `/` | Keeps | Loses |
-| ------ | --------- | ----- | ----- |
-| A. Load the official snippet (`/ph/static/array.js`) with `defer` after the page's own boot, not as an island | ~18 KB on the critical path; posthog-js arrives later and is browser-cached for 4 h | everything | nothing, but the bytes still transfer once per 4 h |
-| B. `posthog-js-lite` (~6 KB gz) in the island | ~24 KB | pageviews, custom events, identify | web vitals, replay, surveys, autocapture |
-| C. No client PostHog; capture pageviews server-side from `middleware/tracking.ts`, filter by `$virt_is_bot` in PostHog | ~18 KB | pageviews, server events | web vitals, replay, surveys |
+The rest of the gap is PostHog, which waits on a decision (below).
 
-Recommendation: **A** first, because it needs no product decision, then
-revisit replay. Replay is the bulk of the lazy load and it has been always-on
-for 20 visitors a month; turning it to a sampled or flag-gated recording in
-the PostHog project cuts the lazy ~73 KB without a code change. Web vitals
-are the one client-side signal the perf roadmap itself depends on, so C only
-after the roadmap is done.
+## PostHog options (decision needed)
 
-**Cookie banner becomes a component.** Move `islands/cookie-banner.tsx` to
-`components/`. Same markup, one less hydration and one less chunk.
+Nothing here is implemented. Baseline is after the cookie banner change.
+"Critical path" is what the page boots with; "later" is fetched after boot.
 
-**Replace zingtouch with pointer events.** `client/touch.ts` needs: on
-`pointerdown`, find the nearest piece; on `pointerup`, if the pointer moved
-more than a threshold within a time window, derive the cardinal direction from
-the dominant axis and call `onSwipe` with distance/time as velocity; otherwise
-forward the tap. That is forty lines, no library, and it drops the dynamic
-import and the `window.ZingTouch` global. Keep `calculateMoveSpeed` as is.
+What arrives from the browser today (PostHog, last 30 days): `$autocapture`
+10.9k, `$pageview` 1.2k (20 people), `$web_vitals` 1.1k, `$pageleave` 679,
+`$rageclick` 440, `$opt_in` 7. Session recordings: 0 in the last 30 days, so
+replay is effectively off already. Everything else (`puzzle_solved`,
+`hint_requested`, `cookie_consent`, …) is server-side and unaffected by any
+option.
 
-**Router stays.** It is 1 KB and every island depends on its event. Not worth
-touching.
+| Option | `/` crit. path | Puzzle crit. path | Later | Lost or delayed | Risk |
+| ------ | -------------- | ----------------- | ----- | --------------- | ---- |
+| Today | 77.3 KB | 94.7 KB | recorder/surveys if enabled remotely | — | — |
+| **D. Same posthog-js, `import()` inside the island's effect** (measured) | **20.9 KB** | **37.8 KB** | 57.3 KB, hashed same-origin asset, immutable cache | Nothing dropped. Init happens ~one round trip after hydration: autocapture misses clicks in that window; initial `$pageview` and `$web_vitals` (buffered observers) still arrive | Low: 5-line change, version still pinned by the lockfile |
+| A. Official snippet, `array.js` via `/ph/static` with `defer` (per spec) | ~20.5 KB + ~1 KB inline snippet | ~37.4 KB + ~1 KB | 57.3 KB `array.js` through the proxy, cached per PostHog's headers (spec says 4 h) | Same as D | Medium: version floats with PostHog's CDN, every cache miss is a proxied request through our isolate, island replaced by inline script |
+| B. `posthog-js-lite` 4.13.0 in the island (bundled: 23.8 KB, not the ~6 KB the original spec assumed) | ~44 KB | ~61 KB | — | Autocapture, rageclicks, web vitals, replay, surveys, `$pageleave` | Misses the budget; drops web vitals the perf roadmap relies on |
+| B′. `posthog-js/slim`, no extensions (dist bundle 32.6 KB; adding Analytics extensions duplicates core → 62.7 KB) | ~53 KB | ~70 KB | — | Autocapture, web vitals, history pageviews, replay | Misses the budget |
+| C. No client PostHog; `$pageview` from `middleware/tracking.ts` | ~20.5 KB | ~37.4 KB | — | Web vitals, autocapture, rageclicks, `$pageleave`, session duration and bounce rate in web analytics; bots must be filtered server-side | Loses the one client signal the perf roadmap uses |
 
-## Tests
+`~` values are "today minus the tracking island" computed from the measured
+chunks, not a separate build.
 
-- `client/touch.ts` gesture math (`angleToDirection` replaced by an axis
-  function, `findNearestPiece`) is pure: test the direction thresholds and the
-  nearest-piece radius in `client/touch_test.ts`. The hook wiring is not
-  tested per `/testing`.
-- Cookie banner: `new-user-flow_test.ts` already clicks through it; keep green.
-- PostHog option A: verify in the browser that `$pageview` and `$web_vitals`
-  still arrive (PostHog live events), and that no console errors appear with
-  JS disabled.
-
-## Acceptance
-
-Puzzle page JS ≤ 40 KB gz on the critical path, home ≤ 25 KB, measured from
-the build manifest sizes of the chunks the page's inline boot script imports.
-Swipe on a touch device moves the puck in all four directions; tap on a piece
-still selects it.
+**Recommendation: D.** It meets both budgets, keeps every event that arrives
+today, needs no product decision, and serves posthog-js as an immutable
+same-origin asset instead of a proxied 4-hour one. A is the same trade with
+more moving parts. Revisit C only after the perf roadmap no longer needs web
+vitals.
 
 ## Non-goals
 
+- Replacing zingtouch: its own branch, `perf/pointer-gestures`. It costs
+  6.6 KB gz on the puzzle page, touch devices only, loaded after hydration (0 on
+  home, not on the critical path).
 - Removing Preact or Fresh's client runtime. That is the architecture.
+- The router island: 0.4 KB and every island depends on its event.
 - Dropping web vitals while the roadmap is in progress.
