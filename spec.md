@@ -101,8 +101,10 @@ Game logic, test exhaustively with realistic scenarios:
   asserting identical outputs to today's.
 - `game/recommendation_test.ts` (new): new user, beginner with onboarding left,
   beginner who exhausted onboarding, everything perfected, random pool
-  excludes the daily. Runs against the real manifest with scenarios that leave
-  exactly one valid pick, so the random choice is deterministic.
+  excludes the daily. The decision is a pure `pickRecommendedSlug` given the
+  manifest, available entries, daily and a `random`; `pickRecommendedPuzzle`
+  only loads those and the chosen puzzle. Tests use a small made-up pool, so
+  they run without the generated manifest (CI doesn't build one).
 - e2e: `returning-user-flow_test.ts` already walks solve → home best-moves,
   and the home stats tests already load `/` with seeded KV solutions and no
   cookie. One storage-exception test deletes the player's KV solutions after

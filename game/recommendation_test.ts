@@ -1,114 +1,107 @@
 import { assertEquals } from "@std/assert";
 
-import {
-  getAvailableEntries,
-  getPuzzleManifest,
-  getTodaysPuzzle,
-} from "#/game/loader.ts";
-import type { Progress } from "#/game/progress.ts";
-import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
+import { pickRecommendedSlug } from "#/game/recommendation.ts";
+import type { Difficulty } from "#/game/types.ts";
 
-// Best moves of every released daily, optimal or one over
-async function releasedProgress(options: { optimal: boolean }) {
-  const entries = await getAvailableEntries();
-  const released = entries.filter((e) => !e.isFuture && e.minMoves);
-  const extra = options.optimal ? 0 : 1;
+// Onboarding puzzles live only in the manifest, the dailies in both lists.
+const manifest = [
+  { slug: "tutorial", onboardingLevel: 1 },
+  { slug: "lars", onboardingLevel: 2 },
+  { slug: "lone", onboardingLevel: 3 },
+  { slug: "loke" },
+];
 
-  return Object.fromEntries(
-    released.map((e) => [e.slug, (e.minMoves ?? 0) + extra]),
-  ) as Progress;
+function daily(slug: string, difficulty: Difficulty, isFuture = false) {
+  return { slug, minMoves: 8, difficulty, isFuture };
 }
 
-// A released daily an expert can be recommended: not today's, not ultra
-async function recommendableSlug() {
-  const [entries, daily] = await Promise.all([
-    getAvailableEntries(),
-    getTodaysPuzzle(),
-  ]);
-  const entry = entries.find((e) =>
-    !e.isFuture && e.minMoves && e.difficulty !== "ultra" &&
-    e.slug !== daily?.slug
-  );
-  if (!entry) throw new Error("Needs a recommendable released puzzle");
-  return entry.slug;
-}
+const entries = [
+  daily("today", "easy"),
+  daily("yesterday", "medium"),
+  daily("last-week", "hard"),
+  daily("last-month", "ultra"),
+  daily("tomorrow", "easy", true),
+];
 
-async function onboardingSlugs() {
-  const manifest = await getPuzzleManifest();
-  return manifest
-    .filter((e) => (e.onboardingLevel ?? 0) > 1)
-    .sort((a, b) => (a.onboardingLevel ?? 0) - (b.onboardingLevel ?? 0))
-    .map((e) => e.slug);
-}
+// Always picks the first candidate
+const pool = { manifest, entries, dailySlug: "today", random: () => 0 };
 
-Deno.test("pickRecommendedPuzzle() gives a new player the tutorial", async () => {
-  const puzzle = await pickRecommendedPuzzle({ skillLevel: null }, {});
-
-  assertEquals(puzzle.onboardingLevel, 1);
+Deno.test("pickRecommendedSlug() gives a new player the tutorial", () => {
+  assertEquals(pickRecommendedSlug({ skillLevel: null }, {}, pool), "tutorial");
 });
 
-Deno.test("pickRecommendedPuzzle() gives a beginner the first onboarding puzzle", async () => {
-  const [first] = await onboardingSlugs();
-  const puzzle = await pickRecommendedPuzzle({ skillLevel: "beginner" }, {});
-
-  assertEquals(puzzle.slug, first);
+Deno.test("pickRecommendedSlug() gives a beginner the first onboarding puzzle", () => {
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "beginner" }, {}, pool),
+    "lars",
+  );
 });
 
-Deno.test("pickRecommendedPuzzle() gives a beginner the next unsolved onboarding puzzle", async () => {
-  const [first, second] = await onboardingSlugs();
-  const puzzle = await pickRecommendedPuzzle(
-    { skillLevel: "beginner" },
-    { [first]: 6 },
-  );
+Deno.test("pickRecommendedSlug() gives a beginner the next unsolved onboarding puzzle", () => {
+  const bestMoves = { lars: 6 };
 
-  assertEquals(puzzle.slug, second);
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "beginner" }, bestMoves, pool),
+    "lone",
+  );
 });
 
-Deno.test("pickRecommendedPuzzle() keeps a beginner on the last onboarding puzzle once all are solved", async () => {
-  const slugs = await onboardingSlugs();
-  const progress = Object.fromEntries(slugs.map((slug) => [slug, 6]));
-  const puzzle = await pickRecommendedPuzzle(
-    { skillLevel: "beginner" },
-    progress,
-  );
+Deno.test("pickRecommendedSlug() keeps a beginner on the last onboarding puzzle once all are solved", () => {
+  const bestMoves = { lars: 6, lone: 9 };
 
-  assertEquals(puzzle.slug, slugs.at(-1));
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "beginner" }, bestMoves, pool),
+    "lone",
+  );
 });
 
-Deno.test("pickRecommendedPuzzle() gives loke once everything is perfected", async () => {
-  const progress = await releasedProgress({ optimal: true });
-  const puzzle = await pickRecommendedPuzzle(
-    { skillLevel: "expert" },
-    progress,
-  );
+Deno.test("pickRecommendedSlug() gives an intermediate player an unplayed easy or medium puzzle", () => {
+  const bestMoves = { "last-week": 8 };
 
-  assertEquals(puzzle.slug, "loke");
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "intermediate" }, bestMoves, pool),
+    "yesterday",
+  );
 });
 
-Deno.test("pickRecommendedPuzzle() gives the one unplayed puzzle, never the daily", async () => {
-  const daily = await getTodaysPuzzle();
-  const unplayed = await recommendableSlug();
-  const progress = await releasedProgress({ optimal: true });
-  delete progress[unplayed];
-  if (daily) delete progress[daily.slug];
+Deno.test("pickRecommendedSlug() gives an expert an unplayed hard puzzle", () => {
+  const bestMoves = { "yesterday": 9 };
 
-  const puzzle = await pickRecommendedPuzzle(
-    { skillLevel: "expert" },
-    progress,
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "expert" }, bestMoves, pool),
+    "last-week",
   );
-
-  assertEquals(puzzle.slug, unplayed);
 });
 
-Deno.test("pickRecommendedPuzzle() gives a suboptimal puzzle once all are played", async () => {
-  const suboptimal = await recommendableSlug();
-  const progress = await releasedProgress({ optimal: true });
-  progress[suboptimal] += 1;
+Deno.test("pickRecommendedSlug() never gives the daily, even when it's the only one unplayed", () => {
+  const bestMoves = { "yesterday": 9, "last-week": 10, "last-month": 8 };
 
-  const puzzle = await pickRecommendedPuzzle(
-    { skillLevel: "expert" },
-    progress,
+  // Everything is played, so it falls back to the non-optimal ones
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "expert" }, bestMoves, pool),
+    "yesterday",
   );
+});
 
-  assertEquals(puzzle.slug, suboptimal);
+Deno.test("pickRecommendedSlug() gives a non-optimal puzzle once all are played", () => {
+  const bestMoves = {
+    today: 8,
+    "yesterday": 8,
+    "last-week": 11,
+    "last-month": 8,
+  };
+
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "expert" }, bestMoves, pool),
+    "last-week",
+  );
+});
+
+Deno.test("pickRecommendedSlug() gives loke once everything released is perfected", () => {
+  const bestMoves = { "yesterday": 8, "last-week": 8, "last-month": 8 };
+
+  assertEquals(
+    pickRecommendedSlug({ skillLevel: "expert" }, bestMoves, pool),
+    "loke",
+  );
 });
