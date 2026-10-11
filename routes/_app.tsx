@@ -5,6 +5,8 @@ import { define } from "#/core.ts";
 import { CookieBanner } from "#/islands/cookie-banner.tsx";
 import { Router } from "#/islands/router.tsx";
 import { TrackingScript } from "#/islands/tracking-script.tsx";
+import font400 from "#/styles/fonts/chakra-petch-400.woff2?url";
+import font500 from "#/styles/fonts/chakra-petch-500.woff2?url";
 
 export default define.page(
   function AppWrapper({ Component, state, url }) {
@@ -54,7 +56,7 @@ export default define.page(
             rel="preload"
             as="font"
             type="font/woff2"
-            href="/fonts/chakra-petch-400.woff2"
+            href={font400}
             crossOrigin="anonymous"
           />
           {/* Headings render at 500 — needed for first paint, same as 400 */}
@@ -62,7 +64,7 @@ export default define.page(
             rel="preload"
             as="font"
             type="font/woff2"
-            href="/fonts/chakra-petch-500.woff2"
+            href={font500}
             crossOrigin="anonymous"
           />
 
