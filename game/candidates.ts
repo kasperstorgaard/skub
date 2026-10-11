@@ -175,9 +175,13 @@ export type StoredScoring = {
  * can still ask what the generator produces. `edited` is a board a human drew
  * or reworked — including every variant, since editing one forks a new
  * candidate rather than changing the rated board underneath. `corpus` mirrors a
- * puzzle that shipped in `static/puzzles`.
+ * puzzle that shipped in `static/puzzles`. `submitted` came in from a player.
  */
-export type CandidateSource = "corpus" | "generated" | "edited";
+export type CandidateSource =
+  | "corpus"
+  | "generated"
+  | "edited"
+  | "submitted";
 
 /**
  * A puzzle candidate persisted to the `candidates/` store for curation: a
@@ -185,7 +189,7 @@ export type CandidateSource = "corpus" | "generated" | "edited";
  * it, and — for generated boards — the options that produced it.
  *
  * Candidacy is a state, not an origin (see `source`): generation, the editor's
- * Propose and an existing corpus puzzle all arrive here. A candidate never
+ * Propose, a player submission and an existing corpus puzzle all arrive here. A candidate never
  * enters the manifest or the game; a curator promotes one by hand into
  * `static/puzzles`.
  */
