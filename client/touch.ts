@@ -38,6 +38,81 @@ function angleToDirection(angleDeg: number): Direction {
   return "down";
 }
 
+// Gesture rules, matching zingtouch 1.0.6 Swipe/Tap as we configured them.
+const SWIPE_MIN_MOVES = 3;
+const SWIPE_ESCAPE_VELOCITY = 0.25; // px/ms
+const SWIPE_MAX_REST_TIME = 100; // ms
+const TAP_MAX_DELAY = 300; // ms
+const TAP_MOVE_TOLERANCE = 10; // px per step, per axis
+
+export type GesturePoint = { x: number; y: number; time: number };
+
+type GestureTrace = {
+  start: GesturePoint;
+  moves: GesturePoint[];
+  end: GesturePoint;
+  region: { left: number; top: number; width: number; height: number };
+};
+
+/**
+ * Reads a single-pointer trace as a swipe and/or a tap.
+ * Swipe and tap are judged independently, as zingtouch did.
+ */
+export function readGesture({ start, moves, end, region }: GestureTrace) {
+  const isInRegion = ({ x, y }: GesturePoint) =>
+    x > region.left && x < region.left + region.width &&
+    y > region.top && y < region.top + region.height;
+
+  // Every point before the lift must stay inside the region.
+  if (![start, ...moves].every(isInRegion)) {
+    return { swipe: null, isTap: false };
+  }
+
+  return { swipe: readSwipe(moves, end), isTap: isTap(start, moves, end) };
+}
+
+function readSwipe(moves: GesturePoint[], end: GesturePoint) {
+  if (moves.length < SWIPE_MIN_MOVES) return null;
+
+  const current = moves[moves.length - 1];
+  if (end.time - current.time > SWIPE_MAX_REST_TIME) return null;
+
+  // Latest earlier move with a different timestamp.
+  let previous: GesturePoint | null = null;
+  for (let i = moves.length - 2; i >= 0; i--) {
+    if (moves[i].time !== current.time) {
+      previous = moves[i];
+      break;
+    }
+  }
+  if (!previous) return null;
+
+  const dx = current.x - previous.x;
+  const dy = current.y - previous.y;
+  const distance = Math.round(Math.sqrt(dx * dx + dy * dy) * 100) / 100;
+  const velocity = distance / (current.time - previous.time);
+  if (velocity < SWIPE_ESCAPE_VELOCITY) return null;
+
+  return { direction: angleToDirection(getAngle(dx, dy)), velocity };
+}
+
+function isTap(start: GesturePoint, moves: GesturePoint[], end: GesturePoint) {
+  const delay = end.time - start.time;
+  if (delay < 0 || delay > TAP_MAX_DELAY) return false;
+
+  return moves.every((move, i) => {
+    const prev = i === 0 ? start : moves[i - 1];
+    return Math.abs(move.x - prev.x) <= TAP_MOVE_TOLERANCE &&
+      Math.abs(move.y - prev.y) <= TAP_MOVE_TOLERANCE;
+  });
+}
+
+/** Screen delta to unit-circle degrees (0=right, 90=up), as zingtouch. */
+function getAngle(dx: number, dy: number): number {
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  return 360 - (angle < 0 ? 360 + angle : angle);
+}
+
 type findNearestPieceOptions = {
   touchX: number;
   touchY: number;
