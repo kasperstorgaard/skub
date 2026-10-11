@@ -35,6 +35,7 @@ export const user = define.middleware(async (ctx) => {
 
   let syncedAt = profile?.syncedAt;
   if (isOwnProfile && !isDue) {
+    // Strip the cookie-only fields; the rest is the user record.
     const { sessionId: _, syncedAt: __, ...user } = profile;
     ctx.state.user = user;
   } else {
