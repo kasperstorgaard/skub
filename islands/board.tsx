@@ -21,7 +21,7 @@ import {
   isValidSolution,
   resolveMoves,
 } from "#/game/board.ts";
-import { getGuides, Guide } from "#/game/guides.ts";
+import { getGuides, getMoveLabel, Guide } from "#/game/guides.ts";
 import {
   type Direction,
   type Move,
@@ -620,7 +620,7 @@ function MoveGuide({ move, to, href, isHint }: MoveGuideProps) {
           "--x": to.x,
           "--y": to.y,
         }}
-        aria-label={`move to ${to.x},${to.y}`}
+        aria-label={getMoveLabel(move)}
         tabIndex={-1}
         data-router="replace"
       />

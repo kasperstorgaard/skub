@@ -3,6 +3,7 @@ import type { Page } from "playwright";
 
 import { SolutionsPage } from "../solutions/_e2e/solutions-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
+import { getMoveLabel } from "#/game/guides.ts";
 import type { Move } from "#/game/types.ts";
 
 const SLUG_MATCHER = /\/puzzles\/([^/]+)(\/|$)/i;
@@ -64,9 +65,7 @@ export class PuzzlePage {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,
       }).click();
-      await this.page.getByRole("link", {
-        name: `move to ${move[1].x},${move[1].y}`,
-      }).click();
+      await this.page.getByRole("link", { name: getMoveLabel(move) }).click();
     }
     return this;
   }
@@ -77,9 +76,12 @@ export class PuzzlePage {
     await this.page.waitForLoadState("domcontentloaded");
 
     // Loop over moves, focus the piece, then use arrow keys to move
-    for (const [from, to] of moves) {
+    for (const move of moves) {
+      // A portal slide heads for the portal it goes in by.
+      const [from, target, entry] = move;
+      const to = entry ?? target;
       const fromLabel = `at ${from.x},${from.y}`;
-      const toLabel = `move to ${to.x},${to.y}`;
+      const toLabel = getMoveLabel(move);
 
       await this.page.getByRole("link", { name: fromLabel }).focus();
 

@@ -56,14 +56,26 @@ export function getGuides(
     // borrow from. Resolving its own slide is what keeps it stopping at the
     // portal — falling back to the move's endpoint would both point off-axis
     // and give away where the portal comes out.
-    const [firstLeg] = getMoveSlide(hint, board)?.segments ?? [];
+    const segments = getMoveSlide(hint, board)?.segments ?? [];
+    const [firstLeg] = segments;
+    const entry = firstLeg?.[firstLeg.length - 1];
 
     result.splice(insertIdx, 1, {
-      move: hint,
-      to: target?.to ?? firstLeg?.[firstLeg.length - 1] ?? hint[1],
+      move: target?.move ??
+        (segments.length > 1 && entry ? [hint[0], hint[1], entry] : hint),
+      to: target?.to ?? entry ?? hint[1],
       isHint: true,
     });
   }
 
   return result;
+}
+
+/**
+ * The accessible name of a move guide: where the piece comes to rest, plus the
+ * portal it goes in by when the guide is drawn only that far.
+ */
+export function getMoveLabel([, target, entry]: Move): string {
+  const label = `move to ${target.x},${target.y}`;
+  return entry ? `${label}, through portal at ${entry.x},${entry.y}` : label;
 }

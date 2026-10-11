@@ -1,6 +1,7 @@
 import { assertEquals } from "@std/assert/equals";
 
-import { getGuides } from "./guides.ts";
+import { getGuides, getMoveLabel } from "./guides.ts";
+import type { Move } from "./types.ts";
 
 Deno.test("getGuides() should return a guide for each available direction", () => {
   const result = getGuides(
@@ -134,10 +135,22 @@ Deno.test("getGuides() should stop a hint at the portal, not at where it lands",
   );
 
   assertEquals(result, [{
-    // The move committed is still the whole slide...
-    move: [{ x: 0, y: 0 }, { x: 7, y: 4 }],
+    // The move committed is still the whole slide, through the portal...
+    move: [{ x: 0, y: 0 }, { x: 7, y: 4 }, { x: 2, y: 0 }],
     // ...but it is drawn only as far as the portal it goes in by.
     to: { x: 2, y: 0 },
     isHint: true,
   }]);
+});
+
+Deno.test("getMoveLabel() names where an ordinary slide comes to rest", () => {
+  const move: Move = [{ x: 0, y: 0 }, { x: 0, y: 7 }];
+
+  assertEquals(getMoveLabel(move), "move to 0,7");
+});
+
+Deno.test("getMoveLabel() names where a portal slide lands and the portal it takes", () => {
+  const move: Move = [{ x: 0, y: 0 }, { x: 7, y: 4 }, { x: 2, y: 0 }];
+
+  assertEquals(getMoveLabel(move), "move to 7,4, through portal at 2,0");
 });
