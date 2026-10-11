@@ -25,29 +25,45 @@ later.
 
 ## Approach
 
-**Fonts and favicons through `asset()`.** `fresh/runtime` exports `asset(path)`
-which appends the build-id cache key; Fresh then serves the file immutable.
-Use it for the two preloaded fonts, the `@font-face` sources in `styles.css`
-(Tailwind/Vite rewrites CSS `url()` to hashed assets at build; verify, and if
-it does, the CSS side is already fine), and the favicons.
+**Already done by the Fresh 2.3 upgrade (#249).** Every hashed `/assets/*`
+file (CSS, island and runtime JS, shared chunks) is flagged immutable in
+Fresh's build snapshot and served `public, max-age=31536000, immutable`. The
+planned fallback cache middleware for `/assets/` is not needed and was not
+added.
 
-**Fallback cache middleware for `/assets/`.** If the 2.3 upgrade did not flag
-hashed chunks immutable, add a middleware in `main.ts` ahead of `staticFiles()`
-that sets `Cache-Control: public, max-age=31536000, immutable` on any
-`/assets/` path. Filenames there are content-hashed by Vite, so this is safe.
-Remove it once Fresh does it.
+**Fonts as Vite assets.** Tailwind/Vite does not rewrite absolute `url()`s
+that point into `static/`, and a preload through `asset()` would add
+`?__frsh_c=` that the `@font-face` URL lacks, so the browser would fetch each
+font twice. Instead the fonts live next to the stylesheet and are referenced
+relatively, so Vite content-hashes them into `/assets/`. The two preloads in
+`_app.tsx` import the same files with `?url` and resolve to the same hashed
+URLs, which Fresh serves immutable.
 
-**Preload the shared chunks.** Read Fresh's build manifest (the same data it
-uses for the `Link` header) and append the second-level imports of the page's
-islands to the `Link` header. If Fresh exposes no hook for that, append
-`<link rel="modulepreload">` tags in `_app.tsx` for the three shared runtime
-chunks, resolved through the manifest at request time. Keep it to the shared
-runtime; per-island chunks are already covered.
+**Favicons through `asset()`.** The two SVG favicons get the build-id cache
+key and are served immutable. `/favicon.ico` stays as is: browsers only fall
+back to it when no icon link is present, and its URL cannot carry a key.
+
+**Preload the shared chunks.** Fresh exposes no hook to extend its `Link`
+header, so a small Vite plugin records the chunks the client entry imports
+(`preact.module`, `hooks.module`, `signals.module`) during the client build
+and fills a server-side module with them; `_app.tsx` renders a
+`<link rel="modulepreload">` per chunk. In dev the list is empty.
+
+HTML responses are unchanged: no `Cache-Control`, since they carry per-user
+cookies and content.
 
 ## Tests
 
-Header behaviour is framework plumbing; verify with curl against
-`deno task preview`, and record the before/after headers in the PR body.
+Header behaviour is framework plumbing; verified by calling the built
+server's handler in-process:
+
+| Asset                       | Before             | After             |
+| --------------------------- | ------------------ | ----------------- |
+| Fonts                       | no-cache, no-store | immutable, 1 year |
+| `/assets/*` (JS, CSS)       | immutable, 1 year  | immutable, 1 year |
+| SVG favicons                | no-cache, no-store | immutable, 1 year |
+| `/favicon.ico`              | no-cache, no-store | no-cache, no-store |
+| HTML pages                  | none               | none              |
 
 ## Acceptance
 
