@@ -1,7 +1,7 @@
 import type { Page } from "playwright";
 
 import { expect, setup } from "#/e2e/base.ts";
-import { BASE_URL, getTestUser } from "#/e2e/helpers.ts";
+import { BASE_URL, clearTestUser, getTestUser } from "#/e2e/helpers.ts";
 
 class ProfilePage {
   constructor(private page: Page) {}
@@ -48,6 +48,11 @@ Deno.test("a signed-in player who visits their profile sees their saved username
   }
 });
 
+// -- Storage checks: exceptions to user-centric e2e ---
+// These inspect the store and cookies directly instead of what a player sees.
+// Kept because the cookie-first user record is what pages rely on; a
+// regression here is silent in the UI until KV latency or stale data shows.
+
 Deno.test("a new visitor's record is stored only once they save a username", async () => {
   const { page, teardown } = await setup();
   try {
@@ -62,6 +67,35 @@ Deno.test("a new visitor's record is stored only once they save a username", asy
 
     expect({ before, after: (await getTestUser(userId))?.name })
       .toEqual({ before: null, after: "e2eve" });
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("a returning player's visit stores their profile in a cookie", async () => {
+  const { page, asUser, teardown } = await setup();
+  try {
+    await asUser({ name: "e2eli", theme: "dracula" });
+    await new ProfilePage(page).goto();
+
+    const cookieNames = (await page.context().cookies())
+      .map((cookie) => cookie.name);
+    expect(cookieNames).toContain("profile");
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("a returning player's theme renders from the cookie once their record is gone", async () => {
+  const { page, asUser, teardown } = await setup();
+  try {
+    const user = await asUser({ name: "e2eli", theme: "dracula" });
+    await new ProfilePage(page).goto();
+
+    await clearTestUser(user.id);
+    await page.reload();
+
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dracula");
   } finally {
     await teardown();
   }

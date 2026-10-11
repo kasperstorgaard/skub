@@ -104,7 +104,7 @@ export const handler = define.handlers<Data>({
     if (!isJson) {
       // only set skill level if not already set
       if (!ctx.state.user.skillLevel) {
-        ctx.state.user = await setUser(ctx.state.user, {
+        ctx.state.user = await setUser(ctx.state.userId, {
           skillLevel: "beginner",
         });
 
@@ -126,7 +126,7 @@ export const handler = define.handlers<Data>({
       throw new HttpError(400, "Solution is not valid");
     }
 
-    ctx.state.user = await setUser(ctx.state.user, {
+    ctx.state.user = await setUser(ctx.state.userId, {
       skillLevel: "beginner",
     });
     trackTutorialCompleted(ctx.state, puzzle, {

@@ -26,7 +26,7 @@ export const handler = define.handlers({
       id: body.id ?? crypto.randomUUID(),
     };
 
-    await setUser(user);
+    await setUser(user.id, user);
 
     return Response.json(user);
   },

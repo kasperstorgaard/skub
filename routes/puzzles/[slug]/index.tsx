@@ -95,9 +95,11 @@ export const handler = define.handlers<PageData>({
       "application/json",
     );
 
-    const { name, moves } = isJson
+    const solve = isJson
       ? await ctx.req.json() as { name: string; moves: Move[] }
       : await parseSolveForm(ctx.req);
+    const name = solve.name?.slice(0, 30);
+    const { moves } = solve;
 
     if (!name) throw new HttpError(400, "Must provide a username");
 
@@ -120,7 +122,9 @@ export const handler = define.handlers<PageData>({
         span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
       }),
-      setUser(ctx.state.user, { name }),
+      name === ctx.state.user.name
+        ? ctx.state.user
+        : setUser(ctx.state.userId, { name }),
     ]);
     ctx.state.user = user;
 
@@ -131,7 +135,7 @@ export const handler = define.handlers<PageData>({
       const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
       if (newLevel && newLevel !== skillLevel) {
-        ctx.state.user = await setUser(ctx.state.user, {
+        ctx.state.user = await setUser(ctx.state.userId, {
           skillLevel: newLevel,
         });
         trackSkillLevelUp(ctx.state, puzzle, {
