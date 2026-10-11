@@ -9,7 +9,6 @@ import { MonthStrip } from "#/components/month-strip.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard } from "#/components/puzzle-card.tsx";
 import { define } from "#/core.ts";
-import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
 import { getAvailableEntries, getPuzzleByDate } from "#/game/loader.ts";
 import { Difficulty, Puzzle, PuzzleManifestEntry } from "#/game/types.ts";
 import { getArchiveDate } from "#/game/url.ts";
@@ -38,12 +37,8 @@ export const handler = define.handlers<PageData>({
 
     const selectedDate = getArchiveDate(url) ?? today;
 
-    const [entries, userSolutions] = await Promise.all([
-      getAvailableEntries(),
-      listUserSolutions(ctx.state.userId, { limit: "max" }),
-    ]);
-
-    const bestMoves = getBestMoves(userSolutions);
+    const entries = await getAvailableEntries();
+    const bestMoves = ctx.state.progress;
 
     const difficultyBreakdown: Record<Difficulty, number> = {
       easy: 0,

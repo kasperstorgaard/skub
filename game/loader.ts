@@ -26,7 +26,7 @@ let manifestCache: PuzzleManifestEntry[] | null = null;
  * static between requests, with one exception: promoting a candidate writes a
  * new puzzle, and that path calls {@link invalidateCorpus}.
  */
-async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
+export async function getPuzzleManifest(): Promise<PuzzleManifestEntry[]> {
   if (manifestCache) return manifestCache;
 
   const text = await Deno.readTextFile(`${PUZZLES_DIR}/manifest.json`);
@@ -226,34 +226,6 @@ export async function getTodaysPuzzle() {
   return entry ? getPuzzle(entry.slug) : null;
 }
 
-type GetRandomPuzzleOptions = {
-  difficulty?: Difficulty[];
-  excludeSlugs?: string[];
-};
-
-/**
- * Gets a random puzzle from the pool matching the given difficulty options.
- * Never an unreleased one — this feeds the recommendation.
- */
-export async function getRandomPuzzle(
-  options: GetRandomPuzzleOptions,
-): Promise<Puzzle | null> {
-  let entries = await getAvailableEntries();
-
-  entries = entries
-    .filter((puzzle) => !puzzle.isFuture)
-    .filter((puzzle) =>
-      options.difficulty ? options.difficulty.includes(puzzle.difficulty) : true
-    )
-    .filter((puzzle) => !options.excludeSlugs?.includes(puzzle.slug));
-
-  if (!entries.length) return null;
-
-  const entry = entries[Math.floor(Math.random() * entries.length)];
-
-  return getPuzzle(entry.slug);
-}
-
 /**
  * Gets a puzzle by date
  */
@@ -278,24 +250,4 @@ export async function getTutorialPuzzle() {
 
   const entry = manifest.find((entry) => entry.onboardingLevel === 1);
   return entry ? getPuzzle(entry.slug) : null;
-}
-
-/**
- * Gets the next non-excluded onboarding puzzle.
- * TODO: extend onboarding sequence with more levels (currently caps at lone, level 3)
- */
-export async function getOnboardingPuzzle(
-  options: { excludeSlugs: string[] },
-) {
-  const manifest = await getPuzzleManifest();
-  const lookup = new Set(options.excludeSlugs);
-
-  const pool = manifest
-    .filter((entry) => (entry.onboardingLevel ?? 0) > 1)
-    .sort((a, b) => (a.onboardingLevel ?? 0) - (b.onboardingLevel ?? 0));
-
-  const next = pool.find((entry) => !lookup.has(entry.slug)) ??
-    pool[pool.length - 1];
-
-  return getPuzzle(next.slug);
 }

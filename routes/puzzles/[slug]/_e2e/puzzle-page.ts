@@ -14,6 +14,10 @@ export class PuzzlePage {
     return (new URL(this.page.url()).pathname.match(SLUG_MATCHER) ?? [])[1];
   }
 
+  get backLink() {
+    return this.page.getByRole("link", { name: "Back", exact: true });
+  }
+
   get heading() {
     return this.page.getByRole("heading", { level: 1 });
   }

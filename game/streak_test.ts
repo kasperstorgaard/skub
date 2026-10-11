@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 
+import { getProgress } from "#/game/progress.ts";
 import { computeUserStats } from "#/game/streak.ts";
 import { Move } from "#/game/types.ts";
 
@@ -21,31 +22,40 @@ Deno.test("currentStreak — consecutive solves from today", () => {
   const entries = [entry("c"), entry("b"), entry("a")];
   const solutions = [solution("c", 3), solution("b", 4), solution("a", 5)];
 
-  assertEquals(computeUserStats(entries, solutions).currentStreak, 3);
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).currentStreak,
+    3,
+  );
 });
 
 Deno.test("currentStreak — skips today if unsolved, counts from yesterday", () => {
   const entries = [entry("c"), entry("b"), entry("a")];
   const solutions = [solution("b", 4), solution("a", 5)];
 
-  assertEquals(computeUserStats(entries, solutions).currentStreak, 2);
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).currentStreak,
+    2,
+  );
 });
 
 Deno.test("currentStreak — gap in the middle breaks the streak", () => {
   const entries = [entry("d"), entry("c"), entry("b"), entry("a")];
   const solutions = [solution("d", 3), solution("b", 4), solution("a", 5)];
 
-  assertEquals(computeUserStats(entries, solutions).currentStreak, 1);
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).currentStreak,
+    1,
+  );
 });
 
 Deno.test("currentStreak — no solves returns 0", () => {
   const entries = [entry("b"), entry("a")];
 
-  assertEquals(computeUserStats(entries, []).currentStreak, 0);
+  assertEquals(computeUserStats(entries, {}).currentStreak, 0);
 });
 
 Deno.test("currentStreak — no entries returns 0", () => {
-  assertEquals(computeUserStats([], [solution("a", 3)]).currentStreak, 0);
+  assertEquals(computeUserStats([], { a: 3 }).currentStreak, 0);
 });
 
 // bestStreak
@@ -68,14 +78,14 @@ Deno.test("bestStreak — tracks longest consecutive run across full history", (
     solution("d", 3),
   ];
 
-  assertEquals(computeUserStats(entries, solutions).bestStreak, 3);
+  assertEquals(computeUserStats(entries, getProgress(solutions)).bestStreak, 3);
 });
 
 Deno.test("bestStreak — single solve counts as 1", () => {
   const entries = [entry("c"), entry("b"), entry("a")];
   const solutions = [solution("b", 4)];
 
-  assertEquals(computeUserStats(entries, solutions).bestStreak, 1);
+  assertEquals(computeUserStats(entries, getProgress(solutions)).bestStreak, 1);
 });
 
 Deno.test("bestStreak — current streak can equal best streak", () => {
@@ -87,7 +97,7 @@ Deno.test("bestStreak — current streak can equal best streak", () => {
   ];
 
   // Current streak is 2 (d, c), best is also 2
-  const stats = computeUserStats(entries, solutions);
+  const stats = computeUserStats(entries, getProgress(solutions));
   assertEquals(stats.currentStreak, 2);
   assertEquals(stats.bestStreak, 2);
 });
@@ -99,7 +109,10 @@ Deno.test("totalSolves — counts unique puzzles, not total solutions", () => {
   // Two solutions for the same puzzle
   const solutions = [solution("a", 3), solution("a", 5)];
 
-  assertEquals(computeUserStats(entries, solutions).totalSolves, 1);
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).totalSolves,
+    1,
+  );
 });
 
 // optimalSolves
@@ -112,7 +125,10 @@ Deno.test("optimalSolves — counts puzzles solved in minMoves", () => {
     solution("a", 5), // optimal
   ];
 
-  assertEquals(computeUserStats(entries, solutions).optimalSolves, 2);
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).optimalSolves,
+    2,
+  );
 });
 
 Deno.test("optimalSolves — counts puzzle as optimal if any attempt matches", () => {
@@ -122,14 +138,20 @@ Deno.test("optimalSolves — counts puzzle as optimal if any attempt matches", (
     solution("a", 3), // optimal
   ];
 
-  assertEquals(computeUserStats(entries, solutions).optimalSolves, 1);
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).optimalSolves,
+    1,
+  );
 });
 
 Deno.test("optimalSolves — ignores solutions for puzzles not in entries", () => {
   const entries = [entry("a", 3)];
   const solutions = [solution("unknown", 3)];
 
-  assertEquals(computeUserStats(entries, solutions).optimalSolves, 0);
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).optimalSolves,
+    0,
+  );
 });
 
 // Full scenario
@@ -152,7 +174,7 @@ Deno.test("full scenario — realistic 5-day history with mixed solves", () => {
     solution("day1", 6), // optimal
   ];
 
-  const stats = computeUserStats(entries, solutions);
+  const stats = computeUserStats(entries, getProgress(solutions));
 
   assertEquals(stats, {
     currentStreak: 3, // day5, day4, day3 — consecutive from today

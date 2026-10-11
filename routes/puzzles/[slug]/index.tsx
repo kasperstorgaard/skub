@@ -9,12 +9,13 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
-import { listUserPuzzleSolutions, saveSolution } from "#/db/solutions.ts";
+import { saveSolution } from "#/db/solutions.ts";
 import { getPuzzleStats } from "#/db/stats.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
+import { withSolve } from "#/game/progress.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
@@ -42,26 +43,14 @@ type PageData = {
 };
 
 export const handler = define.handlers<PageData>({
-  async GET(ctx) {
+  GET(ctx) {
     const { slug } = ctx.params;
     const { puzzle } = ctx.state;
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
 
-    // Default to false on KV failure — the game itself stays playable; the
-    // worst case is the user temporarily sees "?" on a puzzle they've solved.
-    let hasSolved = false;
-    try {
-      const priorSolutions = await listUserPuzzleSolutions(
-        ctx.state.userId,
-        slug,
-        { limit: 1 },
-      );
-      hasSolved = priorSolutions.length > 0;
-    } catch {
-      hasSolved = false;
-    }
+    const hasSolved = slug in ctx.state.progress;
 
     // No-JS solve detection: moves are encoded in the URL on each navigation.
     // JS users go via AutoPostSolution → POST instead. The dialog guard prevents
@@ -127,6 +116,7 @@ export const handler = define.handlers<PageData>({
         : setUser(ctx.state.userId, { name }),
     ]);
     ctx.state.user = user;
+    ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
 
     if (isNew) {
       trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });

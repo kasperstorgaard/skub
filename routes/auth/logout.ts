@@ -1,6 +1,7 @@
 import { define } from "#/core.ts";
 import { deleteAuthSession } from "#/db/auth.ts";
 import { clearProfileCookie } from "#/game/profile-cookie.ts";
+import { clearProgressCookie } from "#/game/progress-cookie.ts";
 import { clearAuthSessionCookie, getAuthSessionId } from "#/lib/auth-cookie.ts";
 import { clearUserIdCookie } from "#/lib/user-cookie.ts";
 
@@ -14,6 +15,7 @@ export const handler = define.handlers({
     clearAuthSessionCookie(headers);
     clearUserIdCookie(headers);
     clearProfileCookie(headers);
+    clearProgressCookie(headers);
 
     return new Response(null, { status: 303, headers });
   },

@@ -1,7 +1,7 @@
 import { HomePage } from "./home-page.ts";
 import { expect, setup } from "#/e2e/base.ts";
 import { solvePuzzle } from "#/e2e/helpers.ts";
-import { getAvailableEntries } from "#/game/loader.ts";
+import { getAvailableEntries, getTodaysPuzzle } from "#/game/loader.ts";
 
 Deno.test("home — share button is visible", async () => {
   const { page, teardown } = await setup();
@@ -97,6 +97,27 @@ Deno.test("home — shows quick puzzle for user in who completed first onboardin
     const home = await new HomePage(page).goto();
 
     await expect(home.quickPuzzleLink).toBeVisible();
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("home — a returning player sees their best on the daily card", async () => {
+  const { page, asUser, addSolution, teardown } = await setup();
+  try {
+    const [_, daily] = await Promise.all([
+      asUser({ name: "e2esben" }),
+      getTodaysPuzzle(),
+    ]);
+    if (!daily) throw new Error("No daily puzzle");
+    await addSolution({
+      puzzleSlug: daily.slug,
+      moves: await solvePuzzle(daily.slug),
+    });
+
+    const home = await new HomePage(page).goto();
+
+    await expect(home.dailyPuzzleLink.getByLabel("Perfect")).toBeVisible();
   } finally {
     await teardown();
   }

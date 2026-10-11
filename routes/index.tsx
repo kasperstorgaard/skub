@@ -15,13 +15,10 @@ import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard } from "#/components/puzzle-card.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
-import { getBestMoves, listUserSolutions } from "#/db/solutions.ts";
-import { getUserStats } from "#/db/stats.ts";
-import { getTodaysPuzzle } from "#/game/loader.ts";
+import { getAvailableEntries, getTodaysPuzzle } from "#/game/loader.ts";
 import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
-import type { UserStats } from "#/game/streak.ts";
+import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
-import { withSpan } from "#/lib/tracing.ts";
 
 type PageData = {
   dailyPuzzle: Puzzle;
@@ -32,27 +29,17 @@ type PageData = {
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
-    const { user } = ctx.state;
+    const { user, progress: bestMoves } = ctx.state;
 
-    const [dailyPuzzle, solutions] = await Promise.all([
+    const [dailyPuzzle, recommendedPuzzle, entries] = await Promise.all([
       getTodaysPuzzle(),
-      withSpan(
-        "home.solutions",
-        (span) =>
-          listUserSolutions(ctx.state.userId, { limit: "max" }).then(
-            (result) => {
-              span.setAttribute("solutions.count", result.length);
-              return result;
-            },
-          ),
-      ),
+      pickRecommendedPuzzle(user, bestMoves),
+      getAvailableEntries(),
     ]);
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    const bestMoves = getBestMoves(solutions);
-    const recommendedPuzzle = await pickRecommendedPuzzle(user, solutions);
-    const userStats = await getUserStats(ctx.state.userId, solutions);
+    const userStats = computeUserStats(entries, bestMoves);
 
     return page({
       dailyPuzzle,
