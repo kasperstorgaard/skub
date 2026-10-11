@@ -93,8 +93,3 @@ PR finishes only part of an item, trim the item to what is left.
   Today the account keeps the first device's history and later devices'
   anonymous solves are left behind. Merge them when the device was anonymous at
   login. Specced on `feat/login-merge-history`.
-
-## Tests
-
-- **Playing a puzzle without JavaScript should be covered again.** The no-JS
-  puzzle e2e scenario fails; probably portal related, not confirmed.

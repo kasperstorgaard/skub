@@ -19,6 +19,20 @@ Deno.test("a returning player who solves a puzzle sees the celebration dialog", 
   }
 });
 
+Deno.test("without JavaScript — a returning player solves a puzzle through portals", async () => {
+  const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
+  try {
+    await asUser({ name: "e2eulla" });
+    const moves = await solvePuzzle("ulla");
+    const puzzlePage = await new PuzzlePage(page).goto("ulla");
+    await puzzlePage.solveByClicking(moves);
+
+    await expect(puzzlePage.solutionDialog.heading).toBeVisible();
+  } finally {
+    await teardown();
+  }
+});
+
 Deno.test("without JavaScript — a returning player submits their solve via the solution dialog", async () => {
   const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
   try {

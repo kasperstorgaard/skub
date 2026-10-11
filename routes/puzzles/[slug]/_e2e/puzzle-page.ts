@@ -64,9 +64,10 @@ export class PuzzlePage {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,
       }).click();
+      // Two guides can land on the same cell; either leaves the same board.
       await this.page.getByRole("link", {
         name: `move to ${move[1].x},${move[1].y}`,
-      }).click();
+      }).first().click();
     }
     return this;
   }

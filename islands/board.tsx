@@ -620,7 +620,7 @@ function MoveGuide({ move, to, href, isHint }: MoveGuideProps) {
           "--x": to.x,
           "--y": to.y,
         }}
-        aria-label={`move to ${to.x},${to.y}`}
+        aria-label={`move to ${move[1].x},${move[1].y}`}
         tabIndex={-1}
         data-router="replace"
       />
