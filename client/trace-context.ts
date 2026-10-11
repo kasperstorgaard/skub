@@ -1,5 +1,5 @@
 /**
- * Reads the W3C `traceparent` injected by the server into the page `<head>` and
+ * Reads the W3C `traceparent` Fresh injects into the page `<head>` and
  * returns it as a fetch-ready headers object. Pass the result to `fetch()` so the
  * outgoing request is linked to the server-side trace that rendered the page.
  *
