@@ -48,6 +48,11 @@ Deno.test("a signed-in player who visits their profile sees their saved username
   }
 });
 
+// -- Storage checks: exceptions to user-centric e2e ---
+// These inspect the store and cookies directly instead of what a player sees.
+// Kept because the cookie-first user record is what pages rely on; a
+// regression here is silent in the UI until KV latency or stale data shows.
+
 Deno.test("a new visitor's record is stored only once they save a username", async () => {
   const { page, teardown } = await setup();
   try {
