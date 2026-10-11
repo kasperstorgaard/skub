@@ -21,9 +21,7 @@ export const auth = define.middleware(async (ctx) => {
   if (url.pathname.startsWith("/api/migrate")) return ctx.next();
 
   const sessionId = getAuthSessionId(ctx.req.headers);
-  const sessionUserId = sessionId
-    ? await getSessionUserId(ctx.req, sessionId)
-    : undefined;
+  const sessionUserId = await getSessionUserId(ctx.req, sessionId);
   if (sessionUserId) ctx.state.sessionId = sessionId;
 
   let userId = sessionUserId ?? getUserIdCookie(ctx.req.headers);
@@ -40,7 +38,9 @@ export const auth = define.middleware(async (ctx) => {
 });
 
 /** The session's user id: from the signed profile when it vouches for this session, else KV. */
-async function getSessionUserId(req: Request, sessionId: string) {
+async function getSessionUserId(req: Request, sessionId?: string) {
+  if (!sessionId) return undefined;
+
   const profile = await getProfileCookie(req);
   if (profile?.sessionId === sessionId) return profile.id;
 

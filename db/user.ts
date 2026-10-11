@@ -23,7 +23,8 @@ export async function setUser(
   userId: string,
   patch: Partial<Omit<User, "id">>,
 ): Promise<User> {
-  const updated = { ...(await getUser(userId) ?? newUser(userId)), ...patch };
+  const existing = await getUser(userId) ?? newUser(userId);
+  const updated = { ...existing, ...patch };
   await kv.set(["user", userId], updated);
   return updated;
 }

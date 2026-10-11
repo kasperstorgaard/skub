@@ -27,10 +27,10 @@ export const user = define.middleware(async (ctx) => {
   const { headers } = ctx.req;
 
   const profile = await getProfileCookie(ctx.req);
-  const isOwnProfile = profile?.id === userId &&
-    profile.sessionId === sessionId;
-  const isDue = !!sessionId &&
-    Date.now() - (profile?.syncedAt ?? 0) > SYNC_INTERVAL_MS;
+  const isOwnLogin = profile?.sessionId === sessionId;
+  const isOwnProfile = profile?.id === userId && isOwnLogin;
+  const syncAge = Date.now() - (profile?.syncedAt ?? 0);
+  const isDue = !!sessionId && syncAge > SYNC_INTERVAL_MS;
   const isKnown = !!sessionId || !!getUserIdCookie(headers);
 
   let syncedAt = profile?.syncedAt;
@@ -39,27 +39,23 @@ export const user = define.middleware(async (ctx) => {
     ctx.state.user = user;
   } else {
     syncedAt = Date.now();
-    ctx.state.user = isKnown
-      ? await getUser(userId) ?? newUser(userId)
-      : newUser(userId);
+    const stored = isKnown ? await getUser(userId) : null;
+    ctx.state.user = stored ?? newUser(userId);
   }
 
   const res = await ctx.next();
 
   // A handler that set the cookie itself (logout clears it) has the last word.
-  if (res.headers.getSetCookie().some((c) => c.startsWith("profile="))) {
-    return res;
-  }
+  const cookiesSet = res.headers.getSetCookie();
+  if (cookiesSet.some((cookie) => cookie.startsWith("profile="))) return res;
 
   const payload = encodeProfile({ ...ctx.state.user, sessionId, syncedAt });
   if (isOwnProfile && payload === encodeProfile(profile)) return res;
 
   const cookies = new Headers();
   await setProfileCookie(cookies, payload);
+  const [cookie] = cookies.getSetCookie();
+  if (!cookie) return res;
 
-  return updateHeaders(res, (headers) => {
-    for (const cookie of cookies.getSetCookie()) {
-      headers.append("set-cookie", cookie);
-    }
-  });
+  return updateHeaders(res, (headers) => headers.append("set-cookie", cookie));
 });
