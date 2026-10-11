@@ -3,8 +3,7 @@ import type { BrowserContext } from "playwright";
 import type { Solution, User } from "#/db/types.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { solveSync } from "#/game/solver.ts";
-import { getMoveSlide, resolveMoves } from "#/game/board.ts";
-import type { Board, Move } from "#/game/types.ts";
+import type { Move } from "#/game/types.ts";
 
 export const BASE_URL = Deno.env.get("BASE_URL") ?? "http://localhost:5173";
 
@@ -107,21 +106,7 @@ export async function seedSolution(
 export async function solvePuzzle(slug: string): Promise<Move[]> {
   const puzzle = await getPuzzle(slug);
   if (!puzzle) throw new Error(`Puzzle not found: ${slug}`);
-  return withPortalEntries(puzzle.board, solveSync(puzzle));
-}
-
-/**
- * Records the portal each teleporting move goes in by, as the board does when
- * the move is played, so page objects can find its guide by name.
- */
-function withPortalEntries(board: Board, moves: Move[]): Move[] {
-  return moves.map((move, index) => {
-    const played = resolveMoves(board, moves.slice(0, index));
-    const [firstLeg, ...rest] = getMoveSlide(move, played)?.segments ?? [];
-    if (!firstLeg || !rest.length) return move;
-
-    return [move[0], move[1], firstLeg[firstLeg.length - 1]];
-  });
+  return solveSync(puzzle);
 }
 
 function seedHeaders() {

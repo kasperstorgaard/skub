@@ -3,7 +3,6 @@ import type { Page } from "playwright";
 
 import { HomePage } from "../../../_e2e/home-page.ts";
 import { BASE_URL } from "#/e2e/helpers.ts";
-import { getMoveLabel } from "#/game/guides.ts";
 import type { Move } from "#/game/types.ts";
 
 export class TutorialPage {
@@ -65,7 +64,9 @@ export class TutorialPage {
       await this.page.getByRole("link", {
         name: `at ${move[0].x},${move[0].y}`,
       }).click();
-      await this.page.getByRole("link", { name: getMoveLabel(move) }).click();
+      await this.page.getByRole("link", {
+        name: `move to ${move[1].x},${move[1].y}`,
+      }).click();
     }
     return this;
   }

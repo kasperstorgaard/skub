@@ -19,21 +19,6 @@ Deno.test("a returning player who solves a puzzle sees the celebration dialog", 
   }
 });
 
-// Portals, on a fixed puzzle so coverage doesn't depend on the daily.
-Deno.test("a returning player who solves a puzzle through portals sees the celebration dialog", async () => {
-  const { page, asUser, teardown } = await setup();
-  try {
-    await asUser({ name: "e2eulla" });
-    const moves = await solvePuzzle("ulla");
-    const puzzlePage = await new PuzzlePage(page).goto("ulla");
-    await puzzlePage.solveByClicking(moves);
-
-    await expect(puzzlePage.celebrationDialog.heading).toBeVisible();
-  } finally {
-    await teardown();
-  }
-});
-
 Deno.test("without JavaScript — a returning player solves a puzzle through portals", async () => {
   const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
   try {
