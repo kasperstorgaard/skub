@@ -5,7 +5,6 @@ import { define } from "#/core.ts";
 import { CookieBanner } from "#/islands/cookie-banner.tsx";
 import { Router } from "#/islands/router.tsx";
 import { TrackingScript } from "#/islands/tracking-script.tsx";
-import { getTraceparent } from "#/lib/tracing.ts";
 
 export default define.page(
   function AppWrapper({ Component, state, url }) {
@@ -21,9 +20,6 @@ export default define.page(
     const ogSlug = puzzleSlug && !ogExcluded.includes(puzzleSlug)
       ? puzzleSlug
       : null;
-
-    // get the trace parent so we can inject into the page for client side fetches
-    const traceparent = getTraceparent();
 
     return (
       <html
@@ -77,7 +73,6 @@ export default define.page(
             href="/favicon-dark.svg"
             media="(prefers-color-scheme: dark)"
           />
-          {traceparent && <meta name="traceparent" content={traceparent} />}
 
           {/* Tiny script to indicate JavaScript is enabled, needed for styling */}
           <script
