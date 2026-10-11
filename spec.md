@@ -46,13 +46,14 @@ cookie: `bestMoves[slug] = min(existing, moves.length)`. The tutorial solve
 does the same for its slug. The login callback rebuilds the cookie from KV for
 the claimed user id, which is how progress follows a login across devices.
 
-**Devices sync at session start.** Same rule as the profile cookie
-(`perf/profile-cookie`): a logged-in request without the `session` marker
-cookie (30 minutes of inactivity) rebuilds progress from KV; anonymous visitors
-never re-read, since an anonymous id is one browser. Streak, calendar and best
-moves must agree across devices eventually, not instantly; a device's own
-solves show immediately. Refresh both cookies on the same request so a device
-never shows a fresh profile with stale progress.
+**Logged-in devices resync every 30 minutes.** Same rule as the profile
+cookie (`perf/profile-cookie`): when the profile's `syncedAt` is over 30
+minutes old for a logged-in visitor, progress is rebuilt from KV too.
+Anonymous visitors never re-read, since an anonymous id is one browser. Read
+the profile record and the solutions list in one `Promise.all`, so the refresh
+costs one round trip, not two. Streak, calendar and best moves must agree
+across devices eventually, not instantly; a device's own solves show
+immediately.
 
 **Backfill, once.** `middleware/user.ts` (or a sibling `progress` middleware
 so each stays small) does: no `progress` cookie but a `user_id` cookie means
@@ -95,7 +96,7 @@ Game logic, test exhaustively with realistic scenarios:
 
 `db.kv.*` span count on `/`, `/puzzles`, `/profile`, `/puzzles/:slug`: zero
 for anonymous visitors with cookies; for logged-in visitors, one refresh per
-session. Home TTFB from Europe ≤ 150 ms warm.
+30 minutes of use. Home TTFB from Europe ≤ 150 ms warm.
 
 ## Non-goals
 
