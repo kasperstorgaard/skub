@@ -8,9 +8,11 @@ const HMAC = { name: "HMAC", hash: "SHA-256" };
 export const COOKIE_SIGNING_KEY = getSigningKey();
 
 function getSigningKey(): string {
-  const key = Deno.env.get("COOKIE_SIGNING_KEY") ??
-    (isDev ? "skub-dev-cookie-signing-key" : undefined);
-  if (!key) throw new Error("COOKIE_SIGNING_KEY must be set outside dev");
+  if (isDev) return "skub-dev-cookie-signing-key";
+
+  const key = Deno.env.get("COOKIE_SIGNING_KEY");
+  if (!key) throw new Error("COOKIE_SIGNING_KEY not set");
+
   return key;
 }
 
