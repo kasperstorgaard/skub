@@ -1,6 +1,6 @@
 /**
  * Applies `update` to the response's headers, copying the response first when
- * its headers are immutable (`Response.redirect`, `Response.json`).
+ * its headers are immutable (`Response.redirect`, or a `fetch` response).
  */
 export function updateHeaders(
   res: Response,
