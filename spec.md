@@ -55,6 +55,9 @@ costs one round trip, not two. Streak, calendar and best moves must agree
 across devices eventually, not instantly; a device's own solves show
 immediately.
 
+**Logout clears it.** Logout is a full reset (`perf/profile-cookie`): add the
+`progress` cookie to what it clears, so the device starts over with nothing.
+
 **Backfill, once.** `middleware/user.ts` (or a sibling `progress` middleware
 so each stays small) does: no `progress` cookie but a `user_id` cookie means
 run the old `listUserSolutions` scan one time and set the cookie. That is the
