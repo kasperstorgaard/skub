@@ -18,6 +18,11 @@ and `Tap` (defaults) rules. `useSwipe` feeds it from `pointerdown` /
 `pointermove` / `pointerup` on the same swipe region; the piece lookup, tap
 forwarding and `calculateMoveSpeed` are unchanged.
 
+Result (production build, `/puzzles/yrsa`): the 6.6 KB zingtouch chunk is
+gone; the board island goes from 6.3 to 6.2 KB gz. Touch devices load 6.7 KB
+less JS on the puzzle page; the critical path is unchanged (it never included
+zingtouch).
+
 ## Preserved zingtouch behaviour
 
 - Swipe needs ≥ 3 move events, and the finger lifts within 100 ms of the last

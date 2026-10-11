@@ -25,9 +25,9 @@ const MAX_SWIPE_VELOCITY = 3; // px/ms
 const MIN_PIECE_SPEED = 50; // ms
 
 /**
- * Converts a ZingTouch angle (unit circle degrees) to a cardinal direction.
+ * Converts a unit-circle angle to a cardinal direction.
  *
- * ZingTouch: 0°=right, 90°=up, 180°=left, 270°=down.
+ * 0°=right, 90°=up, 180°=left, 270°=down.
  * Quadrants: 315-45°→right, 45-135°→up, 135-225°→left, 225-315°→down.
  */
 function angleToDirection(angleDeg: number): Direction {
@@ -38,7 +38,7 @@ function angleToDirection(angleDeg: number): Direction {
   return "down";
 }
 
-// Gesture rules, matching zingtouch 1.0.6 Swipe/Tap as we configured them.
+// Gesture thresholds.
 const SWIPE_MIN_MOVES = 3;
 const SWIPE_ESCAPE_VELOCITY = 0.25; // px/ms
 const SWIPE_MAX_REST_TIME = 100; // ms
@@ -56,7 +56,7 @@ type GestureTrace = {
 
 /**
  * Reads a single-pointer trace as a swipe and/or a tap.
- * Swipe and tap are judged independently, as zingtouch did.
+ * Swipe and tap are judged independently.
  */
 export function readGesture({ start, moves, end, region }: GestureTrace) {
   const isInRegion = ({ x, y }: GesturePoint) =>
@@ -107,7 +107,7 @@ function isTap(start: GesturePoint, moves: GesturePoint[], end: GesturePoint) {
   });
 }
 
-/** Screen delta to unit-circle degrees (0=right, 90=up), as zingtouch. */
+/** Screen delta to unit-circle degrees (0=right, 90=up). */
 function getAngle(dx: number, dy: number): number {
   const angle = Math.atan2(dy, dx) * (180 / Math.PI);
   return 360 - (angle < 0 ? 360 + angle : angle);
@@ -122,10 +122,10 @@ type findNearestPieceOptions = {
 };
 
 /**
- * Board-level swipe detection using ZingTouch.
- * Attaches a single swipe listener to the board container.
- * On touchstart, finds the nearest piece via proximity detection.
- * On swipe, converts angle to direction and calls onSwipe.
+ * Board-level swipe detection with pointer events on the swipe region.
+ * On pointerdown, finds the nearest piece via proximity detection.
+ * On pointerup, reads the trace with readGesture: a swipe calls onSwipe,
+ * a tap is forwarded to the element underneath.
  *
  * Mobile only — skips initialization on non-touch devices.
  */
@@ -134,7 +134,7 @@ export function useSwipe(
   boardRef: RefObject<HTMLElement>,
   { pieces, onSwipe, isEnabled }: UseSwipeOptions,
 ): void {
-  // Use refs for values that change frequently to avoid re-creating the region
+  // Use refs for values that change frequently to avoid re-binding listeners
   const piecesRef = useRef(pieces);
   piecesRef.current = pieces;
 
@@ -147,85 +147,98 @@ export function useSwipe(
     if (!regionEl || !boardEl || !isEnabled) return;
     if (!("ontouchstart" in window)) return;
 
-    // currently touched piece, detected from touchstart
+    // Piece found at the last pointerdown, cleared once a gesture uses it
     let touchedPiece: Position | null = null;
-    // deno-lint-ignore no-explicit-any
-    let region: any = null;
-    let destroyed = false;
     let cellSize: number | null = null;
 
-    const onTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
+    const pointerIds = new Set<number>();
+    let start: GesturePoint | null = null;
+    let moves: GesturePoint[] = [];
+
+    const toPoint = (e: PointerEvent) => ({
+      x: e.clientX,
+      y: e.clientY,
+      time: Date.now(),
+    });
+
+    const reset = () => {
+      start = null;
+      moves = [];
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      // A pointer whose up we never saw (mouse released outside)
+      if (pointerIds.has(e.pointerId)) pointerIds.clear();
+      pointerIds.add(e.pointerId);
+      // A second pointer drops the gesture
+      if (pointerIds.size > 1) return reset();
+
+      start = toPoint(e);
+      moves = [];
+
+      // Only a touch picks up a piece
+      if (e.pointerType === "mouse") return;
 
       const boardRect = boardEl.getBoundingClientRect();
       cellSize = boardRect.width / 8;
 
       touchedPiece = findNearestPiece({
-        touchX: touch.clientX,
-        touchY: touch.clientY,
+        touchX: e.clientX,
+        touchY: e.clientY,
         boardRect,
         pieces: piecesRef.current,
         cellSize,
       });
     };
 
-    // Load ZingTouch dynamically to avoid SSR issues
-    import("zingtouch").then((ZingTouch) => {
-      if (destroyed) return;
+    const onPointerMove = (e: PointerEvent) => {
+      if (!start || !pointerIds.has(e.pointerId)) return;
+      moves.push(toPoint(e));
+    };
 
-      regionEl.addEventListener("touchstart", onTouchStart, { passive: true });
+    const onPointerUp = (e: PointerEvent) => {
+      pointerIds.delete(e.pointerId);
+      if (!start) return;
 
-      const ZT = ZingTouch.default ?? ZingTouch;
-      // Region on wrapper so swipes ending outside the board are still captured
-      region = new ZT.Region(regionEl, false, false);
-
-      const swipe = new ZT.Swipe({
-        escapeVelocity: 0.25,
-        maxRestTime: 100,
+      const { swipe, isTap } = readGesture({
+        start,
+        moves,
+        end: toPoint(e),
+        region: regionEl.getBoundingClientRect(),
       });
+      reset();
 
-      region.bind(regionEl, swipe, (event: CustomEvent) => {
-        // If no currently touched piece, ignore the swipe
-        if (!touchedPiece) return;
-
-        const data = event.detail.data[0];
-        if (!data || !cellSize) return;
-
-        const direction = angleToDirection(data.currentDirection);
-        onSwipeRef.current(touchedPiece, {
-          direction,
-          velocity: data.velocity,
-          cellSize,
-        });
-
-        // reset the touched piece to get ready for next swipe
+      if (swipe && touchedPiece && cellSize) {
+        onSwipeRef.current(touchedPiece, { ...swipe, cellSize });
         touchedPiece = null;
-      });
+      }
 
-      // Forward taps through the overlay to the elements underneath
-      const tap = new ZT.Tap();
-
-      region.bind(regionEl, tap, (event: CustomEvent) => {
-        const input = event.detail.events[0];
-        if (!input) return;
-
-        // Temporarily disable pointer events to detect the underlying element
+      if (isTap) {
+        // Hide the overlay to find the element underneath
         regionEl.style.pointerEvents = "none";
-        const target = document.elementFromPoint(input.clientX, input.clientY);
-        // Renable pointer events
+        const target = document.elementFromPoint(e.clientX, e.clientY);
         regionEl.style.pointerEvents = "";
 
         if (target instanceof HTMLElement) target.click();
-
-        // reset touched piece, as we don't want to mix tap and swipe
         touchedPiece = null;
-      });
-    });
+      }
+    };
+
+    const onPointerCancel = (e: PointerEvent) => {
+      pointerIds.delete(e.pointerId);
+      reset();
+    };
+
+    regionEl.addEventListener("pointerdown", onPointerDown);
+    regionEl.addEventListener("pointermove", onPointerMove);
+    regionEl.addEventListener("pointerup", onPointerUp);
+    regionEl.addEventListener("pointercancel", onPointerCancel);
 
     return () => {
-      destroyed = true;
-      regionEl.removeEventListener("touchstart", onTouchStart);
-      if (region) region.unbind(regionEl);
+      regionEl.removeEventListener("pointerdown", onPointerDown);
+      regionEl.removeEventListener("pointermove", onPointerMove);
+      regionEl.removeEventListener("pointerup", onPointerUp);
+      regionEl.removeEventListener("pointercancel", onPointerCancel);
     };
   }, [regionRef.current, boardRef.current, isEnabled]);
 }
