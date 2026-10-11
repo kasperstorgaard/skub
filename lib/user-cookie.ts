@@ -104,3 +104,18 @@ export async function setProfileCookie(
     sameSite: "Lax",
   });
 }
+
+/** Forgets the device's identity and profile, so it starts over as a new visitor. */
+export function clearUserCookies(headers: Headers): void {
+  for (const name of [USER_ID_KEY, PROFILE_KEY]) {
+    setCookie(headers, {
+      name,
+      value: "",
+      httpOnly: true,
+      path: "/",
+      secure: !isDev,
+      maxAge: 0,
+      sameSite: "Lax",
+    });
+  }
+}

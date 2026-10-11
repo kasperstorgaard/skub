@@ -46,6 +46,11 @@ export const user = define.middleware(async (ctx) => {
 
   const res = await ctx.next();
 
+  // A handler that set the cookie itself (logout clears it) has the last word.
+  if (res.headers.getSetCookie().some((c) => c.startsWith("profile="))) {
+    return res;
+  }
+
   const payload = encodeProfile({ ...ctx.state.user, sessionId, syncedAt });
   if (isOwnProfile && payload === encodeProfile(profile)) return res;
 

@@ -25,7 +25,7 @@ export const handler = define.handlers<PageData>({
   async POST(ctx) {
     const form = await ctx.req.formData();
 
-    const name = form.get("name")?.toString().trim();
+    const name = form.get("name")?.toString().trim().slice(0, 30);
     const theme = form.get("theme")?.toString();
 
     if (name || theme) {

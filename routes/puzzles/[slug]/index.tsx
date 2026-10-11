@@ -95,9 +95,11 @@ export const handler = define.handlers<PageData>({
       "application/json",
     );
 
-    const { name, moves } = isJson
+    const solve = isJson
       ? await ctx.req.json() as { name: string; moves: Move[] }
       : await parseSolveForm(ctx.req);
+    const name = solve.name?.slice(0, 30);
+    const { moves } = solve;
 
     if (!name) throw new HttpError(400, "Must provide a username");
 

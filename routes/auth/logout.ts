@@ -1,6 +1,7 @@
 import { define } from "#/core.ts";
 import { deleteAuthSession } from "#/db/auth.ts";
 import { clearAuthSessionCookie, getAuthSessionId } from "#/lib/auth-cookie.ts";
+import { clearUserCookies } from "#/lib/user-cookie.ts";
 
 export const handler = define.handlers({
   async GET(ctx) {
@@ -8,7 +9,9 @@ export const handler = define.handlers({
     if (sessionId) await deleteAuthSession(sessionId);
 
     const headers = new Headers({ Location: "/profile" });
+    // A full reset: the device starts over as a new anonymous visitor.
     clearAuthSessionCookie(headers);
+    clearUserCookies(headers);
 
     return new Response(null, { status: 303, headers });
   },

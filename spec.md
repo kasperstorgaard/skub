@@ -25,8 +25,9 @@ base64url HMAC-SHA256 tag (Web Crypto, full 32 bytes so `crypto.subtle.verify`
 does the constant-time compare) keyed by a new `COOKIE_SIGNING_KEY` env var.
 Signing matters because `skillLevel` gates the recommendation and `email` must
 not be spoofable. `httpOnly`, `secure` outside dev, `SameSite=Lax`, 5 years,
-same as `user_id`. A profile too large for a cookie (a pathological name) is
-not set, and that visitor keeps reading KV.
+same as `user_id`. Names are cut to 30 characters on save, so a profile
+always fits; a larger one would not be set, and that visitor would keep reading
+KV.
 
 The codec is in `lib/signed-cookie.ts` (portable, no game knowledge), the
 profile shape in `lib/user-cookie.ts` next to the user id cookie. Outside dev a
@@ -34,10 +35,15 @@ missing `COOKIE_SIGNING_KEY` is a startup error, not a silent unsigned cookie.
 
 **The payload is bound to its user and login.** It is trusted only when `id`
 matches the request's user id and `sessionId` matches the request's login
-session (both absent when anonymous). Login and logout therefore re-seed the
-cookie from KV on the next request, and a cookie left behind by an account
-switch is ignored rather than believed. Neither the callback nor logout touch
-the cookie.
+session (both absent when anonymous). A login therefore re-seeds the cookie from KV on
+the next request, and a cookie left behind by an account switch is ignored
+rather than believed.
+
+**Logout is a full reset.** It clears `auth_session`, `user_id` and `profile`,
+so the device starts over as a new anonymous visitor. A logged-out device
+never keeps acting under the account's id, which would otherwise leave it
+reading a cookie that no longer syncs. A handler that sets the `profile` cookie
+itself has the last word over the middleware's re-issue.
 
 **Middleware reads the cookie, falls back to KV once.** In
 `middleware/user.ts`:
@@ -72,6 +78,9 @@ Lazy, backwards compatible, rollback-safe:
 - Rolling back to code without this PR ignores the `profile` cookie and reads
   KV as before. KV was never behind.
 - Cookie invalid or tampered: treat as absent, fall back to KV, re-sign.
+- A migration that rewrites user records bumps the payload version `v`, which
+  invalidates every profile cookie so each device re-reads once. Without the
+  bump, anonymous devices would keep their cookie copy indefinitely.
 - Email changes only through the auth callback; the login itself re-seeds the
   cookie.
 
