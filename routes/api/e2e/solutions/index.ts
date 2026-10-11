@@ -22,7 +22,8 @@ export const handler = define.handlers({
       });
     }
 
-    const { isNew, solution } = await saveSolution(body);
+    const { isNew, solution, stats } = await saveSolution(body);
+    await stats;
 
     if (!isNew) {
       return new Response("Duplicate solution", { status: 409 });

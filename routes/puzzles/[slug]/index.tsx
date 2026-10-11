@@ -10,7 +10,7 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { saveSolution } from "#/db/solutions.ts";
-import { getPuzzleStats } from "#/db/stats.ts";
+import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getHintCount } from "#/game/cookies.ts";
@@ -99,8 +99,9 @@ export const handler = define.handlers<PageData>({
     const activeSpan = trace.getActiveSpan();
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const [{ isNew, isNewPath }, user] = await Promise.all([
-      withSpan("puzzle.save_solution", async (span) => {
+    const { isNew, isNewPath, stats } = await withSpan(
+      "puzzle.save_solution",
+      async (span) => {
         const result = await saveSolution({
           puzzleSlug: slug,
           name,
@@ -110,13 +111,12 @@ export const handler = define.handlers<PageData>({
         span.setAttribute("solution.is_new", result.isNew);
         span.setAttribute("solution.is_new_path", result.isNewPath);
         return result;
-      }),
-      name === ctx.state.user.name
-        ? ctx.state.user
-        : setUser(ctx.state.userId, { name }),
-    ]);
-    ctx.state.user = user;
+      },
+    );
     ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
+
+    const patch: Partial<Omit<User, "id">> = {};
+    if (name !== ctx.state.user.name) patch.name = name;
 
     if (isNew) {
       trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
@@ -125,9 +125,7 @@ export const handler = define.handlers<PageData>({
       const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
       if (newLevel && newLevel !== skillLevel) {
-        ctx.state.user = await setUser(ctx.state.userId, {
-          skillLevel: newLevel,
-        });
+        patch.skillLevel = newLevel;
         trackSkillLevelUp(ctx.state, puzzle, {
           moves,
           url: referer,
@@ -136,8 +134,16 @@ export const handler = define.handlers<PageData>({
       }
     }
 
+    // One user write, alongside the aggregates.
+    const [user, puzzleStats] = await Promise.all([
+      Object.keys(patch).length > 0
+        ? setUser(ctx.state.userId, patch)
+        : ctx.state.user,
+      stats,
+    ]);
+    ctx.state.user = user;
+
     if (isJson) {
-      const puzzleStats = await getPuzzleStats(slug);
       return Response.json({
         isNewPath,
         puzzleStats: puzzleStats ?? defaultPuzzleStats,
