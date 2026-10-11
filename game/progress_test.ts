@@ -106,9 +106,9 @@ Deno.test("encodeProgress() drops a slug with no number or reserved slot", () =>
   });
 });
 
-Deno.test("encodeProgress() takes a byte per puzzle up to the highest solved", () => {
+Deno.test("encodeProgress() takes a byte per puzzle number up to the highest solved", () => {
   const bytes = encodeProgress(solves([2_700]), manifest(2_700));
 
-  // Four reserved slots, then one per daily
-  assertEquals(bytes.length, 2_704);
+  // Slot 0 is unused; dailies start at 1
+  assertEquals(bytes.length, 2_701);
 });

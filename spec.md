@@ -20,10 +20,10 @@ counts: the solutions themselves stay in KV, read and written on solve and on
 the solutions page. Encoding, in `game/progress.ts` (pure, no browser or KV
 knowledge):
 
-- One byte per puzzle, the best move count, 0 meaning unsolved. Slots 0–3 are
-  reserved for the unnumbered puzzles (tutorial, lars, lone, loke, append
-  only); daily `n` follows at slot `3 + n`. The array ends at the highest
-  solved puzzle.
+- One byte per puzzle number, the best move count, 0 meaning unsolved: daily
+  `n` is at index `n`. The unnumbered puzzles (tutorial, lars, lone, loke) get
+  fixed numbers from 10,000, so adding one never shifts the dailies. The
+  trailing zeros up to 10,000 deflate to about 35 characters.
 - The cookie payload is a version byte, the user id, then that array deflated
   with the built-in `CompressionStream`, signed with `signBytes`, the binary
   sibling of the profile's `signValue`. Bumping the version rebuilds every
@@ -32,7 +32,7 @@ knowledge):
   (1.25 KB vs 1.69 KB for 2,700 puzzles at 95% solved) without capping move
   counts, and empty slots of casual players compress to almost nothing. That
   leaves room for about 6,000 puzzles, 16 years of dailies. Today's full
-  manifest, all solved, is a 124 character cookie.
+  manifest, all solved, is a 159 character cookie.
 - An empty-but-present cookie means "backfilled, nothing solved", so empty
   users are not re-scanned.
 
@@ -96,7 +96,7 @@ Game logic, test exhaustively with realistic scenarios:
   replaces, a worse one is a no-op; round trips of empty progress and of
   dailies with gaps plus the reserved puzzles; a manifest that gained puzzles
   still resolves, a dropped number is skipped, a slug with no slot is dropped;
-  size is one byte per puzzle up to the highest solved.
+  size is one byte per puzzle number up to the highest solved.
 - `game/streak_test.ts`: existing scenarios rewritten to feed `Progress`,
   asserting identical outputs to today's.
 - `game/recommendation_test.ts` (new): new user, beginner with onboarding left,
