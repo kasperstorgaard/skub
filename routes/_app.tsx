@@ -1,5 +1,5 @@
 import { clsx } from "clsx/lite";
-import { Partial } from "fresh/runtime";
+import { asset, Partial } from "fresh/runtime";
 
 import { define } from "#/core.ts";
 import { CookieBanner } from "#/islands/cookie-banner.tsx";
@@ -68,11 +68,15 @@ export default define.page(
             crossOrigin="anonymous"
           />
 
-          <link rel="icon" type="image/svg+xml" href="/favicon-light.svg" />
           <link
             rel="icon"
             type="image/svg+xml"
-            href="/favicon-dark.svg"
+            href={asset("/favicon-light.svg")}
+          />
+          <link
+            rel="icon"
+            type="image/svg+xml"
+            href={asset("/favicon-dark.svg")}
             media="(prefers-color-scheme: dark)"
           />
 
