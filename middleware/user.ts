@@ -5,17 +5,18 @@ import {
   encodeProfile,
   getProfileCookie,
   getUserIdCookie,
-  hasSessionCookie,
   setProfileCookie,
-  setSessionCookie,
 } from "#/lib/user-cookie.ts";
 
 /**
  * Populates ctx.state.user from the signed `profile` cookie, reading KV only
  * when the cookie is missing, belongs to another user or login, or a logged-in
- * device starts a session (so devices converge). Re-issues the cookie when the user
- * changed. Requires auth middleware to run first.
+ * device last synced over 30 minutes ago (so devices converge). Re-issues the
+ * cookie when the user changed. Requires auth middleware to run first.
  */
+// Logged-in devices resync from KV after this long, so devices converge.
+const SYNC_INTERVAL_MS = 30 * 60 * 1000;
+
 export const user = define.middleware(async (ctx) => {
   const url = new URL(ctx.req.url);
 
@@ -28,13 +29,16 @@ export const user = define.middleware(async (ctx) => {
   const profile = await getProfileCookie(ctx.req);
   const isOwnProfile = profile?.id === userId &&
     profile.sessionId === sessionId;
-  const isSessionStart = !!sessionId && !hasSessionCookie(headers);
+  const isDue = !!sessionId &&
+    Date.now() - (profile?.syncedAt ?? 0) > SYNC_INTERVAL_MS;
   const isKnown = !!sessionId || !!getUserIdCookie(headers);
 
-  if (isOwnProfile && !isSessionStart) {
-    const { sessionId: _, ...user } = profile;
+  let syncedAt = profile?.syncedAt;
+  if (isOwnProfile && !isDue) {
+    const { sessionId: _, syncedAt: __, ...user } = profile;
     ctx.state.user = user;
   } else {
+    syncedAt = Date.now();
     ctx.state.user = isKnown
       ? await getUser(userId) ?? newUser(userId)
       : newUser(userId);
@@ -42,17 +46,14 @@ export const user = define.middleware(async (ctx) => {
 
   const res = await ctx.next();
 
-  const payload = encodeProfile({ ...ctx.state.user, sessionId });
-  const isStale = !isOwnProfile || payload !== encodeProfile(profile);
+  const payload = encodeProfile({ ...ctx.state.user, sessionId, syncedAt });
+  if (isOwnProfile && payload === encodeProfile(profile)) return res;
 
-  if (!isStale && !sessionId) return res;
-
-  const profileHeaders = new Headers();
-  if (isStale) await setProfileCookie(profileHeaders, payload);
-  if (sessionId) setSessionCookie(profileHeaders);
+  const cookies = new Headers();
+  await setProfileCookie(cookies, payload);
 
   return updateHeaders(res, (headers) => {
-    for (const cookie of profileHeaders.getSetCookie()) {
+    for (const cookie of cookies.getSetCookie()) {
       headers.append("set-cookie", cookie);
     }
   });

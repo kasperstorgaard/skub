@@ -20,7 +20,7 @@ same without it.
 ## Approach
 
 **A `profile` cookie carries the record.** Value: base64url JSON
-`{ v: 1, id, sessionId?, skillLevel, theme, name, email }`, `.`, and a
+`{ v: 1, id, sessionId?, syncedAt?, skillLevel, theme, name, email }`, `.`, and a
 base64url HMAC-SHA256 tag (Web Crypto, full 32 bytes so `crypto.subtle.verify`
 does the constant-time compare) keyed by a new `COOKIE_SIGNING_KEY` env var.
 Signing matters because `skillLevel` gates the recommendation and `email` must
@@ -78,18 +78,26 @@ Lazy, backwards compatible, rollback-safe:
 Logged-in sync across devices is unchanged: login claims the user id from KV
 and the next request seeds the cookie from the KV record.
 
-**Devices sync at session start.** Only a logged-in player can have two devices
-on one account; an anonymous id is one browser. A session is 30 minutes of
-inactivity, as in PostHog: an unsigned `session` marker cookie with
-`Max-Age=1800`, re-set on every response. A logged-in request without it is a
-session start and re-reads the record from KV, re-issuing the cookie. A device
-switch (phone, then laptop later) syncs on the laptop's first request; during
-active play there are no reads. Two devices in active use at once may disagree
-until one idles; that is not a real use case. Skill level, streak and calendar
-must agree across devices eventually, not instantly. A device's own writes
-show immediately, since the cookie is re-issued from the merged record. Email
-changes only in the auth callback, and a login re-seeds the cookie. KV never regresses,
-because writes merge the patch rather than the device's copy.
+**Logged-in devices resync every 30 minutes.** Only a logged-in player can
+have two devices on one account; an anonymous id is one browser, so anonymous
+visitors never re-read. The profile carries `syncedAt`, the time of its last KV
+read. A logged-in request whose `syncedAt` is over 30 minutes old reads KV
+before rendering and re-issues the cookie. A device switch (phone, then laptop
+later) syncs on the laptop's first request, since its `syncedAt` dates from its
+last use; two devices in use within the same 30 minutes can disagree until it
+passes. The cookie is only rewritten when a read ran or the user changed, so
+there's no Set-Cookie on every response.
+
+The refresh is deliberately synchronous: a logged-in player's first page of a
+visit pays about 100 ms, in exchange for that page (home, with streak and
+calendar) never showing another device's stale state. A background refresh was
+considered and rejected: it would show stale state on exactly that page, and
+needs per-isolate caching to save one round trip for a few players.
+
+Skill level, streak and calendar must agree across devices eventually, not
+instantly. A device's own writes show immediately, since the cookie is
+re-issued from the merged record. KV never regresses, because writes merge the
+patch rather than the device's copy.
 
 ## Tests
 
@@ -104,7 +112,7 @@ because writes merge the patch rather than the device's copy.
 ## Acceptance
 
 `db.kv.*` spans: zero on any GET for anonymous visitors after their first
-request; for logged-in visitors, one read per session. TTFB on `/puzzles/:slug` within 50 ms of
+request; for logged-in visitors, one read per 30 minutes of use. TTFB on `/puzzles/:slug` within 50 ms of
 `/robots.txt`.
 
 ## Region note

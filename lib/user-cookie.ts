@@ -25,9 +25,6 @@ export function setUserIdCookie(headers: Headers, userId: string): void {
 }
 
 const PROFILE_KEY = "profile";
-const SESSION_KEY = "session";
-// 30 minutes of inactivity ends a session, as in PostHog
-const SESSION_DURATION = 60 * 30;
 // Leave headroom under the 4 KB cookie cap; a bigger profile stays in KV only.
 const PROFILE_MAX_LENGTH = 3800;
 
@@ -41,7 +38,11 @@ function getSigningKey(): string {
 }
 
 /** The user record as carried by the `profile` cookie, bound to its user id. */
-export type Profile = User & { sessionId?: string };
+export type Profile = User & {
+  sessionId?: string;
+  // Epoch ms of the last KV read, so logged-in devices know when to resync
+  syncedAt?: number;
+};
 
 const profiles = new WeakMap<Request, Promise<Profile | null>>();
 
@@ -72,11 +73,12 @@ async function readProfile(headers: Headers): Promise<Profile | null> {
 
 /** JSON payload for `profile`, keys in a fixed order so equal profiles compare equal. */
 export function encodeProfile(profile: Profile): string {
-  const { id, sessionId, skillLevel, theme, name, email } = profile;
+  const { id, sessionId, syncedAt, skillLevel, theme, name, email } = profile;
   return JSON.stringify({
     v: 1,
     id,
     sessionId,
+    syncedAt,
     skillLevel,
     theme,
     name,
@@ -99,24 +101,6 @@ export async function setProfileCookie(
     path: "/",
     secure: !isDev,
     maxAge: USER_ID_DURATION,
-    sameSite: "Lax",
-  });
-}
-
-/** Whether the device has made a request in the last 30 minutes. */
-export function hasSessionCookie(headers: Headers): boolean {
-  return SESSION_KEY in getCookies(headers);
-}
-
-/** Starts or extends the device's session. Unsigned: forging it only skips a sync. */
-export function setSessionCookie(headers: Headers): void {
-  setCookie(headers, {
-    name: SESSION_KEY,
-    value: "1",
-    httpOnly: true,
-    path: "/",
-    secure: !isDev,
-    maxAge: SESSION_DURATION,
     sameSite: "Lax",
   });
 }
