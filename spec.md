@@ -30,8 +30,9 @@ always fits; a larger one would not be set, and that visitor would keep reading
 KV.
 
 The codec is in `lib/signed-cookie.ts` (portable, no game knowledge), the
-profile shape in `lib/user-cookie.ts` next to the user id cookie. Outside dev a
-missing `COOKIE_SIGNING_KEY` is a startup error, not a silent unsigned cookie.
+profile cookie in `game/profile-cookie.ts`, since it carries the user record.
+`lib/user-cookie.ts` keeps only the user id cookie. Outside dev a missing
+`COOKIE_SIGNING_KEY` is a startup error, not a silent unsigned cookie.
 
 **The payload is bound to its user and login.** It is trusted only when `id`
 matches the request's user id and `sessionId` matches the request's login
@@ -95,7 +96,8 @@ before rendering and re-issues the cookie. A device switch (phone, then laptop
 later) syncs on the laptop's first request, since its `syncedAt` dates from its
 last use; two devices in use within the same 30 minutes can disagree until it
 passes. The cookie is only rewritten when a read ran or the user changed, so
-there's no Set-Cookie on every response.
+there's no Set-Cookie on every response. A write counts as a read: `setUser`
+has just read KV, so it moves `syncedAt` forward too.
 
 The refresh is deliberately synchronous: a logged-in player's first page of a
 visit pays about 100 ms, in exchange for that page (home, with streak and

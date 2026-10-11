@@ -1,12 +1,14 @@
 import { define } from "#/core.ts";
+import type { User } from "#/db/types.ts";
 import { getUser, newUser } from "#/db/user.ts";
-import { updateHeaders } from "#/lib/headers.ts";
 import {
   encodeProfile,
   getProfileCookie,
-  getUserIdCookie,
   setProfileCookie,
-} from "#/lib/user-cookie.ts";
+  signProfile,
+} from "#/game/profile-cookie.ts";
+import { updateHeaders } from "#/lib/headers.ts";
+import { getUserIdCookie } from "#/lib/user-cookie.ts";
 
 // Logged-in devices resync from KV after this long, so devices converge.
 const SYNC_INTERVAL_MS = 30 * 60 * 1000;
@@ -34,17 +36,22 @@ export const user = define.middleware(async (ctx) => {
   const isKnown = !!sessionId || !!getUserIdCookie(headers);
 
   let syncedAt = profile?.syncedAt;
+  let user: User;
   if (isOwnProfile && !isDue) {
     // Strip the cookie-only fields; the rest is the user record.
-    const { sessionId: _, syncedAt: __, ...user } = profile;
-    ctx.state.user = user;
+    const { sessionId: _, syncedAt: __, ...profileUser } = profile;
+    user = profileUser;
   } else {
     syncedAt = Date.now();
     const stored = isKnown ? await getUser(userId) : null;
-    ctx.state.user = stored ?? newUser(userId);
+    user = stored ?? newUser(userId);
   }
+  ctx.state.user = user;
 
   const res = await ctx.next();
+
+  // A write (setUser) read KV just now, so the device is in sync again.
+  if (ctx.state.user !== user) syncedAt = Date.now();
 
   // A handler that set the cookie itself (logout clears it) has the last word.
   const cookiesSet = res.headers.getSetCookie();
@@ -53,10 +60,8 @@ export const user = define.middleware(async (ctx) => {
   const payload = encodeProfile({ ...ctx.state.user, sessionId, syncedAt });
   if (isOwnProfile && payload === encodeProfile(profile)) return res;
 
-  const cookies = new Headers();
-  await setProfileCookie(cookies, payload);
-  const [cookie] = cookies.getSetCookie();
-  if (!cookie) return res;
+  const value = await signProfile(payload);
+  if (!value) return res;
 
-  return updateHeaders(res, (headers) => headers.append("set-cookie", cookie));
+  return updateHeaders(res, (headers) => setProfileCookie(headers, value));
 });

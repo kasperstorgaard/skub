@@ -2,13 +2,10 @@ import { trace } from "@opentelemetry/api";
 
 import { define } from "#/core.ts";
 import { getAuthSession } from "#/db/auth.ts";
+import { getProfileCookie } from "#/game/profile-cookie.ts";
 import { getAuthSessionId } from "#/lib/auth-cookie.ts";
 import { updateHeaders } from "#/lib/headers.ts";
-import {
-  getProfileCookie,
-  getUserIdCookie,
-  setUserIdCookie,
-} from "#/lib/user-cookie.ts";
+import { getUserIdCookie, setUserIdCookie } from "#/lib/user-cookie.ts";
 
 /**
  * Establishes user identity for every request.
