@@ -14,29 +14,15 @@ scenario in `TODO.md`.
 
 ## Approach
 
-**Name the destination and the portal.** A portal guide is labelled "move to
-7,4, through portal at 2,0"; an ordinary one keeps "move to 0,7". The board
-still draws the guide only to the portal. Non-sighted players learn where a
-portal move lands before choosing it, which sighted players don't. Accepted:
-playing a spatial puzzle without sight is an edge case, and naming the outcome
-is the more useful label.
+**Name where the piece lands.** A guide is labelled "move to <x>,<y>" with the
+move's destination, not the cell it is drawn to. For ordinary slides the two are
+the same. The board still draws a portal guide only to the portal. Non-sighted
+players learn where a portal move lands before choosing it, which sighted
+players don't. Accepted: naming the outcome is the more useful label.
 
-One function, `getMoveLabel(move)` in `game/guides.ts`, builds the label for
-both the board and the e2e page objects. Hint guides carry their entry portal
-like the others, so their labels match too.
+The e2e page objects already look guides up by destination. Two guides can
+rarely land on the same cell; the click takes the first, since either leaves the
+same board.
 
-**E2E knows about portals.** `solvePuzzle()` records the portal each
-teleporting move goes in by, the way the board records it when the move is
-played. Page objects find guides by `getMoveLabel`, and keyboard solving aims
-for the portal entry.
-
-**Portal coverage doesn't depend on the calendar.** The daily flows stay, since
-the daily is the key feature. A fixed portal puzzle (`ulla`) is solved with and
-without JS, so portals are tested every day, not only on portal days.
-
-## Tests
-
-- `game/guides_test.ts`: labels for an ordinary and a portal move; a portal
-  hint carries its entry.
-- e2e: two `ulla` scenarios in `routes/puzzles/[slug]/_e2e/puzzle_test.ts`; the
-  daily flows pass again on portal days.
+**One fixed portal scenario.** A no-JS solve of `ulla` covers portals every
+day, not only on days the daily has them.
