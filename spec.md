@@ -105,10 +105,11 @@ Game logic, test exhaustively with realistic scenarios:
   manifest, available entries, daily and a `random`; `pickRecommendedPuzzle`
   only loads those and the chosen puzzle. Tests use a small made-up pool, so
   they run without the generated manifest (CI doesn't build one).
-- e2e: `returning-user-flow_test.ts` already walks solve → home best-moves,
-  and the home stats tests already load `/` with seeded KV solutions and no
-  cookie. One storage-exception test deletes the player's KV solutions after
-  the first load and asserts the stats still render on reload.
+- e2e, user-centric: a home page test where a returning player with a seeded
+  daily solve and no cookie sees "Perfect" on the daily card (the backfill),
+  and both returning-user flows walk back after solving and see the result on
+  home (JS) and in the archives calendar (no JS), which is the cookie write on
+  solve.
 
 ## Acceptance
 

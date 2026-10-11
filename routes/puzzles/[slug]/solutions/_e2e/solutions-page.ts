@@ -12,6 +12,10 @@ export class SolutionsPage {
     return this;
   }
 
+  get backLink() {
+    return this.page.getByRole("link", { name: "Back", exact: true });
+  }
+
   solveByName(name: string) {
     return this.page.getByRole("link", { name, exact: false });
   }

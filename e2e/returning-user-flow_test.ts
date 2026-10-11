@@ -3,7 +3,7 @@ import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
 import { solvePuzzle } from "./helpers.ts";
 
-// -- Returning user: homepage → daily puzzle → solve → celebration ---
+// -- Returning user: homepage → daily puzzle → solve → celebration → home ---
 
 Deno.test("a returning player opens the daily puzzle from the homepage and solves it", async () => {
   const { page, asUser, teardown } = await setup();
@@ -19,12 +19,16 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
 
     const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
     await expect(solutionsPage.solveByName("e2egg")).toBeVisible();
+
+    await solutionsPage.backLink.click();
+    await puzzlePage.backLink.click();
+    await expect(homePage.dailyPuzzleLink.getByLabel("Perfect")).toBeVisible();
   } finally {
     await teardown();
   }
 });
 
-// -- New user, no JavaScript: home → archives → earlier month → solve → submit name ---
+// -- No JavaScript: home → archives → earlier month → solve → submit name → archives ---
 
 Deno.test("without js - a returning user plays an archived puzzle and submits their solve", async () => {
   const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
@@ -50,6 +54,12 @@ Deno.test("without js - a returning user plays an archived puzzle and submits th
 
     const solutionsPage = await puzzlePage.solutionDialog.submitName("e2elf");
     await expect(solutionsPage.solveByName("e2elf")).toBeVisible();
+
+    await solutionsPage.backLink.click();
+    await puzzlePage.backLink.click();
+    await expect(archivesPage.day(1)).toHaveAccessibleName(
+      /solved in \d+ moves/,
+    );
   } finally {
     await teardown();
   }

@@ -33,11 +33,15 @@ export class ArchivesPage {
     return this;
   }
 
+  /** A day cell in the calendar by its day-of-month number. */
+  day(day: number) {
+    return this.grid.locator("a", { hasText: new RegExp(`^${day}$`) })
+      .first();
+  }
+
   /** Clicks a day cell in the calendar by its day-of-month number. */
   async clickDay(day: number) {
-    await this.grid.locator("a", { hasText: new RegExp(`^${day}$`) })
-      .first()
-      .click();
+    await this.day(day).click();
     return this;
   }
 
