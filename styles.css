@@ -96,6 +96,16 @@
 @import "tailwindcss/theme" layer(theme);
 @import "tailwindcss/utilities" layer(utilities);
 
+/* Prose and fixtures, not markup */
+@source not "./specs";
+@source not "./candidates";
+@source not "./static";
+@source not "./e2e";
+@source not "./scripts";
+@source not "./**/_e2e";
+@source not "./.claude";
+@source not "./*.md";
+
 @custom-variant js (&:where([data-js] *));
 
 /* Tailwind v4 theme configuration */
