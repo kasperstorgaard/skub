@@ -5,6 +5,7 @@ import { define } from "#/core.ts";
 import { CookieBanner } from "#/islands/cookie-banner.tsx";
 import { Router } from "#/islands/router.tsx";
 import { TrackingScript } from "#/islands/tracking-script.tsx";
+import { sharedChunks } from "#/lib/shared-chunks.ts";
 import font400 from "#/styles/fonts/chakra-petch-400.woff2?url";
 import font500 from "#/styles/fonts/chakra-petch-500.woff2?url";
 
@@ -67,6 +68,10 @@ export default define.page(
             href={font500}
             crossOrigin="anonymous"
           />
+
+          {sharedChunks.map((href) => (
+            <link key={href} rel="modulepreload" href={href} />
+          ))}
 
           <link
             rel="icon"
