@@ -42,10 +42,11 @@ in `tokens.css`.
 `js:inline-flex`, …). Those paths are excluded with `@source not`, which
 leaves new UI directories scanned by default.
 
-**Guard it.** `deno task check-css-vars` reads the built CSS and fails on any
+**Guard it.** `deno task check-css` reads the built CSS and fails on any
 `var(--…)` (in the CSS or in UI source) that resolves to nothing, so a token
-used later but never copied is caught instead of failing silently. It runs
-in the PR workflow after a build.
+used later but never copied is caught instead of failing silently. It also
+fails when the stylesheet grows past 14 KB gzipped, which leaves headroom over
+today's 13.1 KB. It runs in the PR workflow after a build.
 
 **Normalize** stays: it is the one dependency with a real cross-browser job,
 and swapping it would change how things look.

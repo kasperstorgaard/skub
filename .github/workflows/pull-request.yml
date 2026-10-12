@@ -37,5 +37,5 @@ jobs:
       - name: Build
         run: deno task build
 
-      - name: Check CSS variables
-        run: deno task check-css-vars
+      - name: Check CSS
+        run: deno task check-css

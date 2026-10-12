@@ -25,8 +25,8 @@ To use an Open Props token for the first time, copy it verbatim from
 `node_modules/open-props/open-props.min.css` into `tokens.css`, and add its
 `@theme` entry if a utility needs it. A utility without an `@theme` entry
 (`gap-6`) silently falls back to Tailwind's default scale.
-`deno task build && deno task check-css-vars` catches a `var(--…)` that resolves
-to nothing.
+`deno task build && deno task check-css` catches a `var(--…)` that resolves to
+nothing, and fails when the stylesheet passes 14 KB gzipped.
 
 ## CSS
 

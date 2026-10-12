@@ -1,9 +1,13 @@
+import { gzipSync } from "node:zlib";
+
 /**
- * Checks every `var(--…)` in the built CSS and in UI source resolves to a
- * declared custom property. Unresolved vars fail silently in the browser.
+ * Checks the built CSS stays under its gzipped budget, and that every
+ * `var(--…)` in it and in UI source resolves to a declared custom property.
+ * Unresolved vars fail silently in the browser.
  *
- * Usage: `deno task build && deno task check-css-vars`
+ * Usage: `deno task build && deno task check-css`
  */
+const BUDGET_KB = 14;
 const ASSETS_DIR = "_fresh/client/assets";
 const SOURCE_DIRS = ["components", "islands", "routes", "client", "lib"];
 
@@ -24,6 +28,16 @@ for await (const path of files(ASSETS_DIR, /\.css$/)) {
 }
 if (!css) {
   console.error(`No CSS in ${ASSETS_DIR}; run \`deno task build\` first.`);
+  Deno.exit(1);
+}
+
+const gzippedKb = gzipSync(css).length / 1024;
+if (gzippedKb > BUDGET_KB) {
+  console.error(
+    `CSS is ${
+      gzippedKb.toFixed(1)
+    } KB gzipped, over the ${BUDGET_KB} KB budget.`,
+  );
   Deno.exit(1);
 }
 
@@ -61,4 +75,6 @@ if (unresolved.size) {
   for (const name of [...unresolved].sort()) console.error(`  ${name}`);
   Deno.exit(1);
 }
-console.log("All CSS variables resolve.");
+console.log(
+  `CSS is ${gzippedKb.toFixed(1)} KB gzipped; all CSS variables resolve.`,
+);
