@@ -1,8 +1,8 @@
 import { clsx } from "clsx/lite";
 import { asset, Partial } from "fresh/runtime";
 
+import { CookieBanner } from "#/components/cookie-banner.tsx";
 import { define } from "#/core.ts";
-import { CookieBanner } from "#/islands/cookie-banner.tsx";
 import { Router } from "#/islands/router.tsx";
 import { TrackingScript } from "#/islands/tracking-script.tsx";
 import { sharedChunks } from "#/lib/shared-chunks.ts";
