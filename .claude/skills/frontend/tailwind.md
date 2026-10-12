@@ -16,11 +16,17 @@
 
 ## Design tokens
 
-The basic design system tokens are from open props, read them if needed:
-node_modules/open-props/open-props.min.css
-node_modules/open-props/normalize.min.css
+The design tokens are the Open Props values in use, copied into
+`styles/tokens.css`; only those exist. `styles.css` mirrors them into Tailwind's
+`@theme` and extends them. Normalize still comes from
+`node_modules/open-props/normalize.min.css`.
 
-They are then customised and extended in the tailwind styles.css config
+To use an Open Props token for the first time, copy it verbatim from
+`node_modules/open-props/open-props.min.css` into `tokens.css`, and add its
+`@theme` entry if a utility needs it. A utility without an `@theme` entry
+(`gap-6`) silently falls back to Tailwind's default scale.
+`deno task build && deno task check-css-vars` catches a `var(--…)` that resolves
+to nothing.
 
 ## CSS
 
