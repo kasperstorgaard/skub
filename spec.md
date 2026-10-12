@@ -35,7 +35,25 @@ less island chunk and hydration. Works without JS as before.
 | `/`             | 78.2 KB | 77.3 KB |
 | `/puzzles/yrsa` | 95.5 KB | 94.7 KB |
 
-The rest of the gap is PostHog, which waits on a decision (below).
+**posthog-js loads on idle (option D below).** The tracking island imports
+posthog-js with `import()` once the page is idle (`requestIdleCallback`, a
+`setTimeout` fallback for Safari), so it never competes with hydration or the
+first tap. Same init, consent and opt-in logic.
+
+**PostHog is upgraded** to posthog-js 1.434.15 and posthog-node 5.54.1 (both
+late September, pinned exactly), so the project doesn't fall further behind.
+posthog-js's default bundle grew from 59 KB to 101 KB gz since 1.364.7; with
+D that is a one-off cached download after load, not critical path. Slim
+builds don't help: without extensions they drop autocapture and web vitals,
+and slim 1.434.15 alone is 51 KB.
+
+| Page            | Before  | After   | Budget |
+| --------------- | ------- | ------- | ------ |
+| `/`             | 78.2 KB | 20.9 KB | 25 KB  |
+| `/puzzles/birk` | 95.5 KB | 37.8 KB | 40 KB  |
+
+After load, the PostHog chunk is 100.8 KB gz, a hashed same-origin asset
+served immutable, and ~310 KB to parse on each full page load.
 
 **The PostHog proxy strips `content-encoding`.** Deno Deploy's `fetch`
 decodes upstream bodies but keeps the header, so every response PostHog
@@ -43,9 +61,10 @@ compresses (`config.js`, `/flags/`) failed in the browser with
 `ERR_CONTENT_DECODING_FAILED`: remote config and flags never loaded. Events
 were unaffected. Option A below loads `array.js` through the same proxy.
 
-## PostHog options (decision needed)
+## PostHog options
 
-Nothing here is implemented. Baseline is after the cookie banner change.
+Decided: D, with the upgrade. Measured before the upgrade, against the
+baseline after the cookie banner change.
 "Critical path" is what the page boots with; "later" is fetched after boot.
 
 What arrives from the browser today (PostHog, last 30 days): `$autocapture`
@@ -67,17 +86,21 @@ option.
 `~` values are "today minus the tracking island" computed from the measured
 chunks, not a separate build.
 
-**Recommendation: D.** It meets both budgets, keeps every event that arrives
-today, needs no product decision, and serves posthog-js as an immutable
-same-origin asset instead of a proxied 4-hour one. A is the same trade with
-more moving parts. Revisit C only after the perf roadmap no longer needs web
-vitals.
+**D**: it meets both budgets, keeps every event that arrives today, and
+serves posthog-js as an immutable same-origin asset instead of a proxied
+4-hour one. C (server pageviews plus a small `web-vitals` beacon) would be
+lighter still, but PostHog stays as a tool this project explores.
+
+## Verify after deploy
+
+- PostHog keeps receiving `$pageview`, `$autocapture` and `$web_vitals`.
+- INP by page in `$web_vitals`, to see whether the idle-time init delays taps.
+- Recording status on new sessions (`$recording_status`), now that remote
+  config loads through the fixed proxy. Replays are not a goal, just a check.
 
 ## Non-goals
 
-- Replacing zingtouch: its own branch, `perf/pointer-gestures`. It costs
-  6.6 KB gz on the puzzle page, touch devices only, loaded after hydration (0 on
-  home, not on the critical path).
+- Replacing zingtouch: its own branch (#256).
 - Removing Preact or Fresh's client runtime. That is the architecture.
 - The router island: 0.4 KB and every island depends on its event.
 - Dropping web vitals while the roadmap is in progress.
