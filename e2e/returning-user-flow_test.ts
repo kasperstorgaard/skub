@@ -59,7 +59,9 @@ Deno.test("without js - a returning user plays an archived puzzle and submits th
     await expect(solutionsPage.solveByName("e2elf")).toBeVisible();
 
     await solutionsPage.backLink.click();
+    await expect(puzzlePage.seeSolvesLink).toBeVisible();
     await puzzlePage.backLink.click();
+    await expect(archivesPage.heading).toBeVisible();
     await expect(archivesPage.day(1)).toHaveAccessibleName(
       /solved in \d+ moves/,
     );
