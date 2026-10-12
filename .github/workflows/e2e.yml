@@ -104,15 +104,6 @@ jobs:
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
           TEST_FILES: ${{ steps.select.outputs.files }}
 
-      # Open with `npx playwright show-trace <file>` or trace.playwright.dev
-      - name: Upload traces
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-traces
-          path: test-results/
-          retention-days: 7
-
       - name: Post final status
         if: always()
         run: |

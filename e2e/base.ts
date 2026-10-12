@@ -34,7 +34,6 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   const context = await browser.newContext({
     javaScriptEnabled: opts?.javaScriptEnabled ?? true,
   });
-  await context.tracing.start({ screenshots: true, snapshots: true });
 
   const page = await context.newPage();
 
@@ -67,14 +66,6 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
       const userId = currentUser?.id ??
         (await context.cookies()).find((c) => c.name === "user_id")?.value;
       if (userId) await clearTestUser(userId);
-
-      // Printed under the test's own output, so a failure names its trace
-      const tracePath = `test-results/trace-${
-        crypto.randomUUID().slice(0, 8)
-      }.zip`;
-      await context.tracing.stop({ path: tracePath });
-      console.log(`trace: ${tracePath}`);
-
       await context.close();
       await browser.close();
     },
