@@ -44,6 +44,7 @@ export a puzzle as a `.md` file and **Import** to load one back in.
 | UI        | [Preact](https://preactjs.com) + [Signals](https://preactjs.com/guide/v10/signals/)  |
 | Styling   | [Tailwind CSS v4](https://tailwindcss.com) + [Open Props](https://open-props.style/) |
 | Storage   | [Deno KV](https://deno.com/kv)                                                       |
+| Touch     | [ZingTouch](https://zingchart.github.io/zingtouch/)                                  |
 | Build     | [Vite](https://vite.dev)                                                             |
 
 ## Getting Started
