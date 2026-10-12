@@ -35,10 +35,9 @@ less island chunk and hydration. Works without JS as before.
 | `/`             | 78.2 KB | 77.3 KB |
 | `/puzzles/yrsa` | 95.5 KB | 94.7 KB |
 
-**posthog-js loads on idle (option D below).** The tracking island imports
-posthog-js with `import()` once the page is idle (`requestIdleCallback`, a
-`setTimeout` fallback for Safari), so it never competes with hydration or the
-first tap. It loads only after a cookie choice: before one, PostHog
+**posthog-js loads after hydration (option D below).** The tracking island
+imports posthog-js with `import()` in its effect, so it never competes with
+the page's own JS. It loads only after a cookie choice: before one, PostHog
 (`cookieless_mode: "on_reject"`) captures nothing anyway, and choosing reloads
 the page via the consent form's 303. First-time visitors download nothing from
 PostHog. Same init, consent and opt-in logic otherwise; declining still
@@ -98,7 +97,7 @@ lighter still, but PostHog stays as a tool this project explores.
 ## Verify after deploy
 
 - PostHog keeps receiving `$pageview`, `$autocapture` and `$web_vitals`.
-- INP by page in `$web_vitals`, to see whether the idle-time init delays taps.
+- INP by page in `$web_vitals`, to see whether PostHog's init delays taps.
 - Recording status on new sessions (`$recording_status`), now that remote
   config loads through the fixed proxy. Replays are not a goal, just a check.
 

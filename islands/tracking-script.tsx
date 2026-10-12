@@ -13,8 +13,8 @@ type TrackingProps = {
  * Initializes client-side PostHog analytics when tracking is allowed.
  * Uses /ph proxy to avoid direct connections to PostHog servers.
  * Pageviews are captured server-side, so capture_pageview is disabled.
- * posthog-js is imported once the page is idle, off the critical path,
- * and only after a cookie choice.
+ * posthog-js is imported after hydration, off the critical path, and only
+ * after a cookie choice.
  */
 export function TrackingScript(
   { apiKey, cookieChoice, trackingId }: TrackingProps,
@@ -59,10 +59,7 @@ export function TrackingScript(
       }
     };
 
-    // Safari has no requestIdleCallback
-    const onIdle = globalThis.requestIdleCallback ??
-      ((callback: () => void) => setTimeout(callback, 1));
-    onIdle(() => start());
+    start();
 
     return () => {
       isCancelled = true;
