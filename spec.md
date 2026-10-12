@@ -91,8 +91,8 @@ render-blocking estimate for the stylesheet, measured after deploy.
   first time means copying it into `tokens.css` and the `@theme` mirror. The
   check script catches a missing token, but a utility whose `@theme` entry
   doesn't exist (`gap-6`) silently falls back to Tailwind's default spacing.
-- The 300 font weight is used once (`font-3` in the controls panel); worth a
-  look in the `/frontend` pass, not a CSS-size issue.
+- The 300 font weight was used only by the move counter, which already rendered
+  with the 400 file; its `@font-face`, file, token and class are gone.
 
 ## Non-goals
 

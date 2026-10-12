@@ -145,8 +145,8 @@ export function ControlsPanel(
 
             <div
               className={clsx(
-                "flex items-center justify-center min-w-[2ch] font-3",
-                "text-center leading-flat font-3 tracking-wide text-8 tabular-nums",
+                "flex items-center justify-center min-w-[2ch]",
+                "text-center leading-flat tracking-wide text-8 tabular-nums",
               )}
             >
               {count < 10 ? `0${count}` : count}
