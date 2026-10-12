@@ -44,7 +44,8 @@ leaves new UI directories scanned by default.
 
 **Guard it.** `deno task check-css-vars` reads the built CSS and fails on any
 `var(--…)` (in the CSS or in UI source) that resolves to nothing, so a token
-used later but never copied is caught instead of failing silently.
+used later but never copied is caught instead of failing silently. It runs
+in the PR workflow after a build.
 
 **Normalize** stays: it is the one dependency with a real cross-browser job,
 and swapping it would change how things look.
@@ -89,7 +90,6 @@ render-blocking estimate for the stylesheet, measured after deploy.
   first time means copying it into `tokens.css` and the `@theme` mirror. The
   check script catches a missing token, but a utility whose `@theme` entry
   doesn't exist (`gap-6`) silently falls back to Tailwind's default spacing.
-  Should `check-css-vars` run in CI after the build?
 - The 300 font weight is used once (`font-3` in the controls panel); worth a
   look in the `/frontend` pass, not a CSS-size issue.
 
