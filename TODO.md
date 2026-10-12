@@ -58,6 +58,41 @@ PR finishes only part of an item, trim the item to what is left.
   were fit to a one-directional `too-easy` bias that the board/route tag split
   has since corrected.
 
+## Hosting
+
+- **Skub keeps running after Deno Deploy shuts down.** Deno joined Cloudflare
+  (announced 2026-10-09): Deno Deploy shuts down in about six months, and the
+  Deno runtime gets bug-fix and security releases for a year, then development
+  ends. Everything hosted on Deploy needs a new home: the app itself, Deno KV
+  (users, solutions, stats, candidates — a data migration, not just a redeploy),
+  env vars and secrets, the preview deployments whose `deployment_status` events
+  drive the e2e workflow, the OTEL traces the perf work reads, and the region
+  setting. The `skub.app` DNS is already on Cloudflare. The runtime end means
+  the stack choice (Deno, Fresh, `deno test` / `fmt` / `lint`) is on the table
+  too, on a longer clock. Cloudflare's path is Workers and Durable Objects
+  (self-hostable via workerd merged with Deno's celld).
+
+  Runtime target: [workerd](https://github.com/cloudflare/workerd). Open
+  question is the store. What skub relies on in Deno KV: atomic multi-key writes
+  with versionstamp checks (a solution under four index keys),
+  optimistic-concurrency retries on shared counters (puzzle stats), ordered
+  prefix scans (`listUserSolutions`, solutions by puzzle, canonical groups), and
+  read-after-write on the solve POST.
+
+  - **Workers KV:** eventually consistent (~60 s), no atomics — breaks the solve
+    flow and stats. Fine only for cache-like data such as the manifest.
+  - **D1 (SQLite):** the most direct port. Index keys become one table with
+    indexes, prefix scans become `WHERE`, stats retries become one `UPDATE`.
+    Single primary region with read replicas, like KV in Virginia today, which
+    cookie-first GETs already sidestep.
+  - **Durable Objects + SQLite:** strongly consistent per object, no retry logic
+    (e.g. one object per puzzle, one per user). A bigger data-model rethink, but
+    it's what celld runs, so managed and self-hosted stay interchangeable.
+
+  Lean: Durable Objects — it's the model Ryan Dahl's celld is built around and
+  what Cloudflare's self-hosting path centres on. D1 stays the fallback if the
+  redesign proves too big.
+
 ## Performance
 
 - **The site should feel instant.** Pages are 6 KB of HTML, yet first paint is
