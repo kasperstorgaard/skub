@@ -27,6 +27,9 @@ export type Fixtures = {
   teardown: () => Promise<void>;
 };
 
+// Numbers each test's trace; tests run one at a time
+let traceCount = 0;
+
 export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   const browser = await chromium.launch({
     args: ["--disable-dev-shm-usage"],
@@ -34,6 +37,7 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   const context = await browser.newContext({
     javaScriptEnabled: opts?.javaScriptEnabled ?? true,
   });
+  await context.tracing.start({ screenshots: true, snapshots: true });
 
   const page = await context.newPage();
 
@@ -66,6 +70,15 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
       const userId = currentUser?.id ??
         (await context.cookies()).find((c) => c.name === "user_id")?.value;
       if (userId) await clearTestUser(userId);
+
+      // Printed under the test's own output, so a failure names its trace
+      traceCount++;
+      const tracePath = `test-results/trace-${
+        String(traceCount).padStart(2, "0")
+      }.zip`;
+      await context.tracing.stop({ path: tracePath });
+      console.log(`trace: ${tracePath}`);
+
       await context.close();
       await browser.close();
     },

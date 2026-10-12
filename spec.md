@@ -31,9 +31,10 @@ The highest scheduled puzzle is #291 (Oct 18). From Oct 19, `/puzzles` returns
 
 - Archives: when the selected date has no puzzle, render the month without a
   selected puzzle instead of throwing.
-- e2e: upload Playwright traces on failure in `e2e.yml`, so the next failure
-  shows the page. The workflow runs from `main` (`deployment_status`), so this
-  only takes effect once merged.
+- e2e evidence (done, for now): every test records a Playwright trace, and
+  teardown prints its file name under that test's output. A failed run
+  uploads them as the `e2e-traces` artifact (7 days). The workflow checks out
+  the deployment's commit, so this applies on this branch's own preview.
 - JS daily test: with traces, see what the page shows after the second
   `backLink` click under Fresh 2.3, then fix the test's wait or locator.
 - The no-JS test still has slow passing runs (~34 s vs ~8 s); worth a look
