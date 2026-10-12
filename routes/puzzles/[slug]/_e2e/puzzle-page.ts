@@ -22,6 +22,12 @@ export class PuzzlePage {
     return this.page.getByRole("heading", { level: 1 });
   }
 
+  // In the controls panel, not the celebration dialog
+  get seeSolvesLink() {
+    return this.page.getByRole("complementary")
+      .getByRole("link", { name: /See solves/i });
+  }
+
   // Shown after a guest solves a puzzle
   get solutionDialog() {
     const page = this.page;

@@ -20,8 +20,9 @@ navigates with Fresh partials (a `?fresh-partial=true` fetch and a swap of the
 the second Back click landed on the solutions page's header, still on screen,
 whose Back points to the puzzle page again. The trace shows two partial
 requests for `/puzzles/kenneth` and the test ending there. It started with
-Fresh 2.3 (#249) because the timing changed; by hand it works. Fix: wait for
-the solutions list to disappear before the second Back.
+Fresh 2.3 (#249) because the timing changed; by hand it works. Fix: wait for the
+puzzle page (its controls' "See solves") before the second Back, and for the
+home title after it.
 
 ## Risk in production
 

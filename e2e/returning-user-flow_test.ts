@@ -20,10 +20,11 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
     const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
     await expect(solutionsPage.solveByName("e2egg")).toBeVisible();
 
-    // Back is a client-side navigation; wait for it before the next Back
+    // Back is a client-side navigation; wait for each page before going on
     await solutionsPage.backLink.click();
-    await expect(solutionsPage.solveByName("e2egg")).toBeHidden();
+    await expect(puzzlePage.seeSolvesLink).toBeVisible();
     await puzzlePage.backLink.click();
+    await expect(homePage.heading).toHaveText(/Skub/);
     await expect(homePage.dailyPuzzleLink.getByLabel("Perfect")).toBeVisible();
   } finally {
     await teardown();
