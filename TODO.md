@@ -89,8 +89,9 @@ PR finishes only part of an item, trim the item to what is left.
     (e.g. one object per puzzle, one per user). A bigger data-model rethink, but
     it's what celld runs, so managed and self-hosted stay interchangeable.
 
-  Lean: D1 for the least redesign; Durable Objects if self-hosting via celld is
-  part of the appeal.
+  Lean: Durable Objects — it's the model Ryan Dahl's celld is built around and
+  what Cloudflare's self-hosting path centres on. D1 stays the fallback if the
+  redesign proves too big.
 
 ## Performance
 
