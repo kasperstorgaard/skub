@@ -32,9 +32,14 @@ export const posthogProxy = define.middleware(async (ctx) => {
     body: method === "POST" ? body : undefined,
   });
 
+  // fetch already decoded the body
+  const responseHeaders = new Headers(response.headers);
+  responseHeaders.delete("content-encoding");
+  responseHeaders.delete("content-length");
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers: response.headers,
+    headers: responseHeaders,
   });
 });
