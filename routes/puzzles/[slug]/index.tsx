@@ -9,7 +9,8 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
-import { saveSolution } from "#/db/solutions.ts";
+import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
+import { getPuzzleStats } from "#/db/stats.ts";
 import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
@@ -99,7 +100,7 @@ export const handler = define.handlers<PageData>({
     const activeSpan = trace.getActiveSpan();
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const { isNew, isNewPath, stats } = await withSpan(
+    const { isNew, isNewPath, solution } = await withSpan(
       "puzzle.save_solution",
       async (span) => {
         const result = await saveSolution({
@@ -139,7 +140,7 @@ export const handler = define.handlers<PageData>({
       Object.keys(patch).length > 0
         ? setUser(ctx.state.userId, patch)
         : ctx.state.user,
-      stats,
+      isNew ? updateSolutionAggregates(solution) : getPuzzleStats(slug),
     ]);
     ctx.state.user = user;
 

@@ -17,14 +17,12 @@ import { Move } from "#/game/types.ts";
  * - by user + puzzle slug (user's attempts at a specific puzzle)
  *
  * Uses an atomic transaction so all entries are written together or not at all.
- * Resolves after the commit. `stats` settles once the aggregates (stats,
- * canonical group) are updated and never rejects; callers must await it.
+ * Resolves after the commit; a new solution still needs `updateSolutionAggregates`.
  */
 type SaveSolutionResult = {
   solution: Solution;
   isNew: boolean;
   isNewPath: boolean;
-  stats: Promise<PuzzleStats | null>;
 };
 
 export async function saveSolution(
@@ -52,7 +50,6 @@ export async function saveSolution(
       solution: existingSolution,
       isNew: false,
       isNewPath: false,
-      stats: getPuzzleStats(puzzleSlug),
     };
   }
 
@@ -99,12 +96,13 @@ export async function saveSolution(
     isNew: true,
     isNewPath,
     solution,
-    stats: updateAggregates(solution),
   };
 }
 
 /** Updates stats and the canonical group; on failure logs and reads stats as they are. */
-async function updateAggregates(solution: Solution) {
+export async function updateSolutionAggregates(
+  solution: Solution,
+): Promise<PuzzleStats | null> {
   const { puzzleSlug, moves, userId } = solution;
   try {
     const [stats] = await Promise.all([

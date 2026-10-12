@@ -27,17 +27,17 @@ Four sequential round trips on every new solve, without changing what gets
 written:
 
 - Run 1 and 2 in parallel; neither depends on the other.
-- `saveSolution` resolves right after the commit, with the aggregate update as
-  a `stats` promise (never rejects; on failure it logs and reads stats as they
-  are). The handler tracks, assesses skill and updates the progress cookie
-  state in that gap.
+- `saveSolution` resolves right after the commit; the aggregate update moves
+  to its own `updateSolutionAggregates` (never rejects; on failure it logs and
+  reads stats as they are). The handler tracks, assesses skill and updates the
+  progress cookie state before starting it.
 - Merge 6 and 7 into one `setUser` call after the skill assessment, with the
   patch `{ name?, skillLevel? }`, skipped when empty. `setUser` keeps its
   pre-read (another device may have written since the cookie was issued), but
   its read and write run alongside the aggregates' read and commit.
 - `updatePuzzleStats` already returns the new stats; use them for the JSON
   response instead of re-reading in 8. A repeated path has no aggregate
-  update, so its `stats` is a plain read, also run alongside the user write.
+  update, so the handler reads stats instead, also alongside the user write.
 - Keep 4 and 5 as they are: optimistic retries on shared aggregates are the
   right tool, and they already run in parallel. Keep awaiting them, on both
   the JSON and the no-JS path; the isolate may be evicted after the response,
