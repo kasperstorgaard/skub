@@ -14,6 +14,10 @@ export class HomePage {
     return this;
   }
 
+  get heading() {
+    return this.page.getByRole("heading", { name: /Skub/i });
+  }
+
   get shareButton() {
     return this.page.getByRole("button", { name: /share/i });
   }

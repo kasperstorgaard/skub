@@ -20,8 +20,11 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
     const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
     await expect(solutionsPage.solveByName("e2egg")).toBeVisible();
 
+    // Back is a client-side navigation; wait for each page before going on
     await solutionsPage.backLink.click();
+    await expect(puzzlePage.seeSolvesLink).toBeVisible();
     await puzzlePage.backLink.click();
+    await expect(homePage.heading).toBeVisible();
     await expect(homePage.dailyPuzzleLink.getByLabel("Perfect")).toBeVisible();
   } finally {
     await teardown();
@@ -56,7 +59,9 @@ Deno.test("without js - a returning user plays an archived puzzle and submits th
     await expect(solutionsPage.solveByName("e2elf")).toBeVisible();
 
     await solutionsPage.backLink.click();
+    await expect(puzzlePage.seeSolvesLink).toBeVisible();
     await puzzlePage.backLink.click();
+    await expect(archivesPage.heading).toBeVisible();
     await expect(archivesPage.day(1)).toHaveAccessibleName(
       /solved in \d+ moves/,
     );
