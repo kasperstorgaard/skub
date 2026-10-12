@@ -41,7 +41,9 @@ zingtouch).
   (strict bounds), or if a second finger touches down.
 - Only on devices with touch (`ontouchstart`); the region has `touch-action:
   none`, so page scroll never starts on it. Keyboard input is untouched.
-- Timestamps are `Date.now()` at handling time, as zingtouch did.
+- One deliberate change: timestamps are the event's `timeStamp` (when the
+  input happened, sub-millisecond) instead of `Date.now()` at handling time.
+  Velocity no longer skews when events queue up behind a busy main thread.
 
 ## Verify on device (preview URL)
 
@@ -71,4 +73,4 @@ zingtouch).
 
 ## Non-goals
 
-- Changing gesture thresholds or feel. Any tuning is a separate change.
+- Changing gesture thresholds. Any tuning is a separate change.

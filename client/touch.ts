@@ -155,10 +155,11 @@ export function useSwipe(
     let start: GesturePoint | null = null;
     let moves: GesturePoint[] = [];
 
+    // When the input happened, not when we handled it
     const toPoint = (e: PointerEvent) => ({
       x: e.clientX,
       y: e.clientY,
-      time: Date.now(),
+      time: e.timeStamp,
     });
 
     const reset = () => {
