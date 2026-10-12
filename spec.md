@@ -47,7 +47,10 @@ back to it when no icon link is present, and its URL cannot carry a key.
 header, so a small Vite plugin records the chunks the client entry imports
 (`preact.module`, `hooks.module`, `signals.module`) during the client build
 and fills a server-side module with them; `_app.tsx` renders a
-`<link rel="modulepreload">` per chunk. In dev the list is empty.
+`<link rel="modulepreload">` per chunk. In dev the list is empty. A build that
+records no chunks fails, so a change in Fresh's build order or entry name
+surfaces instead of silently dropping the preloads; the plugin notes to
+re-check on every Fresh upgrade whether Fresh preloads imports itself.
 
 HTML responses are unchanged: no `Cache-Control`, since they carry per-user
 cookies and content.
