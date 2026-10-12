@@ -72,6 +72,26 @@ PR finishes only part of an item, trim the item to what is left.
   too, on a longer clock. Cloudflare's path is Workers and Durable Objects
   (self-hostable via workerd merged with Deno's celld).
 
+  Runtime target: [workerd](https://github.com/cloudflare/workerd). Open
+  question is the store. What skub relies on in Deno KV: atomic multi-key writes
+  with versionstamp checks (a solution under four index keys),
+  optimistic-concurrency retries on shared counters (puzzle stats), ordered
+  prefix scans (`listUserSolutions`, solutions by puzzle, canonical groups), and
+  read-after-write on the solve POST.
+
+  - **Workers KV:** eventually consistent (~60 s), no atomics — breaks the solve
+    flow and stats. Fine only for cache-like data such as the manifest.
+  - **D1 (SQLite):** the most direct port. Index keys become one table with
+    indexes, prefix scans become `WHERE`, stats retries become one `UPDATE`.
+    Single primary region with read replicas, like KV in Virginia today, which
+    cookie-first GETs already sidestep.
+  - **Durable Objects + SQLite:** strongly consistent per object, no retry logic
+    (e.g. one object per puzzle, one per user). A bigger data-model rethink, but
+    it's what celld runs, so managed and self-hosted stay interchangeable.
+
+  Lean: D1 for the least redesign; Durable Objects if self-hosting via celld is
+  part of the appeal.
+
 ## Performance
 
 - **The site should feel instant.** Pages are 6 KB of HTML, yet first paint is
