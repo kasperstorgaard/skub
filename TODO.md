@@ -58,6 +58,16 @@ PR finishes only part of an item, trim the item to what is left.
   were fit to a one-directional `too-easy` bias that the board/route tag split
   has since corrected.
 
+## Hosting
+
+- **Skub keeps running after Deno Deploy shuts down.** Deno joined Cloudflare
+  and console.deno.com is end-of-life in about six months (heard 2026-10-12).
+  Everything hosted there needs a new home: the app itself, Deno KV (users,
+  solutions, stats, candidates — a data migration, not just a redeploy), env
+  vars and secrets, the preview deployments whose `deployment_status` events
+  drive the e2e workflow, the OTEL traces the perf work reads, and the region
+  setting. The `skub.app` DNS is already on Cloudflare.
+
 ## Performance
 
 - **The site should feel instant.** Pages are 6 KB of HTML, yet first paint is
