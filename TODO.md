@@ -61,12 +61,16 @@ PR finishes only part of an item, trim the item to what is left.
 ## Hosting
 
 - **Skub keeps running after Deno Deploy shuts down.** Deno joined Cloudflare
-  and console.deno.com is end-of-life in about six months (heard 2026-10-12).
-  Everything hosted there needs a new home: the app itself, Deno KV (users,
-  solutions, stats, candidates — a data migration, not just a redeploy), env
-  vars and secrets, the preview deployments whose `deployment_status` events
+  (announced 2026-10-09): Deno Deploy shuts down in about six months, and the
+  Deno runtime gets bug-fix and security releases for a year, then development
+  ends. Everything hosted on Deploy needs a new home: the app itself, Deno KV
+  (users, solutions, stats, candidates — a data migration, not just a redeploy),
+  env vars and secrets, the preview deployments whose `deployment_status` events
   drive the e2e workflow, the OTEL traces the perf work reads, and the region
-  setting. The `skub.app` DNS is already on Cloudflare.
+  setting. The `skub.app` DNS is already on Cloudflare. The runtime end means
+  the stack choice (Deno, Fresh, `deno test` / `fmt` / `lint`) is on the table
+  too, on a longer clock. Cloudflare's path is Workers and Durable Objects
+  (self-hostable via workerd merged with Deno's celld).
 
 ## Performance
 
