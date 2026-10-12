@@ -5,19 +5,21 @@ previews from Oct 12. Cause found; what is left is hardening.
 
 ## Cause
 
-The branches were cut before #254, so their puzzles end at #284, and from
-Oct 12 today's slot is 285. Nothing in the solve change caused it.
+Two separate problems.
 
-- **No JS:** the archives page opens on today's date and throws
-  `HttpError(500)` when today's slot has no puzzle
-  (`routes/puzzles/index.tsx`). Reproduced with curl on two previews; prod,
-  which has #285, returns 200.
-- **JS:** home falls back to the newest puzzle (`birk`, #284), but it isn't
-  today's, so the puzzle page's back link goes to the archives instead of home
-  and the test never sees the daily card again.
+**No JS: the date (fixed by rebasing).** Branches cut before #254 end at
+puzzle #284, and from Oct 12 today's slot is 285. The archives page opens on
+today's date and throws `HttpError(500)` when today's slot has no puzzle
+(`routes/puzzles/index.tsx`). Reproduced with curl on two previews; passes
+once the branch is rebased on `main`.
 
-The JS failure on `feat/puzzles-37` (Oct 11, 19:40 UTC) doesn't fit: `birk`
-was today's then. Likely the flake seen before.
+**JS: the test, not the app.** After solving the daily, `backLink` twice
+should land on home with "Perfect" on the daily card. It fails on every
+branch that includes Fresh 2.3 (#249), including after the rebase, and passed
+on every run before it; #249 never ran e2e (it was a draft). The same flow
+works by hand on a preview, so players are unaffected: the test is out of
+step with how navigation behaves since Fresh 2.3 (timing or navigation
+mechanics). Not yet pinned down.
 
 ## Risk in production
 
@@ -31,5 +33,7 @@ The highest scheduled puzzle is #291 (Oct 18). From Oct 19, `/puzzles` returns
 - e2e: upload Playwright traces on failure in `e2e.yml`, so the next failure
   shows the page. The workflow runs from `main` (`deployment_status`), so this
   only takes effect once merged.
+- JS daily test: with traces, see what the page shows after the second
+  `backLink` click under Fresh 2.3, then fix the test's wait or locator.
 - The no-JS test still has slow passing runs (~34 s vs ~8 s); worth a look
   once traces exist.
