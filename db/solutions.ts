@@ -1,8 +1,8 @@
 import { ulid } from "@std/ulid";
 
 import { kv } from "#/db/kv.ts";
-import { updatePuzzleStats } from "#/db/stats.ts";
-import { CanonicalGroup, Solution } from "#/db/types.ts";
+import { getPuzzleStats, updatePuzzleStats } from "#/db/stats.ts";
+import { CanonicalGroup, PuzzleStats, Solution } from "#/db/types.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { Move } from "#/game/types.ts";
 
@@ -17,7 +17,7 @@ import { Move } from "#/game/types.ts";
  * - by user + puzzle slug (user's attempts at a specific puzzle)
  *
  * Uses an atomic transaction so all entries are written together or not at all.
- * Awaits aggregate updates (stats, canonical group) before returning — errors are logged but not re-thrown.
+ * Resolves after the commit; a new solution still needs `updateSolutionAggregates`.
  */
 type SaveSolutionResult = {
   solution: Solution;
@@ -29,31 +29,32 @@ export async function saveSolution(
   payload: Omit<Solution, "id">,
 ): Promise<SaveSolutionResult> {
   const { puzzleSlug, moves } = payload;
-
-  // User-level dedup: skip if this user already submitted this exact canonical path
-  if (payload.userId) {
-    const existingSolution = await getCanonicalUserSolution(
-      payload.userId,
-      puzzleSlug,
-      moves,
-    );
-
-    if (existingSolution) {
-      return { solution: existingSolution, isNew: false, isNewPath: false };
-    }
-  }
-
-  const id = ulid().toLowerCase();
-  const solution = { ...payload, id };
   const canonicalKey = getCanonicalMoveKey(moves);
-
   const groupKey = [
     "solution_groups_by_puzzle",
     puzzleSlug,
     moves.length,
     canonicalKey,
   ];
-  const existingGroup = await kv.get<CanonicalGroup>(groupKey);
+
+  // User-level dedup: skip if this user already submitted this exact canonical path
+  const [existingSolution, existingGroup] = await Promise.all([
+    payload.userId
+      ? getCanonicalUserSolution(payload.userId, puzzleSlug, moves)
+      : null,
+    kv.get<CanonicalGroup>(groupKey),
+  ]);
+
+  if (existingSolution) {
+    return {
+      solution: existingSolution,
+      isNew: false,
+      isNewPath: false,
+    };
+  }
+
+  const id = ulid().toLowerCase();
+  const solution = { ...payload, id };
   const isNewPath = existingGroup.value === null;
 
   // simple key by slug for easy direct lookup
@@ -91,19 +92,31 @@ export async function saveSolution(
 
   await atomic.commit();
 
+  return {
+    isNew: true,
+    isNewPath,
+    solution,
+  };
+}
+
+/** Updates stats and the canonical group; on failure logs and reads stats as they are. */
+export async function updateSolutionAggregates(
+  solution: Solution,
+): Promise<PuzzleStats | null> {
+  const { puzzleSlug, moves, userId } = solution;
   try {
-    await Promise.all([
-      updatePuzzleStats(puzzleSlug, moves.length, payload.userId),
+    const [stats] = await Promise.all([
+      updatePuzzleStats(puzzleSlug, moves.length, userId),
       updateCanonicalGroup(puzzleSlug, moves, solution),
     ]);
+    return stats;
   } catch (err) {
     console.error(
       "Failed to update solution aggregates:",
       (err as Error).message,
     );
+    return await getPuzzleStats(puzzleSlug);
   }
-
-  return { isNew: true, isNewPath, solution };
 }
 
 /**

@@ -12,7 +12,7 @@ export async function getPuzzleStats(
  * Increments the move histogram, total solution count, firstSolvedAt (once),
  * uniqueSolvers (via presence key when userId is provided), for a puzzle.
  * Retries on optimistic concurrency conflicts (two simultaneous solves).
- * Called as best-effort fire-and-forget after addSolution — may drift slightly.
+ * Returns the new stats.
  */
 export async function updatePuzzleStats(
   puzzleSlug: string,
