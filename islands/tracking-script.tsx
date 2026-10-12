@@ -1,4 +1,3 @@
-import { posthog } from "posthog-js";
 import { useEffect } from "preact/hooks";
 
 type TrackingProps = {
@@ -14,6 +13,7 @@ type TrackingProps = {
  * Initializes client-side PostHog analytics when tracking is allowed.
  * Uses /ph proxy to avoid direct connections to PostHog servers.
  * Pageviews are captured server-side, so capture_pageview is disabled.
+ * posthog-js is imported once the page is idle, off the critical path.
  */
 export function TrackingScript(
   { apiKey, cookieChoice, trackingId }: TrackingProps,
@@ -21,34 +21,50 @@ export function TrackingScript(
   useEffect(() => {
     if (!apiKey) return;
 
-    if (!posthog.__loaded) {
-      posthog.init(apiKey, {
-        api_host: "/ph",
-        ui_host: "https://eu.posthog.com",
-        defaults: "2025-11-30",
-        cookieless_mode: "on_reject",
-      });
-    }
+    let isCancelled = false;
 
-    if (cookieChoice === "accepted") {
-      posthog.identify(trackingId);
-    }
+    const start = async () => {
+      const { posthog } = await import("posthog-js");
+      if (isCancelled) return;
 
-    // Opt in when accepted
-    if (
-      cookieChoice === "accepted" &&
-      !posthog.has_opted_in_capturing()
-    ) {
-      posthog.opt_in_capturing();
-    }
+      if (!posthog.__loaded) {
+        posthog.init(apiKey, {
+          api_host: "/ph",
+          ui_host: "https://eu.posthog.com",
+          defaults: "2025-11-30",
+          cookieless_mode: "on_reject",
+        });
+      }
 
-    // Opt out when declined
-    if (
-      cookieChoice === "declined" &&
-      !posthog.has_opted_out_capturing()
-    ) {
-      posthog.opt_out_capturing();
-    }
+      if (cookieChoice === "accepted") {
+        posthog.identify(trackingId);
+      }
+
+      // Opt in when accepted
+      if (
+        cookieChoice === "accepted" &&
+        !posthog.has_opted_in_capturing()
+      ) {
+        posthog.opt_in_capturing();
+      }
+
+      // Opt out when declined
+      if (
+        cookieChoice === "declined" &&
+        !posthog.has_opted_out_capturing()
+      ) {
+        posthog.opt_out_capturing();
+      }
+    };
+
+    // Safari has no requestIdleCallback
+    const onIdle = globalThis.requestIdleCallback ??
+      ((callback: () => void) => setTimeout(callback, 1));
+    onIdle(() => start());
+
+    return () => {
+      isCancelled = true;
+    };
   }, [apiKey, cookieChoice, trackingId]);
 
   return null;
