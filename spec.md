@@ -1,8 +1,8 @@
 # Returning-user e2e failures
 
 Two tests in `e2e/returning-user-flow_test.ts` failed consistently on PR
-previews from Oct 12. One is explained and fixed; the other is a test problem
-still to pin down.
+previews from Oct 12. Both are explained: one by the date, one by a race in
+the test.
 
 ## Cause
 
@@ -14,13 +14,14 @@ today's date and throws `HttpError(500)` when today's slot has no puzzle
 (`routes/puzzles/index.tsx`). Reproduced with curl on two previews; passes
 once the branch is rebased on `main`.
 
-**JS: the test, not the app.** After solving the daily, `backLink` twice
-should land on home with "Perfect" on the daily card. It fails on every
-branch that includes Fresh 2.3 (#249), including after the rebase, and passed
-on every run before it; #249 never ran e2e (it was a draft). The same flow
-works by hand on a preview, so players are unaffected: the test is out of
-step with how navigation behaves since Fresh 2.3 (timing or navigation
-mechanics). Not yet pinned down.
+**JS: a race in the test.** The header has `f-client-nav`, so its Back link
+navigates with Fresh partials (a `?fresh-partial=true` fetch and a swap of the
+`body` partial, no page load). Playwright's `click()` doesn't wait for that, so
+the second Back click landed on the solutions page's header, still on screen,
+whose Back points to the puzzle page again. The trace shows two partial
+requests for `/puzzles/kenneth` and the test ending there. It started with
+Fresh 2.3 (#249) because the timing changed; by hand it works. Fix: wait for
+the solutions list to disappear before the second Back.
 
 ## Risk in production
 
@@ -35,7 +36,5 @@ The highest scheduled puzzle is #291 (Oct 18). From Oct 19, `/puzzles` returns
   teardown prints its file name under that test's output. A failed run
   uploads them as the `e2e-traces` artifact (7 days). The workflow checks out
   the deployment's commit, so this applies on this branch's own preview.
-- JS daily test: with traces, see what the page shows after the second
-  `backLink` click under Fresh 2.3, then fix the test's wait or locator.
 - The no-JS test still has slow passing runs (~34 s vs ~8 s); worth a look
   once traces exist.

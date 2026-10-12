@@ -20,7 +20,9 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
     const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
     await expect(solutionsPage.solveByName("e2egg")).toBeVisible();
 
+    // Back is a client-side navigation; wait for it before the next Back
     await solutionsPage.backLink.click();
+    await expect(solutionsPage.solveByName("e2egg")).toBeHidden();
     await puzzlePage.backLink.click();
     await expect(homePage.dailyPuzzleLink.getByLabel("Perfect")).toBeVisible();
   } finally {
