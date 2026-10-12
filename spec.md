@@ -1,7 +1,8 @@
 # Returning-user e2e failures
 
 Two tests in `e2e/returning-user-flow_test.ts` failed consistently on PR
-previews from Oct 12. Cause found; what is left is hardening.
+previews from Oct 12. One is explained and fixed; the other is a test problem
+still to pin down.
 
 ## Cause
 
