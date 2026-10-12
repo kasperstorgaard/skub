@@ -37,6 +37,12 @@ less island chunk and hydration. Works without JS as before.
 
 The rest of the gap is PostHog, which waits on a decision (below).
 
+**The PostHog proxy strips `content-encoding`.** Deno Deploy's `fetch`
+decodes upstream bodies but keeps the header, so every response PostHog
+compresses (`config.js`, `/flags/`) failed in the browser with
+`ERR_CONTENT_DECODING_FAILED`: remote config and flags never loaded. Events
+were unaffected. Option A below loads `array.js` through the same proxy.
+
 ## PostHog options (decision needed)
 
 Nothing here is implemented. Baseline is after the cookie banner change.
