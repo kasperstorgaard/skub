@@ -13,13 +13,15 @@ type TrackingProps = {
  * Initializes client-side PostHog analytics when tracking is allowed.
  * Uses /ph proxy to avoid direct connections to PostHog servers.
  * Pageviews are captured server-side, so capture_pageview is disabled.
- * posthog-js is imported once the page is idle, off the critical path.
+ * posthog-js is imported once the page is idle, off the critical path,
+ * and only after a cookie choice.
  */
 export function TrackingScript(
   { apiKey, cookieChoice, trackingId }: TrackingProps,
 ) {
   useEffect(() => {
-    if (!apiKey) return;
+    // Before a choice PostHog captures nothing, so don't load it
+    if (!apiKey || !cookieChoice) return;
 
     let isCancelled = false;
 

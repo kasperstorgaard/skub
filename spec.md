@@ -38,7 +38,11 @@ less island chunk and hydration. Works without JS as before.
 **posthog-js loads on idle (option D below).** The tracking island imports
 posthog-js with `import()` once the page is idle (`requestIdleCallback`, a
 `setTimeout` fallback for Safari), so it never competes with hydration or the
-first tap. Same init, consent and opt-in logic.
+first tap. It loads only after a cookie choice: before one, PostHog
+(`cookieless_mode: "on_reject"`) captures nothing anyway, and choosing reloads
+the page via the consent form's 303. First-time visitors download nothing from
+PostHog. Same init, consent and opt-in logic otherwise; declining still
+captures cookieless, as before.
 
 **PostHog is upgraded** to posthog-js 1.434.15 and posthog-node 5.54.1 (both
 late September, pinned exactly), so the project doesn't fall further behind.
