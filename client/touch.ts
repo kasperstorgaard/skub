@@ -175,6 +175,7 @@ export function useSwipe(
 
       start = toPoint(e);
       moves = [];
+      touchedPiece = null;
 
       // Only a touch picks up a piece
       if (e.pointerType === "mouse") return;
