@@ -20,7 +20,8 @@ deno test -A             # Run all unit tests
 deno task update-puzzles # Regenerate puzzle manifest after adding puzzles
 ```
 
-CI runs: `deno fmt --check`, `deno lint`, `deno test -A`.
+CI runs: `deno fmt --check`, `deno lint`, `deno test -A`, then
+`deno task build` and `deno task check-css`.
 
 ## Skills
 

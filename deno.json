@@ -7,6 +7,7 @@
     "build": "vite build",
     "dev": "vite",
     "check-calibration": "deno run -A ./scripts/check-calibration.ts",
+    "check-css": "deno run -A ./scripts/check-css.ts",
     "check-tiles": "deno run -A ./scripts/check-tiles.ts",
     "e2e": "deno test -A --no-check --env e2e/ routes/",
     "list-candidates": "deno run -A ./scripts/list-candidates.ts",

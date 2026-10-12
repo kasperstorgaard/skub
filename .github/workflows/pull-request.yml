@@ -33,3 +33,9 @@ jobs:
 
       - name: Run tests
         run: deno test -A --ignore=e2e/,routes/**/_e2e/
+
+      - name: Build
+        run: deno task build
+
+      - name: Check CSS
+        run: deno task check-css
