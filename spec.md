@@ -33,9 +33,7 @@ The highest scheduled puzzle is #291 (Oct 18). From Oct 19, `/puzzles` returns
 
 - Archives: when the selected date has no puzzle, render the month without a
   selected puzzle instead of throwing.
-- e2e evidence (done, for now): every test records a Playwright trace, and
-  teardown prints its file name under that test's output. A failed run
-  uploads them as the `e2e-traces` artifact (7 days). The workflow checks out
-  the deployment's commit, so this applies on this branch's own preview.
-- The no-JS test still has slow passing runs (~34 s vs ~8 s); worth a look
-  once traces exist.
+- e2e evidence: traces (recorded per test, uploaded on failure) found the
+  race above; removed again before merge. Re-add them the same way when a
+  failure needs a look.
+- The no-JS test still has slow passing runs (~34 s vs ~8 s); worth a look.
