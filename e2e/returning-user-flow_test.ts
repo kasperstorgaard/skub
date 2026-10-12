@@ -24,7 +24,7 @@ Deno.test("a returning player opens the daily puzzle from the homepage and solve
     await solutionsPage.backLink.click();
     await expect(puzzlePage.seeSolvesLink).toBeVisible();
     await puzzlePage.backLink.click();
-    await expect(homePage.heading).toHaveText(/Skub/);
+    await expect(homePage.heading).toBeVisible();
     await expect(homePage.dailyPuzzleLink.getByLabel("Perfect")).toBeVisible();
   } finally {
     await teardown();

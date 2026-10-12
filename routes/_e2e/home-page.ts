@@ -15,7 +15,7 @@ export class HomePage {
   }
 
   get heading() {
-    return this.page.getByRole("heading", { level: 1 });
+    return this.page.getByRole("heading", { name: /Skub/i });
   }
 
   get shareButton() {
