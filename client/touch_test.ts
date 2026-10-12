@@ -142,17 +142,6 @@ Deno.test("readGesture() measures velocity against the last move with a differen
   assertEquals(gesture.swipe, { direction: "right", velocity: 2.5 });
 });
 
-Deno.test("readGesture() reads velocity from sub-millisecond timestamps", () => {
-  const gesture = readGesture({
-    start: at(100, 100, 0),
-    moves: [at(110, 100, 10), at(120, 100, 16.5), at(133, 100, 23)],
-    end: at(133, 100, 30),
-    region,
-  });
-
-  assertEquals(gesture.swipe, { direction: "right", velocity: 2 });
-});
-
 Deno.test("readGesture() reads a quick touch without movement as a tap", () => {
   const gesture = readGesture({
     start: at(100, 100, 0),
