@@ -76,6 +76,7 @@
     "tailwindcss": "npm:tailwindcss@^4.2.2",
     "vite": "npm:vite@^7.3.1",
     "jose": "npm:jose@^5.10.0",
+    "zingtouch": "npm:zingtouch@^1.0.6",
     "playwright": "npm:playwright@^1.59.1",
     "playwright/test": "npm:playwright@^1.59.1/test"
   },
