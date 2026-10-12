@@ -4,7 +4,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/chakra-petch-400.woff2") format("woff2");
+  src: url("./styles/fonts/chakra-petch-400.woff2") format("woff2");
   unicode-range:
     U+0000-00FF,
     U+0131,
@@ -31,7 +31,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/fonts/chakra-petch-500.woff2") format("woff2");
+  src: url("./styles/fonts/chakra-petch-500.woff2") format("woff2");
   unicode-range:
     U+0000-00FF,
     U+0131,

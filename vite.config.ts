@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 import { puzzleManifest } from "./plugins/puzzle-manifest.ts";
+import { sharedChunks } from "./plugins/shared-chunks.ts";
 import { workerBundle } from "./plugins/worker-bundle.ts";
 
 export default defineConfig({
@@ -28,6 +29,7 @@ export default defineConfig({
   plugins: [
     workerBundle("solver-worker"),
     puzzleManifest(),
+    sharedChunks(),
     tailwindcss(),
     fresh(),
   ],
