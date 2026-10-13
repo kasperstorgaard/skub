@@ -43,10 +43,10 @@ export const THEMES: Theme[] = [
     mode: "dark",
   },
   {
-    key: "paper",
-    label: "Paper",
-    surface: "#fdf6e3",
-    brand: "#7d6300",
+    key: "classic",
+    label: "Classic Web",
+    surface: "#ffffff",
+    brand: "#000000",
     mode: "light",
   },
   {

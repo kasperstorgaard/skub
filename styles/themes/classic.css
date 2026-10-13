@@ -1,0 +1,154 @@
+/* Classic Web — a document from the early web.
+   White page, black serif text, link blue as the only colour, table-style
+   grid, square corners, no shadows. System Georgia/Times and Arial, so
+   nothing to download. */
+
+:root[data-theme="classic"] {
+  color-scheme: light;
+  --hover-brightness: 0.71;
+  --btn-active-text: #ffffff;
+
+  --font-sans: Georgia, "Times New Roman", Times, serif;
+  --font-display: var(--font-sans);
+  --font-mono: "Courier New", Courier, monospace;
+
+  --color-brand: #000000;
+  --color-link: #0000ee;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f2f2f2;
+  --color-surface-3: #e4e4e4;
+  --color-surface-4: #bdbdbd;
+
+  --color-text-1: #000000;
+  --color-text-2: #333333;
+  --color-text-3: #666666;
+
+  --color-ui-1: #0000ee;
+  --color-ui-2: #000000;
+  --color-ui-3: #7a7a7a;
+  --color-ui-4: #000000;
+  --color-ui-contrast: #cc0000;
+  --color-hole: #333333;
+  --color-portal: #551a8b;
+  --color-portal-alt: #e9e2f1;
+
+  --classic-rule: #000000;
+  --classic-grid: #999999;
+  --classic-controls: Arial, Helvetica, sans-serif;
+}
+
+[data-theme="classic"] {
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 700;
+  }
+
+  /* Square corners everywhere; the puck stays a circle */
+  .btn,
+  .icon-btn,
+  .callout,
+  .board-space,
+  .board-blocker,
+  .board-hole,
+  .board-portal,
+  .puzzle-card-thumb,
+  .puzzle-card-difficulty,
+  .difficulty-badge,
+  .cookie-banner,
+  dialog,
+  kbd {
+    border-radius: 0;
+  }
+
+  /* Form controls: white, black rule, system sans */
+  .btn,
+  .icon-btn {
+    font-family: var(--classic-controls);
+    font-weight: 400;
+    border-width: var(--border-size-1);
+    border-color: var(--classic-rule);
+    background-color: var(--color-surface-1);
+    color: var(--color-text-1);
+  }
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    background-color: var(--color-link);
+    border-color: var(--color-link);
+  }
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--color-text-1);
+    border-color: var(--color-text-1);
+    color: var(--color-surface-1);
+  }
+
+  .move-counter {
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  .puzzle-card-thumb {
+    border-width: var(--border-size-1);
+    border-color: var(--classic-rule);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    border-color: var(--color-link);
+  }
+
+  /* Labels: a caption, not a tag */
+  .puzzle-card-difficulty {
+    clip-path: none;
+    margin: var(--size-1);
+    border: var(--border-size-1) solid var(--classic-rule);
+    background-color: var(--color-surface-1);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .difficulty-badge {
+    border: var(--border-size-1) solid var(--classic-rule);
+    background-color: var(--color-surface-1);
+    font-style: italic;
+    letter-spacing: 0;
+  }
+
+  .callout {
+    border: var(--border-size-1) solid var(--classic-grid);
+    background-color: var(--color-surface-1);
+  }
+
+  .panel {
+    border-top-width: var(--border-size-1);
+    border-top-color: var(--classic-rule);
+  }
+
+  dialog {
+    border: var(--border-size-1) solid var(--classic-rule);
+    background-color: var(--color-surface-1);
+    box-shadow: none;
+  }
+  dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.3);
+  }
+
+  .cookie-banner {
+    border: var(--border-size-1) solid var(--classic-rule);
+    background-color: var(--color-surface-1);
+    box-shadow: none;
+  }
+
+  /* Board: a table. Grey cell rules inside a black outer rule. */
+  .board {
+    outline: var(--border-size-1) solid var(--classic-rule);
+    outline-offset: var(--size-1);
+  }
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: var(--classic-grid);
+  }
+
+  @media print {
+    .board {
+      outline: none;
+    }
+  }
+}
