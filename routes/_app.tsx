@@ -24,8 +24,10 @@ export default define.page(
       ? puzzleSlug
       : null;
 
-    // user is unset when middleware throws before it runs (error page)
-    const theme = resolveTheme(state.user?.theme);
+    // user is unset when middleware throws before it runs (error page).
+    // A theme without a stylesheet yet renders as skub.
+    const resolved = resolveTheme(state.user?.theme);
+    const theme = resolved in THEME_ASSETS ? resolved : "skub";
     const themeAssets = THEME_ASSETS[theme];
 
     return (
