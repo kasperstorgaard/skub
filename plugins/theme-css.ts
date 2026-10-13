@@ -33,8 +33,9 @@ export function themeCss(): Plugin {
     return keys.sort();
   };
 
+  const fontUrlRe = /url\(["']?([^"')]+\.woff2)["']?\)/g;
   const fontUrls = (css: string) =>
-    [...css.matchAll(/url\(["']?([^"')]+\.woff2)["']?\)/g)].map((m) => m[1]);
+    [...css.matchAll(fontUrlRe)].map((m) => m[1]);
 
   return {
     name: "theme-css",
@@ -61,32 +62,40 @@ export function themeCss(): Plugin {
       const names = keys.map((_, i) => `theme${i}`);
       return `${imports.join("\n")}\nexport default [${names.join(", ")}];`;
     },
-    async transform(_code, id) {
+    transform(_code, id) {
       if (this.environment.name === "client" || !id.endsWith(moduleId)) {
         return;
       }
 
-      const assets: Record<string, ThemeAssets> = {};
       if (isBuild) {
         if (Object.keys(built).length === 0) {
           this.error(
             "No theme CSS recorded; did Fresh change its build order?",
           );
         }
-        Object.assign(assets, built);
-      } else {
-        for (const key of await themeKeys()) {
-          const css = await Deno.readTextFile(`${THEMES_DIR}/${key}.css`);
-          assets[key] = {
-            css: `/${THEMES_DIR}/${key}.css`,
-            fonts: fontUrls(css).map((url) =>
-              `/${THEMES_DIR}/${url}`.replace(`/${THEMES_DIR}/../`, "/styles/")
-            ),
-          };
-        }
+        return `export const THEME_ASSETS = ${JSON.stringify(built)};`;
       }
 
-      return `export const THEME_ASSETS = ${JSON.stringify(assets)};`;
+      // Dev: resolve per access, so a theme file added while the server runs
+      // is picked up without a restart.
+      return `
+        const dir = ${JSON.stringify(`${root}/${THEMES_DIR}`)};
+        const fontUrls = (css) => [...css.matchAll(${fontUrlRe.toString()})]
+          .map((m) => m[1].replace("../", "/styles/"));
+        const read = (key) => {
+          if (typeof key !== "string") return undefined;
+          try {
+            const css = Deno.readTextFileSync(\`\${dir}/\${key}.css\`);
+            return { css: \`/${THEMES_DIR}/\${key}.css\`, fonts: fontUrls(css) };
+          } catch {
+            return undefined;
+          }
+        };
+        export const THEME_ASSETS = new Proxy({}, {
+          get: (_, key) => read(key),
+          has: (_, key) => read(key) !== undefined,
+        });
+      `;
     },
     async generateBundle(_options, bundle) {
       if (this.environment.name !== "client") return;
