@@ -36,10 +36,10 @@ export const THEMES: Theme[] = [
     mode: "dark",
   },
   {
-    key: "nocturne",
-    label: "Nocturne",
-    surface: "#1e1f29",
-    brand: "#5d87ff",
+    key: "noir",
+    label: "Noir",
+    surface: "#121212",
+    brand: "#d4a84b",
     mode: "dark",
   },
   {
