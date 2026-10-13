@@ -44,9 +44,9 @@
   --color-text-3: #9d848d;
 
   --color-ui-1: #8ad9c8;
-  --color-ui-2: #f4d47c;
-  --color-ui-3: #b48ad6;
-  --color-ui-4: #ea9a5b;
+  --color-ui-2: #f6e7c8;
+  --color-ui-3: #c86b86;
+  --color-ui-4: #e2a86c;
   --color-ui-contrast: #ef8aa4;
   --color-hole: #0d0a0b;
   --color-portal: #8ec5ff;
@@ -65,12 +65,12 @@
     background-image:
       radial-gradient(
         60% 50% at 100% 0%,
-        color-mix(in srgb, var(--color-brand) 24%, transparent),
+        color-mix(in srgb, var(--color-brand) 14%, transparent),
         transparent
       ),
       radial-gradient(
       50% 40% at 0% 100%,
-      color-mix(in srgb, var(--color-link) 14%, transparent),
+      color-mix(in srgb, var(--color-link) 8%, transparent),
       transparent
     );
     background-attachment: fixed;
@@ -85,7 +85,7 @@
     pointer-events: none;
     background-image: var(--noise-3);
     filter: var(--noise-filter-2);
-    opacity: 0.07;
+    opacity: 0.05;
   }
 
   /* Display face: pixel type reads small, so match its x-height to the body */
@@ -114,8 +114,9 @@
   .btn,
   .icon-btn {
     border-width: var(--border-size-1);
-    border-color: color-mix(in srgb, var(--color-link) 70%, transparent);
-    background-color: color-mix(in srgb, var(--color-link) 8%, transparent);
+    border-color: var(--color-text-1);
+    background-color: var(--color-text-1);
+    color: var(--color-surface-1);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
@@ -128,11 +129,21 @@
 
   /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
   .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
-  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    background-color: var(--color-brand);
+    border-color: var(--color-brand);
+  }
   .btn[data-primary],
   .icon-btn[data-primary] {
-    background-color: var(--color-link);
-    border-color: var(--color-link);
+    background-color: var(--color-text-1);
+    border-color: var(--color-text-1);
+    color: var(--color-surface-1);
+  }
+
+  /* Move counter as a camera readout */
+  .move-counter {
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
   }
 
   .puzzle-card-thumb {
@@ -164,11 +175,7 @@
   .panel {
     border-top-width: var(--border-size-1);
     border-top-color: color-mix(in srgb, var(--color-brand) 55%, transparent);
-    background-color: color-mix(
-      in srgb,
-      var(--color-surface-2) 85%,
-      transparent
-    );
+    background-color: var(--color-surface-2);
   }
 
   dialog {
