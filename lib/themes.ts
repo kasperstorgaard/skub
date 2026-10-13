@@ -32,7 +32,7 @@ export const THEMES: Theme[] = [
     key: "acid",
     label: "Acid",
     surface: "#0a0c0a",
-    brand: "#00ff41",
+    brand: "#a8ff3a",
     mode: "dark",
   },
   {

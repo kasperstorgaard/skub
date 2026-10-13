@@ -28,27 +28,27 @@
 :root[data-theme="acid"] {
   color-scheme: dark;
   --hover-brightness: 1.4;
-  --btn-active-text: #0a0c0a;
+  --btn-active-text: #a8ff3a;
 
   --font-sans: "JetBrains Mono", ui-monospace, monospace;
   --font-display: "Michroma", "JetBrains Mono", sans-serif;
 
-  --color-brand: #00ff41;
+  --color-brand: #a8ff3a;
   --color-link: #00e5ff;
   --color-surface-1: #0a0c0a;
   --color-surface-2: #101410;
   --color-surface-3: #182018;
   --color-surface-4: #263226;
 
-  --color-text-1: #e0ffe0;
-  --color-text-2: #90d090;
-  --color-text-3: #60a060;
+  --color-text-1: #ebffd9;
+  --color-text-2: #a9df7f;
+  --color-text-3: #78b050;
 
-  --color-ui-1: #00ff41;
+  --color-ui-1: #00e5ff;
   --color-ui-2: #ffff00;
   --color-ui-3: #ff0090;
   --color-ui-4: #ff6600;
-  --color-ui-contrast: #00e5ff;
+  --color-ui-contrast: #a8ff3a;
   --color-hole: #000000;
   --color-portal: #00e5ff;
   --color-portal-alt: #003b45;
@@ -120,13 +120,9 @@
     border-radius: 0;
   }
 
-  /* Cut top-right corner (clip-path keeps the border); lifted while
-     keyboard-focused so the outline is not clipped */
-  .btn:not(:focus-visible),
-  .icon-btn:not(:focus-visible),
+  /* Cut top-right corner (clip-path keeps the border) */
   .puzzle-card-thumb,
-  dialog,
-  .board::before {
+  dialog {
     clip-path: polygon(
       0 0,
       calc(100% - var(--acid-cut)) 0,
@@ -154,21 +150,27 @@
   .btn,
   .icon-btn {
     border-width: var(--border-size-1);
-    border-color: color-mix(in srgb, var(--color-link) 70%, transparent);
-    background-color: color-mix(in srgb, var(--color-link) 6%, transparent);
-  }
-  .btn {
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    border-color: color-mix(in srgb, var(--color-brand) 55%, transparent);
+    background-color: color-mix(in srgb, var(--color-brand) 5%, transparent);
+    font-weight: 500;
   }
 
-  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  /* Hover and primary light up instead of filling */
   .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
   .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
   .btn[data-primary],
   .icon-btn[data-primary] {
-    background-color: var(--color-link);
-    border-color: var(--color-link);
+    background-color: color-mix(in srgb, var(--color-brand) 12%, transparent);
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+    box-shadow: 0 0 10px
+      color-mix(in srgb, var(--color-brand) 35%, transparent);
+  }
+  .btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    filter: none;
+    box-shadow: 0 0 14px
+      color-mix(in srgb, var(--color-brand) 55%, transparent);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -247,18 +249,16 @@
     box-shadow: 0 0 10px color-mix(in srgb, var(--color-ui-1) 30%, transparent);
   }
 
-  /* Cut-corner frame with a faint green glow pooled behind the tiles */
+  /* A faint green glow pooled behind the tiles */
   .board::before {
     content: "";
     position: absolute;
     inset: calc(var(--size-3) * -1);
     z-index: -1;
     pointer-events: none;
-    --acid-cut: var(--size-4);
-    border: var(--border-size-1) solid var(--acid-grid);
     background: radial-gradient(
       closest-side,
-      color-mix(in srgb, var(--color-brand) 9%, transparent),
+      color-mix(in srgb, var(--color-brand) 7%, transparent),
       transparent
     );
   }
