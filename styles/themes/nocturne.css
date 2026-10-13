@@ -1,43 +1,36 @@
 /* Nocturne — dark, velvety.
    Dracula palette, soft radius, purple-to-cyan gradient edges, deep soft
-   shadows. DM Sans for text, Sora for the display face. */
+   shadows. Instrument Sans for text, Syne for the display face. */
 
 @font-face {
-  font-family: "DM Sans";
+  font-family: "Instrument Sans";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("../fonts/dm-sans-400.woff2") format("woff2");
+  src: url("../fonts/instrument-sans-400.woff2") format("woff2");
 }
 @font-face {
-  font-family: "DM Sans";
+  font-family: "Instrument Sans";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("../fonts/dm-sans-500.woff2") format("woff2");
+  src: url("../fonts/instrument-sans-500.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Sora";
+  font-family: "Syne";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 700;
   font-display: swap;
-  src: url("../fonts/sora-400.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Sora";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("../fonts/sora-600.woff2") format("woff2");
+  src: url("../fonts/syne-700.woff2") format("woff2");
 }
 
 :root[data-theme="nocturne"] {
   color-scheme: dark;
   --hover-brightness: 1.4;
-  --btn-active-text: #21222c;
+  --btn-active-text: #f8f8f2;
 
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-display: "Sora", "DM Sans", sans-serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-display: "Syne", "Instrument Sans", sans-serif;
 
   --color-brand: #bd93f9;
   --color-link: #8be9fd;
@@ -100,15 +93,17 @@
 
   :where(h1, h2, h3, h4, h5, h6) {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: 700;
   }
 
   /* Generous radius on the chrome, soft radius on the board */
-  .btn,
-  .icon-btn,
   .callout,
   .puzzle-card-thumb {
     border-radius: var(--radius-3);
+  }
+  .btn,
+  .icon-btn {
+    border-radius: var(--radius-2);
   }
   dialog,
   .cookie-banner {
@@ -143,16 +138,29 @@
     );
     box-shadow: var(--shadow-2);
   }
-  .btn {
+  .btn,
+  .move-counter {
     font-family: var(--font-display);
-    font-weight: 600;
+    font-weight: 700;
   }
+  /* Hover and primary deepen the tint behind the edge; never a solid fill */
   .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
-  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    --nocturne-fill: color-mix(
+      in srgb,
+      var(--color-link) 24%,
+      var(--color-surface-2)
+    );
+    color: var(--color-link);
+  }
   .btn[data-primary],
   .icon-btn[data-primary] {
-    background: var(--color-link);
-    border-color: var(--color-link);
+    --nocturne-fill: color-mix(
+      in srgb,
+      var(--color-brand) 22%,
+      var(--color-surface-2)
+    );
+    color: var(--color-brand);
   }
 
   .puzzle-card-thumb {
