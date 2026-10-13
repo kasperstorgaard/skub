@@ -34,7 +34,7 @@ export function DifficultyBadge(
   return (
     <span
       className={clsx(
-        "flex items-center pl-1 leading-loose justify-center text-2",
+        "difficulty-badge flex items-center pl-1 leading-loose justify-center text-2",
         "bg-surface-2 cursor-help tracking-wider",
         className,
       )}

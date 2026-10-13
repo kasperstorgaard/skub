@@ -130,6 +130,24 @@
     border-width: var(--border-size-1);
     border-color: var(--digicam-hairline);
   }
+
+  /* On-screen-display labels: square, hairline, no slant */
+  .puzzle-card-difficulty {
+    clip-path: none;
+    margin: var(--size-1);
+    padding-inline: var(--size-2);
+    border: var(--border-size-1) solid var(--digicam-hairline);
+    background-color: color-mix(
+      in srgb,
+      var(--color-surface-1) 80%,
+      transparent
+    );
+  }
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-size-adjust: 0.56;
+    border: var(--border-size-1) solid var(--digicam-hairline);
+  }
   .puzzle-card:hover .puzzle-card-thumb {
     border-color: var(--color-link);
   }
