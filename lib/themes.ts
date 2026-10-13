@@ -39,7 +39,7 @@ export const THEMES: Theme[] = [
     key: "nocturne",
     label: "Nocturne",
     surface: "#1e1f29",
-    brand: "#8be9fd",
+    brand: "#5d87ff",
     mode: "dark",
   },
   {
