@@ -1,21 +1,21 @@
 /* Kiln — light, warm, clay.
    Cream ground, clay orange headings, rust links, plain clay buttons, generous radius,
-   soft inset depth. Outfit for text, Bricolage Grotesque for the display
+   soft inset depth. Karla for text, Bricolage Grotesque for the display
    face. */
 
 @font-face {
-  font-family: "Outfit";
+  font-family: "Karla";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("../fonts/outfit-400.woff2") format("woff2");
+  src: url("../fonts/karla-400.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Outfit";
+  font-family: "Karla";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("../fonts/outfit-500.woff2") format("woff2");
+  src: url("../fonts/karla-500.woff2") format("woff2");
 }
 @font-face {
   font-family: "Bricolage Grotesque";
@@ -37,8 +37,8 @@
   --hover-brightness: 0.71;
   --btn-active-text: #fbf3ec;
 
-  --font-sans: "Outfit", system-ui, sans-serif;
-  --font-display: "Bricolage Grotesque", "Outfit", sans-serif;
+  --font-sans: "Karla", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Karla", sans-serif;
 
   /* Ember hues, darkened where the cream ground needs it */
   --color-brand: #b4380a;
@@ -110,7 +110,7 @@
   }
   .move-counter {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 500;
   }
   .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
   .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
