@@ -97,6 +97,30 @@ export function themeCss(): Plugin {
         });
       `;
     },
+    // Fresh's dev server only lets Vite serve URLs in the module graph, and a
+    // linked stylesheet never enters it. Serve theme files and fonts directly.
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+        const match = pathname.match(
+          /^\/styles\/((?:themes\/[\w-]+\.css)|(?:fonts\/[\w-]+\.woff2))$/,
+        );
+        if (!match) return next();
+        try {
+          const file = await Deno.readFile(`${root}/styles/${match[1]}`);
+          res.setHeader(
+            "Content-Type",
+            match[1].endsWith(".css")
+              ? "text/css; charset=utf-8"
+              : "font/woff2",
+          );
+          res.setHeader("Cache-Control", "no-cache");
+          res.end(file);
+        } catch {
+          next();
+        }
+      });
+    },
     async generateBundle(_options, bundle) {
       if (this.environment.name !== "client") return;
 

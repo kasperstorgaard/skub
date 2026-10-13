@@ -126,6 +126,15 @@
     font-size: var(--font-size-2);
   }
 
+  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--color-link);
+    border-color: var(--color-link);
+  }
+
   .puzzle-card-thumb {
     border-width: var(--border-size-1);
     border-color: var(--digicam-hairline);

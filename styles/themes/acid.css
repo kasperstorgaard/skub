@@ -162,6 +162,15 @@
     letter-spacing: 0.05em;
   }
 
+  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--color-link);
+    border-color: var(--color-link);
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     .btn:hover:not([disabled], [aria-disabled]) {
       animation: acid-glitch 160ms linear 3;

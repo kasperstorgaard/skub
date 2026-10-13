@@ -46,14 +46,14 @@ export const THEMES: Theme[] = [
     key: "paper",
     label: "Paper",
     surface: "#fdf6e3",
-    brand: "#b58900",
+    brand: "#7d6300",
     mode: "light",
   },
   {
     key: "kiln",
     label: "Kiln",
     surface: "#fbf3ec",
-    brand: "#c2410c",
+    brand: "#b4380a",
     mode: "light",
   },
   {
@@ -67,5 +67,5 @@ export const THEMES: Theme[] = [
 
 /** A stored key with no theme behind it (a retired theme) renders as skub. */
 export function resolveTheme(stored: string | undefined): string {
-  return THEMES.some((theme) => theme.key === stored) ? stored : "skub";
+  return THEMES.find((theme) => theme.key === stored)?.key ?? "skub";
 }

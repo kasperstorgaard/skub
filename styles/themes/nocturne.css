@@ -1,0 +1,243 @@
+/* Nocturne — dark, velvety.
+   Dracula palette, soft radius, purple-to-pink gradient edges, deep soft
+   shadows. DM Sans for text, Sora for the display face. */
+
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/dm-sans-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DM Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/dm-sans-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/sora-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/sora-600.woff2") format("woff2");
+}
+
+:root[data-theme="nocturne"] {
+  color-scheme: dark;
+  --hover-brightness: 1.4;
+  --btn-active-text: #21222c;
+
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Sora", "DM Sans", sans-serif;
+
+  --color-brand: #ff79c6;
+  --color-link: #8be9fd;
+  --color-surface-1: #282a36;
+  --color-surface-2: #21222c;
+  --color-surface-3: #343746;
+  --color-surface-4: #44475a;
+
+  --color-text-1: #f8f8f2;
+  --color-text-2: #a0aabe;
+  --color-text-3: #8d9bc9;
+
+  --color-ui-1: #50fa7b;
+  --color-ui-2: #f1fa8c;
+  --color-ui-3: #bd93f9;
+  --color-ui-4: #ffb86c;
+  --color-ui-contrast: #ff79c6;
+  --color-hole: #12131a;
+  --color-portal: #8be9fd;
+  --color-portal-alt: #44475a;
+
+  --shadow-color: 231 15% 5%;
+  --shadow-strength: 30%;
+
+  /* Open Props */
+  --gradient-space: in oklab;
+  --shadow-2:
+    0 3px 5px -2px hsl(var(--shadow-color) / var(--shadow-strength-4)),
+    0 7px 14px -5px hsl(var(--shadow-color) / var(--shadow-strength-6));
+
+  /* Gradient edge, the opaque fill it wraps, and the full-width-aware radius */
+  --nocturne-edge: linear-gradient(
+    135deg var(--gradient-space),
+    var(--color-ui-3),
+    var(--color-brand)
+  );
+  --nocturne-fill: var(--color-surface-2);
+  --nocturne-radius-cond: clamp(
+    0px,
+    calc(100vw - 100%) * 1e5,
+    var(--radius-3)
+  );
+}
+
+[data-theme="nocturne"] {
+  /* A faint pink wash pooled in the top-right corner */
+  body {
+    background-image: radial-gradient(
+      60% 50% at 100% 0% var(--gradient-space),
+      color-mix(in srgb, var(--color-brand) 8%, transparent),
+      transparent
+    );
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background-color: var(--color-brand);
+    color: var(--color-surface-1);
+  }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  /* Generous radius on the chrome, soft radius on the board */
+  .btn,
+  .icon-btn,
+  .callout,
+  .puzzle-card-thumb {
+    border-radius: var(--radius-3);
+  }
+  dialog,
+  .cookie-banner {
+    border-radius: var(--nocturne-radius-cond);
+  }
+  .board-space,
+  .board-blocker,
+  .board-hole,
+  .board-portal,
+  .difficulty-badge,
+  kbd {
+    border-radius: var(--radius-2);
+  }
+
+  /* Purple-to-pink hairline edge: fill on the padding box, gradient on the border box */
+  .btn,
+  .icon-btn,
+  .puzzle-card-thumb,
+  dialog {
+    border: var(--border-size-1) solid transparent;
+    background:
+      linear-gradient(var(--nocturne-fill), var(--nocturne-fill)) padding-box,
+      var(--nocturne-edge) border-box;
+  }
+
+  .btn,
+  .icon-btn {
+    --nocturne-fill: color-mix(
+      in srgb,
+      var(--color-link) 10%,
+      var(--color-surface-2)
+    );
+    box-shadow: var(--shadow-2);
+  }
+  .btn {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background: var(--color-link);
+    border-color: var(--color-link);
+  }
+
+  .puzzle-card-thumb {
+    --nocturne-fill: var(--color-surface-1);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    filter: brightness(1.15);
+  }
+
+  /* Labels: a rounded pill on cards, a soft rectangle on the puzzle page */
+  .puzzle-card-difficulty,
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: var(--border-size-1) solid var(--color-surface-4);
+  }
+  .puzzle-card-difficulty {
+    clip-path: none;
+    margin: var(--size-1);
+    border-radius: var(--radius-round);
+  }
+
+  .callout {
+    border: var(--border-size-1) solid var(--color-surface-4);
+  }
+
+  kbd {
+    background-color: var(--color-surface-3);
+    border-color: var(--color-surface-4);
+    box-shadow: none;
+    color: var(--color-text-1);
+  }
+
+  /* Panel: gradient top edge, soft shadow */
+  .panel {
+    border-top-color: transparent;
+    background:
+      linear-gradient(var(--color-surface-2), var(--color-surface-2))
+      padding-box,
+      var(--nocturne-edge) border-box;
+    box-shadow: var(--shadow-4);
+  }
+
+  dialog::backdrop {
+    background-color: rgb(18 19 26 / 0.6);
+  }
+
+  .cookie-banner {
+    border: var(--border-size-1) solid var(--color-surface-4);
+    box-shadow: var(--shadow-4);
+  }
+
+  /* Board: flat tiles with one soft line, a purple glow pooled behind the grid */
+  .board {
+    isolation: isolate;
+  }
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: var(--color-surface-4);
+  }
+  .board::before {
+    content: "";
+    position: absolute;
+    inset: calc(var(--size-3) * -1);
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-ui-3) 12%, transparent),
+      transparent
+    );
+  }
+
+  @media print {
+    body {
+      background-image: none;
+    }
+    .board::before {
+      display: none;
+    }
+    .btn,
+    .icon-btn,
+    .panel,
+    .cookie-banner {
+      box-shadow: none;
+    }
+  }
+}

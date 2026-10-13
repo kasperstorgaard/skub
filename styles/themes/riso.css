@@ -1,0 +1,260 @@
+/* Riso — light risograph print.
+   Fluorescent pink and teal inks overprinted on off-white stock: misregistered
+   pink shadows, a halftone dot screen, paper grain, zero radius, thick borders.
+   Archivo for text, Archivo Black for the display face. */
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/archivo-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/archivo-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Archivo Black";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/archivo-black-400.woff2") format("woff2");
+}
+
+:root[data-theme="riso"] {
+  color-scheme: light;
+  --hover-brightness: 0.71;
+  --btn-active-text: #ffffff;
+
+  --font-sans: "Archivo", system-ui, sans-serif;
+  --font-display: "Archivo Black", "Archivo", sans-serif;
+
+  /* Pink is a fill ink; text-bearing roles use the darker mixes below */
+  --color-brand: #ff48b0;
+  --color-link: #0b6e78;
+  --color-surface-1: #f4f1ea;
+  --color-surface-2: #ebe6db;
+  --color-surface-3: #ddd6c6;
+  --color-surface-4: #b9b0a0;
+
+  --color-text-1: #1f1d1a;
+  --color-text-2: #4a453e;
+  --color-text-3: #6b645a;
+
+  --color-ui-1: #0b6e78;
+  --color-ui-2: #f22d9c;
+  --color-ui-3: #2b4bd1;
+  --color-ui-4: #1f1d1a;
+  --color-ui-contrast: #ff48b0;
+  --color-hole: #1f1d1a;
+  --color-portal: #2b4bd1;
+  --color-portal-alt: #d8dcf2;
+
+  /* Open Props */
+  --noise-4: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 2056 2056' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23a)'/%3E%3C/svg%3E");
+  --noise-filter-1: contrast(300%) brightness(100%);
+
+  /* Ink at print weight, pink ink for headings, the two misregistered shadows, grid lines */
+  --riso-ink: color-mix(in srgb, var(--color-text-1) 85%, transparent);
+  --riso-ink-pink: #c4166f;
+  --riso-offset-pink: 3px 3px 0 color-mix(
+    in srgb,
+    var(--color-brand) 70%,
+    transparent
+  );
+  --riso-offset-teal: 3px 3px 0 color-mix(
+    in srgb,
+    var(--color-link) 70%,
+    transparent
+  );
+  --riso-grid: color-mix(in srgb, var(--color-text-1) 25%, transparent);
+}
+
+[data-theme="riso"] {
+  /* Halftone dot screen, multiplied like ink */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-1);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    background-image: radial-gradient(
+      circle,
+      var(--color-text-1) 0.6px,
+      transparent 0.9px
+    );
+    background-size: 4px 4px;
+    opacity: 0.06;
+  }
+
+  /* Paper grain */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-1);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    background-image: var(--noise-4);
+    filter: var(--noise-filter-1);
+    opacity: 0.05;
+  }
+
+  ::selection {
+    background-color: var(--color-brand);
+    color: var(--color-text-1);
+  }
+
+  /* Display face: Archivo Black is heavy, so pull its size back towards the body */
+  :where(h1, h2, h3, h4, h5, h6),
+  .puzzle-card-difficulty {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size-adjust: 0.52;
+    letter-spacing: 0;
+  }
+
+  /* Fluorescent pink fails as text; headings take the pink ink unless a page inks them itself */
+  :where(h1, h2, h3, h4, h5, h6):not([class*="text-text-"]) {
+    color: var(--riso-ink-pink);
+  }
+
+  /* Zero radius everywhere the chrome has a corner; the puck stays a circle */
+  .btn,
+  .icon-btn,
+  .callout,
+  .board-space,
+  .board-blocker,
+  .board-hole,
+  .board-portal,
+  .puzzle-card-thumb,
+  .cookie-banner,
+  dialog,
+  kbd {
+    border-radius: 0;
+  }
+
+  /* Overprint: ink border, pink shadow out of register; teal once hovered */
+  .btn,
+  .icon-btn {
+    border-color: var(--riso-ink);
+    background-color: color-mix(in srgb, var(--color-link) 8%, transparent);
+    box-shadow: var(--riso-offset-pink);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    box-shadow: var(--riso-offset-teal);
+  }
+
+  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--color-link);
+    border-color: var(--color-link);
+  }
+
+  .puzzle-card-thumb {
+    border-color: var(--riso-ink);
+    box-shadow: var(--riso-offset-pink);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    box-shadow: var(--riso-offset-teal);
+  }
+
+  /* Labels: a pink-ink tag with the theme's own slant, an ink-boxed badge */
+  .puzzle-card-difficulty {
+    clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+    background-color: var(--riso-ink-pink);
+    color: var(--btn-active-text);
+  }
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-size-adjust: 0.52;
+    border: var(--border-size-2) solid var(--riso-ink);
+  }
+
+  .callout {
+    border: var(--border-size-1) solid var(--riso-grid);
+  }
+
+  kbd {
+    background-color: var(--color-surface-1);
+    border-color: var(--riso-ink);
+    box-shadow: 2px 2px 0
+      color-mix(in srgb, var(--color-brand) 70%, transparent);
+    color: var(--color-text-1);
+  }
+
+  /* Thick pink rule with a teal line printed just under it */
+  .panel {
+    border-top-width: var(--border-size-3);
+    border-top-color: var(--color-brand);
+    box-shadow: inset 0 2px 0
+      color-mix(in srgb, var(--color-link) 60%, transparent);
+  }
+
+  dialog {
+    border: var(--border-size-2) solid var(--riso-ink);
+    background-color: var(--color-surface-1);
+    box-shadow: var(--riso-offset-pink);
+  }
+  dialog::backdrop {
+    background-color: rgb(31 29 26 / 0.45);
+  }
+
+  .cookie-banner {
+    border: var(--border-size-2) solid var(--riso-ink);
+    box-shadow: var(--riso-offset-pink);
+  }
+
+  /* Board: a printed teal area ruled in ink, square blockers with a pink ghost */
+  .board {
+    isolation: isolate;
+  }
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: var(--riso-grid);
+    background-color: color-mix(in srgb, var(--color-link) 6%, transparent);
+  }
+  .board-blocker {
+    box-shadow: 2px 2px 0
+      color-mix(in srgb, var(--color-brand) 45%, transparent);
+  }
+
+  /* Ink frame behind the tiles, pink shadow out of register */
+  .board::before {
+    content: "";
+    position: absolute;
+    inset: calc(var(--size-3) * -1);
+    z-index: -1;
+    pointer-events: none;
+    border: var(--border-size-2) solid var(--riso-ink);
+    box-shadow: var(--riso-offset-pink);
+  }
+
+  @media print {
+    body::before,
+    body::after,
+    .board::before {
+      display: none;
+    }
+    .btn,
+    .icon-btn,
+    .puzzle-card-thumb,
+    .board-blocker,
+    .panel,
+    dialog {
+      box-shadow: none;
+    }
+  }
+}
