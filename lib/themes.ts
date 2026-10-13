@@ -38,7 +38,7 @@ export const THEMES: Theme[] = [
   {
     key: "nocturne",
     label: "Nocturne",
-    surface: "#282a36",
+    surface: "#1e1f29",
     brand: "#bd93f9",
     mode: "dark",
   },
