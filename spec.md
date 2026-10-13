@@ -44,7 +44,7 @@ or motion.
 | `digicam` | dark | 2000s hipster, early digital camera: rose palette, film grain, zero radius, thin light borders, a light-leak gradient | Space Grotesk + VT323 |
 | `acid` | dark | neon terminal: corner-cut angles, hairline borders, faded neon glows, glitch on hover | Michroma + JetBrains Mono |
 | `nocturne` | dark | Dracula palette: soft radius, purple-to-pink gradient edges, velvety depth | Sora + DM Sans |
-| `classic` | light | a document from the early web: white, black serif, link blue as the only colour, table grid, no radius | system Georgia + Arial |
+| `classic` | light | a document from the early web: white, black serif, link blue as the only colour, table grid, no radius | Tinos |
 | `kiln` | light | Ember palette: clay gradients, generous radius, soft inset depth | Bricolage Grotesque + Nunito Sans |
 | `riso` | light | risograph: two-ink overprint in pink and teal, halftone noise, zero radius, thick borders | Archivo Black + Archivo |
 

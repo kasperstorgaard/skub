@@ -1,14 +1,29 @@
 /* Classic Web — a document from the early web.
    White page, black serif text, link blue as the only colour, table-style
-   grid, square corners, no shadows. One font, Times New Roman, so nothing
-   to download. */
+   grid, square corners, no shadows. One font: Tinos, the metric-compatible
+   Times New Roman. */
+
+@font-face {
+  font-family: "Tinos";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/tinos-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Tinos";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/tinos-700.woff2") format("woff2");
+}
 
 :root[data-theme="classic"] {
   color-scheme: light;
   --hover-brightness: 0.71;
   --btn-active-text: #ffffff;
 
-  --font-sans: "Times New Roman", Times, Georgia, serif;
+  --font-sans: "Tinos", "Times New Roman", Times, serif;
   --font-display: var(--font-sans);
 
   --color-brand: #000000;
