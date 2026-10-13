@@ -95,11 +95,11 @@ export default define.page<typeof handler>(function Home(ctx) {
               {user.skillLevel === null && (
                 <a
                   href="/puzzles/tutorial"
-                  className="flex flex-col gap-2 text-text-1 no-underline"
+                  className="puzzle-card flex flex-col gap-2 text-text-1 no-underline"
                 >
                   <div
                     className={clsx(
-                      "group flex gap-fl-1 p-fl-3 place-content-center place-items-center",
+                      "puzzle-card-thumb group flex gap-fl-1 p-fl-3 place-content-center place-items-center",
                       "text-3 text-text-2 border-2 border-link rounded-1 no-underline",
                       "aspect-square lg:flex-col lg:gap-fl-1 lg:w-full",
                       "hover:filter-[lighten(1.3)] hover:no-underline",

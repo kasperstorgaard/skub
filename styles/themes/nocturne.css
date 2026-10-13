@@ -1,5 +1,5 @@
 /* Nocturne — dark, velvety.
-   Dracula palette, soft radius, purple-to-pink gradient edges, deep soft
+   Dracula palette, soft radius, purple-to-cyan gradient edges, deep soft
    shadows. DM Sans for text, Sora for the display face. */
 
 @font-face {
@@ -39,7 +39,7 @@
   --font-sans: "DM Sans", system-ui, sans-serif;
   --font-display: "Sora", "DM Sans", sans-serif;
 
-  --color-brand: #ff79c6;
+  --color-brand: #bd93f9;
   --color-link: #8be9fd;
   --color-surface-1: #282a36;
   --color-surface-2: #21222c;
@@ -54,7 +54,7 @@
   --color-ui-2: #f1fa8c;
   --color-ui-3: #bd93f9;
   --color-ui-4: #ffb86c;
-  --color-ui-contrast: #ff79c6;
+  --color-ui-contrast: #8be9fd;
   --color-hole: #12131a;
   --color-portal: #8be9fd;
   --color-portal-alt: #44475a;
@@ -71,8 +71,8 @@
   /* Gradient edge, the opaque fill it wraps, and the full-width-aware radius */
   --nocturne-edge: linear-gradient(
     135deg var(--gradient-space),
-    var(--color-ui-3),
-    var(--color-brand)
+    var(--color-brand),
+    var(--color-link)
   );
   --nocturne-fill: var(--color-surface-2);
   --nocturne-radius-cond: clamp(
@@ -83,7 +83,7 @@
 }
 
 [data-theme="nocturne"] {
-  /* A faint pink wash pooled in the top-right corner */
+  /* A faint purple wash pooled in the top-right corner */
   body {
     background-image: radial-gradient(
       60% 50% at 100% 0% var(--gradient-space),
@@ -123,7 +123,7 @@
     border-radius: var(--radius-2);
   }
 
-  /* Purple-to-pink hairline edge: fill on the padding box, gradient on the border box */
+  /* Purple-to-cyan hairline edge: fill on the padding box, gradient on the border box */
   .btn,
   .icon-btn,
   .puzzle-card-thumb,
