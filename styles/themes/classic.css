@@ -1,16 +1,15 @@
 /* Classic Web — a document from the early web.
    White page, black serif text, link blue as the only colour, table-style
-   grid, square corners, no shadows. System Georgia/Times and Arial, so
-   nothing to download. */
+   grid, square corners, no shadows. One font, Times New Roman, so nothing
+   to download. */
 
 :root[data-theme="classic"] {
   color-scheme: light;
   --hover-brightness: 0.71;
   --btn-active-text: #ffffff;
 
-  --font-sans: Georgia, "Times New Roman", Times, serif;
+  --font-sans: "Times New Roman", Times, Georgia, serif;
   --font-display: var(--font-sans);
-  --font-mono: "Courier New", Courier, monospace;
 
   --color-brand: #000000;
   --color-link: #0000ee;
@@ -34,7 +33,6 @@
 
   --classic-rule: #000000;
   --classic-grid: #999999;
-  --classic-controls: Arial, Helvetica, sans-serif;
 }
 
 [data-theme="classic"] {
@@ -59,10 +57,9 @@
     border-radius: 0;
   }
 
-  /* Form controls: white, black rule, system sans */
+  /* Form controls: white with a black rule */
   .btn,
   .icon-btn {
-    font-family: var(--classic-controls);
     font-weight: 400;
     border-width: var(--border-size-1);
     border-color: var(--classic-rule);
@@ -82,7 +79,6 @@
   }
 
   .move-counter {
-    font-family: var(--font-mono);
     font-weight: 700;
   }
 
