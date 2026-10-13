@@ -66,11 +66,7 @@
     var(--color-brand) 70%,
     transparent
   );
-  --riso-offset-teal: 3px 3px 0 color-mix(
-    in srgb,
-    var(--color-link) 70%,
-    transparent
-  );
+  --riso-offset-blue: 3px 3px 0 #6fb7ff;
   --riso-grid: color-mix(in srgb, var(--color-text-1) 25%, transparent);
 }
 
@@ -151,7 +147,7 @@
   }
   .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
   .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
-    box-shadow: var(--riso-offset-teal);
+    box-shadow: var(--riso-offset-blue);
   }
 
   /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
@@ -168,7 +164,7 @@
     box-shadow: var(--riso-offset-pink);
   }
   .puzzle-card:hover .puzzle-card-thumb {
-    box-shadow: var(--riso-offset-teal);
+    box-shadow: var(--riso-offset-blue);
   }
 
   /* Labels: a pink-ink tag with the theme's own slant, an ink-boxed badge */
@@ -177,6 +173,10 @@
     background-color: var(--riso-ink-pink);
     color: var(--btn-active-text);
   }
+  .move-counter {
+    font-family: var(--font-display);
+  }
+
   .difficulty-badge {
     font-family: var(--font-display);
     font-size-adjust: 0.52;
