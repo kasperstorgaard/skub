@@ -114,8 +114,8 @@
   .btn,
   .icon-btn {
     border-width: var(--border-size-1);
-    border-color: var(--color-text-1);
-    background-color: var(--color-text-1);
+    border-color: #ffffff;
+    background-color: #ffffff;
     color: var(--color-surface-1);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -135,15 +135,14 @@
   }
   .btn[data-primary],
   .icon-btn[data-primary] {
-    background-color: var(--color-text-1);
-    border-color: var(--color-text-1);
+    background-color: #ffffff;
+    border-color: #ffffff;
     color: var(--color-surface-1);
   }
 
-  /* Move counter as a camera readout */
   .move-counter {
-    font-family: var(--font-display);
-    letter-spacing: 0.05em;
+    font-family: var(--font-sans);
+    font-weight: 500;
   }
 
   .puzzle-card-thumb {
@@ -175,7 +174,7 @@
   .panel {
     border-top-width: var(--border-size-1);
     border-top-color: color-mix(in srgb, var(--color-brand) 55%, transparent);
-    background-color: var(--color-surface-2);
+    background-color: #130f11;
   }
 
   dialog {
