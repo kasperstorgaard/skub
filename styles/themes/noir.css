@@ -1,56 +1,56 @@
 /* Noir — a hotel bar at midnight.
-   Black and gold, hairlines, barely rounded, ivory text. Playfair Display for
-   the display face and the counter, Libre Franklin for text. */
+   Black and champagne gold, hairlines, barely rounded, ivory text. Bodoni
+   Moda in tracked capitals for the display face and the counter, Jost for text. */
 
 @font-face {
-  font-family: "Libre Franklin";
+  font-family: "Jost";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("../fonts/libre-franklin-400.woff2") format("woff2");
+  src: url("../fonts/jost-400.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Libre Franklin";
+  font-family: "Jost";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("../fonts/libre-franklin-500.woff2") format("woff2");
+  src: url("../fonts/jost-500.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Playfair Display";
+  font-family: "Bodoni Moda";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("../fonts/playfair-display-700.woff2") format("woff2");
+  src: url("../fonts/bodoni-moda-700.woff2") format("woff2");
 }
 
 :root[data-theme="noir"] {
   color-scheme: dark;
   --hover-brightness: 1.4;
-  --btn-active-text: #121212;
+  --btn-active-text: #0f0f10;
 
-  --font-sans: "Libre Franklin", system-ui, sans-serif;
-  --font-display: "Playfair Display", Georgia, serif;
+  --font-sans: "Jost", system-ui, sans-serif;
+  --font-display: "Bodoni Moda", "Didot", Georgia, serif;
 
-  --color-brand: #d4a84b;
-  --color-link: #d4a84b;
-  --color-surface-1: #121212;
-  --color-surface-2: #1b1b1b;
-  --color-surface-3: #272727;
-  --color-surface-4: #3a3a3a;
+  --color-brand: #c9a961;
+  --color-link: #c9a961;
+  --color-surface-1: #0f0f10;
+  --color-surface-2: #1a1917;
+  --color-surface-3: #262521;
+  --color-surface-4: #3b3933;
 
   --color-text-1: #f2ead7;
-  --color-text-2: #c9bfa6;
-  --color-text-3: #9a9077;
+  --color-text-2: #cfc4a8;
+  --color-text-3: #a0957a;
 
-  --color-ui-1: #5fcf9a;
+  --color-ui-1: #4fbf8f;
   --color-ui-2: #f2ead7;
-  --color-ui-3: #a63d4e;
-  --color-ui-4: #d4a84b;
+  --color-ui-3: #8e3b46;
+  --color-ui-4: #c9a961;
   --color-ui-contrast: #ff6f61;
   --color-hole: #000000;
-  --color-portal: #7fb3d5;
-  --color-portal-alt: #1f2a33;
+  --color-portal: #6fa8a8;
+  --color-portal-alt: #162222;
 
   --shadow-color: 40 20% 2%;
   --shadow-strength: 35%;
@@ -61,7 +61,7 @@
 [data-theme="noir"] {
   /* Satin: a barely-there vertical falloff */
   body {
-    background-image: linear-gradient(180deg, #171717, #0f0f0f);
+    background-image: linear-gradient(180deg, #151515, #0c0c0d);
     background-attachment: fixed;
   }
 
@@ -74,6 +74,10 @@
   .move-counter {
     font-family: var(--font-display);
     font-weight: 700;
+  }
+  :where(h1, h2, h3, h4, h5, h6) {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   /* Barely rounded; the puck stays a circle */
@@ -103,7 +107,7 @@
   .btn {
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     font-size: var(--font-size-1);
   }
   .btn[data-size="lg"] {
@@ -136,7 +140,8 @@
   }
   .difficulty-badge {
     border: var(--border-size-1) solid var(--noir-gold-line);
-    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
   }
 
   .callout {

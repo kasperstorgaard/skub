@@ -49,7 +49,7 @@ or motion.
 | `high-contrast` | dark | unchanged, a11y | Chakra Petch |
 | `digicam` | dark | 2000s hipster, early digital camera: rose palette, film grain, zero radius, viewfinder brackets on the board, white buttons with black text | Space Grotesk + VT323 (headings, labels) |
 | `acid` | dark | neon terminal: lime phosphor, hairline outline buttons that glow instead of filling, corner cuts on cards and dialogs, glitch on hover | Michroma + JetBrains Mono |
-| `noir` | dark | a hotel bar at midnight: black and gold, hairlines, 2px radius, ivory puck, oxblood blockers, jade destination | Playfair Display + Libre Franklin |
+| `noir` | dark | a hotel bar at midnight: black and gold, hairlines, 2px radius, ivory puck, oxblood blockers, jade destination | Bodoni Moda + Jost |
 | `classic` | light | a document from the early web: white, black serif, link blue as the only colour, table-style grid, no radius, no shadows | Tinos |
 | `kiln` | light | Ember palette: clay fills, rust links, generous radius, flat board | Bricolage Grotesque + Karla |
 | `riso` | light | risograph: two-ink overprint in pink and teal, halftone noise, zero radius, thick borders | Archivo Black + Archivo |
