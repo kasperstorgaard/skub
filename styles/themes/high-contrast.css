@@ -1,0 +1,85 @@
+/* Chakra Petch — self-hosted, latin subset */
+@font-face {
+  font-family: "Chakra Petch";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/chakra-petch-400.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/chakra-petch-500.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+/* High Contrast / A11y — Wong (2011) / Okabe-Ito colorblind-safe palette.
+   All ui colors pass WCAG AAA (7:1) on pure black.
+   surface-4 = surface-3 (collapsed) to keep text-3 above AA on elevated surfaces. */
+:root[data-theme="high-contrast"] {
+  color-scheme: dark;
+  --hover-brightness: 1.8;
+  --btn-active-text: #000000;
+
+  --color-brand: #ffffff;
+  --color-link: var(--blue-3);
+
+  --color-surface-1: #000000;
+  --color-surface-2: #0d0d0d;
+  --color-surface-3: #1a1a1a;
+  --color-surface-4: #1a1a1a;
+
+  --color-text-1: #ffffff;
+  --color-text-2: #cccccc;
+  --color-text-3: #888888;
+
+  --color-ui-1: var(--blue-3); /* destination — sky blue   — 10.7:1 */
+  --color-ui-2: var(--yellow-7); /* puck        — orange     — 9.8:1  */
+  --color-ui-3: var(--pink-5); /* blockers    — warm pink  — 7.0:1  */
+  --color-ui-4: var(--gray-4); /* walls       — cool gray  — 14.0:1 */
+  --color-ui-contrast: #000000;
+  --color-hole: #000000; /* void — the rendered ring carries definition */
+  --color-portal: var(--teal-3); /* bluish-green — 14.6:1 */
+  --color-portal-alt: #000000;
+}

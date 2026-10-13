@@ -22,38 +22,50 @@ export const THEMES: Theme[] = [
     mode: "dark",
   },
   {
-    key: "dracula",
-    label: "Dracula",
-    surface: "#282a36",
-    brand: "#ff79c6",
+    key: "digicam",
+    label: "Digicam",
+    surface: "#1b1518",
+    brand: "#ef8aa4",
     mode: "dark",
   },
   {
     key: "acid",
     label: "Acid",
-    surface: "#0d0d0d",
+    surface: "#0a0c0a",
     brand: "#00ff41",
     mode: "dark",
   },
   {
-    key: "catppuccin",
-    label: "Catppuccin",
-    surface: "#eff1f5",
-    brand: "#8839ef",
-    mode: "light",
+    key: "nocturne",
+    label: "Nocturne",
+    surface: "#282a36",
+    brand: "#ff79c6",
+    mode: "dark",
   },
   {
-    key: "solarized-light",
-    label: "Solarized Light",
+    key: "paper",
+    label: "Paper",
     surface: "#fdf6e3",
     brand: "#b58900",
     mode: "light",
   },
   {
-    key: "ember",
-    label: "Ember",
-    surface: "#ffffff",
-    brand: "#b91c1c",
+    key: "kiln",
+    label: "Kiln",
+    surface: "#fbf3ec",
+    brand: "#c2410c",
+    mode: "light",
+  },
+  {
+    key: "riso",
+    label: "Riso",
+    surface: "#f4f1ea",
+    brand: "#ff48b0",
     mode: "light",
   },
 ];
+
+/** A stored key with no theme behind it (a retired theme) renders as skub. */
+export function resolveTheme(stored: string | undefined): string {
+  return THEMES.some((theme) => theme.key === stored) ? stored : "skub";
+}

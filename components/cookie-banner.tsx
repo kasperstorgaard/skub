@@ -15,7 +15,7 @@ export function CookieBanner({ open }: Props) {
   return (
     <div
       className={clsx(
-        "fixed top-auto bottom-1 left-0 max-w-screen right-0 p-5 py-4 m-0 z-5",
+        "cookie-banner fixed top-auto bottom-1 left-0 max-w-screen right-0 p-5 py-4 m-0 z-5",
         "rounded-cond-2 overflow-hidden bg-surface-2",
         "sm:max-w-88 max-lg:shadow-3",
         "md:bottom-fl-2 md:left-fl-2 md:right-auto",

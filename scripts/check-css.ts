@@ -8,6 +8,8 @@ import { gzipSync } from "node:zlib";
  * Usage: `deno task build && deno task check-css`
  */
 const BUDGET_KB = 14;
+// One theme file is linked per page, on top of the entry stylesheet.
+const THEME_BUDGET_KB = 6;
 const ASSETS_DIR = "_fresh/client/assets";
 const SOURCE_DIRS = ["components", "islands", "routes", "client", "lib"];
 
@@ -23,23 +25,31 @@ async function* files(dir: string, ext: RegExp): AsyncGenerator<string> {
 }
 
 let css = "";
+let entryCss = "";
+let overBudget = false;
 for await (const path of files(ASSETS_DIR, /\.css$/)) {
-  css += await Deno.readTextFile(path);
+  const text = await Deno.readTextFile(path);
+  css += text;
+  const isEntry = path.includes("/client-entry-");
+  if (isEntry) entryCss += text;
+  const gzippedKb = gzipSync(text).length / 1024;
+  const budget = isEntry ? BUDGET_KB : THEME_BUDGET_KB;
+  if (gzippedKb > budget) {
+    overBudget = true;
+    console.error(
+      `${path} is ${
+        gzippedKb.toFixed(1)
+      } KB gzipped, over the ${budget} KB budget.`,
+    );
+  }
 }
-if (!css) {
-  console.error(`No CSS in ${ASSETS_DIR}; run \`deno task build\` first.`);
-  Deno.exit(1);
-}
-
-const gzippedKb = gzipSync(css).length / 1024;
-if (gzippedKb > BUDGET_KB) {
+if (!entryCss) {
   console.error(
-    `CSS is ${
-      gzippedKb.toFixed(1)
-    } KB gzipped, over the ${BUDGET_KB} KB budget.`,
+    `No entry CSS in ${ASSETS_DIR}; run \`deno task build\` first.`,
   );
   Deno.exit(1);
 }
+if (overBudget) Deno.exit(1);
 
 let source = "";
 for (const dir of SOURCE_DIRS) {
@@ -76,5 +86,7 @@ if (unresolved.size) {
   Deno.exit(1);
 }
 console.log(
-  `CSS is ${gzippedKb.toFixed(1)} KB gzipped; all CSS variables resolve.`,
+  `Entry CSS is ${
+    (gzipSync(entryCss).length / 1024).toFixed(1)
+  } KB gzipped; all CSS variables resolve.`,
 );

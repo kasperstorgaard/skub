@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 
 import { puzzleManifest } from "./plugins/puzzle-manifest.ts";
 import { sharedChunks } from "./plugins/shared-chunks.ts";
+import { themeCss } from "./plugins/theme-css.ts";
 import { workerBundle } from "./plugins/worker-bundle.ts";
 
 export default defineConfig({
@@ -30,6 +31,7 @@ export default defineConfig({
     workerBundle("solver-worker"),
     puzzleManifest(),
     sharedChunks(),
+    themeCss(),
     tailwindcss(),
     fresh(),
   ],

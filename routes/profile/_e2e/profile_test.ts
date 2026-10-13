@@ -75,7 +75,7 @@ Deno.test("a new visitor's record is stored only once they save a username", asy
 Deno.test("a returning player's visit stores their profile in a cookie", async () => {
   const { page, asUser, teardown } = await setup();
   try {
-    await asUser({ name: "e2eli", theme: "dracula" });
+    await asUser({ name: "e2eli", theme: "nocturne" });
     await new ProfilePage(page).goto();
 
     const cookieNames = (await page.context().cookies())
@@ -89,13 +89,16 @@ Deno.test("a returning player's visit stores their profile in a cookie", async (
 Deno.test("a returning player's theme renders from the cookie once their record is gone", async () => {
   const { page, asUser, teardown } = await setup();
   try {
-    const user = await asUser({ name: "e2eli", theme: "dracula" });
+    const user = await asUser({ name: "e2eli", theme: "nocturne" });
     await new ProfilePage(page).goto();
 
     await clearTestUser(user.id);
     await page.reload();
 
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "dracula");
+    await expect(page.locator("html")).toHaveAttribute(
+      "data-theme",
+      "nocturne",
+    );
   } finally {
     await teardown();
   }

@@ -261,7 +261,7 @@ export default function Board(
         }}
         className={clsx(
           // Relative for the touch region positioning
-          "relative grid gap-(--gap) w-full",
+          "board relative grid gap-(--gap) w-full",
           // Written out per size: Tailwind only sees class names it can read
           // whole in the source.
           size === 4
@@ -429,7 +429,7 @@ function BoardWall({ x, y, orientation }: Wall) {
   return (
     <div
       className={clsx(
-        "place-self-start col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full",
+        "board-wall place-self-start col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full",
         "border-ui-4 aspect-square pointer-events-none",
         orientation === "vertical"
           ? "border-l-[3px] -ml-[3.5px]"
@@ -467,7 +467,7 @@ function BoardSpace(
       <a
         href={href}
         className={clsx(
-          "grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
+          "board-space grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
           "border-1 border-stone-9 border-b-1 border-r-1 border-r-stone-7 border-b-stone-7",
           hasSolution && "tile-ripple",
         )}
@@ -480,7 +480,7 @@ function BoardSpace(
   return (
     <div
       className={clsx(
-        "grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
+        "board-space grid col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] aspect-square rounded-1",
         "border-1 border-stone-9 border-b-1 border-r-1 border-r-stone-7 border-b-stone-7",
         hasSolution && "tile-ripple",
       )}
@@ -513,7 +513,7 @@ function BoardHole({ x, y }: Position) {
     <div
       className={clsx(
         "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
-        "rounded-1 bg-hole overflow-hidden pointer-events-none",
+        "board-hole rounded-1 bg-hole overflow-hidden pointer-events-none",
       )}
       style={{ "--x": x, "--y": y }}
     >
@@ -536,7 +536,7 @@ function BoardPortal({ x, y }: Position) {
     <div
       className={clsx(
         "col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full aspect-square",
-        "relative overflow-hidden rounded-1 pointer-events-none",
+        "board-portal relative overflow-hidden rounded-1 pointer-events-none",
       )}
       style={{ "--x": x, "--y": y }}
     >
@@ -563,7 +563,7 @@ function BoardDestination({ x, y, dice }: BoardDestinationProps) {
     <div
       className={clsx(
         "col-[calc(var(--x)+1)] w-full row-[calc(var(--y)+1)]",
-        "aspect-square flex items-center justify-center pointer-events-none",
+        "board-destination aspect-square flex items-center justify-center pointer-events-none",
         "border-2 border-ui-1",
       )}
       style={{
@@ -732,8 +732,8 @@ function BoardPiece(
         }}
         className={clsx(
           "w-full h-full",
-          type === "puck" && "bg-ui-2 rounded-round",
-          type === "blocker" && "bg-ui-3 rounded-1",
+          type === "puck" && "board-puck bg-ui-2 rounded-round",
+          type === "blocker" && "board-blocker bg-ui-3 rounded-1",
           wiggle && type === "puck" && "pulse-puck",
           wiggle && type === "blocker" && "jiggle",
         )}
@@ -856,8 +856,8 @@ function BoardFallingPiece(
         onTransitionEnd={onDone}
         className={clsx(
           "w-full h-full origin-center",
-          type === "puck" && "bg-ui-2 rounded-round",
-          type === "blocker" && "bg-ui-3 rounded-1",
+          type === "puck" && "board-puck bg-ui-2 rounded-round",
+          type === "blocker" && "board-blocker bg-ui-3 rounded-1",
           "transition-all ease-in duration-300 delay-(--piece-speed,200ms)",
           at === from ? "scale-100 opacity-100" : "scale-0 opacity-0",
         )}
