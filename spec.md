@@ -15,14 +15,20 @@ spacing, same layout, same board rules, but its own fonts, shape (radius,
 border weight, angles), texture (noise, grain, scanlines) and light (gradients,
 glows). Eight themes total.
 
-Each theme is one CSS file in `styles/themes/` and only the active one is
-linked from `_app.tsx`, with its fonts preloaded. `skub` is the `:root`
-default in `styles.css`, so an unknown stored theme key (a player who had
-`dracula`) renders as `skub` with no extra request.
+Each theme is one CSS file in `styles/themes/`, built as a hashed asset by
+`plugins/theme-css.ts`, and only the active one is linked from `_app.tsx`,
+with its fonts preloaded. `skub`'s tokens are the `:root` defaults in
+`styles.css`, so an unknown stored theme key (a player who had `dracula`)
+renders as `skub`. In dev the plugin serves theme files and fonts itself:
+Fresh's dev server only hands Vite a URL already in its module graph, which a
+linked stylesheet never enters.
 
 Theme files override components directly through a small set of stable class
-hooks (`.board`, `.board-space`, `.board-puck`, `.panel`, `.puzzle-card`, …)
-plus `.btn`/`.icon-btn`, `dialog`, `header`. They lean on Open Props values:
+hooks (`.board`, `.board-space`, `.board-puck`, `.panel`, `.puzzle-card`,
+`.puzzle-card-difficulty`, `.difficulty-badge`, `.move-counter`, …) plus
+`.btn`/`.icon-btn`, `dialog`, `header`. Theme files are unlayered, so they win
+over Tailwind utilities; a theme that sets a button background must restate
+the hover and primary fills, which `buttons.css` keeps in a layer. They lean on Open Props values:
 `--gradient-*`, `--noise-*`, `--mask-corner-cut-*`, `--radius-*`,
 `--border-size-*`. Tokenising what the themes end up sharing is deliberately
 left for after the themes look right.
@@ -41,11 +47,11 @@ or motion.
 |---|---|---|---|
 | `skub` | dark | unchanged baseline | Chakra Petch |
 | `high-contrast` | dark | unchanged, a11y | Chakra Petch |
-| `digicam` | dark | 2000s hipster, early digital camera: rose palette, film grain, zero radius, thin light borders, a light-leak gradient | Space Grotesk + VT323 |
-| `acid` | dark | neon terminal: corner-cut angles, hairline borders, faded neon glows, glitch on hover | Michroma + JetBrains Mono |
-| `nocturne` | dark | Dracula palette: soft radius, purple-to-pink gradient edges, velvety depth | Sora + DM Sans |
-| `classic` | light | a document from the early web: white, black serif, link blue as the only colour, table grid, no radius | Tinos |
-| `kiln` | light | Ember palette: clay gradients, generous radius, soft inset depth | Bricolage Grotesque + Nunito Sans |
+| `digicam` | dark | 2000s hipster, early digital camera: rose palette, film grain, zero radius, viewfinder brackets on the board, white buttons with black text | Space Grotesk + VT323 (headings, labels) |
+| `acid` | dark | neon terminal: lime phosphor, hairline outline buttons that glow instead of filling, corner cuts on cards and dialogs, glitch on hover | Michroma + JetBrains Mono |
+| `nocturne` | dark | a code editor after dark: Dracula surfaces, cobalt as the one accent, hairlines, 5px radius, a purple glow behind the board | IBM Plex Sans + Plex Mono |
+| `classic` | light | a document from the early web: white, black serif, link blue as the only colour, table-style grid, no radius, no shadows | Tinos |
+| `kiln` | light | Ember palette: clay fills, rust links, generous radius, flat board | Bricolage Grotesque + Karla |
 | `riso` | light | risograph: two-ink overprint in pink and teal, halftone noise, zero radius, thick borders | Archivo Black + Archivo |
 
 ## Non-goals
