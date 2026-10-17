@@ -71,14 +71,13 @@
 }
 
 [data-theme="riso"] {
-  /* Halftone dot screen, multiplied like ink */
+  /* Halftone dot screen */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: var(--layer-1);
     pointer-events: none;
-    mix-blend-mode: multiply;
     background-image: radial-gradient(
       circle,
       var(--color-text-1) 0.6px,
@@ -95,8 +94,8 @@
     inset: 0;
     z-index: var(--layer-1);
     pointer-events: none;
-    mix-blend-mode: multiply;
     background-image: var(--noise-4);
+    background-size: 256px;
     filter: var(--noise-filter-1);
     opacity: 0.05;
   }

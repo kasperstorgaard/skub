@@ -25,9 +25,7 @@ export default define.page(
       : null;
 
     // user is unset when middleware throws before it runs (error page).
-    // A theme without a stylesheet yet renders as skub.
-    const resolved = resolveTheme(state.user?.theme);
-    const theme = resolved in THEME_ASSETS ? resolved : "skub";
+    const theme = resolveTheme(state.user?.theme);
     const themeAssets = THEME_ASSETS[theme];
 
     return (
@@ -68,7 +66,7 @@ export default define.page(
               crossOrigin="anonymous"
             />
           ))}
-          {themeAssets.css && <link rel="stylesheet" href={themeAssets.css} />}
+          <link rel="stylesheet" href={themeAssets.css} />
 
           {sharedChunks.map((href) => (
             <link key={href} rel="modulepreload" href={href} />

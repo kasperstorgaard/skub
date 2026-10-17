@@ -67,8 +67,19 @@
 }
 
 [data-theme="sash"] {
-  /* Ultramarine to violet, a lens flare up right, laser rays from down left */
+  /* A stacking context, so fixed layers at z-index -1 sit above body's own
+     background */
   body {
+    isolation: isolate;
+  }
+
+  /* Ultramarine to violet, a lens flare up right, laser rays from down left */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image:
       radial-gradient(
         circle at 86% 9%,
@@ -103,7 +114,6 @@
       var(--color-surface-1) 30%,
       #1f0b45 100%
     );
-    background-attachment: fixed;
   }
 
   ::selection {
@@ -247,8 +257,8 @@
   }
 
   @media print {
-    body {
-      background-image: none;
+    body::before {
+      display: none;
     }
     :where(h1, h2),
     .move-counter {

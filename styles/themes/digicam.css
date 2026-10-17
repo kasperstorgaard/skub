@@ -60,8 +60,19 @@
 }
 
 [data-theme="digicam"] {
-  /* Light leak: warm in the top-right, faint tan in the bottom-left */
+  /* A stacking context, so fixed layers at z-index -1 sit above body's own
+     background */
   body {
+    isolation: isolate;
+  }
+
+  /* Light leak: warm in the top-right, faint tan in the bottom-left */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image:
       radial-gradient(
         60% 50% at 100% 0%,
@@ -73,7 +84,6 @@
       color-mix(in srgb, var(--color-link) 8%, transparent),
       transparent
     );
-    background-attachment: fixed;
   }
 
   /* Film grain over everything but the top layer (dialogs) */
@@ -84,6 +94,7 @@
     z-index: var(--layer-1);
     pointer-events: none;
     background-image: var(--noise-3);
+    background-size: 256px;
     filter: var(--noise-filter-2);
     opacity: 0.05;
   }
@@ -232,6 +243,7 @@
 
   @media print {
     body::before,
+    body::after,
     .board::before {
       display: none;
     }

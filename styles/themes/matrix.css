@@ -71,27 +71,32 @@
 }
 
 [data-theme="matrix"] {
-  /* Phosphor spill from the top */
+  /* A stacking context, so the rain at z-index -1 sits above body's own
+     background */
   body {
-    background-image: radial-gradient(
-      70% 50% at 50% 0%,
-      color-mix(in srgb, var(--color-brand) 9%, transparent),
-      transparent
-    );
-    background-attachment: fixed;
+    isolation: isolate;
   }
 
-  /* Digital rain behind the content, fading out towards the bottom */
+  /* Phosphor spill and digital rain behind the content, fading out towards
+     the bottom */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-image: var(--matrix-rain);
-    background-size: 480px 640px;
+    /* Phosphor spill on top; the page colour at 91% over the rain stands in
+       for a 9% opacity, which would also dim the spill */
+    background-image:
+      radial-gradient(
+        70% 50% at 50% 0%,
+        color-mix(in srgb, var(--color-brand) 9%, transparent),
+        transparent
+      ),
+      linear-gradient(rgb(10 12 10 / 0.91), rgb(10 12 10 / 0.91)),
+      var(--matrix-rain);
+    background-size: auto, auto, 480px 640px;
     mask-image: linear-gradient(black, transparent 85%);
-    opacity: 0.09;
   }
 
   /* CRT scanlines */
@@ -287,9 +292,6 @@
   }
 
   @media print {
-    body {
-      background-image: none;
-    }
     body::before,
     body::after {
       display: none;

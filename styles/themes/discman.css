@@ -92,13 +92,23 @@
 }
 
 [data-theme="discman"] {
-  /* Matte aluminium, brushed, catching light from the top left */
+  /* A stacking context, so fixed layers at z-index -1 sit above body's own
+     background */
   body {
+    isolation: isolate;
+  }
+
+  /* Matte aluminium, brushed, catching light from the top left */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image:
       var(--disc-brush),
       linear-gradient(135deg, #eef0f2, var(--color-surface-1) 45%, #d8dbdf);
     background-size: 400px 400px, 100% 100%;
-    background-attachment: fixed;
   }
 
   ::selection {
@@ -263,8 +273,8 @@
   }
 
   @media print {
-    body {
-      background-image: none;
+    body::before {
+      display: none;
     }
     .panel::before {
       display: none;
