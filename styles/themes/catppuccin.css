@@ -1,0 +1,80 @@
+/* Catppuccin Latte (catppuccin.com).
+   Colour only, on Skub's type and shapes. */
+/* Chakra Petch — self-hosted, latin subset */
+@font-face {
+  font-family: "Chakra Petch";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/chakra-petch-400.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/chakra-petch-500.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+:root[data-theme="catppuccin"] {
+  color-scheme: light;
+  --hover-brightness: 0.71;
+  --btn-active-text: #eff1f5;
+  --color-surface-1: #eff1f5;
+  --color-surface-2: #e1e4ec;
+  --color-surface-3: #cdd0db;
+  --color-surface-4: #9499ab;
+  --color-text-1: #4c4f69;
+  --color-text-2: #6c6f85;
+  --color-text-3: #9ca0b0;
+  --color-brand: #8839ef;
+  --color-link: #1e66f5;
+  --color-ui-1: #40a02b;
+  --color-ui-2: #df8e1d;
+  --color-ui-3: #8839ef;
+  --color-ui-4: #fe640b;
+  --color-ui-contrast: #8839ef;
+  --color-hole: #3b3f52;
+  --color-portal: #1e66f5;
+  --color-portal-alt: #ccd6f4;
+}

@@ -49,12 +49,8 @@ export default define.page<typeof handler>(function ProfilePage(props) {
   const { userStats } = props.data;
 
   const savedName = user?.name ?? null;
-  const isAccessible = (t: Theme) => t.key === "high-contrast";
-  const darkThemes = THEMES.filter((t) =>
-    t.mode === "dark" && !isAccessible(t)
-  );
-  const lightThemes = THEMES.filter((t) => t.mode === "light");
-  const accessibleThemes = THEMES.filter(isAccessible);
+  const inSection = (section: Theme["section"]) =>
+    THEMES.filter((theme) => theme.section === section);
   const activeTheme = resolveTheme(user.theme);
 
   return (
@@ -188,21 +184,27 @@ export default define.page<typeof handler>(function ProfilePage(props) {
             <form
               method="post"
               action="/profile"
-              className="flex flex-col gap-fl-3"
+              className="flex flex-col gap-fl-3 lg:grid lg:grid-cols-2"
             >
               <ThemeGroup
                 label="Dark"
-                themes={darkThemes}
+                themes={inSection("dark")}
                 active={activeTheme}
               />
               <ThemeGroup
                 label="Light"
-                themes={lightThemes}
+                themes={inSection("light")}
                 active={activeTheme}
               />
               <ThemeGroup
+                label="Retro"
+                themes={inSection("retro")}
+                active={activeTheme}
+                className="lg:col-span-2"
+              />
+              <ThemeGroup
                 label="Accessibility"
-                themes={accessibleThemes}
+                themes={inSection("accessibility")}
                 active={activeTheme}
               />
             </form>
@@ -218,11 +220,12 @@ type ThemeGroupProps = {
   label: string;
   themes: typeof THEMES;
   active: string;
+  className?: string;
 };
 
-function ThemeGroup({ label, themes, active }: ThemeGroupProps) {
+function ThemeGroup({ label, themes, active, className }: ThemeGroupProps) {
   return (
-    <div className="flex flex-col gap-fl-1">
+    <div className={clsx("flex flex-col gap-fl-1", className)}>
       <p className="text-text-2 font-5 text-3">
         {label}
       </p>

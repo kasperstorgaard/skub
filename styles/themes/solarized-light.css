@@ -1,0 +1,80 @@
+/* Solarized Light (ethanschoonover.com/solarized).
+   Colour only, on Skub's type and shapes. */
+/* Chakra Petch — self-hosted, latin subset */
+@font-face {
+  font-family: "Chakra Petch";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/chakra-petch-400.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/chakra-petch-500.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+:root[data-theme="solarized-light"] {
+  color-scheme: light;
+  --hover-brightness: 0.71;
+  --btn-active-text: #fdf6e3;
+  --color-surface-1: #fdf6e3;
+  --color-surface-2: #eee8d5;
+  --color-surface-3: #ddd6be;
+  --color-surface-4: #93a1a1;
+  --color-text-1: #51646b;
+  --color-text-2: #5e6b6c;
+  --color-text-3: #626969;
+  --color-brand: #b58900;
+  --color-link: #268bd2;
+  --color-ui-1: #2aa198;
+  --color-ui-2: #859900;
+  --color-ui-3: #d33682;
+  --color-ui-4: #073642;
+  --color-ui-contrast: #b58900;
+  --color-hole: #073642;
+  --color-portal: #268bd2;
+  --color-portal-alt: #d6e5ef;
+}
