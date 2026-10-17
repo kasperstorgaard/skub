@@ -6,8 +6,8 @@ import { define } from "#/core.ts";
 import { Router } from "#/islands/router.tsx";
 import { TrackingScript } from "#/islands/tracking-script.tsx";
 import { sharedChunks } from "#/lib/shared-chunks.ts";
-import font400 from "#/styles/fonts/chakra-petch-400.woff2?url";
-import font500 from "#/styles/fonts/chakra-petch-500.woff2?url";
+import { THEME_ASSETS } from "#/lib/theme-assets.ts";
+import { resolveTheme } from "#/lib/themes.ts";
 
 export default define.page(
   function AppWrapper({ Component, state, url }) {
@@ -24,12 +24,15 @@ export default define.page(
       ? puzzleSlug
       : null;
 
+    // user is unset when middleware throws before it runs (error page).
+    const theme = resolveTheme(state.user?.theme);
+    const themeAssets = THEME_ASSETS[theme];
+
     return (
       <html
         className="min-h-dvh"
         lang="en"
-        // user is unset when middleware throws before it runs (error page)
-        data-theme={state.user?.theme ?? "skub"}
+        data-theme={theme}
       >
         <head>
           <meta charset="utf-8" />
@@ -53,21 +56,17 @@ export default define.page(
               content={`${url.origin}/puzzles/${ogSlug}/og-image`}
             />
           )}
-          <link
-            rel="preload"
-            as="font"
-            type="font/woff2"
-            href={font400}
-            crossOrigin="anonymous"
-          />
-          {/* Headings render at 500 — needed for first paint, same as 400 */}
-          <link
-            rel="preload"
-            as="font"
-            type="font/woff2"
-            href={font500}
-            crossOrigin="anonymous"
-          />
+          {themeAssets.fonts.map((href) => (
+            <link
+              key={href}
+              rel="preload"
+              as="font"
+              type="font/woff2"
+              href={href}
+              crossOrigin="anonymous"
+            />
+          ))}
+          <link rel="stylesheet" href={themeAssets.css} />
 
           {sharedChunks.map((href) => (
             <link key={href} rel="modulepreload" href={href} />
@@ -104,6 +103,20 @@ export default define.page(
             "print:grid-cols-[1fr_max-content_1fr] print:grid-rows-[auto_1fr] print:gap-0",
           )}
         >
+          {/* Dookie's hand-drawn wobble; CSS filters can't reach an SVG file */}
+          {theme === "dookie" && (
+            <svg aria-hidden="true" width="0" height="0" className="absolute">
+              <filter id="dookie-wobble">
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="0.04"
+                  numOctaves="2"
+                  seed="3"
+                />
+                <feDisplacementMap in="SourceGraphic" scale="2.5" />
+              </filter>
+            </svg>
+          )}
           <Partial name="body">
             <Component />
           </Partial>

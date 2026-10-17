@@ -1,0 +1,310 @@
+/* Matrix — The Matrix, 1999.
+   Phosphor green on near-black, mirrored glyph rain behind the page, faint
+   CRT scanlines, cut corners, hairline borders, glows, a green glitch on
+   button hover. JetBrains Mono for text, Michroma for the display face. */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/jetbrains-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/jetbrains-mono-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Michroma";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/michroma-400.woff2") format("woff2");
+}
+
+:root[data-theme="matrix"] {
+  color-scheme: dark;
+  --hover-brightness: 1.4;
+  --btn-active-text: #a8ff3a;
+
+  --font-sans: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Michroma", "JetBrains Mono", sans-serif;
+
+  --color-brand: #a8ff3a;
+  --color-link: #00e5ff;
+  --color-surface-1: #0a0c0a;
+  --color-surface-2: #101410;
+  --color-surface-3: #182018;
+  --color-surface-4: #263226;
+
+  --color-text-1: #ebffd9;
+  --color-text-2: #a9df7f;
+  --color-text-3: #78b050;
+
+  --color-ui-1: #00e5ff;
+  --color-ui-2: #ffff00;
+  --color-ui-3: #ff0090;
+  --color-ui-4: #ff6600;
+  --color-ui-contrast: #a8ff3a;
+  --color-hole: #000000;
+  --color-portal: #00e5ff;
+  --color-portal-alt: #003b45;
+
+  /* Chrome hairline, board grid line, corner cut size */
+  --matrix-hairline: color-mix(in srgb, var(--color-text-3) 40%, transparent);
+  --matrix-grid: color-mix(in srgb, var(--color-brand) 22%, transparent);
+  --matrix-cut: var(--size-2);
+  /* Digital rain: mirrored katakana and digits, one tile */
+  --matrix-rain: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0ODAnIGhlaWdodD0nNjQwJyBmb250LWZhbWlseT0nbW9ub3NwYWNlJyBmb250LXNpemU9JzE2JyBmaWxsPScjYThmZjNhJz48ZyB0cmFuc2Zvcm09J3NjYWxlKC0xIDEpIHRyYW5zbGF0ZSgtNDgwIDApJz48dGV4dCB4PSc0NCcgeT0nMjQwJyBvcGFjaXR5PScxLjAnPu++lTwvdGV4dD48dGV4dCB4PSc0NCcgeT0nMjIwJyBvcGFjaXR5PScwLjc4Jz7vvb08L3RleHQ+PHRleHQgeD0nNDQnIHk9JzIwMCcgb3BhY2l0eT0nMC43Myc+7727PC90ZXh0Pjx0ZXh0IHg9JzQ0JyB5PScxODAnIG9wYWNpdHk9JzAuNjgnPu++lzwvdGV4dD48dGV4dCB4PSc0NCcgeT0nMTYwJyBvcGFjaXR5PScwLjYzJz41PC90ZXh0Pjx0ZXh0IHg9JzQ0JyB5PScxNDAnIG9wYWNpdHk9JzAuNTgnPjg8L3RleHQ+PHRleHQgeD0nNDQnIHk9JzEyMCcgb3BhY2l0eT0nMC41Myc+772+PC90ZXh0Pjx0ZXh0IHg9JzQ0JyB5PScxMDAnIG9wYWNpdHk9JzAuNDgnPu++mjwvdGV4dD48dGV4dCB4PSc0NCcgeT0nODAnIG9wYWNpdHk9JzAuNDMnPjk8L3RleHQ+PHRleHQgeD0nNDQnIHk9JzYwJyBvcGFjaXR5PScwLjM4Jz7vvbQ8L3RleHQ+PHRleHQgeD0nNDQnIHk9JzQwJyBvcGFjaXR5PScwLjMzJz7vvoo8L3RleHQ+PHRleHQgeD0nNDQnIHk9JzIwJyBvcGFjaXR5PScwLjI4Jz7vvoo8L3RleHQ+PHRleHQgeD0nMTA0JyB5PScxMDAnIG9wYWNpdHk9JzEuMCc+7728PC90ZXh0Pjx0ZXh0IHg9JzEwNCcgeT0nODAnIG9wYWNpdHk9JzAuNzknPu++iDwvdGV4dD48dGV4dCB4PScxMDQnIHk9JzYwJyBvcGFjaXR5PScwLjc0Jz7vvpE8L3RleHQ+PHRleHQgeD0nMTA0JyB5PSc0MCcgb3BhY2l0eT0nMC43Jz7vvpI8L3RleHQ+PHRleHQgeD0nMTA0JyB5PScyMCcgb3BhY2l0eT0nMC42NSc+WjwvdGV4dD48dGV4dCB4PScxNjQnIHk9JzE2MCcgb3BhY2l0eT0nMS4wJz7vvoA8L3RleHQ+PHRleHQgeD0nMTY0JyB5PScxNDAnIG9wYWNpdHk9JzAuNyc+776VPC90ZXh0Pjx0ZXh0IHg9JzE2NCcgeT0nMTIwJyBvcGFjaXR5PScwLjU4Jz43PC90ZXh0Pjx0ZXh0IHg9JzE2NCcgeT0nMTAwJyBvcGFjaXR5PScwLjQ2Jz7vvoI8L3RleHQ+PHRleHQgeD0nMTY0JyB5PSc4MCcgb3BhY2l0eT0nMC4zMyc+772yPC90ZXh0Pjx0ZXh0IHg9JzE2NCcgeT0nNjAnIG9wYWNpdHk9JzAuMic+776SPC90ZXh0Pjx0ZXh0IHg9JzE4NCcgeT0nNTQwJyBvcGFjaXR5PScxLjAnPu+9uzwvdGV4dD48dGV4dCB4PScxODQnIHk9JzUyMCcgb3BhY2l0eT0nMC43Jz7vvoQ8L3RleHQ+PHRleHQgeD0nMTg0JyB5PSc1MDAnIG9wYWNpdHk9JzAuNTgnPu+9tDwvdGV4dD48dGV4dCB4PScxODQnIHk9JzQ4MCcgb3BhY2l0eT0nMC40Nic+7724PC90ZXh0Pjx0ZXh0IHg9JzE4NCcgeT0nNDYwJyBvcGFjaXR5PScwLjMzJz4zPC90ZXh0Pjx0ZXh0IHg9JzE4NCcgeT0nNDQwJyBvcGFjaXR5PScwLjInPu++jzwvdGV4dD48dGV4dCB4PScyMDQnIHk9JzUyMCcgb3BhY2l0eT0nMS4wJz7vvbg8L3RleHQ+PHRleHQgeD0nMjA0JyB5PSc1MDAnIG9wYWNpdHk9JzAuNzgnPu++hzwvdGV4dD48dGV4dCB4PScyMDQnIHk9JzQ4MCcgb3BhY2l0eT0nMC43Myc+MTwvdGV4dD48dGV4dCB4PScyMDQnIHk9JzQ2MCcgb3BhY2l0eT0nMC42OCc+772xPC90ZXh0Pjx0ZXh0IHg9JzIwNCcgeT0nNDQwJyBvcGFjaXR5PScwLjYzJz7vvog8L3RleHQ+PHRleHQgeD0nMjA0JyB5PSc0MjAnIG9wYWNpdHk9JzAuNTgnPu++kTwvdGV4dD48dGV4dCB4PScyMDQnIHk9JzQwMCcgb3BhY2l0eT0nMC41Myc+MjwvdGV4dD48dGV4dCB4PScyMDQnIHk9JzM4MCcgb3BhY2l0eT0nMC40OCc+776UPC90ZXh0Pjx0ZXh0IHg9JzIwNCcgeT0nMzYwJyBvcGFjaXR5PScwLjQzJz5aPC90ZXh0Pjx0ZXh0IHg9JzIwNCcgeT0nMzQwJyBvcGFjaXR5PScwLjM4Jz43PC90ZXh0Pjx0ZXh0IHg9JzIwNCcgeT0nMzIwJyBvcGFjaXR5PScwLjMzJz7vvbk8L3RleHQ+PHRleHQgeD0nMjA0JyB5PSczMDAnIG9wYWNpdHk9JzAuMjgnPjc8L3RleHQ+PHRleHQgeD0nMjA0JyB5PScyODAnIG9wYWNpdHk9JzAuMjMnPu++jTwvdGV4dD48dGV4dCB4PScyMDQnIHk9JzI2MCcgb3BhY2l0eT0nMC4xOCc+NjwvdGV4dD48dGV4dCB4PScyMDQnIHk9JzI0MCcgb3BhY2l0eT0nMC4xMyc+776BPC90ZXh0Pjx0ZXh0IHg9JzI0NCcgeT0nMTYwJyBvcGFjaXR5PScxLjAnPu+9vjwvdGV4dD48dGV4dCB4PScyNDQnIHk9JzE0MCcgb3BhY2l0eT0nMC43OSc+NzwvdGV4dD48dGV4dCB4PScyNDQnIHk9JzEyMCcgb3BhY2l0eT0nMC43NCc+776CPC90ZXh0Pjx0ZXh0IHg9JzI0NCcgeT0nMTAwJyBvcGFjaXR5PScwLjcnPu++mDwvdGV4dD48dGV4dCB4PScyNDQnIHk9JzgwJyBvcGFjaXR5PScwLjY1Jz7vvpg8L3RleHQ+PHRleHQgeD0nMjQ0JyB5PSc2MCcgb3BhY2l0eT0nMC42MSc+772+PC90ZXh0Pjx0ZXh0IHg9JzI0NCcgeT0nNDAnIG9wYWNpdHk9JzAuNTcnPu++mzwvdGV4dD48dGV4dCB4PScyNDQnIHk9JzIwJyBvcGFjaXR5PScwLjUyJz7vvo48L3RleHQ+PHRleHQgeD0nMzA0JyB5PSc0MjAnIG9wYWNpdHk9JzEuMCc+OTwvdGV4dD48dGV4dCB4PSczMDQnIHk9JzQwMCcgb3BhY2l0eT0nMC43Nic+NzwvdGV4dD48dGV4dCB4PSczMDQnIHk9JzM4MCcgb3BhY2l0eT0nMC42OCc+776WPC90ZXh0Pjx0ZXh0IHg9JzMwNCcgeT0nMzYwJyBvcGFjaXR5PScwLjYnPu+9uTwvdGV4dD48dGV4dCB4PSczMDQnIHk9JzM0MCcgb3BhY2l0eT0nMC41Myc+776WPC90ZXh0Pjx0ZXh0IHg9JzMwNCcgeT0nMzIwJyBvcGFjaXR5PScwLjQ2Jz7vvoY8L3RleHQ+PHRleHQgeD0nMzA0JyB5PSczMDAnIG9wYWNpdHk9JzAuMzgnPu++gzwvdGV4dD48dGV4dCB4PSczMDQnIHk9JzI4MCcgb3BhY2l0eT0nMC4zMSc+772/PC90ZXh0Pjx0ZXh0IHg9JzMwNCcgeT0nMjYwJyBvcGFjaXR5PScwLjIzJz44PC90ZXh0Pjx0ZXh0IHg9JzMwNCcgeT0nMjQwJyBvcGFjaXR5PScwLjE1Jz43PC90ZXh0Pjx0ZXh0IHg9JzMyNCcgeT0nNDIwJyBvcGFjaXR5PScxLjAnPu++mzwvdGV4dD48dGV4dCB4PSczMjQnIHk9JzQwMCcgb3BhY2l0eT0nMC43Jz7vvbM8L3RleHQ+PHRleHQgeD0nMzI0JyB5PSczODAnIG9wYWNpdHk9JzAuNTgnPjQ8L3RleHQ+PHRleHQgeD0nMzI0JyB5PSczNjAnIG9wYWNpdHk9JzAuNDYnPu++gzwvdGV4dD48dGV4dCB4PSczMjQnIHk9JzM0MCcgb3BhY2l0eT0nMC4zMyc+776CPC90ZXh0Pjx0ZXh0IHg9JzMyNCcgeT0nMzIwJyBvcGFjaXR5PScwLjInPu++iTwvdGV4dD48dGV4dCB4PSczNjQnIHk9JzU4MCcgb3BhY2l0eT0nMS4wJz7vvpA8L3RleHQ+PHRleHQgeD0nMzY0JyB5PSc1NjAnIG9wYWNpdHk9JzAuNzknPu+9uTwvdGV4dD48dGV4dCB4PSczNjQnIHk9JzU0MCcgb3BhY2l0eT0nMC43NCc+776IPC90ZXh0Pjx0ZXh0IHg9JzM2NCcgeT0nNTIwJyBvcGFjaXR5PScwLjcnPu++kTwvdGV4dD48dGV4dCB4PSczNjQnIHk9JzUwMCcgb3BhY2l0eT0nMC42NSc+772+PC90ZXh0Pjx0ZXh0IHg9JzM2NCcgeT0nNDgwJyBvcGFjaXR5PScwLjYxJz7vvo08L3RleHQ+PHRleHQgeD0nMzY0JyB5PSc0NjAnIG9wYWNpdHk9JzAuNTcnPu+9sjwvdGV4dD48dGV4dCB4PSczNjQnIHk9JzQ0MCcgb3BhY2l0eT0nMC41Mic+LjwvdGV4dD48dGV4dCB4PSczNjQnIHk9JzQyMCcgb3BhY2l0eT0nMC40OCc+776QPC90ZXh0Pjx0ZXh0IHg9JzM2NCcgeT0nNDAwJyBvcGFjaXR5PScwLjQzJz4zPC90ZXh0Pjx0ZXh0IHg9JzM2NCcgeT0nMzgwJyBvcGFjaXR5PScwLjM5Jz46PC90ZXh0Pjx0ZXh0IHg9JzM2NCcgeT0nMzYwJyBvcGFjaXR5PScwLjM0Jz7vvps8L3RleHQ+PHRleHQgeD0nMzY0JyB5PSczNDAnIG9wYWNpdHk9JzAuMyc+7723PC90ZXh0Pjx0ZXh0IHg9JzM2NCcgeT0nMzIwJyBvcGFjaXR5PScwLjI2Jz7vvbY8L3RleHQ+PHRleHQgeD0nMzY0JyB5PSczMDAnIG9wYWNpdHk9JzAuMjEnPu+9sjwvdGV4dD48dGV4dCB4PSczNjQnIHk9JzI4MCcgb3BhY2l0eT0nMC4xNyc+MDwvdGV4dD48dGV4dCB4PSczNjQnIHk9JzI2MCcgb3BhY2l0eT0nMC4xMic+LjwvdGV4dD48dGV4dCB4PSc0MDQnIHk9JzQyMCcgb3BhY2l0eT0nMS4wJz7vvbk8L3RleHQ+PHRleHQgeD0nNDA0JyB5PSc0MDAnIG9wYWNpdHk9JzAuNzYnPu+9tzwvdGV4dD48dGV4dCB4PSc0MDQnIHk9JzM4MCcgb3BhY2l0eT0nMC42OSc+WjwvdGV4dD48dGV4dCB4PSc0MDQnIHk9JzM2MCcgb3BhY2l0eT0nMC42Myc+776aPC90ZXh0Pjx0ZXh0IHg9JzQwNCcgeT0nMzQwJyBvcGFjaXR5PScwLjU2Jz7vvbM8L3RleHQ+PHRleHQgeD0nNDA0JyB5PSczMjAnIG9wYWNpdHk9JzAuNDknPjA8L3RleHQ+PHRleHQgeD0nNDA0JyB5PSczMDAnIG9wYWNpdHk9JzAuNDInPu+9vTwvdGV4dD48dGV4dCB4PSc0MDQnIHk9JzI4MCcgb3BhY2l0eT0nMC4zNSc+772+PC90ZXh0Pjx0ZXh0IHg9JzQwNCcgeT0nMjYwJyBvcGFjaXR5PScwLjI4Jz44PC90ZXh0Pjx0ZXh0IHg9JzQwNCcgeT0nMjQwJyBvcGFjaXR5PScwLjIyJz7vvpE8L3RleHQ+PHRleHQgeD0nNDA0JyB5PScyMjAnIG9wYWNpdHk9JzAuMTUnPjM8L3RleHQ+PHRleHQgeD0nNDI0JyB5PScyNDAnIG9wYWNpdHk9JzEuMCc+OTwvdGV4dD48dGV4dCB4PSc0MjQnIHk9JzIyMCcgb3BhY2l0eT0nMC43Jz7vvo48L3RleHQ+PHRleHQgeD0nNDI0JyB5PScyMDAnIG9wYWNpdHk9JzAuNTgnPu++ijwvdGV4dD48dGV4dCB4PSc0MjQnIHk9JzE4MCcgb3BhY2l0eT0nMC40Nic+776ZPC90ZXh0Pjx0ZXh0IHg9JzQyNCcgeT0nMTYwJyBvcGFjaXR5PScwLjMzJz44PC90ZXh0Pjx0ZXh0IHg9JzQyNCcgeT0nMTQwJyBvcGFjaXR5PScwLjInPjQ8L3RleHQ+PHRleHQgeD0nNDQ0JyB5PSc0MDAnIG9wYWNpdHk9JzEuMCc+7727PC90ZXh0Pjx0ZXh0IHg9JzQ0NCcgeT0nMzgwJyBvcGFjaXR5PScwLjc5Jz42PC90ZXh0Pjx0ZXh0IHg9JzQ0NCcgeT0nMzYwJyBvcGFjaXR5PScwLjc1Jz7vvpk8L3RleHQ+PHRleHQgeD0nNDQ0JyB5PSczNDAnIG9wYWNpdHk9JzAuNyc+776TPC90ZXh0Pjx0ZXh0IHg9JzQ0NCcgeT0nMzIwJyBvcGFjaXR5PScwLjY2Jz7vvoA8L3RleHQ+PHRleHQgeD0nNDQ0JyB5PSczMDAnIG9wYWNpdHk9JzAuNjInPu+9sTwvdGV4dD48dGV4dCB4PSc0NDQnIHk9JzI4MCcgb3BhY2l0eT0nMC41OCc+NzwvdGV4dD48dGV4dCB4PSc0NDQnIHk9JzI2MCcgb3BhY2l0eT0nMC41NCc+776PPC90ZXh0Pjx0ZXh0IHg9JzQ0NCcgeT0nMjQwJyBvcGFjaXR5PScwLjUnPu++jzwvdGV4dD48dGV4dCB4PSc0NDQnIHk9JzIyMCcgb3BhY2l0eT0nMC40Nic+7728PC90ZXh0Pjx0ZXh0IHg9JzQ0NCcgeT0nMjAwJyBvcGFjaXR5PScwLjQxJz7vvoI8L3RleHQ+PHRleHQgeD0nNDQ0JyB5PScxODAnIG9wYWNpdHk9JzAuMzcnPu++iDwvdGV4dD48dGV4dCB4PSc0NDQnIHk9JzE2MCcgb3BhY2l0eT0nMC4zMyc+776CPC90ZXh0Pjx0ZXh0IHg9JzQ0NCcgeT0nMTQwJyBvcGFjaXR5PScwLjI5Jz7vvoo8L3RleHQ+PHRleHQgeD0nNDQ0JyB5PScxMjAnIG9wYWNpdHk9JzAuMjUnPu++izwvdGV4dD48dGV4dCB4PSc0NDQnIHk9JzEwMCcgb3BhY2l0eT0nMC4yJz45PC90ZXh0Pjx0ZXh0IHg9JzQ0NCcgeT0nODAnIG9wYWNpdHk9JzAuMTYnPu++ljwvdGV4dD48dGV4dCB4PSc0NDQnIHk9JzYwJyBvcGFjaXR5PScwLjEyJz7vvoU8L3RleHQ+PC9nPjwvc3ZnPg==");
+}
+
+@keyframes matrix-glitch {
+  0%, 49% {
+    text-shadow: -1px 0 #00ff41, 1px 0 #ffffff;
+  }
+  50%, 100% {
+    text-shadow: 1px 0 #00ff41, -1px 0 #ffffff;
+  }
+}
+
+[data-theme="matrix"] {
+  /* A stacking context, so the rain at z-index -1 sits above body's own
+     background */
+  body {
+    isolation: isolate;
+  }
+
+  /* Phosphor spill and digital rain behind the content, fading out towards
+     the bottom */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    /* Phosphor spill on top; the page colour at 91% over the rain stands in
+       for a 9% opacity, which would also dim the spill */
+    background-image:
+      radial-gradient(
+        70% 50% at 50% 0%,
+        color-mix(in srgb, var(--color-brand) 9%, transparent),
+        transparent
+      ),
+      linear-gradient(rgb(10 12 10 / 0.91), rgb(10 12 10 / 0.91)),
+      var(--matrix-rain);
+    background-size: auto, auto, 480px 640px;
+    mask-image: linear-gradient(black, transparent 85%);
+  }
+
+  /* CRT scanlines */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: var(--layer-1);
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      180deg,
+      rgb(0 0 0 / 0.18) 0 1px,
+      transparent 1px 3px
+    );
+  }
+
+  ::selection {
+    background-color: var(--color-brand);
+    color: var(--color-surface-1);
+  }
+
+  /* Display face: Michroma is wide, so pull its size back towards the body */
+  :where(h1, h2, h3, h4, h5, h6),
+  .puzzle-card-difficulty {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size-adjust: 0.5;
+    letter-spacing: 0.02em;
+  }
+
+  h1 {
+    text-shadow:
+      0 0 2px color-mix(in srgb, var(--color-brand) 60%, transparent),
+      0 0 14px color-mix(in srgb, var(--color-brand) 45%, transparent);
+  }
+
+  /* Zero radius everywhere the chrome has a corner; the puck stays a circle */
+  .btn,
+  .icon-btn,
+  .callout,
+  .board-space,
+  .board-blocker,
+  .board-hole,
+  .board-portal,
+  .puzzle-card-thumb,
+  .cookie-banner,
+  dialog,
+  kbd {
+    border-radius: 0;
+  }
+
+  /* Cut top-right corner (clip-path keeps the border) */
+  .puzzle-card-thumb,
+  dialog {
+    clip-path: polygon(
+      0 0,
+      calc(100% - var(--matrix-cut)) 0,
+      100% var(--matrix-cut),
+      100% 100%,
+      0 100%
+    );
+  }
+  /* Top-left cut: the cookie sits top-right; the tag mirrors the thumb */
+  .cookie-banner,
+  .puzzle-card-difficulty {
+    clip-path: polygon(
+      var(--matrix-cut) 0,
+      100% 0,
+      100% 100%,
+      0 100%,
+      0 var(--matrix-cut)
+    );
+  }
+  dialog,
+  .cookie-banner {
+    --matrix-cut: var(--size-4);
+  }
+
+  .btn,
+  .icon-btn {
+    border-width: var(--border-size-1);
+    border-color: color-mix(in srgb, var(--color-brand) 55%, transparent);
+    background-color: color-mix(in srgb, var(--color-brand) 5%, transparent);
+    font-weight: 500;
+  }
+
+  /* Hover and primary light up instead of filling */
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: color-mix(in srgb, var(--color-brand) 12%, transparent);
+    border-color: var(--color-brand);
+    color: var(--color-brand);
+    box-shadow: 0 0 10px
+      color-mix(in srgb, var(--color-brand) 35%, transparent);
+  }
+  .btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    filter: none;
+    box-shadow: 0 0 14px
+      color-mix(in srgb, var(--color-brand) 55%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .btn:hover:not([disabled], [aria-disabled]) {
+      animation: matrix-glitch 160ms linear 3;
+    }
+  }
+
+  .puzzle-card-thumb {
+    border-width: var(--border-size-1);
+    border-color: var(--matrix-hairline);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    border-color: var(--color-link);
+  }
+
+  /* Readout labels: hairline boxes, the card tag loses skub's slant for a cut */
+  .puzzle-card-difficulty {
+    border: var(--border-size-1) solid var(--matrix-hairline);
+    background-color: color-mix(
+      in srgb,
+      var(--color-surface-1) 85%,
+      transparent
+    );
+  }
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-size-adjust: 0.5;
+    border: var(--border-size-1) solid var(--matrix-hairline);
+  }
+
+  .callout {
+    border: var(--border-size-1) solid var(--matrix-hairline);
+  }
+
+  kbd {
+    background-color: var(--color-surface-3);
+    border-color: var(--matrix-hairline);
+    box-shadow: none;
+    color: var(--color-text-1);
+  }
+
+  .panel {
+    border-top-width: var(--border-size-1);
+    border-top-color: color-mix(in srgb, var(--color-brand) 70%, transparent);
+    box-shadow: 0 -2px 16px -8px var(--color-brand);
+  }
+
+  dialog {
+    border: var(--border-size-1) solid var(--matrix-hairline);
+    background-color: var(--color-surface-2);
+    box-shadow: none;
+  }
+  dialog::backdrop {
+    background-color: rgb(0 8 4 / 0.7);
+  }
+
+  .cookie-banner {
+    border: var(--border-size-1) solid var(--matrix-hairline);
+    box-shadow: none;
+  }
+
+  /* Board: hairline phosphor grid, square blockers, glowing puck and target */
+  .board {
+    isolation: isolate;
+  }
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: var(--matrix-grid);
+    background-color: color-mix(in srgb, var(--color-brand) 4%, transparent);
+  }
+  .board-puck {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-ui-2) 35%, transparent);
+  }
+  .board-destination {
+    box-shadow: 0 0 10px color-mix(in srgb, var(--color-ui-1) 30%, transparent);
+  }
+
+  /* A faint green glow pooled behind the tiles */
+  .board::before {
+    content: "";
+    position: absolute;
+    inset: calc(var(--size-3) * -1);
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--color-brand) 7%, transparent),
+      transparent
+    );
+  }
+
+  @media print {
+    body::before,
+    body::after {
+      display: none;
+    }
+    .board::before {
+      display: none;
+    }
+    h1,
+    .board-puck,
+    .board-destination,
+    .panel {
+      text-shadow: none;
+      box-shadow: none;
+    }
+  }
+}

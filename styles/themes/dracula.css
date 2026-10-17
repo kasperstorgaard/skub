@@ -1,0 +1,27 @@
+/* Dracula — the editor palette.
+   Colour only, on Skub's type and shapes. */
+/* Skub's type: Chakra Petch */
+@import "./skub.css";
+
+:root[data-theme="dracula"] {
+  color-scheme: dark;
+  --hover-brightness: 1.4;
+  --btn-active-text: #282a36;
+  --color-surface-1: #282a36;
+  --color-surface-2: #21222c;
+  --color-surface-3: #343746;
+  --color-surface-4: #44475a;
+  --color-text-1: #f8f8f2;
+  --color-text-2: #a0aabe;
+  --color-text-3: #8090c2;
+  --color-brand: #ff79c6;
+  --color-link: #8be9fd;
+  --color-ui-1: #50fa7b;
+  --color-ui-2: #f1fa8c;
+  --color-ui-3: #bd93f9;
+  --color-ui-4: #ffb86c;
+  --color-ui-contrast: #ff79c6;
+  --color-hole: #12131a;
+  --color-portal: #8be9fd;
+  --color-portal-alt: #44475a;
+}

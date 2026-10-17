@@ -1,0 +1,27 @@
+/* Catppuccin Latte (catppuccin.com).
+   Colour only, on Skub's type and shapes. */
+/* Skub's type: Chakra Petch */
+@import "./skub.css";
+
+:root[data-theme="catppuccin"] {
+  color-scheme: light;
+  --hover-brightness: 0.71;
+  --btn-active-text: #eff1f5;
+  --color-surface-1: #eff1f5;
+  --color-surface-2: #e1e4ec;
+  --color-surface-3: #cdd0db;
+  --color-surface-4: #9499ab;
+  --color-text-1: #4c4f69;
+  --color-text-2: #6c6f85;
+  --color-text-3: #9ca0b0;
+  --color-brand: #8839ef;
+  --color-link: #1e66f5;
+  --color-ui-1: #40a02b;
+  --color-ui-2: #df8e1d;
+  --color-ui-3: #8839ef;
+  --color-ui-4: #fe640b;
+  --color-ui-contrast: #8839ef;
+  --color-hole: #3b3f52;
+  --color-portal: #1e66f5;
+  --color-portal-alt: #ccd6f4;
+}

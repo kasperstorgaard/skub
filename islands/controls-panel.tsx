@@ -145,7 +145,7 @@ export function ControlsPanel(
 
             <div
               className={clsx(
-                "flex items-center justify-center min-w-[2ch]",
+                "move-counter flex items-center justify-center min-w-[2ch]",
                 "text-center leading-flat tracking-wide text-8 tabular-nums",
               )}
             >

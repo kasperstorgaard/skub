@@ -41,14 +41,14 @@ export function PuzzleCard({
     <a
       href={`/puzzles/${puzzle.slug}`}
       class={clsx(
-        "group flex flex-col gap-1 text-text-1 no-underline",
+        "puzzle-card group flex flex-col gap-1 text-text-1 no-underline",
         className,
       )}
       {...rest}
     >
       <div
         class={clsx(
-          "relative flex border-2 border-link rounded-1",
+          "puzzle-card-thumb relative flex border-2 border-link rounded-1",
           "group-hover:filter-[lighten(1.3)] transition-colors",
         )}
       >
@@ -68,7 +68,7 @@ export function PuzzleCard({
 
         <div
           class={clsx(
-            "absolute bottom-0 right-0 px-3 bg-surface-2",
+            "puzzle-card-difficulty absolute bottom-0 right-0 px-3 bg-surface-2",
             "text-current leading-relaxed text-1 uppercase tracking-wider",
             "[clip-path:polygon(10%_0,100%_0,100%_100%,0_100%)]",
           )}
@@ -111,7 +111,7 @@ export function PuzzleCard({
         {tagline && (
           <span
             className={clsx(
-              "text-1 text-text-2 tracking-wide leading-tight",
+              "puzzle-card-tagline text-1 text-text-2 tracking-wide leading-tight",
               "group-hover:text-current",
             )}
           >

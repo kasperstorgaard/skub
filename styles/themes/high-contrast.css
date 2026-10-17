@@ -1,0 +1,32 @@
+/* Skub's type: Chakra Petch */
+@import "./skub.css";
+
+/* High Contrast / A11y — Wong (2011) / Okabe-Ito colorblind-safe palette.
+   All ui colors pass WCAG AAA (7:1) on pure black.
+   surface-4 = surface-3 (collapsed) to keep text-3 above AA on elevated surfaces. */
+:root[data-theme="high-contrast"] {
+  color-scheme: dark;
+  --hover-brightness: 1.8;
+  --btn-active-text: #000000;
+
+  --color-brand: #ffffff;
+  --color-link: var(--blue-3);
+
+  --color-surface-1: #000000;
+  --color-surface-2: #0d0d0d;
+  --color-surface-3: #1a1a1a;
+  --color-surface-4: #1a1a1a;
+
+  --color-text-1: #ffffff;
+  --color-text-2: #cccccc;
+  --color-text-3: #9a9a9a;
+
+  --color-ui-1: var(--blue-3); /* destination — sky blue   — 10.7:1 */
+  --color-ui-2: var(--yellow-7); /* puck        — orange     — 9.8:1  */
+  --color-ui-3: var(--pink-5); /* blockers    — warm pink  — 7.0:1  */
+  --color-ui-4: var(--gray-4); /* walls       — cool gray  — 14.0:1 */
+  --color-ui-contrast: #000000;
+  --color-hole: #000000; /* void — the rendered ring carries definition */
+  --color-portal: var(--teal-3); /* bluish-green — 14.6:1 */
+  --color-portal-alt: #000000;
+}

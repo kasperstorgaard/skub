@@ -1,0 +1,27 @@
+/* Ember — warm light, red/orange/amber.
+   Colour only, on Skub's type and shapes. */
+/* Skub's type: Chakra Petch */
+@import "./skub.css";
+
+:root[data-theme="ember"] {
+  color-scheme: light;
+  --hover-brightness: 0.71;
+  --btn-active-text: #ffffff;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #faf6f1;
+  --color-surface-3: #eddecb;
+  --color-surface-4: #c9b49a;
+  --color-text-1: #2d1a0e;
+  --color-text-2: #6b3a1f;
+  --color-text-3: #a07858;
+  --color-brand: #b91c1c;
+  --color-link: #0f766e;
+  --color-ui-1: #166534;
+  --color-ui-2: #ea580c;
+  --color-ui-3: #b91c1c;
+  --color-ui-4: #374151;
+  --color-ui-contrast: #ffffff;
+  --color-hole: #2d1a0e;
+  --color-portal: #0f766e;
+  --color-portal-alt: #d7ece9;
+}
