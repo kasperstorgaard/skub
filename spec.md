@@ -59,3 +59,11 @@ or motion.
 - A shared shape/texture token layer. Comes after, from what the themes share.
 - Loading optimisation beyond "one theme file per request". Measured at the end.
 - Changing `skub` or `high-contrast`.
+
+## Status
+
+Reviewed one theme at a time against the dev server. Riso and Kiln are
+signed off; Digicam, Acid, Noir and Classic have had at least one revision
+round and need another look. Nocturne and Paper were replaced outright.
+Still open: a token pass over what the six files share, the loading pass,
+and removing the "theme with more edge" TODO entry.
