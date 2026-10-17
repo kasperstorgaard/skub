@@ -54,7 +54,6 @@ or motion.
 | `catppuccin`, `solarized-light`, `ember` | light | existing colour themes, unchanged | Chakra Petch |
 | `digicam` | retro | early-2000s digital camera: rose palette, film grain, viewfinder brackets on the board, white buttons with black text | Space Grotesk + VT323 |
 | `matrix` | retro | The Matrix (1999): lime phosphor, mirrored glyph rain behind the page, scanlines, outline buttons that glow, corner cuts | Michroma + JetBrains Mono |
-| `moquette` | retro | the London Underground (c. 1990): the page is a Tube seat moquette woven tone on tone, full colour only behind open dialogs; the board keeps its shape, with pieces in tube line colours (Circle-yellow puck, Hammersmith & City pink target, Trams green blockers, Central-red walls); white wordmark, Underground red buttons, white-on-blue station name boards for labels and card taglines; no roundel (TfL trademark) | Railway Sans (Johnston revival) |
 | `sash` | retro | 1997 Eurodance CD cover: ultramarine to violet, lens flare, laser rays, chrome lettering and buttons, glowing laser walls, glossy pucks | Exo 2 (ExtraBold Italic display) |
 | `geocities` | retro | a 1998 homepage: tiled starry-sky background, rainbow WordArt title and rainbow rules, grey Win95 bevelled buttons, dark Minesweeper tiles, hit-counter moves, hazard-striped dialogs | Tinos + Comic Neue |
 | `dookie` | retro | the 1994 album cover as a cartoon: cream, sky blue, mustard, tomato, thin black outlines wobbled by an SVG turbulence filter, pucks with faces | Luckiest Guy + Nunito |
@@ -65,9 +64,8 @@ Dookie's wobble is an inline SVG `<filter>` rendered by `_app.tsx` only when
 that theme is active: Chromium ignores a CSS `filter: url()` that points into
 a separate SVG file or data URI.
 
-Railway Sans and DSEG7 ship as their authors' unmodified files: their OFL
-licences reserve the font names, and subsetting or converting counts as modifying it,
-so the theme plugin and the font preloads accept `.woff` as well as `.woff2`.
+DSEG7 (Discman's LCD digits) ships as its author's unmodified file: its
+OFL licence reserves the font name, and subsetting counts as modifying it.
 
 ## Non-goals
 
@@ -80,13 +78,12 @@ so the theme plugin and the font preloads accept `.woff` as well as `.woff2`.
 
 The Retro lineup is set: the 90s/2000s kitsch references are in place and
 each has had at least a first pass. The existing colour themes are back
-beside them, each in its own file. Riso is signed off. The rest are
-recognisable but still lean on their gimmick; the next pass is refinement,
-theme by theme, until each is enjoyable to play in rather than a novelty.
+beside them, each in its own file. Retro themes are opt-in, so
+they ship as they are; any tweaks come later, theme by theme.
 
-Dropped along the way for lacking a reference people recognise: Kiln, Noir,
-Classic Web, Bondi (iMac G3), Wes (Wes Anderson) and Trek (Star Trek, as
+Dropped along the way, mostly for lacking a reference people recognise: Kiln, Noir,
+Classic Web, Moquette (London Underground), Bondi (iMac G3), Wes (Wes Anderson) and Trek (Star Trek, as
 LCARS and as the original series).
 
-Still open: the refinement pass, a token pass over what the theme files
+Still open: a token pass over what the theme files
 share, the loading pass, and removing the "theme with more edge" TODO entry.

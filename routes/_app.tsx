@@ -63,7 +63,7 @@ export default define.page(
               key={href}
               rel="preload"
               as="font"
-              type={href.endsWith(".woff") ? "font/woff" : "font/woff2"}
+              type="font/woff2"
               href={href}
               crossOrigin="anonymous"
             />

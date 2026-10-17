@@ -33,7 +33,7 @@ export function themeCss(): Plugin {
     return keys.sort();
   };
 
-  const fontUrlRe = /url\(["']?([^"')]+\.woff2?)["']?\)/g;
+  const fontUrlRe = /url\(["']?([^"')]+\.woff2)["']?\)/g;
   const fontUrls = (css: string) =>
     [...css.matchAll(fontUrlRe)].map((m) => m[1]);
 
@@ -103,7 +103,7 @@ export function themeCss(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const pathname = new URL(req.url ?? "/", "http://localhost").pathname;
         const match = pathname.match(
-          /^\/styles\/((?:themes\/[\w-]+\.css)|(?:fonts\/[\w-]+\.woff2?))$/,
+          /^\/styles\/((?:themes\/[\w-]+\.css)|(?:fonts\/[\w-]+\.woff2))$/,
         );
         if (!match) return next();
         try {
@@ -112,9 +112,7 @@ export function themeCss(): Plugin {
             "Content-Type",
             match[1].endsWith(".css")
               ? "text/css; charset=utf-8"
-              : match[1].endsWith(".woff2")
-              ? "font/woff2"
-              : "font/woff",
+              : "font/woff2",
           );
           res.setHeader("Cache-Control", "no-cache");
           res.end(file);

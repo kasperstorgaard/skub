@@ -64,13 +64,6 @@ export const THEMES: Theme[] = [
     section: "retro",
   },
   {
-    key: "moquette",
-    label: "Moquette",
-    surface: "#172f80",
-    brand: "#dc241f",
-    section: "retro",
-  },
-  {
     key: "sash",
     label: "SASH!",
     surface: "#0b0b33",
