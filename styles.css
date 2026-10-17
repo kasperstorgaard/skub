@@ -329,6 +329,12 @@
 }
 
 @layer base {
+  /* The canvas past body's edge (overscroll, a page taller than the window)
+     takes the theme's surface, not normalize's own */
+  html {
+    background-color: var(--color-surface-1);
+  }
+
   /* Set default text color */
   body {
     color: var(--color-text-1);
