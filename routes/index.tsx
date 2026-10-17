@@ -66,7 +66,7 @@ export default define.page<typeof handler>(function Home(ctx) {
       <Main className="max-lg:row-span-full items-stretch place-content-stretch">
         <Header url={url} share />
 
-        <div className="flex flex-col">
+        <div className="title-card flex flex-col">
           <h1 className="text-8 leading-tight text-brand flex items-baseline gap-fl-1">
             <span>
               Skub
@@ -111,7 +111,7 @@ export default define.page<typeof handler>(function Home(ctx) {
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <span className="text-1 text-text-2 tracking-wide leading-tight">
+                    <span className="puzzle-card-tagline text-1 text-text-2 tracking-wide leading-tight">
                       New here?
                     </span>
                     <span className="text-text-1 text-3 font-semibold leading-flat items-center">

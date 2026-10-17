@@ -1,4 +1,4 @@
-# Eight themes that differ in more than colour
+# Ten themes that differ in more than colour
 
 ## Problem
 
@@ -10,10 +10,11 @@ is clean but flat, and five of the seven themes are editor palettes
 ## Approach
 
 Keep `skub` and `high-contrast` as they are. Replace the five editor themes
-with six new ones, each a *slight* variation on the current design: same
+with eight new ones, each a kitsch reference from the 90s and 2000s and each a
+*slight* variation on the current design: same
 spacing, same layout, same board rules, but its own fonts, shape (radius,
 border weight, angles), texture (noise, grain, scanlines) and light (gradients,
-glows). Eight themes total.
+glows). Ten themes total.
 
 Each theme is one CSS file in `styles/themes/`, built as a hashed asset by
 `plugins/theme-css.ts`, and only the active one is linked from `_app.tsx`,
@@ -43,27 +44,44 @@ or motion.
 
 ## The themes
 
-| Key | Mode | Direction | Fonts |
+| Key | Mode | Reference | Fonts |
 |---|---|---|---|
 | `skub` | dark | unchanged baseline | Chakra Petch |
 | `high-contrast` | dark | unchanged, a11y | Chakra Petch |
-| `digicam` | dark | 2000s hipster, early digital camera: rose palette, film grain, zero radius, viewfinder brackets on the board, white buttons with black text | Space Grotesk + VT323 (headings, labels) |
-| `acid` | dark | neon terminal: lime phosphor, hairline outline buttons that glow instead of filling, corner cuts on cards and dialogs, glitch on hover | Michroma + JetBrains Mono |
-| `noir` | dark | a hotel bar at midnight: black and gold, hairlines, 2px radius, ivory puck, oxblood blockers, jade destination | Bodoni Moda + Jost |
-| `classic` | light | a document from the early web: white, black serif, link blue as the only colour, table-style grid, no radius, no shadows | Tinos |
-| `kiln` | light | Ember palette: clay fills, rust links, generous radius, flat board | Bricolage Grotesque + Karla |
-| `riso` | light | risograph: two-ink overprint in pink and teal, halftone noise, zero radius, thick borders | Archivo Black + Archivo |
+| `digicam` | dark | early-2000s digital camera: rose palette, film grain, viewfinder brackets on the board, white buttons with black text | Space Grotesk + VT323 |
+| `matrix` | dark | The Matrix (1999): lime phosphor, mirrored glyph rain behind the page, scanlines, outline buttons that glow, corner cuts | Michroma + JetBrains Mono |
+| `moquette` | dark | the London Underground (c. 1990): the page is a Tube seat moquette woven tone on tone, full colour only behind open dialogs; the board keeps its shape, with pieces in tube line colours (Circle-yellow puck, Hammersmith & City pink target, Trams green blockers, Central-red walls); white wordmark, Underground red buttons, white-on-blue station name boards for labels and card taglines; no roundel (TfL trademark) | Railway Sans (Johnston revival) |
+| `sash` | dark | 1997 Eurodance CD cover: ultramarine to violet, lens flare, laser rays, chrome lettering and buttons, glowing laser walls, glossy pucks | Exo 2 (ExtraBold Italic display) |
+| `geocities` | dark | a 1998 homepage: tiled starry-sky background, rainbow WordArt title and rainbow rules, grey Win95 bevelled buttons, dark Minesweeper tiles, hit-counter moves, hazard-striped dialogs | Tinos + Comic Neue |
+| `dookie` | light | the 1994 album cover as a cartoon: cream, sky blue, mustard, tomato, thin black outlines wobbled by an SVG turbulence filter, pucks with faces | Luckiest Guy + Nunito |
+| `discman` | light | a late-90s portable CD player in daylight: matte brushed aluminium, rubbery silver keys, a backlit LCD with segment digits for the counter, wide device lettering and labels ("Anti-skip · Digital mega bass"), CD-rainbow sheen on the wordmark, difficulty tag and the puck (a tiny disc, on trial) | Syncopate + Manrope + DSEG7 Classic |
+| `riso` | light | 90s risograph zine: two-ink overprint in pink and teal, halftone, zero radius, thick borders | Archivo Black + Archivo |
+
+Dookie's wobble is an inline SVG `<filter>` rendered by `_app.tsx` only when
+that theme is active: Chromium ignores a CSS `filter: url()` that points into
+a separate SVG file or data URI.
+
+Railway Sans and DSEG7 ship as their authors' unmodified files: their OFL
+licences reserve the font names, and subsetting or converting counts as modifying it,
+so the theme plugin and the font preloads accept `.woff` as well as `.woff2`.
 
 ## Non-goals
 
 - A shared shape/texture token layer. Comes after, from what the themes share.
 - Loading optimisation beyond "one theme file per request". Measured at the end.
-- Changing `skub` or `high-contrast`.
+- Changing `skub`. `high-contrast` only gets a slightly brighter tertiary
+  text and its own Accessibility group in the theme picker.
 
 ## Status
 
-Reviewed one theme at a time against the dev server. Riso and Kiln are
-signed off; Digicam, Acid, Noir and Classic have had at least one revision
-round and need another look. Nocturne and Paper were replaced outright.
-Still open: a token pass over what the six files share, the loading pass,
-and removing the "theme with more edge" TODO entry.
+The lineup is set: the 90s/2000s kitsch references are in place and each
+theme has had at least a first pass. Riso is signed off. The rest are
+recognisable but still lean on their gimmick; the next pass is refinement,
+theme by theme, until each is enjoyable to play in rather than a novelty.
+
+Dropped along the way for lacking a reference people recognise: Kiln, Noir,
+Classic Web, Bondi (iMac G3), Wes (Wes Anderson) and Trek (Star Trek, as
+LCARS and as the original series).
+
+Still open: the refinement pass, a token pass over what the theme files
+share, the loading pass, and removing the "theme with more edge" TODO entry.

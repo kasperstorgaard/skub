@@ -63,7 +63,7 @@ export default define.page(
               key={href}
               rel="preload"
               as="font"
-              type="font/woff2"
+              type={href.endsWith(".woff") ? "font/woff" : "font/woff2"}
               href={href}
               crossOrigin="anonymous"
             />
@@ -105,6 +105,20 @@ export default define.page(
             "print:grid-cols-[1fr_max-content_1fr] print:grid-rows-[auto_1fr] print:gap-0",
           )}
         >
+          {/* Dookie's hand-drawn wobble; CSS filters can't reach an SVG file */}
+          {theme === "dookie" && (
+            <svg aria-hidden="true" width="0" height="0" className="absolute">
+              <filter id="dookie-wobble">
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="0.04"
+                  numOctaves="2"
+                  seed="3"
+                />
+                <feDisplacementMap in="SourceGraphic" scale="2.5" />
+              </filter>
+            </svg>
+          )}
           <Partial name="body">
             <Component />
           </Partial>

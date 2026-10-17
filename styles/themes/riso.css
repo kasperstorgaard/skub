@@ -1,4 +1,4 @@
-/* Riso — light risograph print.
+/* Riso — a 90s risograph zine.
    Fluorescent pink and teal inks overprinted on off-white stock: misregistered
    pink shadows, a halftone dot screen, paper grain, zero radius, thick borders.
    Archivo for text, Archivo Black for the display face. */
@@ -144,6 +144,13 @@
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+  }
+  /* Spaced capitals run wide; a touch smaller keeps buttons their width */
+  .btn {
+    font-size: calc(var(--font-size-2) - 2px);
+  }
+  .btn[data-size="lg"] {
+    font-size: calc(var(--font-size-3) - 2px);
   }
   .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
   .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {

@@ -1,0 +1,277 @@
+/* Discman — a portable CD player, late 90s, in daylight.
+   Matte brushed aluminium, rubbery silver keys, a pale backlit LCD with
+   segment digits for the move counter, wide device lettering, and the
+   rainbow sheen off a CD's underside on the wordmark, the difficulty tag and
+   the puck (a tiny disc). Night, gloss and chrome belong to SASH!; this is
+   the opposite. Syncopate for device labels, Manrope for text, DSEG7 for
+   the counter (the author's unmodified file: its licence reserves the name). */
+
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/manrope-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/manrope-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Syncopate";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/syncopate-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "DSEG7 Classic";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/dseg7-classic-400.woff2") format("woff2");
+}
+
+:root[data-theme="discman"] {
+  color-scheme: light;
+  --hover-brightness: 0.9;
+  --btn-active-text: #ffffff;
+
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-display: "Syncopate", "Manrope", sans-serif;
+
+  --color-brand: #e0601f;
+  --color-link: #1f5aa8;
+  --color-surface-1: #e4e6e9;
+  --color-surface-2: #d9dce0;
+  --color-surface-3: #c9cdd2;
+  --color-surface-4: #a3a8b0;
+
+  --color-text-1: #1d2126;
+  --color-text-2: #3d434b;
+  --color-text-3: #555c66;
+
+  --color-ui-1: #2a6fc9;
+  /* The board draws the puck as a disc; thumbnails use this plain silver */
+  --color-ui-2: #7d848e;
+  --color-ui-3: #5a616b;
+  --color-ui-4: #e0601f;
+  --color-ui-contrast: #e0601f;
+  --color-hole: #1d2126;
+  --color-portal: #2a6fc9;
+  --color-portal-alt: #d6e2f3;
+
+  /* Brushing: horizontal streak noise */
+  --disc-brush: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.002 .9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.6 1.1'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23b)'/%3E%3C/svg%3E");
+  --disc-edge: #9aa0a8;
+  --disc-key: linear-gradient(180deg, #f7f8fa, #d3d7dc);
+  --disc-lcd: #bccbd0;
+  --disc-lcd-ink: #1d2a33;
+  /* A CD's underside: pastel for fills, deep for type */
+  --disc-sheen: conic-gradient(
+    from 210deg at 50% 50%,
+    #ffc2dd,
+    #c9c2ff,
+    #b8e6ff,
+    #bff5dc,
+    #fff1b8,
+    #ffd2bd,
+    #ffc2dd
+  );
+  --disc-sheen-deep: linear-gradient(
+    100deg,
+    #b0306a,
+    #6a3fb5,
+    #2a6fc9,
+    #1f8a7a,
+    #b05a2a
+  );
+}
+
+[data-theme="discman"] {
+  /* Matte aluminium, brushed, catching light from the top left */
+  body {
+    background-image:
+      var(--disc-brush),
+      linear-gradient(135deg, #eef0f2, var(--color-surface-1) 45%, #d8dbdf);
+    background-size: 400px 400px, 100% 100%;
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background-color: #c9c2ff;
+    color: var(--color-text-1);
+  }
+
+  /* Printed on the device: wide capitals */
+  :where(h2, h3, h4, h5, h6),
+  .puzzle-card-difficulty,
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size-adjust: 0.42;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  h1 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* The wordmark catches the rainbow */
+  .title-card h1 > span:first-child {
+    background-image: var(--disc-sheen-deep);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Rubbery silver keys, slightly embossed */
+  .btn,
+  .icon-btn {
+    border-width: var(--border-size-1);
+    border-color: var(--disc-edge);
+    border-radius: var(--radius-3);
+    background-color: #e6e9ec;
+    background-image: var(--disc-key);
+    color: var(--color-text-1);
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgb(29 33 38 / 0.2);
+  }
+
+  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    background-color: var(--color-text-2);
+    background-image: none;
+    border-color: var(--color-text-2);
+    color: var(--btn-active-text);
+  }
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--color-link);
+    background-image: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.25),
+      transparent 60%
+    );
+    border-color: #184a8c;
+    color: var(--btn-active-text);
+  }
+  .btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    filter: none;
+    background-color: #184a8c;
+  }
+
+  /* Backlit LCD, segment digits */
+  .move-counter {
+    font-family: "DSEG7 Classic", var(--font-sans);
+    font-size-adjust: 0.6;
+    color: var(--disc-lcd-ink);
+    background-color: var(--disc-lcd);
+    box-shadow: 0 0 0 6px var(--disc-lcd), 0 0 0 7px var(--disc-edge);
+  }
+
+  .puzzle-card-thumb {
+    border-width: var(--border-size-1);
+    border-color: var(--disc-edge);
+    border-radius: var(--radius-2);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    border-color: var(--color-link);
+  }
+
+  /* Difficulty: a sticker with the CD sheen */
+  .puzzle-card-difficulty,
+  .difficulty-badge {
+    border: var(--border-size-1) solid var(--disc-edge);
+    border-radius: var(--radius-1);
+    background-image: var(--disc-sheen);
+    color: var(--color-text-1);
+  }
+  .puzzle-card-difficulty {
+    clip-path: none;
+    margin: var(--size-1);
+  }
+
+  .callout {
+    border: var(--border-size-1) solid var(--disc-edge);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface-2);
+  }
+
+  kbd {
+    background-image: var(--disc-key);
+    border-color: var(--disc-edge);
+    box-shadow: inset 0 1px 0 #ffffff;
+    color: var(--color-text-1);
+  }
+
+  /* Solid panel with a machined top edge, device labels in the corner */
+  .panel {
+    position: relative;
+    border-top: var(--border-size-1) solid var(--disc-edge);
+    background-color: var(--color-surface-2);
+    box-shadow: inset 0 1px 0 #ffffff;
+  }
+  .panel::before {
+    content: "Anti-skip \00b7  Digital mega bass";
+    content: "Anti-skip \00b7  Digital mega bass" / "";
+    position: absolute;
+    top: var(--size-2);
+    right: var(--size-3);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--font-size-00);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-3);
+    pointer-events: none;
+  }
+
+  dialog,
+  .cookie-banner {
+    border: var(--border-size-1) solid var(--disc-edge);
+    border-radius: var(--radius-3);
+    background-color: var(--color-surface-1);
+    box-shadow: 0 10px 30px rgb(29 33 38 / 0.22);
+  }
+  dialog::backdrop {
+    background-color: rgb(29 33 38 / 0.3);
+  }
+
+  /* Board: matte tiles with a faint machined bevel; the puck is a tiny disc */
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: #f7f8fa #b9bec6 #b9bec6 #f7f8fa;
+    background-color: #eceef1;
+  }
+  .board-puck {
+    background-image:
+      radial-gradient(
+        circle,
+        var(--color-surface-1) 0 11%,
+        var(--disc-edge) 11% 15%,
+        transparent 15%
+      ),
+      var(--disc-sheen);
+    box-shadow: inset 0 0 0 1px rgb(29 33 38 / 0.35);
+  }
+
+  @media print {
+    body {
+      background-image: none;
+    }
+    .panel::before {
+      display: none;
+    }
+    .move-counter {
+      box-shadow: none;
+      background-color: transparent;
+    }
+  }
+}

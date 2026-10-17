@@ -72,7 +72,7 @@
 
   --color-text-1: #ffffff;
   --color-text-2: #cccccc;
-  --color-text-3: #888888;
+  --color-text-3: #9a9a9a;
 
   --color-ui-1: var(--blue-3); /* destination — sky blue   — 10.7:1 */
   --color-ui-2: var(--yellow-7); /* puck        — orange     — 9.8:1  */

@@ -111,7 +111,7 @@ export function PuzzleCard({
         {tagline && (
           <span
             className={clsx(
-              "text-1 text-text-2 tracking-wide leading-tight",
+              "puzzle-card-tagline text-1 text-text-2 tracking-wide leading-tight",
               "group-hover:text-current",
             )}
           >

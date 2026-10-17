@@ -1,0 +1,310 @@
+/* GeoCities — a homepage from 1998.
+   A tiled starry-sky background, white Times text, Comic headings, a rainbow
+   WordArt title and rainbow rules, grey Windows 95 buttons, Minesweeper
+   tiles, blue-bordered linked images, a hit counter and hazard-striped
+   "under construction" dialogs. Tinos (the metric-compatible Times New
+   Roman) for text, Comic Neue for the display face. */
+
+@font-face {
+  font-family: "Tinos";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/tinos-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Tinos";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/tinos-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Comic Neue";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/comic-neue-700.woff2") format("woff2");
+}
+
+:root[data-theme="geocities"] {
+  color-scheme: dark;
+  --hover-brightness: 1.3;
+  --btn-active-text: #ffffff;
+
+  --font-sans: "Tinos", "Times New Roman", Times, serif;
+  --font-display: "Comic Neue", "Comic Sans MS", cursive;
+
+  --color-brand: #ffff00;
+  --color-link: #66ccff;
+  --color-surface-1: #000000;
+  --color-surface-2: #000022;
+  --color-surface-3: #101038;
+  --color-surface-4: #404060;
+
+  --color-text-1: #ffffff;
+  --color-text-2: #e0e0e0;
+  --color-text-3: #b4b4b4;
+
+  --color-ui-1: #00ffff;
+  --color-ui-2: #ff0000;
+  --color-ui-3: #c0c0c0;
+  --color-ui-4: #ffff00;
+  --color-ui-contrast: #ff00ff;
+  --color-hole: #333333;
+  --color-portal: #ff00ff;
+  --color-portal-alt: #400040;
+
+  /* Windows grey and its bevel, Netscape navy, visited pink, the two stripes */
+  --geo-face: #c0c0c0;
+  --geo-light: #ffffff;
+  --geo-shade: #404040;
+  --geo-navy: #000080;
+  --geo-visited: #ff88ff;
+  --geo-stars: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' shape-rendering='crispEdges'%3E%3Crect width='160' height='160' fill='%23000'/%3E%3Crect x='151' y='51' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='25' y='75' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='98' y='103' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='138' y='56' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='68' y='6' width='1' height='1' fill='%23ffaaaa' opacity='0.8'/%3E%3Crect x='21' y='33' width='2' height='2' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='145' y='52' width='1' height='1' fill='%23aaaaff' opacity='0.45'/%3E%3Crect x='153' y='90' width='2' height='2' fill='%23ffffaa' opacity='0.6'/%3E%3Crect x='39' y='103' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='36' y='143' width='2' height='2' fill='%23ffaaaa' opacity='0.45'/%3E%3Crect x='82' y='13' width='1' height='1' fill='%23ffffff' opacity='0.45'/%3E%3Crect x='97' y='102' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='106' y='91' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='81' y='133' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='120' y='78' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='31' y='93' width='2' height='2' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='46' y='145' width='2' height='2' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='95' y='144' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='18' y='39' width='1' height='1' fill='%23ffffff' opacity='0.45'/%3E%3Crect x='22' y='67' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='99' y='100' width='1' height='1' fill='%23aaaaff' opacity='1.0'/%3E%3Crect x='13' y='87' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='40' y='81' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='123' y='20' width='1' height='1' fill='%23ffffff' opacity='0.45'/%3E%3Crect x='53' y='134' width='1' height='1' fill='%23ffffaa' opacity='0.45'/%3E%3Crect x='126' y='120' width='2' height='2' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='106' y='156' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='27' y='81' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='95' y='51' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='10' y='38' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='146' y='60' width='1' height='1' fill='%23ffffff' opacity='0.45'/%3E%3Crect x='31' y='27' width='2' height='2' fill='%23ffaaaa' opacity='1.0'/%3E%3Crect x='47' y='96' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='3' y='66' width='2' height='2' fill='%23aaaaff' opacity='1.0'/%3E%3Crect x='137' y='141' width='1' height='1' fill='%23ffffff' opacity='0.45'/%3E%3Crect x='75' y='102' width='1' height='1' fill='%23ffffaa' opacity='1.0'/%3E%3Crect x='79' y='114' width='1' height='1' fill='%23ffffaa' opacity='0.6'/%3E%3Crect x='99' y='51' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='107' y='2' width='2' height='2' fill='%23aaaaff' opacity='0.8'/%3E%3Crect x='17' y='119' width='1' height='1' fill='%23ffaaaa' opacity='0.8'/%3E%3Crect x='134' y='28' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='44' y='142' width='1' height='1' fill='%23ffffff' opacity='0.45'/%3E%3Crect x='1' y='107' width='1' height='1' fill='%23ffaaaa' opacity='0.45'/%3E%3Crect x='148' y='148' width='2' height='2' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='123' y='70' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='53' y='140' width='1' height='1' fill='%23aaaaff' opacity='0.6'/%3E%3Crect x='82' y='7' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='116' y='66' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='24' y='41' width='1' height='1' fill='%23aaaaff' opacity='0.6'/%3E%3Crect x='78' y='3' width='1' height='1' fill='%23ffffaa' opacity='0.8'/%3E%3Crect x='33' y='6' width='1' height='1' fill='%23aaaaff' opacity='0.45'/%3E%3Crect x='59' y='66' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='153' y='66' width='2' height='2' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='70' y='32' width='1' height='1' fill='%23ffffff' opacity='0.45'/%3E%3Crect x='104' y='122' width='2' height='2' fill='%23ffffaa' opacity='0.8'/%3E%3Crect x='44' y='3' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='39' y='61' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='80' y='44' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='23' y='108' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='146' y='9' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='13' y='140' width='1' height='1' fill='%23ffffaa' opacity='1.0'/%3E%3Crect x='3' y='10' width='1' height='1' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='34' y='113' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='50' y='152' width='2' height='2' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='27' y='133' width='1' height='1' fill='%23ffffff' opacity='1.0'/%3E%3Crect x='78' y='93' width='1' height='1' fill='%23aaaaff' opacity='0.45'/%3E%3Crect x='17' y='138' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='148' y='90' width='1' height='1' fill='%23ffffaa' opacity='0.45'/%3E%3Crect x='81' y='111' width='2' height='2' fill='%23ffffff' opacity='0.8'/%3E%3Crect x='125' y='131' width='1' height='1' fill='%23ffffff' opacity='0.6'/%3E%3Crect x='132' y='16' width='7' height='1' fill='%23fff'/%3E%3Crect x='135' y='13' width='1' height='7' fill='%23fff'/%3E%3Crect x='134' y='15' width='3' height='3' fill='%23fff'/%3E%3Crect x='36' y='126' width='7' height='1' fill='%23fff'/%3E%3Crect x='39' y='123' width='1' height='7' fill='%23fff'/%3E%3Crect x='38' y='125' width='3' height='3' fill='%23fff'/%3E%3Crect x='49' y='18' width='7' height='1' fill='%23fff'/%3E%3Crect x='52' y='15' width='1' height='7' fill='%23fff'/%3E%3Crect x='51' y='17' width='3' height='3' fill='%23fff'/%3E%3C/svg%3E");
+  --geo-rainbow: linear-gradient(
+    90deg,
+    #ff0000,
+    #ff8000,
+    #ffff00,
+    #00c000,
+    #0080ff,
+    #8000ff
+  );
+  --geo-hazard: repeating-linear-gradient(
+    -45deg,
+    #000000 0 8px,
+    #ffcc00 8px 16px
+  );
+}
+
+[data-theme="geocities"] {
+  /* The sky, dimmed to about 70% */
+  body {
+    background-image:
+      linear-gradient(rgb(0 0 0 / 0.3), rgb(0 0 0 / 0.3)),
+      var(--geo-stars);
+  }
+
+  /* Block text sitting on the sky gets a black box. Zero specificity, so
+     every component rule wins; positioned and filled elements are left alone. */
+  @media screen {
+    :where(
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p,
+      dt,
+      dd,
+      figcaption,
+      legend,
+      .puzzle-card-tagline
+    ):where(
+      :not(
+        :where(
+          .panel,
+          dialog,
+          .cookie-banner,
+          .callout,
+          .btn,
+          .icon-btn,
+          .board,
+          .puzzle-card-thumb,
+          [class*="bg-"]
+        )
+          *,
+        [class*="bg-"],
+        [class*="absolute"],
+        [class*="fixed"],
+        .sr-only
+      )
+    ) {
+      background-color: #000000;
+    }
+  }
+
+  ::selection {
+    background-color: var(--geo-navy);
+    color: #ffffff;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6),
+  .puzzle-card-difficulty,
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size-adjust: 0.48;
+  }
+
+  /* WordArt: the wordmark in rainbow; its h1 keeps the black box */
+  .title-card h1 > span:first-child {
+    background-image: linear-gradient(
+      90deg,
+      #ff4040,
+      #ffa020,
+      #ffff40,
+      #40ff40,
+      #40c0ff,
+      #c080ff
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  a:not(.btn, .icon-btn):visited {
+    color: var(--geo-visited);
+  }
+
+  /* Square corners everywhere; the puck stays a circle */
+  .btn,
+  .icon-btn,
+  .callout,
+  .board-space,
+  .board-blocker,
+  .board-hole,
+  .board-portal,
+  .puzzle-card-thumb,
+  .puzzle-card-difficulty,
+  .difficulty-badge,
+  .cookie-banner,
+  dialog,
+  kbd {
+    border-radius: 0;
+  }
+
+  /* Windows 95 push buttons: raised grey, pressed in on :active */
+  .btn,
+  .icon-btn {
+    font-weight: 400;
+    border-width: var(--border-size-2);
+    border-color: var(--geo-light) var(--geo-shade) var(--geo-shade)
+      var(--geo-light);
+    background-color: var(--geo-face);
+    color: #000000;
+  }
+  .btn:active:not([disabled], [aria-disabled]),
+  .icon-btn:active:not([disabled], [aria-disabled]) {
+    border-color: var(--geo-shade) var(--geo-light) var(--geo-light)
+      var(--geo-shade);
+  }
+
+  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--geo-navy);
+    color: var(--btn-active-text);
+  }
+  .btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    filter: none;
+    background-color: #0000c0;
+  }
+
+  /* Hit counter: black odometer in a grey bezel, lime digits */
+  .move-counter {
+    font-weight: 700;
+    color: #00ff00;
+    background-color: #000000;
+    box-shadow: 0 0 0 4px #000000, 0 0 0 6px var(--geo-face);
+  }
+
+  /* Linked images get a link-coloured border; pink once visited */
+  .puzzle-card-thumb {
+    border-width: var(--border-size-2);
+    border-color: var(--color-link);
+    background-color: #000000;
+  }
+  .puzzle-card:visited .puzzle-card-thumb {
+    border-color: var(--geo-visited);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    border-color: #ff0000;
+  }
+
+  /* Labels: a yellow "NEW!" sticker */
+  .puzzle-card-difficulty,
+  .difficulty-badge {
+    border: var(--border-size-1) solid #000000;
+    background-color: #ffff00;
+    color: #000000;
+  }
+  .puzzle-card-difficulty {
+    clip-path: none;
+    margin: var(--size-1);
+    text-transform: uppercase;
+    letter-spacing: 0;
+  }
+
+  /* A table with bgcolor=navy */
+  .callout {
+    border: var(--border-size-1) solid var(--geo-face);
+    background-color: var(--geo-navy);
+  }
+
+  kbd {
+    background-color: var(--geo-face);
+    border-color: var(--geo-light) var(--geo-shade) var(--geo-shade)
+      var(--geo-light);
+    box-shadow: none;
+    color: #000000;
+  }
+
+  /* <hr> in every colour: real rules, under the header, over the panel */
+  hr {
+    border-top-width: var(--border-size-2);
+    border-image: var(--geo-rainbow) 1;
+  }
+  header {
+    background: var(--geo-rainbow) bottom / 100% 3px no-repeat;
+  }
+  .panel {
+    border-top-width: var(--border-size-2);
+    border-image: var(--geo-rainbow) 1;
+    background-color: var(--color-surface-2);
+  }
+
+  /* Under construction */
+  dialog,
+  .cookie-banner {
+    border: var(--border-size-3) solid #000000;
+    border-image: var(--geo-hazard) 6;
+    background-color: var(--color-surface-2);
+    box-shadow: none;
+  }
+  dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.6);
+  }
+
+  /* Board: dark Minesweeper cells, solid over the stars */
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: #6a6a6a #262626 #262626 #6a6a6a;
+    background-color: #000000;
+  }
+
+  @media print {
+    body {
+      background-image: none;
+    }
+    .title-card h1 > span:first-child {
+      background-image: none;
+      color: var(--color-text-1);
+    }
+    .move-counter {
+      box-shadow: none;
+      background-color: transparent;
+      color: var(--color-text-1);
+    }
+    hr,
+    .panel,
+    dialog {
+      border-image: none;
+    }
+  }
+}

@@ -58,5 +58,5 @@ Deno.test("a theme's swatch matches its stylesheet", () => {
 Deno.test("a retired theme key resolves to skub", () => {
   assertEquals(resolveTheme("dracula"), "skub");
   assertEquals(resolveTheme(undefined), "skub");
-  assertEquals(resolveTheme("acid"), "acid");
+  assertEquals(resolveTheme("matrix"), "matrix");
 });

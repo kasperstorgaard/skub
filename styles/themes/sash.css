@@ -1,0 +1,266 @@
+/* SASH! — a 1997 Eurodance CD cover.
+   Ultramarine fading to violet, a lens flare in the corner, faint laser rays,
+   chrome lettering and chrome buttons, walls that glow like lasers, glossy
+   pucks. Exo 2: ExtraBold Italic for the display face, upright for text. */
+
+@font-face {
+  font-family: "Exo 2";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/exo-2-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Exo 2";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/exo-2-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Exo 2";
+  font-style: italic;
+  font-weight: 800;
+  font-display: swap;
+  src: url("../fonts/exo-2-800-italic.woff2") format("woff2");
+}
+
+:root[data-theme="sash"] {
+  color-scheme: dark;
+  --hover-brightness: 1.25;
+  --btn-active-text: #ffffff;
+
+  --font-sans: "Exo 2", system-ui, sans-serif;
+  --font-display: var(--font-sans);
+
+  --color-brand: #ff2bd6;
+  --color-link: #5fdcff;
+  --color-surface-1: #0b0b33;
+  --color-surface-2: #14134d;
+  --color-surface-3: #1f1c66;
+  --color-surface-4: #34308c;
+
+  --color-text-1: #ffffff;
+  --color-text-2: #cfd2ff;
+  --color-text-3: #a0a5ea;
+
+  --color-ui-1: #5fdcff;
+  --color-ui-2: #e3e8f4;
+  --color-ui-3: #8a5bff;
+  --color-ui-4: #ff2bd6;
+  --color-ui-contrast: #ff2bd6;
+  --color-hole: #04041a;
+  --color-portal: #5fdcff;
+  --color-portal-alt: #1c2a6e;
+
+  /* Polished chrome, for lettering and buttons */
+  --sash-chrome: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #dfe5f2 38%,
+    #8c95ad 50%,
+    #c7cfe2 62%,
+    #f4f7ff 100%
+  );
+  --sash-hot: linear-gradient(135deg, #ff2bd6, #8a5bff);
+  --sash-hairline: color-mix(in srgb, var(--color-link) 35%, transparent);
+}
+
+[data-theme="sash"] {
+  /* Ultramarine to violet, a lens flare up right, laser rays from down left */
+  body {
+    background-image:
+      radial-gradient(
+        circle at 86% 9%,
+        rgb(255 255 255 / 0.55) 0,
+        rgb(190 220 255 / 0.18) 1.2%,
+        transparent 5%
+      ),
+      radial-gradient(
+      circle at 86% 9%,
+      transparent 9%,
+      rgb(95 220 255 / 0.07) 9.6%,
+      transparent 10.6%
+    ),
+      radial-gradient(
+      circle at 72% 24%,
+      rgb(255 43 214 / 0.1) 0,
+      transparent 2.2%
+    ),
+      radial-gradient(
+      circle at 64% 33%,
+      rgb(95 220 255 / 0.08) 0,
+      transparent 1.4%
+    ),
+      repeating-conic-gradient(
+      from 20deg at -10% 115%,
+      transparent 0 5deg,
+      rgb(255 43 214 / 0.06) 5deg 5.25deg,
+      transparent 5.25deg 11deg
+    ),
+      linear-gradient(
+      160deg,
+      var(--color-surface-1) 30%,
+      #1f0b45 100%
+    );
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background-color: var(--color-brand);
+    color: #ffffff;
+  }
+
+  :where(h1, h2, h3, h4, h5, h6),
+  .puzzle-card-difficulty,
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  /* Chrome lettering, unless a page inks the heading itself */
+  :where(h1, h2):not([class*="text-text-"]) {
+    background-image: var(--sash-chrome);
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 6px rgb(255 43 214 / 0.35));
+  }
+
+  .btn,
+  .icon-btn {
+    border-width: var(--border-size-1);
+    border-color: #ffffff;
+    background-color: #c7cfe2;
+    background-image: var(--sash-chrome);
+    color: var(--color-surface-1);
+    font-style: italic;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--color-brand);
+    background-image: var(--sash-hot);
+    border-color: color-mix(in srgb, #ffffff 60%, var(--color-brand));
+    color: var(--btn-active-text);
+    box-shadow: 0 0 12px rgb(255 43 214 / 0.4);
+  }
+
+  .move-counter {
+    font-style: italic;
+    font-weight: 800;
+    background-image: var(--sash-chrome);
+    background-clip: text;
+    color: transparent;
+  }
+
+  .puzzle-card-thumb {
+    border-width: var(--border-size-1);
+    border-color: var(--sash-hairline);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 12px rgb(255 43 214 / 0.35);
+  }
+
+  .puzzle-card-difficulty {
+    background-image: var(--sash-hot);
+    color: #ffffff;
+  }
+  .difficulty-badge {
+    border: var(--border-size-1) solid var(--sash-hairline);
+  }
+
+  .callout {
+    border: var(--border-size-1) solid var(--sash-hairline);
+  }
+
+  kbd {
+    background-color: var(--color-surface-3);
+    border-color: var(--sash-hairline);
+    box-shadow: none;
+    color: var(--color-text-1);
+  }
+
+  .panel {
+    border-top-width: var(--border-size-2);
+    border-image: linear-gradient(
+      90deg,
+      var(--color-brand),
+      var(--color-ui-3),
+      var(--color-link)
+    ) 1;
+    box-shadow: 0 -2px 18px -8px var(--color-brand);
+  }
+
+  dialog,
+  .cookie-banner {
+    border: var(--border-size-1) solid var(--sash-hairline);
+    background-color: var(--color-surface-2);
+    background-image: linear-gradient(
+      180deg,
+      var(--color-surface-3),
+      var(--color-surface-2) 40%
+    );
+    box-shadow: 0 0 24px rgb(95 220 255 / 0.15);
+  }
+  dialog::backdrop {
+    background-color: rgb(6 4 30 / 0.65);
+  }
+
+  /* Board: hairline tiles, laser walls, glossy pieces */
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: color-mix(in srgb, var(--color-text-3) 30%, transparent);
+  }
+  .board-wall {
+    filter: drop-shadow(0 0 2px var(--color-ui-4)) drop-shadow(
+      0 0 5px rgb(255 43 214 / 0.5)
+    );
+  }
+  .board-puck {
+    background-image:
+      radial-gradient(
+        circle at 34% 28%,
+        rgb(255 255 255 / 0.9) 0,
+        rgb(255 255 255 / 0) 38%
+      ),
+      linear-gradient(180deg, transparent 55%, rgb(60 70 120 / 0.35));
+  }
+  .board-blocker {
+    background-image: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.22),
+      transparent 50%
+    );
+  }
+  .board-destination {
+    box-shadow: 0 0 8px rgb(95 220 255 / 0.3);
+  }
+
+  @media print {
+    body {
+      background-image: none;
+    }
+    :where(h1, h2),
+    .move-counter {
+      background-image: none;
+      color: var(--color-text-1);
+      filter: none;
+    }
+    .board-wall,
+    .panel,
+    .board-destination {
+      filter: none;
+      box-shadow: none;
+    }
+  }
+}

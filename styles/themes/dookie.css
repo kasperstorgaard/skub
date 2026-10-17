@@ -1,0 +1,214 @@
+/* Dookie — a mid-90s punk album cover, drawn as a cartoon.
+   Newsprint cream, sky blue, mustard and tomato in flat fills, everything
+   outlined in thin black ink that wobbles (the #dookie-wobble turbulence
+   filter rendered in _app.tsx), pucks with faces. Luckiest Guy for the
+   display face, Nunito for text. */
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/nunito-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/nunito-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Luckiest Guy";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/luckiest-guy-400.woff2") format("woff2");
+}
+
+:root[data-theme="dookie"] {
+  color-scheme: light;
+  --hover-brightness: 0.85;
+  --btn-active-text: #1a1a1a;
+
+  --font-sans: "Nunito", system-ui, sans-serif;
+  --font-display: "Luckiest Guy", "Nunito", sans-serif;
+
+  /* Sky blue and mustard are fill inks; text-bearing roles use the ink and link */
+  --color-brand: #7cc6ea;
+  --color-link: #1f5f9e;
+  --color-surface-1: #f6f0dc;
+  --color-surface-2: #ede4c8;
+  --color-surface-3: #e0d4b2;
+  --color-surface-4: #bfb08a;
+
+  --color-text-1: #1a1a1a;
+  --color-text-2: #3d3a33;
+  --color-text-3: #5f5a4e;
+
+  --color-ui-1: #e2513b;
+  --color-ui-2: #f6c945;
+  --color-ui-3: #7cc6ea;
+  --color-ui-4: #1a1a1a;
+  --color-ui-contrast: #e2513b;
+  --color-hole: #1a1a1a;
+  --color-portal: #8a5bbf;
+  --color-portal-alt: #e6dcf2;
+
+  --dookie-ink: #1a1a1a;
+  --dookie-mustard: #f6c945;
+  --dookie-line: var(--border-size-2) solid var(--dookie-ink);
+  --dookie-wobble: url("#dookie-wobble");
+  --dookie-face: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='37' cy='42' rx='6' ry='9' fill='%231a1a1a'/%3E%3Cellipse cx='63' cy='42' rx='6' ry='9' fill='%231a1a1a'/%3E%3Ccircle cx='39' cy='38' r='2.2' fill='%23fff'/%3E%3Ccircle cx='65' cy='38' r='2.2' fill='%23fff'/%3E%3Cpath d='M33 62 Q50 77 67 62' fill='none' stroke='%231a1a1a' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+[data-theme="dookie"] {
+  ::selection {
+    background-color: var(--dookie-mustard);
+    color: var(--dookie-ink);
+  }
+
+  :where(h1, h2, h3, h4, h5, h6),
+  .puzzle-card-difficulty,
+  .difficulty-badge {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size-adjust: 0.5;
+    letter-spacing: 0.03em;
+  }
+
+  /* Cover lettering: tomato with an ink outline */
+  h1:not([class*="text-text-"]) {
+    color: var(--color-ui-1);
+    -webkit-text-stroke: 1.5px var(--dookie-ink);
+    paint-order: stroke fill;
+  }
+  /* Small print inside the title (the phonetics): no outline, body face */
+  h1 [class*="text-text-"] {
+    -webkit-text-stroke: 0;
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
+
+  .btn,
+  .icon-btn,
+  .callout,
+  .puzzle-card-thumb,
+  .cookie-banner,
+  dialog,
+  kbd {
+    border-radius: var(--radius-2);
+  }
+
+  /* Flat white, inked by a wobbling outline drawn over the border */
+  .btn,
+  .icon-btn {
+    position: relative;
+    border-color: transparent;
+    background-color: #ffffff;
+    color: var(--dookie-ink);
+    font-weight: 700;
+  }
+  .btn::after,
+  .icon-btn::after {
+    content: "";
+    position: absolute;
+    inset: calc(var(--border-size-2) * -1);
+    border: var(--dookie-line);
+    border-radius: inherit;
+    filter: var(--dookie-wobble);
+    pointer-events: none;
+  }
+
+  /* Unlayered fills beat buttons.css's hover and primary rules; restate them */
+  .btn[data-primary],
+  .icon-btn[data-primary] {
+    background-color: var(--color-brand);
+    border-color: transparent;
+    color: var(--btn-active-text);
+  }
+  .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+  .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    background-color: var(--dookie-mustard);
+    border-color: transparent;
+    color: var(--btn-active-text);
+    filter: none;
+  }
+
+  .move-counter {
+    font-family: var(--font-display);
+  }
+
+  .puzzle-card-thumb {
+    border: var(--dookie-line);
+    filter: var(--dookie-wobble);
+  }
+  .puzzle-card:hover .puzzle-card-thumb {
+    background-color: var(--dookie-mustard);
+  }
+
+  /* Labels: a tomato sticker in ink */
+  .puzzle-card-difficulty {
+    clip-path: none;
+    margin: var(--size-1);
+    border: var(--dookie-line);
+    border-radius: var(--radius-2);
+    background-color: var(--color-ui-1);
+    color: #ffffff;
+  }
+  .difficulty-badge {
+    border: var(--dookie-line);
+    background-color: #ffffff;
+  }
+
+  .callout {
+    border: var(--dookie-line);
+    background-color: #ffffff;
+  }
+
+  kbd {
+    background-color: #ffffff;
+    border-color: var(--dookie-ink);
+    box-shadow: none;
+    color: var(--dookie-ink);
+  }
+
+  .panel {
+    border-top: var(--dookie-line);
+  }
+
+  dialog,
+  .cookie-banner {
+    border: var(--dookie-line);
+    background-color: var(--color-surface-1);
+    box-shadow: none;
+  }
+  dialog::backdrop {
+    background-color: rgb(124 198 234 / 0.45);
+  }
+
+  /* Board: inked tiles and pieces, pucks with faces. No wobble here: a
+     filter makes each tile a stacking context that covers the pieces. */
+  .board-space {
+    border-width: var(--border-size-1);
+    border-color: color-mix(in srgb, var(--dookie-ink) 55%, transparent);
+  }
+  .board-puck,
+  .board-blocker {
+    box-shadow: inset 0 0 0 var(--border-size-2) var(--dookie-ink);
+  }
+  .board-puck {
+    background-image: var(--dookie-face);
+    background-size: 100% 100%;
+  }
+
+  @media print {
+    .btn::after,
+    .icon-btn::after {
+      filter: none;
+    }
+    .puzzle-card-thumb {
+      filter: none;
+    }
+  }
+}

@@ -9,7 +9,7 @@ import { define } from "#/core.ts";
 import { setUser } from "#/db/user.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
-import { resolveTheme, THEMES } from "#/lib/themes.ts";
+import { resolveTheme, type Theme, THEMES } from "#/lib/themes.ts";
 
 type PageData = {
   userStats: UserStats | null;
@@ -49,8 +49,12 @@ export default define.page<typeof handler>(function ProfilePage(props) {
   const { userStats } = props.data;
 
   const savedName = user?.name ?? null;
-  const darkThemes = THEMES.filter((t) => t.mode === "dark");
+  const isAccessible = (t: Theme) => t.key === "high-contrast";
+  const darkThemes = THEMES.filter((t) =>
+    t.mode === "dark" && !isAccessible(t)
+  );
   const lightThemes = THEMES.filter((t) => t.mode === "light");
+  const accessibleThemes = THEMES.filter(isAccessible);
   const activeTheme = resolveTheme(user.theme);
 
   return (
@@ -194,6 +198,11 @@ export default define.page<typeof handler>(function ProfilePage(props) {
               <ThemeGroup
                 label="Light"
                 themes={lightThemes}
+                active={activeTheme}
+              />
+              <ThemeGroup
+                label="Accessibility"
+                themes={accessibleThemes}
                 active={activeTheme}
               />
             </form>
