@@ -5,12 +5,7 @@ import { HttpError, page } from "fresh";
 import { CandidatePanel } from "#/components/candidate-panel.tsx";
 import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
-import {
-  CaretLeft,
-  CaretRight,
-  Icon,
-  RocketLaunch,
-} from "#/components/icons.tsx";
+import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import {
@@ -31,11 +26,8 @@ import {
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { CandidateFeedback } from "#/islands/candidate-feedback.tsx";
-import { Dialog } from "#/islands/dialog.tsx";
+import { type NameError, PromoteDialog } from "#/islands/promote-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
-
-/** Why a typed name couldn't ship: another puzzle has it, or it slugs to nothing. */
-type NameError = "taken" | "empty";
 
 type PageData = {
   puzzle: Puzzle;
@@ -224,7 +216,10 @@ export default define.page<typeof handler>(function CandidatePage(props) {
       />
 
       {props.data.nameDialog && (
-        <NameDialog slug={props.data.puzzle.slug} {...props.data.nameDialog} />
+        <PromoteDialog
+          slug={props.data.puzzle.slug}
+          {...props.data.nameDialog}
+        />
       )}
     </>
   );
@@ -253,54 +248,5 @@ function VersionArrow(
         <Icon icon={direction === "previous" ? CaretLeft : CaretRight} />
       </a>
     </span>
-  );
-}
-
-/** Picks the name a board ships under, when it has none it can use. */
-function NameDialog(
-  { slug, name, error }: {
-    slug: string;
-    name: string;
-    error: NameError | null;
-  },
-) {
-  return (
-    <Dialog open>
-      <div className="flex flex-col gap-fl-2 text-text-2">
-        <h2 className="text-fl-2 font-semibold text-text-1">Name the puzzle</h2>
-        {error === "taken" && <p>{name} is already in use.</p>}
-        {error === "empty" && <p>Use letters or numbers in the name.</p>}
-      </div>
-
-      <form
-        id="promote"
-        action={`/candidates/${slug}/promote`}
-        method="post"
-        className="flex flex-col gap-1"
-      >
-        <label className="flex flex-col gap-1">
-          <span className="text-text-2 text-1">Name</span>
-          <input
-            name="name"
-            defaultValue={name}
-            required
-            className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
-          />
-        </label>
-      </form>
-
-      <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">
-        <a
-          href={`/candidates/${slug}`}
-          className="flex items-center text-text-2 max-md:justify-center"
-        >
-          Cancel
-        </a>
-
-        <button form="promote" type="submit" className="btn">
-          <Icon icon={RocketLaunch} /> Promote
-        </button>
-      </div>
-    </Dialog>
   );
 }
