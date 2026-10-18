@@ -71,7 +71,6 @@ solutionTags:
 note: >-
   little bit tricky to pull off, let's see if people can find slower paths than
   6 or it's too hard
-promotedAs: frode
 ---
 
 ```
