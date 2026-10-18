@@ -2,6 +2,8 @@
  * Disk access for the `candidates/` store, plus the analysis that fills it.
  * Server-side only; the shapes it reads and writes live in `game/candidates.ts`.
  */
+import { slug as slugify } from "@annervisser/slug";
+
 import { isBoardSame } from "#/game/board.ts";
 import {
   type Candidate,
@@ -15,7 +17,8 @@ import {
   stripVariant,
   toStoredScoring,
 } from "#/game/candidates.ts";
-import { getPuzzle } from "#/game/loader.ts";
+import { getCorpusSlugs, getPuzzle } from "#/game/loader.ts";
+import { pickUnusedName } from "#/game/names.ts";
 import {
   CALIBRATION,
   computeMetrics,
@@ -65,6 +68,12 @@ async function candidateFiles(): Promise<string[]> {
   }
 }
 
+/** The slug of every stored candidate. */
+async function storedSlugs(): Promise<string[]> {
+  return (await candidateFiles())
+    .map((path) => path.slice(CANDIDATES_DIR.length + 1, -".md".length));
+}
+
 /**
  * Every stored candidate, parsed. A file that won't parse is skipped with a
  * warning — one hand-edit slip shouldn't take the whole list down.
@@ -84,11 +93,10 @@ export async function readCandidates(): Promise<Candidate[]> {
 /** A candidate's family: its base and every variant, base first. */
 export async function readFamily(slug: string): Promise<Candidate[]> {
   const base = stripVariant(slug);
-  const slugs = (await candidateFiles())
-    .map((path) => path.slice(CANDIDATES_DIR.length + 1, -".md".length))
+  const slugs = (await storedSlugs())
     .filter((other) => stripVariant(other) === base)
     // By slug, not path: `erik-b.md` sorts before `erik.md`.
-    .toSorted();
+    .toSorted((a, b) => a.localeCompare(b));
 
   const family = await Promise.all(slugs.map(readCandidate));
   return family.filter((candidate) => candidate !== null);
@@ -105,15 +113,34 @@ async function slugTaken(slug: string): Promise<boolean> {
 }
 
 /**
+ * Slugs a candidate can't ship under: every corpus puzzle, and every other
+ * family's base — a stored board there would claim the shipped puzzle's slot.
+ */
+export async function takenSlugs(slug: string): Promise<Set<string>> {
+  const base = stripVariant(slug);
+  const families = (await storedSlugs()).map(stripVariant)
+    .filter((other) => other !== base);
+  return new Set([...await getCorpusSlugs(), ...families]);
+}
+
+/** A pool name whose slug isn't taken, to offer when a board needs a name. */
+export function suggestName(taken: Set<string>): string {
+  const tried = new Set<string>();
+  for (;;) {
+    const name = pickUnusedName(tried);
+    if (!taken.has(slugify(name))) return name;
+    tried.add(name);
+  }
+}
+
+/**
  * The next numbered slot for a board that has no name yet. Names are chosen at
  * promote time, so candidates never hold pool names against the corpus.
  */
 export async function numberedCandidate(): Promise<
   { name: string; slug: string }
 > {
-  const slugs = (await candidateFiles())
-    .map((path) => path.slice(CANDIDATES_DIR.length + 1, -".md".length));
-  const slug = `candidate-${nextCandidateNumber(slugs)}`;
+  const slug = `candidate-${nextCandidateNumber(await storedSlugs())}`;
   return { name: slug, slug };
 }
 

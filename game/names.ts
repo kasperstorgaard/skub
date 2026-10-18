@@ -25,11 +25,9 @@ export function getDanishNames(): string[] {
 }
 
 /**
- * Picks a random pool name not present in `used` (case-insensitive), so a
- * promoted puzzle never collides with one already shipped. When the pool is
- * exhausted,
- * falls back to suffixing a random base name with the lowest free ordinal
- * (`Hans-2`, `Hans-3`, …) — generation never runs out of names.
+ * Picks a random pool name not present in `used` (case-insensitive). When the
+ * pool is exhausted, falls back to suffixing a random base name with the lowest
+ * free ordinal (`Hans-2`, `Hans-3`, …), so it never runs out of names.
  */
 export function pickUnusedName(used: Set<string>): string {
   const usedLower = new Set([...used].map((name) => name.toLowerCase()));

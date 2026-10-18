@@ -290,39 +290,97 @@ Deno.test("candidateFamilies() marks a family whose version shipped", () => {
   assertEquals(candidateFamilies(store)[0].promotedAs, "erik");
 });
 
-const corpusSlugs = new Set(["anna", "erik"]);
+Deno.test("candidateFamilies() keeps a numbered board's versions together", () => {
+  const families = candidateFamilies([
+    member("candidate-12-b", "2026-02-01"),
+    member("candidate-12", "2026-01-01"),
+    member("candidate-1", "2026-01-15"),
+  ]);
+  assertEquals(
+    families.map((family) => family.members.map((c) => c.slug)),
+    [["candidate-12", "candidate-12-b"], ["candidate-1"]],
+  );
+});
+
+Deno.test("candidateFamilies() keeps a name-collision board apart from its namesake", () => {
+  const families = candidateFamilies([
+    member("hans", "2026-01-01"),
+    member("hans-2", "2026-02-01"),
+    member("hans-2-b", "2026-03-01"),
+  ]);
+  assertEquals(
+    families.map((family) => family.members.map((c) => c.slug)),
+    [["hans-2", "hans-2-b"], ["hans"]],
+  );
+});
+
+Deno.test("candidateFamilies() marks the most recent of two shipped versions", () => {
+  const families = candidateFamilies([
+    member("erik", "2026-01-01", { promotedAs: "erik" }),
+    member("erik-b", "2026-02-01", { promotedAs: "luna" }),
+  ]);
+  assertEquals(families[0].promotedAs, "luna");
+});
+
+/** A shipped puzzle, plus a stored family that holds the `ida` slot. */
+const takenSlugs = new Set(["anna", "ida"]);
 
 Deno.test("promoteTarget() ships a board under its own free name", () => {
   assertEquals(
-    promoteTarget(member("ida", "2026-01-01", { name: "Ida" }), {
-      corpusSlugs,
+    promoteTarget(member("vilma", "2026-01-01", { name: "Vilma" }), {
+      takenSlugs,
     }),
-    { type: "name", name: "Ida", slug: "ida" },
+    { type: "name", name: "Vilma", slug: "vilma" },
   );
 });
 
-Deno.test("promoteTarget() ships a variant under its family's free name", () => {
+Deno.test("promoteTarget() asks for a name for a variant", () => {
+  // Shipping `vilma-c` as `vilma` would leave the base board in that slot.
   assertEquals(
-    promoteTarget(member("ida-c", "2026-01-01", { name: "Ida-c" }), {
-      corpusSlugs,
-    }),
-    { type: "name", name: "Ida", slug: "ida" },
-  );
-});
-
-Deno.test("promoteTarget() asks for a name when a shipped puzzle holds it", () => {
-  // A new version of a shipped puzzle is a new puzzle; the old one stays as is.
-  assertEquals(
-    promoteTarget(member("anna-b", "2026-01-01", { name: "Anna-b" }), {
-      corpusSlugs,
+    promoteTarget(member("vilma-c", "2026-01-01", { name: "Vilma-c" }), {
+      takenSlugs,
     }),
     { type: "ask" },
   );
 });
 
+Deno.test("promoteTarget() asks for a name when a shipped puzzle holds it", () => {
+  assertEquals(
+    promoteTarget(member("anna", "2026-01-01", { name: "Anna" }), {
+      takenSlugs,
+    }),
+    { type: "ask" },
+  );
+});
+
+Deno.test("promoteTarget() asks for a name when another family holds it", () => {
+  assertEquals(
+    promoteTarget(member("ida", "2026-01-01", { name: "Ida" }), {
+      takenSlugs,
+    }),
+    { type: "ask" },
+  );
+});
+
+Deno.test("promoteTarget() ships a name-collision board under its own name", () => {
+  assertEquals(
+    promoteTarget(member("anna-2", "2026-01-01", { name: "Anna-2" }), {
+      takenSlugs,
+    }),
+    { type: "name", name: "Anna-2", slug: "anna-2" },
+  );
+});
+
 Deno.test("promoteTarget() asks for a name for a numbered board", () => {
   assertEquals(
-    promoteTarget(member("candidate-12", "2026-01-01"), { corpusSlugs }),
+    promoteTarget(member("candidate-12", "2026-01-01"), { takenSlugs }),
+    { type: "ask" },
+  );
+});
+
+Deno.test("promoteTarget() asks for a name for a numbered variant", () => {
+  assertEquals(
+    promoteTarget(member("candidate-12-b", "2026-01-01"), { takenSlugs }),
     { type: "ask" },
   );
 });
@@ -330,7 +388,7 @@ Deno.test("promoteTarget() asks for a name for a numbered board", () => {
 Deno.test("promoteTarget() won't promote a corpus copy", () => {
   assertEquals(
     promoteTarget(member("anna", "2026-01-01", { source: "corpus" }), {
-      corpusSlugs,
+      takenSlugs,
     }),
     { type: "shipped" },
   );

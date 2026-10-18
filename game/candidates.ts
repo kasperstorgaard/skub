@@ -284,7 +284,9 @@ export function stripVariant(value: string): string {
 const NUMBERED = /^candidate-(\d+)(?:-([b-z]))?$/;
 
 /** Whether a slug is a numbered candidate rather than a named one. */
-export const isNumbered = (slug: string): boolean => NUMBERED.test(slug);
+function isNumbered(slug: string): boolean {
+  return NUMBERED.test(slug);
+}
 
 /** How a candidate reads in the UI: `12`, `12 (b)`, or its own name. */
 export function candidateLabel(candidate: { slug: string; name: string }) {
@@ -351,20 +353,23 @@ export type PromoteTarget =
   | { type: "shipped" };
 
 /**
- * Decides where a candidate ships. Promotion always adds a new puzzle, so a
- * board ships under its own name only when no corpus puzzle holds it — a
- * variant of a shipped puzzle, or a numbered board, gets a name picked.
+ * Decides where a candidate ships. Only a family's base ships under its own
+ * name, and only while nothing else holds it; a variant, a numbered board or a
+ * taken name gets one picked.
  */
 export function promoteTarget(
   candidate: Candidate,
-  options: { corpusSlugs: Set<string> },
+  options: { takenSlugs: Set<string> },
 ): PromoteTarget {
   if (candidateSource(candidate) === "corpus") return { type: "shipped" };
 
-  const slug = stripVariant(candidate.slug);
-  if (isNumbered(candidate.slug) || options.corpusSlugs.has(slug)) {
+  const { slug, name } = candidate;
+  if (
+    stripVariant(slug) !== slug || isNumbered(slug) ||
+    options.takenSlugs.has(slug)
+  ) {
     return { type: "ask" };
   }
 
-  return { type: "name", name: stripVariant(candidate.name), slug };
+  return { type: "name", name, slug };
 }

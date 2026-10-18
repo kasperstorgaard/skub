@@ -37,11 +37,12 @@ number; it never overwrites one. The write uses `createNew`, so even a logic
 slip fails instead of replacing a file. (Previously a variant replaced its
 shipped base, `erik-b` → `erik`; that's gone.)
 
-- **Named, and the name is free in the corpus**: ships under its own name
-  (variant letter stripped). No dialog.
-- **Unnamed (`candidate-{n}`), or a shipped puzzle holds the name** (including
-  a variant of a shipped puzzle): a name dialog opens before promoting,
-  prefilled with an unused name from the pool. Accept it or type your own.
+- **A family's base, and its name is free**: ships under its own name. No
+  dialog. "Free" means no corpus puzzle and no other stored family holds the
+  slug; a stored board there would claim the shipped puzzle's slot.
+- **Anything else** (a variant, a numbered board, or a taken name): a name
+  dialog opens before promoting, prefilled with a pool name that's free by the
+  same rule. A rejected name comes back as typed, with the reason.
 - **Corpus copy**: already shipped; the panel shows Play instead of Promote.
 
 The dialog follows the editor's submit-dialog pattern: a query-param step

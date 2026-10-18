@@ -2,10 +2,14 @@ import { slug as slugify } from "@annervisser/slug";
 import { HttpError } from "fresh";
 
 import { define } from "#/core.ts";
-import { readCandidate, writeCandidate } from "#/game/candidate-store.ts";
+import {
+  readCandidate,
+  takenSlugs,
+  writeCandidate,
+} from "#/game/candidate-store.ts";
 import { promoteTarget } from "#/game/candidates.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
-import { getCorpusSlugs, invalidateCorpus } from "#/game/loader.ts";
+import { invalidateCorpus } from "#/game/loader.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { isDev } from "#/lib/env.ts";
 import { nextPuzzleNumber, updateManifest } from "#/lib/manifest.ts";
@@ -28,21 +32,30 @@ export const handler = define.handlers({
     if (!candidate) throw new HttpError(404, "Not found");
 
     const page = `/candidates/${candidate.slug}`;
-    if (candidate.promotedAs) return redirect(page);
+    if (candidate.promotedAs) {
+      return new Response("", { headers: { Location: page }, status: 303 });
+    }
 
-    const corpusSlugs = await getCorpusSlugs();
-    const target = promoteTarget(candidate, { corpusSlugs });
-    if (target.type === "shipped") return redirect(page);
+    const taken = await takenSlugs(candidate.slug);
+    const target = promoteTarget(candidate, { takenSlugs: taken });
+    if (target.type === "shipped") {
+      return new Response("", { headers: { Location: page }, status: 303 });
+    }
 
     let name: string;
     let slug: string;
     if (target.type === "ask") {
       name = (await ctx.req.formData()).get("name")?.toString().trim() ?? "";
       slug = slugify(name);
-      if (!slug) return redirect(`${page}?promote=name`);
-      if (corpusSlugs.has(slug)) {
-        const params = new URLSearchParams({ promote: "name", taken: name });
-        return redirect(`${page}?${params}`);
+
+      // Back to the dialog with what was typed, and why it can't ship.
+      const error = !slug ? "empty" : taken.has(slug) ? "taken" : null;
+      if (error) {
+        const params = new URLSearchParams({ promote: "name", error, name });
+        return new Response("", {
+          headers: { Location: `${page}?${params}` },
+          status: 303,
+        });
       }
     } else {
       ({ name, slug } = target);
@@ -70,10 +83,6 @@ export const handler = define.handlers({
 
     await writeCandidate({ ...candidate, promotedAs: puzzle.slug });
 
-    return redirect(page);
+    return new Response("", { headers: { Location: page }, status: 303 });
   },
 });
-
-function redirect(location: string) {
-  return new Response(null, { headers: { Location: location }, status: 303 });
-}

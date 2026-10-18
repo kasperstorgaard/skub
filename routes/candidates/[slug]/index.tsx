@@ -13,7 +13,12 @@ import {
 } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
-import { currentCandidate, readFamily } from "#/game/candidate-store.ts";
+import {
+  currentCandidate,
+  readFamily,
+  suggestName,
+  takenSlugs,
+} from "#/game/candidate-store.ts";
 import {
   candidateLabel,
   type CandidateSource,
@@ -23,13 +28,14 @@ import {
   type StoredCandidate,
   type StoredScoring,
 } from "#/game/candidates.ts";
-import { getCorpusNames, getCorpusSlugs } from "#/game/loader.ts";
-import { pickUnusedName } from "#/game/names.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { CandidateFeedback } from "#/islands/candidate-feedback.tsx";
 import { Dialog } from "#/islands/dialog.tsx";
 import { isDev } from "#/lib/env.ts";
+
+/** Why a typed name couldn't ship: another puzzle has it, or it slugs to nothing. */
+type NameError = "taken" | "empty";
 
 type PageData = {
   puzzle: Puzzle;
@@ -48,8 +54,8 @@ type PageData = {
   previous: string | null;
   next: string | null;
   promote: PromoteTarget["type"];
-  /** Open when `?promote=name`: a suggested name, and one just found taken. */
-  nameDialog: { suggestion: string; taken: string | null } | null;
+  /** Open when `?promote=name`: the name to offer, and why the last one failed. */
+  nameDialog: { name: string; error: NameError | null } | null;
 };
 
 export const handler = define.handlers<PageData>({
@@ -98,14 +104,19 @@ export const handler = define.handlers<PageData>({
     const family = (await readFamily(slug)).map((member) => member.slug);
     const position = family.indexOf(slug);
 
-    const promote = promoteTarget(candidate, {
-      corpusSlugs: await getCorpusSlugs(),
-    }).type;
+    const taken = await takenSlugs(slug);
+    const promote = promoteTarget(candidate, { takenSlugs: taken }).type;
+
+    const param = url.searchParams.get("error");
+    const error: NameError | null = param === "taken" || param === "empty"
+      ? param
+      : null;
     const nameDialog =
       promote === "ask" && url.searchParams.get("promote") === "name"
         ? {
-          suggestion: pickUnusedName(await getCorpusNames()),
-          taken: url.searchParams.get("taken"),
+          // A rejected name comes back as typed, so it can be fixed.
+          name: url.searchParams.get("name") ?? suggestName(taken),
+          error,
         }
         : null;
 
@@ -126,7 +137,7 @@ export const handler = define.handlers<PageData>({
       solutionTags: solutionTags ?? {},
       label: candidateLabel(puzzle),
       previous: family[position - 1] ?? null,
-      next: position >= 0 ? family[position + 1] ?? null : null,
+      next: family[position + 1] ?? null,
       promote,
       nameDialog,
     });
@@ -197,8 +208,7 @@ export default define.page<typeof handler>(function CandidatePage(props) {
             candidate={props.data.candidate}
             className={clsx(
               "max-lg:mt-fl-2 max-lg:place-self-center",
-              // Clears the next-version arrow: its gap, its width, the gap again.
-              "lg:absolute lg:ml-[calc(var(--spacing-fl-2)*2+48px)] lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:w-3xs",
+              "lg:absolute lg:ml-fl-5 lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:w-3xs",
             )}
           />
         </div>
@@ -248,17 +258,18 @@ function VersionArrow(
 
 /** Picks the name a board ships under, when it has none it can use. */
 function NameDialog(
-  { slug, suggestion, taken }: {
+  { slug, name, error }: {
     slug: string;
-    suggestion: string;
-    taken: string | null;
+    name: string;
+    error: NameError | null;
   },
 ) {
   return (
     <Dialog open>
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h2 className="text-fl-2 font-semibold text-text-1">Name the puzzle</h2>
-        {taken && <p>{taken} is already a puzzle.</p>}
+        {error === "taken" && <p>{name} is already in use.</p>}
+        {error === "empty" && <p>Use letters or numbers in the name.</p>}
       </div>
 
       <form
@@ -271,7 +282,7 @@ function NameDialog(
           <span className="text-text-2 text-1">Name</span>
           <input
             name="name"
-            defaultValue={suggestion}
+            defaultValue={name}
             required
             className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
           />
