@@ -122,6 +122,7 @@ reasons: []
 note: >-
   really not sure about this one. definitely interesting, but the solution is
   maybe a bit too contrived
+promotedAs: jonathan
 ---
 
 ```

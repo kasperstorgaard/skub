@@ -67,6 +67,7 @@ solutionTags:
 rating: 4.5
 reasons: []
 note: 'classic, nothing too fancy'
+promotedAs: mohamed
 ---
 
 ```

@@ -62,6 +62,7 @@ scoring:
   calibrationVersion: 5.0.0
 rating: 4
 reasons: []
+promotedAs: malou
 ---
 
 ```
