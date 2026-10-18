@@ -4,6 +4,7 @@ import { HttpError, page } from "fresh";
 import { CandidateCard } from "#/components/candidate-card.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
+import { Switch } from "#/components/switch.tsx";
 import { define } from "#/core.ts";
 import { readCandidates } from "#/game/candidate-store.ts";
 import {
@@ -74,29 +75,19 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
     >
       <Header url={url} back={{ href: "/" }} />
 
-      <div className="flex flex-col gap-0">
-        <div className="flex items-center justify-between gap-fl-2">
+      <div className="flex items-center justify-between gap-fl-2">
+        <div className="flex flex-col gap-0">
           <h1 className="text-brand text-6 leading-flat">Candidates</h1>
-
-          {/* A link, not a control: the filter lives in the URL. */}
-          <a
-            href={props.data.hidePromoted ? "/candidates" : "?hide=promoted"}
-            role="switch"
-            aria-checked={props.data.hidePromoted}
-            className={clsx(
-              "text-fl-0 rounded-1 px-fl-1 py-1 no-underline",
-              props.data.hidePromoted
-                ? "bg-brand text-surface-1 font-weight-7"
-                : "bg-surface-1 text-text-2 hover:bg-surface-3",
-            )}
-          >
-            Hide promoted
-          </a>
+          <span className="text-3 text-text-2">
+            {props.data.families.length} boards
+          </span>
         </div>
 
-        <span className="text-3 text-text-2">
-          {props.data.families.length} boards
-        </span>
+        <Switch
+          label="Hide promoted"
+          checked={props.data.hidePromoted}
+          href={props.data.hidePromoted ? "/candidates" : "?hide=promoted"}
+        />
       </div>
 
       <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-fl-3 gap-y-fl-2 auto-rows-min list-none pl-0">
