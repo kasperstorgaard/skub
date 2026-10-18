@@ -5,11 +5,11 @@
 **Naming.** Every candidate takes a random name from the pool when it's
 created. That causes two problems:
 
-- **Collisions with the corpus.** A variant ships under its base name
-  (`alberto-d` → `alberto`), but the original `alberto` candidate keeps that
-  slot. `/candidate?slug=alberto` then shows the original board, not the one
-  that shipped, and the shipped board can't get its own corpus entry to rate.
-  27 base candidates are in this state today.
+- **Collisions with the corpus.** A variant shipped under its base name
+  (`alberto-d` → `alberto`), but the original `alberto` candidate kept that
+  slot. `/candidate?slug=alberto` then showed the original board, not the one
+  that shipped, and the shipped board couldn't get its own corpus entry to
+  rate. 28 families were in this state.
 - **Using up the name pool.** Hundreds of names belong to boards that will
   never ship, so they can't be used for puzzles that do.
 
@@ -23,24 +23,26 @@ promoted, or see how a board's family has been rated.
 
 A new board that isn't a variant gets `candidate-{n}`, where `n` is the next
 free number. Variants keep the letter suffix (`candidate-12-b`), so
-`stripVariant` and `nextVariant` work as they do now. Editing a shipped puzzle
-still forks to `anna-b`: it's a variant of a corpus slug, never the base slot,
-so it can't collide.
+`stripVariant` and `nextVariant` work as they do now. Variants are for
+iterating on a board that isn't quite there; editing a shipped puzzle still
+forks to `anna-b`, which never takes the base slot, so it can't collide.
 
 Where a name is shown, a numbered candidate reads as its number and variant:
 `12`, `12 (b)`.
 
 ### The name is chosen at promote time
 
-Promote works out where the board ships:
+Live puzzles are immutable, so promote always adds a new puzzle with the next
+number; it never overwrites one. The write uses `createNew`, so even a logic
+slip fails instead of replacing a file. (Previously a variant replaced its
+shipped base, `erik-b` → `erik`; that's gone.)
 
-- **Variant of a corpus puzzle** (`anna-b`, whose base `anna` is shipped):
-  replaces that puzzle, as now. No dialog.
-- **Named, and the name is free in the corpus**: ships under its own name. No
-  dialog.
-- **Unnamed (`candidate-{n}`), or its name is taken by another corpus puzzle**:
-  a name dialog opens before promoting, prefilled with an unused name from the
-  pool. Accept it or type your own.
+- **Named, and the name is free in the corpus**: ships under its own name
+  (variant letter stripped). No dialog.
+- **Unnamed (`candidate-{n}`), or a shipped puzzle holds the name** (including
+  a variant of a shipped puzzle): a name dialog opens before promoting,
+  prefilled with an unused name from the pool. Accept it or type your own.
+- **Corpus copy**: already shipped; the panel shows Play instead of Promote.
 
 The dialog follows the editor's submit-dialog pattern: a query-param step
 (`?promote=name`) and a plain form POST, so it works with JS off. A typed name
@@ -62,7 +64,11 @@ A one-off script, committed with this branch and then deleted:
   is, so what shipped is still recorded.
 - Use `git mv` so every file keeps its history. Nothing is deleted.
 
-After the migration, every corpus slug is free for its own corpus copy.
+Ran with this branch: 28 families, 174 files, numbered `candidate-5` to
+`candidate-32`. Two broken records were fixed first: `frode` had `promotedAs`
+twice (its board shipped as Magne), and `karina-c` shipped as Karina without
+`promotedAs`. After the migration, every corpus slug is free for its own corpus
+copy.
 
 ## Approach: candidates page
 
@@ -83,7 +89,7 @@ card. While you iterate on a board, the list stays one card long for it.
   - the family name; a numbered family shows just its number (`12`)
   - how many versions it has, when there's more than one
   - the family's best rating
-  - a "Promoted as {slug}" badge when any version has `promotedAs`
+  - a promoted badge with the slug, when any version has `promotedAs`
 - Corpus copies (`source: corpus`) are included, with a small "corpus" label.
 - Reads the store's files directly, without analysing anything (unlike
   `currentCandidate`), so the page stays fast across the whole store.
@@ -99,7 +105,7 @@ moves to `/candidates/review`. That's safe because no candidate will be called
 
 ### Version navigation on the candidate page
 
-Floating left/right arrows on either side of the board step to the previous
+Floating left/right arrows at the board's edges step to the previous
 and next version in the family (base, `b`, `c`, …). Each arrow is hidden at
 its end of the family, and both are hidden for a single-version family. Use
 the same caret icons as `Pagination`; they're plain links, so they work with JS
