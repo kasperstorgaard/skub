@@ -5,7 +5,7 @@ import { Thumbnail } from "#/components/thumbnail.tsx";
 import type { Board } from "#/game/types.ts";
 
 type CandidateCardProps = {
-  /** The version the card opens: the family's newest. */
+  /** The version the card opens: the one that shipped, else the newest. */
   slug: string;
   label: string;
   board: Board;

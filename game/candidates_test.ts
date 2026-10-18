@@ -285,6 +285,18 @@ Deno.test("candidateFamilies() shows the latest letter when versions share a dat
   assertEquals(families[0].newest.slug, "ida-c");
 });
 
+Deno.test("candidateFamilies() shows the version that shipped", () => {
+  assertEquals(candidateFamilies(store)[0].shown.slug, "erik");
+});
+
+Deno.test("candidateFamilies() shows the newest version when none shipped", () => {
+  const families = candidateFamilies([
+    member("ida", "2026-01-01"),
+    member("ida-b", "2026-02-01"),
+  ]);
+  assertEquals(families[0].shown.slug, "ida-b");
+});
+
 Deno.test("candidateFamilies() takes the best rating across the family", () => {
   assertEquals(candidateFamilies(store)[0].bestRating, 4.5);
 });

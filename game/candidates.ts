@@ -312,6 +312,8 @@ export type CandidateFamily = {
   members: Candidate[];
   /** The most recently created member — what the family looks like now. */
   newest: Candidate;
+  /** The version to show for the family: the one that shipped, else the newest. */
+  shown: Candidate;
   /** The best rating any member has, if any is rated. */
   bestRating?: number;
   /** The corpus slug the most recently shipped member went out as. */
@@ -338,13 +340,16 @@ export function candidateFamilies(candidates: Candidate[]): CandidateFamily[] {
     const members = group.toSorted((a, b) => a.slug.localeCompare(b.slug));
     const byAge = members.toSorted(byCreated);
     const ratings = members.flatMap((c) => c.rating ?? []);
+    const newest = byAge[byAge.length - 1];
+    const shipped = byAge.findLast((c) => c.promotedAs);
 
     return {
       base,
       members,
-      newest: byAge[byAge.length - 1],
+      newest,
+      shown: shipped ?? newest,
       bestRating: ratings.length ? Math.max(...ratings) : undefined,
-      promotedAs: byAge.findLast((c) => c.promotedAs)?.promotedAs,
+      promotedAs: shipped?.promotedAs,
     };
   }).toSorted((a, b) => byCreated(b.newest, a.newest));
 }

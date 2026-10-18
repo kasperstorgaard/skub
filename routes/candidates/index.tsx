@@ -35,14 +35,14 @@ export const handler = define.handlers<PageData>({
 
     // Read as stored, no analysis: it's the detail page that brings one current.
     const families = candidateFamilies(await readCandidates()).map((family) => {
-      const { newest } = family;
+      const { shown } = family;
       return {
-        slug: newest.slug,
+        slug: shown.slug,
         label: candidateLabel({
           slug: family.base,
-          name: stripVariant(newest.name),
+          name: stripVariant(shown.name),
         }),
-        board: newest.board,
+        board: shown.board,
         versions: family.members.length,
         bestRating: family.bestRating,
         promotedAs: family.promotedAs,

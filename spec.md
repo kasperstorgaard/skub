@@ -86,8 +86,8 @@ card. While you iterate on a board, the list stays one card long for it.
 - Families are sorted by their newest member's `createdAt`, so the board you're
   working on is at the top.
 - Each card shows:
-  - the newest version's thumbnail (`<Thumbnail>` with its CSS-variable
-    colours), and links to that version
+  - the thumbnail of the version that shipped, or the newest if none did
+    (`<Thumbnail>` with its CSS-variable colours), and links to that version
   - the family name; a numbered family shows just its number (`12`)
   - how many versions it has, when there's more than one
   - the family's best rating
