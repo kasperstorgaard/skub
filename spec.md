@@ -92,10 +92,11 @@ card. While you iterate on a board, the list stays one card long for it.
     its puzzle does on the front page, number and name: `#292 Luna`
   - how many versions it has, when there's more than one
   - the family's best rating
-  - a promoted badge with the slug, when any version has `promotedAs`
+  - a promoted badge (a rocket, where a puzzle card shows difficulty) when any
+    version has `promotedAs`
 - Corpus copies (`source: corpus`) are included, with a small "corpus" label.
 - Cards follow the front page's `PuzzleCard`: same frame, tagline and name
-  styles, with the promoted badge where a puzzle card shows difficulty.
+  styles.
 - A "Hide promoted" switch filters out families with a shipped version. It's
   the switch from web.dev's "Building a switch component" (a real checkbox in
   a GET form, `?hide=promoted`), submitted on change, with a noscript button.

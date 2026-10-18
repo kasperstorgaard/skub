@@ -25,7 +25,7 @@ type FamilyCard = {
   board: Board;
   versions: number;
   bestRating?: number;
-  promotedAs?: string;
+  promoted: boolean;
   corpus: boolean;
 };
 
@@ -58,7 +58,7 @@ export const handler = define.handlers<PageData>({
         board: shown.board,
         versions: family.members.length,
         bestRating: family.bestRating,
-        promotedAs: family.promotedAs,
+        promoted: Boolean(family.promotedAs),
         corpus: family.members.some((c) => candidateSource(c) === "corpus"),
       };
     });
@@ -68,7 +68,7 @@ export const handler = define.handlers<PageData>({
 
     return page({
       families: hidePromoted
-        ? families.filter((family) => !family.promotedAs)
+        ? families.filter((family) => !family.promoted)
         : families,
       hidePromoted,
     });

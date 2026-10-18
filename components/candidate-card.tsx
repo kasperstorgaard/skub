@@ -13,7 +13,8 @@ type CandidateCardProps = {
   board: Board;
   versions: number;
   bestRating?: number;
-  promotedAs?: string;
+  /** Whether a version shipped; the number and name say which puzzle. */
+  promoted: boolean;
   corpus: boolean;
   className?: string;
 };
@@ -31,7 +32,7 @@ export function CandidateCard(
     board,
     versions,
     bestRating,
-    promotedAs,
+    promoted,
     corpus,
     className,
   }: CandidateCardProps,
@@ -60,16 +61,15 @@ export function CandidateCard(
           className="basis-0 grow aspect-square h-full"
         />
 
-        {promotedAs && (
+        {promoted && (
           <div
             className={clsx(
               "puzzle-card-difficulty absolute bottom-0 right-0 px-3 bg-surface-2",
-              "flex items-center gap-1 text-current leading-relaxed text-1 uppercase tracking-wider",
+              "flex items-center text-current leading-relaxed text-1",
               "[clip-path:polygon(10%_0,100%_0,100%_100%,0_100%)]",
             )}
           >
-            <Icon icon={RocketLaunch} aria-label="Promoted as" />
-            {promotedAs}
+            <Icon icon={RocketLaunch} aria-label="Promoted" />
           </div>
         )}
       </div>
