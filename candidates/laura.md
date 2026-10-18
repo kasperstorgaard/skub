@@ -77,6 +77,7 @@ solutionTags:
   G2G8-C3G3-C2C8-C1C7-G7-G4-G8G5-G4C4-C8C5-G5D5:
     - interesting
     - unique
+promotedAs: laura
 ---
 
 ```

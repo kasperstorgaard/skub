@@ -32,8 +32,7 @@ https://github.com/user-attachments/assets/c1c1c2fd-defb-48a7-9622-1df74779787e
 
 The built-in editor lets you create puzzles from scratch or generate random
 solvable boards with configurable minimum moves. A debounced solver runs on every
-edit, showing the optimal solution length in real time. Use **Download** to
-export a puzzle as a `.md` file and **Import** to load one back in.
+edit, showing the optimal solution length in real time.
 
 ## Tech Stack
 

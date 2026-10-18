@@ -114,7 +114,7 @@ solutionTags:
   G4G7-A7F7-H6A7-F7B7-G7C7-C6-B6-B4:
     - interesting
     - unique
-rating: 4
+rating: 3.5
 reasons: []
 ---
 

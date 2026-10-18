@@ -4,9 +4,6 @@ import { useCallback } from "preact/hooks";
 import type { SolveState } from "#/components/difficulty-badge.tsx";
 import {
   ArrowClockwise,
-  ArrowRight,
-  ArrowSquareIn,
-  DownloadSimple,
   Eye,
   FlipHorizontal,
   FlipVertical,
@@ -148,41 +145,6 @@ export function EditorPanel(
         <div className="flex flex-col flex-wrap gap-fl-1">
           {submissionsEnabled && (
             <SubmitButton puzzle={puzzle} href={href} solveState={solveState} />
-          )}
-
-          {!isDev && (
-            <>
-              <a
-                href="/api/export"
-                download
-                className="btn"
-              >
-                <Icon icon={DownloadSimple} />Download
-              </a>
-
-              <form
-                action="/api/import"
-                method="post"
-                enctype="multipart/form-data"
-                className="flex flex-row gap-1"
-              >
-                <label className="btn cursor-pointer flex-1">
-                  <Icon icon={ArrowSquareIn} />Import
-                  <input
-                    type="file"
-                    name="file"
-                    accept=".md"
-                    className="sr-only"
-                    onChange={(e) => e.currentTarget.form?.submit()}
-                  />
-                </label>
-                <noscript>
-                  <button className="icon-btn" type="submit" data-size="sm">
-                    <Icon icon={ArrowRight} />
-                  </button>
-                </noscript>
-              </form>
-            </>
           )}
 
           <a href="/puzzles/preview" className="btn" target="_blank">
