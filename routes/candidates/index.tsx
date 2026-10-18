@@ -4,7 +4,7 @@ import { HttpError, page } from "fresh";
 import { CandidateCard } from "#/components/candidate-card.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
-import { Switch } from "#/components/switch.tsx";
+import { Toggle } from "#/components/toggle.tsx";
 import { define } from "#/core.ts";
 import { readCandidates } from "#/game/candidate-store.ts";
 import {
@@ -83,9 +83,9 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
           </span>
         </div>
 
-        <Switch
+        <Toggle
           label="Hide promoted"
-          checked={props.data.hidePromoted}
+          pressed={props.data.hidePromoted}
           href={props.data.hidePromoted ? "/candidates" : "?hide=promoted"}
         />
       </div>
