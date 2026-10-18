@@ -9,7 +9,7 @@ import {
   RocketLaunch,
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
-import type { StoredScoring } from "#/game/candidates.ts";
+import type { PromoteTarget, StoredScoring } from "#/game/candidates.ts";
 import { boardCharacter, type CharacterTrait } from "#/game/character.ts";
 import { meanMetrics, METRIC_CATALOG } from "#/game/metric-catalog.ts";
 import type { Metrics } from "#/game/scoring.ts";
@@ -187,12 +187,11 @@ function watchHref(
   index: number,
 ): string {
   const params = new URLSearchParams({
-    slug,
     moves: scoring.solutions[index].moves,
     mode: "replay",
     solution: String(index),
   });
-  return `/candidate?${params}`;
+  return `/candidates/${slug}?${params}`;
 }
 
 /**
@@ -289,6 +288,7 @@ type CandidatePanelProps = {
   solutionTags: Record<string, string[]>;
   /** The corpus slug this board shipped as, or null while it's still a candidate. */
   promotedAs: string | null;
+  promote: PromoteTarget["type"];
 };
 
 /**
@@ -300,7 +300,8 @@ type CandidatePanelProps = {
  * code, and the route tags are the one part that does.
  */
 export function CandidatePanel(
-  { puzzle, scoring, selected, solutionTags, promotedAs }: CandidatePanelProps,
+  { puzzle, scoring, selected, solutionTags, promotedAs, promote }:
+    CandidatePanelProps,
 ) {
   // What the character rules need beyond the metrics themselves.
   const context = {
@@ -346,23 +347,36 @@ export function CandidatePanel(
 
         {/* Back into the board, into the corpus, or on to the next one. */}
         <div className="flex flex-col flex-wrap gap-fl-1">
-          <a href={`/candidate/edit?slug=${puzzle.slug}`} className="btn">
+          <a href={`/candidates/${puzzle.slug}/edit`} className="btn">
             <Icon icon={Pencil} /> Edit
           </a>
 
-          {promotedAs
+          {promotedAs || promote === "shipped"
             ? (
-              <a href={`/puzzles/${promotedAs}`} className="btn">
+              <a
+                href={`/puzzles/${promotedAs ?? puzzle.slug}`}
+                className="btn"
+              >
                 <Icon icon={Play} /> Play
               </a>
             )
-            : (
-              <a
-                href={`/candidate/promote?slug=${puzzle.slug}`}
-                className="btn"
-              >
+            : promote === "ask"
+            // No usable name: the page's dialog picks one before posting.
+            ? (
+              <a href="?dialog=promote" data-router="push" className="btn">
                 <Icon icon={RocketLaunch} /> Promote
               </a>
+            )
+            : (
+              <form
+                method="post"
+                action={`/candidates/${puzzle.slug}/promote`}
+                className="contents"
+              >
+                <button type="submit" className="btn">
+                  <Icon icon={RocketLaunch} /> Promote
+                </button>
+              </form>
             )}
 
           <a href="/puzzles/build/reset" className="btn">

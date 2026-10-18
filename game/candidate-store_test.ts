@@ -4,7 +4,6 @@ import {
   analyseBoard,
   mergeCandidate,
   staleAnalysis,
-  stripVariant,
 } from "./candidate-store.ts";
 import type { Candidate, StoredScoring } from "#/game/candidates.ts";
 import { CALIBRATION, type Metrics } from "#/game/scoring.ts";
@@ -23,32 +22,6 @@ const board: Board = {
     { x: 4, y: 6, orientation: "horizontal" },
   ],
 };
-
-Deno.test("stripVariant() takes a version back to the board it forked from", () => {
-  assertEquals(stripVariant("erik-b"), "erik");
-});
-
-Deno.test("stripVariant() takes a later version back to the same board", () => {
-  assertEquals(stripVariant("erik-c"), "erik");
-});
-
-Deno.test("stripVariant() leaves a board that was never forked alone", () => {
-  assertEquals(stripVariant("erik"), "erik");
-});
-
-Deno.test("stripVariant() leaves a numeric name-collision suffix alone", () => {
-  // `hans-2` is a different board whose name collided, not a second version of
-  // `hans` — promoting it must not ship it as `hans`.
-  assertEquals(stripVariant("hans-2"), "hans-2");
-});
-
-Deno.test("stripVariant() forks a name-collision board back to its own name", () => {
-  assertEquals(stripVariant("hans-2-b"), "hans-2");
-});
-
-Deno.test("stripVariant() strips the name as it strips the slug", () => {
-  assertEquals(stripVariant("Erik-b"), "Erik");
-});
 
 /** Solves in one move: the puck slides down and the blocker stops it on target. */
 const oneMoveBoard: Board = {

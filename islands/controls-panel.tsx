@@ -249,12 +249,12 @@ export function ControlsPanel(
           )}
 
           {
-            /* Straight to the candidate page, not via clone: clone strips
+            /* To the candidate it shipped from, not via clone: clone strips
               identity for remixing, and a rating filed under "Untitled, 0
               moves" is useless as ground truth. */
           }
           {isDev && !isPreview && (
-            <a href={`/candidate?slug=${puzzle.value.slug}`} className="btn">
+            <a href={`/puzzles/${puzzle.value.slug}/rate`} className="btn">
               <Icon icon={Star} /> Rate
             </a>
           )}

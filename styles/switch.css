@@ -1,0 +1,73 @@
+/* Switch, after web.dev's "Building a switch component": a real checkbox whose
+   box is the track and whose ::before is the thumb. */
+@layer components {
+  .gui-switch {
+    --thumb-size: 1.25rem;
+    --track-size: calc(var(--thumb-size) * 2);
+    --track-padding: 2px;
+    --track-color-inactive: var(--color-surface-4);
+    --track-color-active: var(--color-text-2);
+    --thumb-color: var(--color-surface-1);
+    --thumb-color-highlight: color-mix(
+      in srgb,
+      var(--color-text-1) 25%,
+      transparent
+    );
+    --highlight-size: 0;
+
+    display: flex;
+    align-items: center;
+    gap: 2ch;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .gui-switch > input {
+    --thumb-position: 0%;
+
+    appearance: none;
+    border: none;
+    outline-offset: 5px;
+    box-sizing: content-box;
+
+    padding: var(--track-padding);
+    background: var(--track-color-inactive);
+    inline-size: var(--track-size);
+    block-size: var(--thumb-size);
+    border-radius: var(--track-size);
+
+    flex-shrink: 0;
+    display: grid;
+    align-items: center;
+    grid: [track] 1fr / [track] 1fr;
+    cursor: pointer;
+  }
+
+  .gui-switch > input::before {
+    content: "";
+    grid-area: track;
+    inline-size: var(--thumb-size);
+    block-size: var(--thumb-size);
+    background: var(--thumb-color);
+    border-radius: 50%;
+    box-shadow: 0 0 0 var(--highlight-size) var(--thumb-color-highlight);
+    transform: translateX(var(--thumb-position));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gui-switch > input::before {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+  }
+
+  .gui-switch > input:checked {
+    --thumb-position: calc(var(--track-size) - 100%);
+    background: var(--track-color-active);
+  }
+
+  .gui-switch > input:not(:disabled):hover::before {
+    --highlight-size: 0.5rem;
+  }
+}

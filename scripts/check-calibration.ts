@@ -6,7 +6,7 @@
  * composite terms.
  *
  * Ground truth is the whole rated store: a corpus puzzle rated through
- * `/candidate` is a stored candidate tagged `source: corpus`, so shipped and
+ * `/candidates` is a stored candidate tagged `source: corpus`, so shipped and
  * generated boards carry their ratings in the same place. The separation
  * tables — which metrics split kept boards from rejected ones — go to a report
  * file, being too wide for a terminal.
@@ -91,7 +91,7 @@ for (const [slug, board] of candidates.boards) {
 
 if (rows.length === 0) {
   console.log(
-    "\nNothing rated yet — rate boards at /candidate (a corpus puzzle gets " +
+    "\nNothing rated yet — rate boards at /candidates (a corpus puzzle gets " +
       "there from its own page).",
   );
   Deno.exit(0);

@@ -4,6 +4,7 @@
 
 /* Component styles */
 @import "./styles/buttons.css";
+@import "./styles/switch.css";
 
 /*
   Tailwind v4
