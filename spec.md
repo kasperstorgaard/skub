@@ -88,12 +88,11 @@ card. While you iterate on a board, the list stays one card long for it.
 - Each card shows:
   - the thumbnail of the version that shipped, or the newest if none did
     (`<Thumbnail>` with its CSS-variable colours), and links to that version
-  - the family name (`C-12` for a numbered family); a shipped family reads as
-    its puzzle does on the front page, number and name: `#292 Luna`
+  - the candidate's own name (`C-12` for a numbered family)
   - how many versions it has, when there's more than one
   - the family's best rating
-  - a promoted badge (a rocket, where a puzzle card shows difficulty) when any
-    version has `promotedAs`
+  - where a puzzle card shows difficulty, a rocket and the `promotedAs` slug,
+    when a version shipped
 - Corpus copies (`source: corpus`) are included, with a small "corpus" label.
 - Cards follow the front page's `PuzzleCard`: same frame, tagline and name
   styles.

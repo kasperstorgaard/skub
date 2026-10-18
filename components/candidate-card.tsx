@@ -7,14 +7,11 @@ import type { Board } from "#/game/types.ts";
 type CandidateCardProps = {
   /** The version the card opens: the one that shipped, else the newest. */
   slug: string;
-  /** The shipped puzzle's number, when a version shipped. */
-  number?: number;
   label: string;
   board: Board;
   versions: number;
   bestRating?: number;
-  /** Whether a version shipped; the number and name say which puzzle. */
-  promoted: boolean;
+  promotedAs?: string;
   corpus: boolean;
   className?: string;
 };
@@ -27,12 +24,11 @@ type CandidateCardProps = {
 export function CandidateCard(
   {
     slug,
-    number,
     label,
     board,
     versions,
     bestRating,
-    promoted,
+    promotedAs,
     corpus,
     className,
   }: CandidateCardProps,
@@ -61,15 +57,16 @@ export function CandidateCard(
           className="basis-0 grow aspect-square h-full"
         />
 
-        {promoted && (
+        {promotedAs && (
           <div
             className={clsx(
               "puzzle-card-difficulty absolute bottom-0 right-0 px-3 bg-surface-2",
-              "flex items-center text-current leading-relaxed text-1",
+              "flex items-center gap-1 text-current leading-relaxed text-1 uppercase tracking-wider",
               "[clip-path:polygon(10%_0,100%_0,100%_100%,0_100%)]",
             )}
           >
-            <Icon icon={RocketLaunch} aria-label="Promoted" />
+            <Icon icon={RocketLaunch} aria-label="Promoted as" />
+            {promotedAs}
           </div>
         )}
       </div>
@@ -91,11 +88,7 @@ export function CandidateCard(
           {details && <span>{details}</span>}
         </span>
 
-        <span className="text-4 font-semibold leading-flat">
-          {number && (
-            <span className="tracking-wide font-normal">#{number}</span>
-          )} <span>{label}</span>
-        </span>
+        <span className="text-4 font-semibold leading-flat">{label}</span>
       </div>
     </a>
   );
