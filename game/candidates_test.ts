@@ -10,6 +10,7 @@ import {
   parseCandidate,
   promoteTarget,
   type ReasonTag,
+  shippedFrom,
   storedSolutionMoves,
   stripVariant,
   toStoredScoring,
@@ -334,10 +335,18 @@ Deno.test("promoteTarget() ships a board under its own free name", () => {
   );
 });
 
-Deno.test("promoteTarget() asks for a name for a variant", () => {
-  // Shipping `vilma-c` as `vilma` would leave the base board in that slot.
+Deno.test("promoteTarget() ships a variant under its family's free name", () => {
   assertEquals(
     promoteTarget(member("vilma-c", "2026-01-01", { name: "Vilma-c" }), {
+      takenSlugs,
+    }),
+    { type: "name", name: "Vilma", slug: "vilma" },
+  );
+});
+
+Deno.test("promoteTarget() asks for a name for a variant of a shipped puzzle", () => {
+  assertEquals(
+    promoteTarget(member("anna-b", "2026-01-01", { name: "Anna-b" }), {
       takenSlugs,
     }),
     { type: "ask" },
@@ -392,4 +401,30 @@ Deno.test("promoteTarget() won't promote a corpus copy", () => {
     }),
     { type: "shipped" },
   );
+});
+
+const otherBoard = {
+  ...baseCandidate().board,
+  destination: { x: 6, y: 6 },
+};
+
+/** Vilma shipped from `vilma-c`; the base `vilma` holds a different board. */
+const vilma = [
+  member("vilma", "2026-01-01", { board: otherBoard }),
+  member("vilma-b", "2026-02-01", { board: otherBoard }),
+  member("vilma-c", "2026-03-01", { promotedAs: "vilma" }),
+];
+
+Deno.test("shippedFrom() finds the version that shipped, not the base at its slug", () => {
+  const puzzle = { ...member("vilma", "2026-03-02"), board: vilma[2].board };
+  assertEquals(shippedFrom(puzzle, vilma)?.slug, "vilma-c");
+});
+
+Deno.test("shippedFrom() ignores a promotion whose board was since replaced", () => {
+  const puzzle = { ...member("vilma", "2026-03-02"), board: otherBoard };
+  assertEquals(shippedFrom(puzzle, vilma), undefined);
+});
+
+Deno.test("shippedFrom() finds nothing for a puzzle made by hand", () => {
+  assertEquals(shippedFrom(member("anna", "2026-01-01"), vilma), undefined);
 });

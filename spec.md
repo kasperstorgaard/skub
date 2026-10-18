@@ -37,12 +37,13 @@ number; it never overwrites one. The write uses `createNew`, so even a logic
 slip fails instead of replacing a file. (Previously a variant replaced its
 shipped base, `erik-b` → `erik`; that's gone.)
 
-- **A family's base, and its name is free**: ships under its own name. No
-  dialog. "Free" means no corpus puzzle and no other stored family holds the
-  slug; a stored board there would claim the shipped puzzle's slot.
-- **Anything else** (a variant, a numbered board, or a taken name): a name
-  dialog opens before promoting, prefilled with a pool name that's free by the
-  same rule. A rejected name comes back as typed, with the reason.
+- **Its family's name is free**: ships under it, whichever version is
+  promoted (usually the latest). No dialog. "Free" means no corpus puzzle and
+  no other stored family holds the slug.
+- **Anything else** (a numbered board, or a taken name, including a variant of
+  a shipped puzzle): a name dialog opens before promoting, prefilled with a pool
+  name that's free by the same rule. A rejected name comes back as typed, with
+  the reason.
 - **Corpus copy**: already shipped; the panel shows Play instead of Promote.
 
 The dialog follows the editor's submit-dialog pattern: a query-param step
@@ -116,6 +117,11 @@ and next version in the family (base, `b`, `c`, …). Each arrow is hidden at
 its end of the family, and both are hidden for a single-version family. Use
 the same caret icons as `Pagination`; they're plain links, so they work with JS
 off.
+
+A shipped puzzle's Rate button goes through `/puzzles/{slug}/rate`, which
+finds the candidate it shipped from (`promotedAs` plus the live board). The
+family's base can still sit at that slug with a different board, so linking to
+`/candidates/{slug}` directly would show the wrong one.
 
 Every link to the old URLs gets updated: the actions' redirects, the editor's
 and composer's Review, and the Preview panel's candidate link.

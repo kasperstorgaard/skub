@@ -1,3 +1,4 @@
+import { isBoardSame } from "#/game/board.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
 import { parsePuzzle } from "#/game/parser.ts";
 import { CALIBRATION, type Metrics, type ScoredBoard } from "#/game/scoring.ts";
@@ -353,8 +354,8 @@ export type PromoteTarget =
   | { type: "shipped" };
 
 /**
- * Decides where a candidate ships. Only a family's base ships under its own
- * name, and only while nothing else holds it; a variant, a numbered board or a
+ * Decides where a candidate ships: under its family's name while nothing else
+ * holds it, whichever version is promoted; otherwise a numbered board or a
  * taken name gets one picked.
  */
 export function promoteTarget(
@@ -363,13 +364,24 @@ export function promoteTarget(
 ): PromoteTarget {
   if (candidateSource(candidate) === "corpus") return { type: "shipped" };
 
-  const { slug, name } = candidate;
-  if (
-    stripVariant(slug) !== slug || isNumbered(slug) ||
-    options.takenSlugs.has(slug)
-  ) {
+  const slug = stripVariant(candidate.slug);
+  if (isNumbered(candidate.slug) || options.takenSlugs.has(slug)) {
     return { type: "ask" };
   }
 
-  return { type: "name", name, slug };
+  return { type: "name", name: stripVariant(candidate.name), slug };
+}
+
+/**
+ * The candidate a puzzle shipped from: promoted under its slug, with the board
+ * that's live. The family's base can sit at that slug holding another board.
+ */
+export function shippedFrom(
+  puzzle: Puzzle,
+  candidates: Candidate[],
+): Candidate | undefined {
+  return candidates.find((candidate) =>
+    candidate.promotedAs === puzzle.slug &&
+    isBoardSame(candidate.board, puzzle.board)
+  );
 }
