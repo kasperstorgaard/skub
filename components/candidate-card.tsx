@@ -34,11 +34,6 @@ export function CandidateCard(
     className,
   }: CandidateCardProps,
 ) {
-  const details = [
-    versions > 1 && `${versions} versions`,
-    corpus && "corpus",
-  ].filter(Boolean).join(" · ");
-
   return (
     <a
       href={`/candidates/${slug}`}
@@ -77,6 +72,8 @@ export function CandidateCard(
           className={clsx(
             "puzzle-card-tagline flex gap-1 text-1 text-text-2 tracking-wide leading-tight",
             "group-hover:text-current",
+            // A dot between whichever details are there.
+            "[&>*+*]:before:content-['·'] [&>*+*]:before:mr-1",
           )}
         >
           {bestRating !== undefined && (
@@ -85,8 +82,8 @@ export function CandidateCard(
               {bestRating}
             </span>
           )}
-          {bestRating !== undefined && details && <span>·</span>}
-          {details && <span>{details}</span>}
+          {versions > 1 && <span>{versions} versions</span>}
+          {corpus && <span>corpus</span>}
         </span>
 
         <span className="text-4 font-semibold leading-flat">{label}</span>
