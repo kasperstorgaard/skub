@@ -276,6 +276,15 @@ Deno.test("candidateFamilies() shows a family as its newest version", () => {
   assertEquals(candidateFamilies(store)[0].newest.slug, "erik-c");
 });
 
+Deno.test("candidateFamilies() shows the latest letter when versions share a date", () => {
+  const families = candidateFamilies([
+    member("ida-c", "2026-01-01"),
+    member("ida", "2026-01-01"),
+    member("ida-b", "2026-01-01"),
+  ]);
+  assertEquals(families[0].newest.slug, "ida-c");
+});
+
 Deno.test("candidateFamilies() takes the best rating across the family", () => {
   assertEquals(candidateFamilies(store)[0].bestRating, 4.5);
 });

@@ -318,8 +318,13 @@ export type CandidateFamily = {
   promotedAs?: string;
 };
 
+/**
+ * Oldest first. Variants made before they got their own date share their
+ * base's, so ties fall back to letter order — the order they were made in.
+ */
 const byCreated = (a: Candidate, b: Candidate) =>
-  new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() ||
+  a.slug.localeCompare(b.slug);
 
 /**
  * Groups candidates into families (`stripVariant`), newest activity first, so

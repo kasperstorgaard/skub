@@ -70,7 +70,10 @@ export const handler = define.handlers({
     // an ordinary state to be in mid-edit, so say so rather than throw a 500.
     let candidate;
     try {
-      candidate = await upsertCandidate({ ...draft, name, slug }, source, {
+      // Dated now, not by the draft it came from: a stored entry keeps its own
+      // date, and a new variant is newer than the board it forked.
+      const puzzle = { ...draft, name, slug, createdAt: new Date(Date.now()) };
+      candidate = await upsertCandidate(puzzle, source, {
         tiles: tiles?.length ? tiles : undefined,
       });
     } catch (err) {
