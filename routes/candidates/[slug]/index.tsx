@@ -181,14 +181,14 @@ export default define.page<typeof handler>(function CandidatePage(props) {
               <VersionArrow
                 slug={props.data.previous}
                 direction="previous"
-                className="left-0 lg:-translate-x-1/2"
+                className="left-0 lg:left-auto lg:right-full lg:mr-fl-2"
               />
             )}
             {props.data.next && (
               <VersionArrow
                 slug={props.data.next}
                 direction="next"
-                className="right-0 lg:translate-x-1/2"
+                className="right-0 lg:right-auto lg:left-full lg:ml-fl-2"
               />
             )}
           </div>
@@ -197,7 +197,8 @@ export default define.page<typeof handler>(function CandidatePage(props) {
             candidate={props.data.candidate}
             className={clsx(
               "max-lg:mt-fl-2 max-lg:place-self-center",
-              "lg:absolute lg:ml-fl-5 lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:w-3xs",
+              // Clears the next-version arrow: its gap, its width, the gap again.
+              "lg:absolute lg:ml-[calc(var(--spacing-fl-2)*2+48px)] lg:left-full lg:top-1/2 lg:-translate-y-1/2 lg:w-3xs",
             )}
           />
         </div>
