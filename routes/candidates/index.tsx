@@ -25,10 +25,10 @@ type FamilyCard = {
   corpus: boolean;
 };
 
-type PageData = { families: FamilyCard[] };
+type PageData = { families: FamilyCard[]; hidePromoted: boolean };
 
 export const handler = define.handlers<PageData>({
-  async GET() {
+  async GET(ctx) {
     // Dev-only, like the rest of the candidate routes.
     if (!isDev) throw new HttpError(404, "Not found");
 
@@ -49,7 +49,15 @@ export const handler = define.handlers<PageData>({
       };
     });
 
-    return page({ families });
+    const hidePromoted =
+      new URL(ctx.req.url).searchParams.get("hide") === "promoted";
+
+    return page({
+      families: hidePromoted
+        ? families.filter((family) => !family.promotedAs)
+        : families,
+      hidePromoted,
+    });
   },
 });
 
@@ -67,7 +75,25 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
       <Header url={url} back={{ href: "/" }} />
 
       <div className="flex flex-col gap-0">
-        <h1 className="text-brand text-6 leading-flat">Candidates</h1>
+        <div className="flex items-center justify-between gap-fl-2">
+          <h1 className="text-brand text-6 leading-flat">Candidates</h1>
+
+          {/* A link, not a control: the filter lives in the URL. */}
+          <a
+            href={props.data.hidePromoted ? "/candidates" : "?hide=promoted"}
+            role="switch"
+            aria-checked={props.data.hidePromoted}
+            className={clsx(
+              "text-fl-0 rounded-1 px-fl-1 py-1 no-underline",
+              props.data.hidePromoted
+                ? "bg-brand text-surface-1 font-weight-7"
+                : "bg-surface-1 text-text-2 hover:bg-surface-3",
+            )}
+          >
+            Hide promoted
+          </a>
+        </div>
+
         <span className="text-3 text-text-2">
           {props.data.families.length} boards
         </span>
