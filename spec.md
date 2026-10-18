@@ -71,15 +71,19 @@ the page's URLs and card labels depend on it.
 
 ### `/candidates`: the list
 
-- One card per candidate, newest first by `createdAt`.
+One card per family, not per candidate. A family is the base plus its variants
+(`stripVariant`): `candidate-12`, `candidate-12-b`, `candidate-12-c` are one
+card. While you iterate on a board, the list stays one card long for it.
+
+- Families are sorted by their newest member's `createdAt`, so the board you're
+  working on is at the top.
 - Each card shows:
-  - the board thumbnail (`<Thumbnail>` with its CSS-variable colours)
-  - the name; a numbered candidate shows just its number and variant, so
-    `candidate-12-b` reads `12 (b)`
-  - its own rating
-  - a "Promoted as {slug}" badge when `promotedAs` is set
-  - the family's best rating when it's higher than the card's own, e.g.
-    "★ 4.5 in family". A family is the base plus its variants (`stripVariant`).
+  - the newest version's thumbnail (`<Thumbnail>` with its CSS-variable
+    colours), and links to that version
+  - the family name; a numbered family shows just its number (`12`)
+  - how many versions it has, when there's more than one
+  - the family's best rating
+  - a "Promoted as {slug}" badge when any version has `promotedAs`
 - Corpus copies (`source: corpus`) are included, with a small "corpus" label.
 - Reads the store's files directly, without analysing anything (unlike
   `currentCandidate`), so the page stays fast across the whole store.
@@ -92,6 +96,13 @@ it (`/candidates/{slug}/promote`, `/candidates/{slug}/edit`), and their
 `?slug=` parameter goes away. Review, which creates or finds the candidate,
 moves to `/candidates/review`. That's safe because no candidate will be called
 "review".
+
+### Version navigation on the candidate page
+
+The candidate page gets a row of links to the other versions in its family,
+labelled by letter (base, `b`, `c`, …), with the current one marked and each
+showing its rating. Previous/next links step through them in order. Plain
+links, so it works with JS off.
 
 Every link to the old URLs gets updated: the actions' redirects, the editor's
 and composer's Review, and the Preview panel's candidate link.
