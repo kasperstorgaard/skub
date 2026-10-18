@@ -4,7 +4,6 @@ import { HttpError, page } from "fresh";
 import { CandidateCard } from "#/components/candidate-card.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
-import { Toggle } from "#/components/toggle.tsx";
 import { define } from "#/core.ts";
 import { readCandidates } from "#/game/candidate-store.ts";
 import {
@@ -14,6 +13,7 @@ import {
   stripVariant,
 } from "#/game/candidates.ts";
 import type { Board } from "#/game/types.ts";
+import { Switch } from "#/islands/switch.tsx";
 import { isDev } from "#/lib/env.ts";
 
 type FamilyCard = {
@@ -83,11 +83,17 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
           </span>
         </div>
 
-        <Toggle
-          label="Hide promoted"
-          pressed={props.data.hidePromoted}
-          href={props.data.hidePromoted ? "/candidates" : "?hide=promoted"}
-        />
+        <form method="get" action="/candidates">
+          <Switch
+            label="Hide promoted"
+            name="hide"
+            value="promoted"
+            checked={props.data.hidePromoted}
+          />
+          <noscript>
+            <button type="submit" className="btn mt-fl-1">Apply</button>
+          </noscript>
+        </form>
       </div>
 
       <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-fl-3 gap-y-fl-2 auto-rows-min list-none pl-0">
