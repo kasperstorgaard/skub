@@ -228,20 +228,21 @@ function VersionArrow(
     className?: string;
   },
 ) {
+  // The wrapper positions; themes restyle `.icon-btn` unlayered, position too.
   return (
-    <a
-      href={`/candidates/${slug}`}
-      aria-label={direction === "previous"
-        ? "Previous version"
-        : "Next version"}
-      className={clsx(
-        "icon-btn absolute top-1/2 -translate-y-1/2 z-1",
-        "rounded-round bg-surface-2 border border-surface-4 shadow-2",
-        className,
-      )}
+    <span
+      className={clsx("absolute top-1/2 -translate-y-1/2 z-1 flex", className)}
     >
-      <Icon icon={direction === "previous" ? CaretLeft : CaretRight} />
-    </a>
+      <a
+        href={`/candidates/${slug}`}
+        aria-label={direction === "previous"
+          ? "Previous version"
+          : "Next version"}
+        className="icon-btn rounded-round bg-surface-2 border border-surface-4 shadow-2"
+      >
+        <Icon icon={direction === "previous" ? CaretLeft : CaretRight} />
+      </a>
+    </span>
   );
 }
 
