@@ -24,14 +24,14 @@ export function Switch({ label, checked, href, className }: SwitchProps) {
       {label}
       <span
         className={clsx(
-          "relative inline-flex w-10 h-6 shrink-0 rounded-round transition-colors",
+          "relative inline-flex w-8 h-5 shrink-0 rounded-round transition-colors",
           checked ? "bg-brand" : "bg-surface-3 group-hover:bg-surface-4",
         )}
       >
         <span
           className={clsx(
-            "absolute top-1 left-1 size-4 rounded-round bg-surface-1 shadow-2 transition-transform",
-            checked && "translate-x-4",
+            "absolute top-1 left-1 size-3 rounded-round bg-text-1 transition-transform",
+            checked && "translate-x-5",
           )}
         />
       </span>
