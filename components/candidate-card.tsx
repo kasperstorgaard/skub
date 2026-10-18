@@ -7,6 +7,8 @@ import type { Board } from "#/game/types.ts";
 type CandidateCardProps = {
   /** The version the card opens: the one that shipped, else the newest. */
   slug: string;
+  /** The shipped puzzle's number, when a version shipped. */
+  number?: number;
   label: string;
   board: Board;
   versions: number;
@@ -24,6 +26,7 @@ type CandidateCardProps = {
 export function CandidateCard(
   {
     slug,
+    number,
     label,
     board,
     versions,
@@ -88,7 +91,11 @@ export function CandidateCard(
           {details && <span>{details}</span>}
         </span>
 
-        <span className="text-4 font-semibold leading-flat">{label}</span>
+        <span className="text-4 font-semibold leading-flat">
+          {number && (
+            <span className="tracking-wide font-normal">#{number}</span>
+          )} <span>{label}</span>
+        </span>
       </div>
     </a>
   );

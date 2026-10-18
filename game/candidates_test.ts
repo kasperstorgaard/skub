@@ -204,14 +204,14 @@ Deno.test("stripVariant() strips the name as it strips the slug", () => {
 Deno.test("candidateLabel() shows a numbered board by its number", () => {
   assertEquals(
     candidateLabel({ slug: "candidate-12", name: "candidate-12" }),
-    "12",
+    "C-12",
   );
 });
 
 Deno.test("candidateLabel() shows a numbered variant with its letter", () => {
   assertEquals(
     candidateLabel({ slug: "candidate-12-b", name: "candidate-12-b" }),
-    "12 (b)",
+    "C-12 (b)",
   );
 });
 

@@ -12,12 +12,15 @@ import {
   candidateSource,
   stripVariant,
 } from "#/game/candidates.ts";
+import { getPuzzleManifest } from "#/game/loader.ts";
 import type { Board } from "#/game/types.ts";
 import { Switch } from "#/islands/switch.tsx";
 import { isDev } from "#/lib/env.ts";
 
 type FamilyCard = {
   slug: string;
+  /** The shipped puzzle's number, when a version shipped. */
+  number?: number;
   label: string;
   board: Board;
   versions: number;
@@ -33,12 +36,22 @@ export const handler = define.handlers<PageData>({
     // Dev-only, like the rest of the candidate routes.
     if (!isDev) throw new HttpError(404, "Not found");
 
+    const shipped = new Map(
+      (await getPuzzleManifest()).map((entry) => [entry.slug, entry]),
+    );
+
     // Read as stored, no analysis: it's the detail page that brings one current.
     const families = candidateFamilies(await readCandidates()).map((family) => {
       const { shown } = family;
+      // A shipped family reads as its puzzle does: `#292 Luna`.
+      const puzzle = family.promotedAs
+        ? shipped.get(family.promotedAs)
+        : undefined;
+
       return {
         slug: shown.slug,
-        label: candidateLabel({
+        number: puzzle?.number,
+        label: puzzle?.name ?? candidateLabel({
           slug: family.base,
           name: stripVariant(shown.name),
         }),

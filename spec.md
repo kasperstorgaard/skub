@@ -27,8 +27,8 @@ free number. Variants keep the letter suffix (`candidate-12-b`), so
 iterating on a board that isn't quite there; editing a shipped puzzle still
 forks to `anna-b`, which never takes the base slot, so it can't collide.
 
-Where a name is shown, a numbered candidate reads as its number and variant:
-`12`, `12 (b)`.
+Where a name is shown, a numbered candidate reads as `C-12`, or `C-12 (b)` for
+a variant, so it can't be mistaken for a puzzle number.
 
 ### The name is chosen at promote time
 
@@ -88,7 +88,8 @@ card. While you iterate on a board, the list stays one card long for it.
 - Each card shows:
   - the thumbnail of the version that shipped, or the newest if none did
     (`<Thumbnail>` with its CSS-variable colours), and links to that version
-  - the family name; a numbered family shows just its number (`12`)
+  - the family name (`C-12` for a numbered family); a shipped family reads as
+    its puzzle does on the front page, number and name: `#292 Luna`
   - how many versions it has, when there's more than one
   - the family's best rating
   - a promoted badge with the slug, when any version has `promotedAs`

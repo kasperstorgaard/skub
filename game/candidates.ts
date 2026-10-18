@@ -289,13 +289,13 @@ function isNumbered(slug: string): boolean {
   return NUMBERED.test(slug);
 }
 
-/** How a candidate reads in the UI: `12`, `12 (b)`, or its own name. */
+/** How a candidate reads in the UI: `C-12`, `C-12 (b)`, or its own name. */
 export function candidateLabel(candidate: { slug: string; name: string }) {
   const match = candidate.slug.match(NUMBERED);
   if (!match) return candidate.name;
 
   const [, number, variant] = match;
-  return variant ? `${number} (${variant})` : number;
+  return variant ? `C-${number} (${variant})` : `C-${number}`;
 }
 
 /** The number the next unnamed board takes: one past the highest in the store. */
