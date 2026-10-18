@@ -181,14 +181,14 @@ export default define.page<typeof handler>(function CandidatePage(props) {
               <VersionArrow
                 slug={props.data.previous}
                 direction="previous"
-                className="left-0 lg:left-auto lg:right-full lg:mr-fl-2"
+                className="left-0 md:left-auto md:right-full md:mr-fl-2"
               />
             )}
             {props.data.next && (
               <VersionArrow
                 slug={props.data.next}
                 direction="next"
-                className="right-0 lg:right-auto lg:left-full lg:ml-fl-2"
+                className="right-0 md:right-auto md:left-full md:ml-fl-2"
               />
             )}
           </div>
