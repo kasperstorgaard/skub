@@ -86,7 +86,6 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
           value={formatPuzzle(puzzle.value)}
         />
 
-
         {userEmail
           ? (
             <label className="flex items-center gap-1 text-text-2 text-1">
