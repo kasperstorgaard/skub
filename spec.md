@@ -91,6 +91,11 @@ card. While you iterate on a board, the list stays one card long for it.
   - the family's best rating
   - a promoted badge with the slug, when any version has `promotedAs`
 - Corpus copies (`source: corpus`) are included, with a small "corpus" label.
+- Cards follow the front page's `PuzzleCard`: same frame, tagline and name
+  styles, with the promoted badge where a puzzle card shows difficulty.
+- A "Hide promoted" switch filters out families with a shipped version. It's
+  the switch from web.dev's "Building a switch component" (a real checkbox in
+  a GET form, `?hide=promoted`), submitted on change, with a noscript button.
 - Reads the store's files directly, without analysing anything (unlike
   `currentCandidate`), so the page stays fast across the whole store.
 
@@ -117,6 +122,6 @@ and composer's Review, and the Preview panel's candidate link.
 ## Non-goals
 
 - Changing the name pool itself (that's `feat/danish-name-pool`).
-- Filtering or sorting controls. Newest first is enough until the list makes
-  it clear what else is needed.
+- Sorting controls, or filters beyond hiding promoted boards. Newest first is
+  enough until the list makes it clear what else is needed.
 - Pagination: the store is a few hundred entries.
