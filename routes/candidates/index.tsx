@@ -99,7 +99,7 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
         </span>
       </div>
 
-      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-fl-3 list-none pl-0">
+      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-fl-3 gap-y-fl-2 list-none pl-0">
         {props.data.families.map((family) => (
           <li key={family.slug} className="list-none pl-0 min-w-0">
             <CandidateCard {...family} />
