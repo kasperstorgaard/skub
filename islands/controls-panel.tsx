@@ -254,7 +254,7 @@ export function ControlsPanel(
               moves" is useless as ground truth. */
           }
           {isDev && !isPreview && (
-            <a href={`/candidate?slug=${puzzle.value.slug}`} className="btn">
+            <a href={`/candidates/${puzzle.value.slug}`} className="btn">
               <Icon icon={Star} /> Rate
             </a>
           )}

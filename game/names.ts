@@ -1,5 +1,5 @@
 /**
- * Danish name pool for auto-naming generated candidates, matching the corpus
+ * Danish name pool for naming puzzles at promote time, matching the corpus
  * convention of naming puzzles after people (erik, malene, torstein…). Loaded
  * from `danish-names.json` and cached. Server-only (read from disk); never
  * imported into an island.
@@ -26,8 +26,8 @@ export function getDanishNames(): string[] {
 
 /**
  * Picks a random pool name not present in `used` (case-insensitive), so a
- * generated candidate never collides with an existing static or generated
- * puzzle. When the pool is exhausted (every stored candidate retires a name),
+ * promoted puzzle never collides with one already shipped. When the pool is
+ * exhausted,
  * falls back to suffixing a random base name with the lowest free ordinal
  * (`Hans-2`, `Hans-3`, …) — generation never runs out of names.
  */

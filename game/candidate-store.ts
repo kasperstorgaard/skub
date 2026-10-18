@@ -2,8 +2,6 @@
  * Disk access for the `candidates/` store, plus the analysis that fills it.
  * Server-side only; the shapes it reads and writes live in `game/candidates.ts`.
  */
-import { slug as slugify } from "@annervisser/slug";
-
 import { isBoardSame } from "#/game/board.ts";
 import {
   type Candidate,
@@ -11,12 +9,13 @@ import {
   type CandidateSource,
   candidateSource,
   formatCandidate,
+  nextCandidateNumber,
   parseCandidate,
   type StoredScoring,
+  stripVariant,
   toStoredScoring,
 } from "#/game/candidates.ts";
-import { getCorpusNames, getPuzzle } from "#/game/loader.ts";
-import { pickUnusedName } from "#/game/names.ts";
+import { getPuzzle } from "#/game/loader.ts";
 import {
   CALIBRATION,
   computeMetrics,
@@ -67,16 +66,32 @@ async function candidateFiles(): Promise<string[]> {
 }
 
 /**
- * The `name` frontmatter of every stored candidate, read off the line rather
- * than parsed — this only feeds the de-duplication set.
+ * Every stored candidate, parsed. A file that won't parse is skipped with a
+ * warning — one hand-edit slip shouldn't take the whole list down.
  */
-async function storedNames(): Promise<string[]> {
-  const names: string[] = [];
+export async function readCandidates(): Promise<Candidate[]> {
+  const candidates: Candidate[] = [];
   for (const path of await candidateFiles()) {
-    const match = (await Deno.readTextFile(path)).match(/^name:\s*(.+)$/m);
-    if (match) names.push(match[1].trim());
+    try {
+      candidates.push(parseCandidate(await Deno.readTextFile(path)));
+    } catch (err) {
+      console.warn(`Skipping unparsable candidate ${path}`, err);
+    }
   }
-  return names;
+  return candidates;
+}
+
+/** A candidate's family: its base and every variant, base first. */
+export async function readFamily(slug: string): Promise<Candidate[]> {
+  const base = stripVariant(slug);
+  const slugs = (await candidateFiles())
+    .map((path) => path.slice(CANDIDATES_DIR.length + 1, -".md".length))
+    .filter((other) => stripVariant(other) === base)
+    // By slug, not path: `erik-b.md` sorts before `erik.md`.
+    .toSorted();
+
+  const family = await Promise.all(slugs.map(readCandidate));
+  return family.filter((candidate) => candidate !== null);
 }
 
 /** Whether a candidate file already occupies this slug's slot. */
@@ -90,24 +105,16 @@ async function slugTaken(slug: string): Promise<boolean> {
 }
 
 /**
- * Picks a random Nordic name unused by any corpus puzzle or stored candidate.
- * Name and file are one thing (`Hans` lives in `hans.md`), and slugification
- * folds diacritics (Kári and Kari both slug to `kari`), so the two are bumped
- * together (`Hans-2`) until the file slot is free.
+ * The next numbered slot for a board that has no name yet. Names are chosen at
+ * promote time, so candidates never hold pool names against the corpus.
  */
-export async function pickCandidateName(): Promise<
+export async function numberedCandidate(): Promise<
   { name: string; slug: string }
 > {
-  const used = new Set([...await getCorpusNames(), ...await storedNames()]);
-
-  const baseName = pickUnusedName(used);
-  let name = baseName;
-  let slug = slugify(baseName);
-  for (let ordinal = 2; await slugTaken(slug); ordinal++) {
-    name = `${baseName}-${ordinal}`;
-    slug = slugify(name);
-  }
-  return { name, slug };
+  const slugs = (await candidateFiles())
+    .map((path) => path.slice(CANDIDATES_DIR.length + 1, -".md".length));
+  const slug = `candidate-${nextCandidateNumber(slugs)}`;
+  return { name: slug, slug };
 }
 
 /**
@@ -115,17 +122,6 @@ export async function pickCandidateName(): Promise<
  * inside a request, and a truncated advisory beats a page that hangs.
  */
 const ANALYSIS_MAX_STATES = 4_000_000;
-
-/**
- * A variant marker: `erik-b`, `erik-c`. Letters, because a numeric suffix means
- * a name collision (`hans-2`) rather than a second version of a board.
- */
-const VARIANT_SUFFIX = /-([b-z])$/;
-
-/** The board a variant hangs off: `erik-b` → `erik`, `hans-2` → `hans-2`. */
-export function stripVariant(value: string): string {
-  return value.replace(VARIANT_SUFFIX, "");
-}
 
 /**
  * The next free variant of a board — the name an edit lands under, so the rated
@@ -229,7 +225,7 @@ export function mergeCandidate(
 
 /**
  * The candidate for a board, analysed and on disk — the one entry point every
- * way into `/candidate` goes through. A corpus puzzle enters under its own slug
+ * way into `/candidates` goes through. A corpus puzzle enters under its own slug
  * and name; a rating filed as "Untitled, 0 moves" is useless as ground truth.
  */
 export async function upsertCandidate(

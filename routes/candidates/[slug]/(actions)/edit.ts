@@ -13,8 +13,7 @@ export const handler = define.handlers({
   async GET(ctx) {
     if (!isDev) throw new HttpError(404, "Not found");
 
-    const slug = new URL(ctx.req.url).searchParams.get("slug");
-    const candidate = slug ? await readCandidate(slug) : null;
+    const candidate = await readCandidate(ctx.params.slug);
     if (!candidate) throw new HttpError(404, "Not found");
 
     const { name, slug: puzzleSlug, createdAt, difficulty, minMoves, board } =

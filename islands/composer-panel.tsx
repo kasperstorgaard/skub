@@ -75,7 +75,7 @@ export function ComposerPanel(
       }`
       : "";
 
-    globalThis.location.href = `/candidate/review${tiles}`;
+    globalThis.location.href = `/candidates/review${tiles}`;
   }, [dealt, puzzle]);
 
   return (
@@ -121,7 +121,7 @@ export function ComposerPanel(
             <Icon icon={Eye} /> Preview
           </a>
 
-          <a href="/candidate/review" className="btn" onClick={onReview}>
+          <a href="/candidates/review" className="btn" onClick={onReview}>
             <Icon icon={Star} /> Review
           </a>
         </div>

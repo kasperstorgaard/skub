@@ -2,11 +2,16 @@ import { assertEquals } from "@std/assert/equals";
 
 import {
   type Candidate,
+  candidateFamilies,
+  candidateLabel,
   candidateSource,
   formatCandidate,
+  nextCandidateNumber,
   parseCandidate,
+  promoteTarget,
   type ReasonTag,
   storedSolutionMoves,
+  stripVariant,
   toStoredScoring,
 } from "./candidates.ts";
 import { CALIBRATION, type Metrics, type ScoredBoard } from "#/game/scoring.ts";
@@ -167,4 +172,166 @@ Deno.test("an entry written before source existed reads as generated", () => {
   };
 
   assertEquals(candidateSource(withoutSource), "generated");
+});
+
+Deno.test("stripVariant() takes a version back to the board it forked from", () => {
+  assertEquals(stripVariant("erik-b"), "erik");
+});
+
+Deno.test("stripVariant() takes a later version back to the same board", () => {
+  assertEquals(stripVariant("erik-c"), "erik");
+});
+
+Deno.test("stripVariant() leaves a board that was never forked alone", () => {
+  assertEquals(stripVariant("erik"), "erik");
+});
+
+Deno.test("stripVariant() leaves a numeric name-collision suffix alone", () => {
+  // `hans-2` is a different board whose name collided, not a second version of
+  // `hans` — promoting it must not ship it as `hans`.
+  assertEquals(stripVariant("hans-2"), "hans-2");
+});
+
+Deno.test("stripVariant() forks a name-collision board back to its own name", () => {
+  assertEquals(stripVariant("hans-2-b"), "hans-2");
+});
+
+Deno.test("stripVariant() strips the name as it strips the slug", () => {
+  assertEquals(stripVariant("Erik-b"), "Erik");
+});
+
+Deno.test("candidateLabel() shows a numbered board by its number", () => {
+  assertEquals(
+    candidateLabel({ slug: "candidate-12", name: "candidate-12" }),
+    "12",
+  );
+});
+
+Deno.test("candidateLabel() shows a numbered variant with its letter", () => {
+  assertEquals(
+    candidateLabel({ slug: "candidate-12-b", name: "candidate-12-b" }),
+    "12 (b)",
+  );
+});
+
+Deno.test("candidateLabel() shows a named board by its name", () => {
+  assertEquals(candidateLabel({ slug: "erik-b", name: "Erik-b" }), "Erik-b");
+});
+
+Deno.test("nextCandidateNumber() starts at one in an empty store", () => {
+  assertEquals(nextCandidateNumber([]), 1);
+});
+
+Deno.test("nextCandidateNumber() takes one past the highest, gaps and all", () => {
+  assertEquals(
+    nextCandidateNumber(["candidate-2", "candidate-7", "candidate-4"]),
+    8,
+  );
+});
+
+Deno.test("nextCandidateNumber() counts a numbered variant's base", () => {
+  assertEquals(nextCandidateNumber(["candidate-3-b"]), 4);
+});
+
+Deno.test("nextCandidateNumber() ignores named boards", () => {
+  assertEquals(nextCandidateNumber(["erik", "hans-2", "candidate-1"]), 2);
+});
+
+const member = (
+  slug: string,
+  createdAt: string,
+  extra: Partial<Candidate> = {},
+): Candidate => ({
+  ...baseCandidate(),
+  name: slug,
+  slug,
+  createdAt: new Date(createdAt),
+  ...extra,
+});
+
+/** Erik iterated three times; Hans made once, after Erik's first version. */
+const store = [
+  member("erik-c", "2026-03-01", { rating: 3.5 }),
+  member("hans", "2026-02-01", { rating: 3 }),
+  member("erik", "2026-01-01", { rating: 2, promotedAs: "erik" }),
+  member("erik-b", "2026-02-15", { rating: 4.5 }),
+];
+
+Deno.test("candidateFamilies() puts the family worked on most recently first", () => {
+  assertEquals(
+    candidateFamilies(store).map((family) => family.base),
+    ["erik", "hans"],
+  );
+});
+
+Deno.test("candidateFamilies() orders a family's versions base first", () => {
+  assertEquals(
+    candidateFamilies(store)[0].members.map((c) => c.slug),
+    ["erik", "erik-b", "erik-c"],
+  );
+});
+
+Deno.test("candidateFamilies() shows a family as its newest version", () => {
+  assertEquals(candidateFamilies(store)[0].newest.slug, "erik-c");
+});
+
+Deno.test("candidateFamilies() takes the best rating across the family", () => {
+  assertEquals(candidateFamilies(store)[0].bestRating, 4.5);
+});
+
+Deno.test("candidateFamilies() leaves an unrated family without a rating", () => {
+  assertEquals(
+    candidateFamilies([member("ida", "2026-01-01")])[0].bestRating,
+    undefined,
+  );
+});
+
+Deno.test("candidateFamilies() marks a family whose version shipped", () => {
+  assertEquals(candidateFamilies(store)[0].promotedAs, "erik");
+});
+
+const corpusSlugs = new Set(["anna", "erik"]);
+
+Deno.test("promoteTarget() ships a board under its own free name", () => {
+  assertEquals(
+    promoteTarget(member("ida", "2026-01-01", { name: "Ida" }), {
+      corpusSlugs,
+    }),
+    { type: "name", name: "Ida", slug: "ida" },
+  );
+});
+
+Deno.test("promoteTarget() ships a variant under its family's free name", () => {
+  assertEquals(
+    promoteTarget(member("ida-c", "2026-01-01", { name: "Ida-c" }), {
+      corpusSlugs,
+    }),
+    { type: "name", name: "Ida", slug: "ida" },
+  );
+});
+
+Deno.test("promoteTarget() asks for a name when a shipped puzzle holds it", () => {
+  // A new version of a shipped puzzle is a new puzzle; the old one stays as is.
+  assertEquals(
+    promoteTarget(member("anna-b", "2026-01-01", { name: "Anna-b" }), {
+      corpusSlugs,
+    }),
+    { type: "ask" },
+  );
+});
+
+Deno.test("promoteTarget() asks for a name for a numbered board", () => {
+  assertEquals(
+    promoteTarget(member("candidate-12", "2026-01-01"), { corpusSlugs }),
+    { type: "ask" },
+  );
+});
+
+Deno.test("promoteTarget() won't promote a corpus copy", () => {
+  assertEquals(
+    promoteTarget(member("anna", "2026-01-01", { source: "corpus" }), {
+      corpusSlugs,
+    }),
+    { type: "shipped" },
+  );
 });

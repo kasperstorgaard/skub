@@ -169,7 +169,7 @@ export type StoredScoring = {
 /**
  * Where a candidate's board came from. Not de-duplication — the calibration
  * reports diff these populations against each other, and a
- * board rated through `/candidate` would otherwise land on more than one side.
+ * board rated through `/candidates` would otherwise land on more than one side.
  *
  * `generated` is the generator's own output and nothing else, so the reports
  * can still ask what the generator produces. `edited` is a board a human drew
@@ -267,4 +267,104 @@ export function formatCandidate(candidate: Candidate): string {
 /** Parses a stored candidate back, feedback and provenance included. */
 export function parseCandidate(markdown: string): Candidate {
   return parsePuzzle(markdown) as Candidate;
+}
+
+/**
+ * A variant marker: `erik-b`, `erik-c`. Letters, because a numeric suffix means
+ * a name collision (`hans-2`) rather than a second version of a board.
+ */
+const VARIANT_SUFFIX = /-([b-z])$/;
+
+/** The board a variant hangs off: `erik-b` → `erik`, `hans-2` → `hans-2`. */
+export function stripVariant(value: string): string {
+  return value.replace(VARIANT_SUFFIX, "");
+}
+
+/** A board that hasn't earned a name: `candidate-12`, or its variant `candidate-12-b`. */
+const NUMBERED = /^candidate-(\d+)(?:-([b-z]))?$/;
+
+/** Whether a slug is a numbered candidate rather than a named one. */
+export const isNumbered = (slug: string): boolean => NUMBERED.test(slug);
+
+/** How a candidate reads in the UI: `12`, `12 (b)`, or its own name. */
+export function candidateLabel(candidate: { slug: string; name: string }) {
+  const match = candidate.slug.match(NUMBERED);
+  if (!match) return candidate.name;
+
+  const [, number, variant] = match;
+  return variant ? `${number} (${variant})` : number;
+}
+
+/** The number the next unnamed board takes: one past the highest in the store. */
+export function nextCandidateNumber(slugs: string[]): number {
+  const numbers = slugs.map((slug) => Number(slug.match(NUMBERED)?.[1] ?? 0));
+  return Math.max(0, ...numbers) + 1;
+}
+
+/** A board and every variant forked from it. */
+export type CandidateFamily = {
+  /** The slug the variants hang off — `erik` for `erik`, `erik-b`, … */
+  base: string;
+  /** Base first, then variants in letter order. */
+  members: Candidate[];
+  /** The most recently created member — what the family looks like now. */
+  newest: Candidate;
+  /** The best rating any member has, if any is rated. */
+  bestRating?: number;
+  /** The corpus slug the most recently shipped member went out as. */
+  promotedAs?: string;
+};
+
+const byCreated = (a: Candidate, b: Candidate) =>
+  new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+
+/**
+ * Groups candidates into families (`stripVariant`), newest activity first, so
+ * iterating on a board keeps it one entry at the top of the list.
+ */
+export function candidateFamilies(candidates: Candidate[]): CandidateFamily[] {
+  const groups = Map.groupBy(candidates, (c) => stripVariant(c.slug));
+
+  return [...groups].map(([base, group]) => {
+    // Slugs sort as base, then `-b`, `-c`… — the order the variants were made.
+    const members = group.toSorted((a, b) => a.slug.localeCompare(b.slug));
+    const byAge = members.toSorted(byCreated);
+    const ratings = members.flatMap((c) => c.rating ?? []);
+
+    return {
+      base,
+      members,
+      newest: byAge[byAge.length - 1],
+      bestRating: ratings.length ? Math.max(...ratings) : undefined,
+      promotedAs: byAge.findLast((c) => c.promotedAs)?.promotedAs,
+    };
+  }).toSorted((a, b) => byCreated(b.newest, a.newest));
+}
+
+/**
+ * Where promoting a candidate ships it: under its own name, or under one the
+ * curator picks (`ask`). A corpus copy is already shipped and can't promote.
+ */
+export type PromoteTarget =
+  | { type: "name"; name: string; slug: string }
+  | { type: "ask" }
+  | { type: "shipped" };
+
+/**
+ * Decides where a candidate ships. Promotion always adds a new puzzle, so a
+ * board ships under its own name only when no corpus puzzle holds it — a
+ * variant of a shipped puzzle, or a numbered board, gets a name picked.
+ */
+export function promoteTarget(
+  candidate: Candidate,
+  options: { corpusSlugs: Set<string> },
+): PromoteTarget {
+  if (candidateSource(candidate) === "corpus") return { type: "shipped" };
+
+  const slug = stripVariant(candidate.slug);
+  if (isNumbered(candidate.slug) || options.corpusSlugs.has(slug)) {
+    return { type: "ask" };
+  }
+
+  return { type: "name", name: stripVariant(candidate.name), slug };
 }

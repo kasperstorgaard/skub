@@ -5,7 +5,7 @@ import { getUserPuzzleDraft } from "#/db/user.ts";
 import { isBoardSame } from "#/game/board.ts";
 import {
   nextVariant,
-  pickCandidateName,
+  numberedCandidate,
   readCandidate,
   upsertCandidate,
 } from "#/game/candidate-store.ts";
@@ -23,9 +23,10 @@ import { isDev } from "#/lib/env.ts";
 async function identify(
   draft: Puzzle,
 ): Promise<{ name: string; slug: string; source?: CandidateSource }> {
-  // Nothing to match an unnamed draft against — this is where it earns a name.
+  // Nothing to match an unnamed draft against; it gets a number, and a name
+  // only if it's promoted.
   if (!draft.name) {
-    return { ...await pickCandidateName(), source: "edited" };
+    return { ...await numberedCandidate(), source: "edited" };
   }
 
   const corpus = await getPuzzle(draft.slug);
@@ -43,13 +44,13 @@ async function identify(
   const variant = origin && await nextVariant(origin);
   if (variant) return { ...variant, source: "edited" };
 
-  return { ...await pickCandidateName(), source: "edited" };
+  return { ...await numberedCandidate(), source: "edited" };
 }
 
 /**
  * Sends the current editor draft to review as a candidate: analyses the board,
- * writes the entry and hands off to `/candidate`. The editor's only write —
- * the corpus write lives on `/candidate`, behind Promote.
+ * writes the entry and hands off to its page. The editor's only write — the
+ * corpus write lives on the candidate page, behind Promote.
  */
 export const handler = define.handlers({
   async GET(ctx) {
@@ -82,7 +83,7 @@ export const handler = define.handlers({
     }
 
     return new Response("", {
-      headers: { Location: `/candidate?slug=${candidate.slug}` },
+      headers: { Location: `/candidates/${candidate.slug}` },
       status: 303,
     });
   },

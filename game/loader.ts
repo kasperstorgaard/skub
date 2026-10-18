@@ -71,9 +71,15 @@ export async function getCorpusHashes(): Promise<Set<string>> {
   return hashes;
 }
 
+/** Every puzzle slug in the corpus (from the cached manifest). */
+export async function getCorpusSlugs(): Promise<Set<string>> {
+  const manifest = await getPuzzleManifest();
+  return new Set(manifest.map((entry) => entry.slug));
+}
+
 /**
- * Every puzzle name in the corpus (from the cached manifest), for de-duping
- * auto-assigned candidate names against existing puzzles.
+ * Every puzzle name in the corpus (from the cached manifest), for suggesting a
+ * name no puzzle holds yet.
  */
 export async function getCorpusNames(): Promise<Set<string>> {
   const manifest = await getPuzzleManifest();

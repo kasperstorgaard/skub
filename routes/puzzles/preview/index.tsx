@@ -1,5 +1,5 @@
 // Preview puzzle route — renders a user's draft board so it can be played, no
-// solution submission. Analysis lives on /candidate; this is the play-it check
+// solution submission. Analysis lives on /candidates; this is the play-it check
 // anyone gets, dev or not.
 import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";

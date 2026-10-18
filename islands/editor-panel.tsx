@@ -57,7 +57,7 @@ export function EditorPanel(
     } catch {
       // Fall through: the draft in KV is the next best thing.
     }
-    globalThis.location.href = "/candidate/review";
+    globalThis.location.href = "/candidates/review";
   }, []);
 
   const onClear = useCallback(() => {
@@ -152,7 +152,7 @@ export function EditorPanel(
           </a>
 
           {isDev && (
-            <a href="/candidate/review" className="btn" onClick={onReview}>
+            <a href="/candidates/review" className="btn" onClick={onReview}>
               <Icon icon={Star} /> Review
             </a>
           )}
