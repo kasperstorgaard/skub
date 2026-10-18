@@ -26,7 +26,7 @@ import {
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { CandidateFeedback } from "#/islands/candidate-feedback.tsx";
-import { type NameError, PromoteDialog } from "#/islands/promote-dialog.tsx";
+import { PromoteDialog } from "#/islands/promote-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 
 type PageData = {
@@ -46,8 +46,8 @@ type PageData = {
   previous: string | null;
   next: string | null;
   promote: PromoteTarget["type"];
-  /** Open when `?dialog=promote`: the name to offer, and why the last one failed. */
-  nameDialog: { name: string; error: NameError | null } | null;
+  /** A free name for the promote dialog, when the board needs one. */
+  suggestion: string | null;
 };
 
 export const handler = define.handlers<PageData>({
@@ -99,18 +99,7 @@ export const handler = define.handlers<PageData>({
     const taken = await takenSlugs(slug);
     const promote = promoteTarget(candidate, { takenSlugs: taken }).type;
 
-    const param = url.searchParams.get("error");
-    const error: NameError | null = param === "taken" || param === "empty"
-      ? param
-      : null;
-    const nameDialog =
-      promote === "ask" && url.searchParams.get("dialog") === "promote"
-        ? {
-          // A rejected name comes back as typed, so it can be fixed.
-          name: url.searchParams.get("name") ?? suggestName(taken),
-          error,
-        }
-        : null;
+    const suggestion = promote === "ask" ? suggestName(taken) : null;
 
     return page({
       puzzle,
@@ -131,7 +120,7 @@ export const handler = define.handlers<PageData>({
       previous: family[position - 1] ?? null,
       next: family[position + 1] ?? null,
       promote,
-      nameDialog,
+      suggestion,
     });
   },
 });
@@ -215,10 +204,11 @@ export default define.page<typeof handler>(function CandidatePage(props) {
         promote={props.data.promote}
       />
 
-      {props.data.nameDialog && (
+      {props.data.suggestion && (
         <PromoteDialog
+          href={href}
           slug={props.data.puzzle.slug}
-          {...props.data.nameDialog}
+          suggestion={props.data.suggestion}
         />
       )}
     </>
