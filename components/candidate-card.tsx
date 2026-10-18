@@ -17,9 +17,10 @@ type CandidateCardProps = {
 };
 
 /**
- * One board family in the candidate list, styled after `PuzzleCard`: the newest
- * version's thumbnail, the best rating any version earned, and — where the
- * puzzle card shows difficulty — the slug a version shipped as.
+ * One board family in the candidate list, styled after `PuzzleCard`: the
+ * promoted version's thumbnail (the newest's if none shipped), the best rating
+ * any version earned, and — where the puzzle card shows difficulty — the slug
+ * it shipped as.
  */
 export function CandidateCard(
   {
