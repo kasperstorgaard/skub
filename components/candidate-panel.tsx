@@ -363,7 +363,7 @@ export function CandidatePanel(
             : promote === "ask"
             // No usable name: the page's dialog picks one before posting.
             ? (
-              <a href="?promote=name" className="btn">
+              <a href="?dialog=promote" className="btn">
                 <Icon icon={RocketLaunch} /> Promote
               </a>
             )

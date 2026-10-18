@@ -46,10 +46,10 @@ shipped base, `erik-b` → `erik`; that's gone.)
   the reason.
 - **Corpus copy**: already shipped; the panel shows Play instead of Promote.
 
-The dialog follows the editor's submit-dialog pattern: a query-param step
-(`?promote=name`) and a plain form POST, so it works with JS off. A typed name
-that's already taken sends you back to the dialog with an error. Promote
-becomes a POST, since it writes files.
+The dialog follows the site's dialog convention, `?dialog=promote`, with a
+plain form POST, so it works with JS off. A typed name that's already taken
+sends you back to the dialog with an error. Promote becomes a POST, since it
+writes files.
 
 `pickCandidateName` goes away. Names are checked only against the corpus.
 

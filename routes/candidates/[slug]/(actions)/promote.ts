@@ -51,7 +51,7 @@ export const handler = define.handlers({
       // Back to the dialog with what was typed, and why it can't ship.
       const error = !slug ? "empty" : taken.has(slug) ? "taken" : null;
       if (error) {
-        const params = new URLSearchParams({ promote: "name", error, name });
+        const params = new URLSearchParams({ dialog: "promote", error, name });
         return new Response("", {
           headers: { Location: `${page}?${params}` },
           status: 303,

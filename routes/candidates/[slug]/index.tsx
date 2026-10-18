@@ -54,7 +54,7 @@ type PageData = {
   previous: string | null;
   next: string | null;
   promote: PromoteTarget["type"];
-  /** Open when `?promote=name`: the name to offer, and why the last one failed. */
+  /** Open when `?dialog=promote`: the name to offer, and why the last one failed. */
   nameDialog: { name: string; error: NameError | null } | null;
 };
 
@@ -112,7 +112,7 @@ export const handler = define.handlers<PageData>({
       ? param
       : null;
     const nameDialog =
-      promote === "ask" && url.searchParams.get("promote") === "name"
+      promote === "ask" && url.searchParams.get("dialog") === "promote"
         ? {
           // A rejected name comes back as typed, so it can be fixed.
           name: url.searchParams.get("name") ?? suggestName(taken),
