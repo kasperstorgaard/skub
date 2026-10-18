@@ -99,10 +99,11 @@ moves to `/candidates/review`. That's safe because no candidate will be called
 
 ### Version navigation on the candidate page
 
-The candidate page gets a row of links to the other versions in its family,
-labelled by letter (base, `b`, `c`, …), with the current one marked and each
-showing its rating. Previous/next links step through them in order. Plain
-links, so it works with JS off.
+Floating left/right arrows on either side of the board step to the previous
+and next version in the family (base, `b`, `c`, …). Each arrow is hidden at
+its end of the family, and both are hidden for a single-version family. Use
+the same caret icons as `Pagination`; they're plain links, so they work with JS
+off.
 
 Every link to the old URLs gets updated: the actions' redirects, the editor's
 and composer's Review, and the Preview panel's candidate link.
