@@ -18,7 +18,7 @@ type Props = {
 
 /**
  * The editor's submit flow, driven by `?submit=`: `compose` asks for an
- * optional note before sending, `sent`/`failed` is the action's answer.
+ * optional message before sending, `sent`/`failed` is the action's answer.
  */
 export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
   const onLocationUpdated = useCallback((url: URL) => {
@@ -70,10 +70,7 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
         </h2>
 
         <p>
-          I play every puzzle and do my best to reply to everyone.
-          <br />
-          If yours makes it into Skub, I'll keep the name you gave it (ideally a
-          real person's name rather than a username).
+          I play every one I get, the good ones make it into the game.
         </p>
       </div>
 
@@ -89,15 +86,6 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
           value={formatPuzzle(puzzle.value)}
         />
 
-        <label className="flex flex-col gap-1">
-          <span className="text-text-2 text-1">Note (optional)</span>
-          <textarea
-            name="note"
-            rows={3}
-            maxLength={2000}
-            className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
-          />
-        </label>
 
         {userEmail
           ? (
@@ -119,6 +107,16 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
               />
             </label>
           )}
+
+        <label className="flex flex-col gap-1">
+          <span className="text-text-2 text-1">Message (optional)</span>
+          <textarea
+            name="message"
+            rows={3}
+            maxLength={2000}
+            className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
+          />
+        </label>
       </form>
 
       <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">

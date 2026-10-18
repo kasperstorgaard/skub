@@ -29,7 +29,7 @@ export const handler = define.handlers({
     const replyTo = user.email
       ? (identified ? user.email : undefined)
       : toEmail(form.get("email"));
-    const note = form.get("note")?.toString().trim().slice(0, 2000) ?? "";
+    const message = form.get("message")?.toString().trim().slice(0, 2000) ?? "";
     const name = puzzle.name || "Untitled";
 
     try {
@@ -48,10 +48,13 @@ export const handler = define.handlers({
             replyTo ? ` <${replyTo}>` : ""
           }`,
           "",
-          ...(note ? ["Note:", note, ""] : []),
+          ...(message ? ["Message:", message, ""] : []),
           markdown,
         ].join("\n"),
-        attachments: [{ filename: "submission.md", content: markdown }],
+        attachments: [{
+          filename: `${puzzle.slug || "submission"}.md`,
+          content: markdown,
+        }],
       });
     } catch (err) {
       console.error("Puzzle submission email failed", err);
@@ -61,7 +64,7 @@ export const handler = define.handlers({
     trackPuzzleSubmitted(ctx.state, puzzle, {
       url: ctx.req.url,
       hasReplyTo: !!replyTo,
-      hasNote: !!note,
+      hasMessage: !!message,
     });
 
     return redirect("sent");

@@ -123,7 +123,7 @@ export function trackCookieConsent(
 export function trackPuzzleSubmitted(
   state: State,
   puzzle: Puzzle,
-  options: { url: string; hasReplyTo: boolean; hasNote: boolean },
+  options: { url: string; hasReplyTo: boolean; hasMessage: boolean },
 ): void {
   posthog?.capture({
     distinctId: state.trackingId,
@@ -133,7 +133,7 @@ export function trackPuzzleSubmitted(
       $process_person_profile: state.cookieChoice === "accepted",
       puzzle_min_moves: puzzle.minMoves,
       has_reply_to: options.hasReplyTo,
-      has_note: options.hasNote,
+      has_message: options.hasMessage,
     },
   });
 }
