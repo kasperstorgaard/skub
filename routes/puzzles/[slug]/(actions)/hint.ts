@@ -20,6 +20,11 @@ import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
  * following links must not reach it.
  */
 export const handler = define.handlers({
+  // Retired GET from before #237 that crawlers still call. Returned, not thrown,
+  // so it skips error tracking. Remove once the traffic stops.
+  GET() {
+    return new Response(null, { status: 405, headers: { Allow: "POST" } });
+  },
   async POST(ctx) {
     const slug = ctx.params.slug;
     const { puzzle } = ctx.state;
