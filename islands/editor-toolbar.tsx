@@ -31,10 +31,11 @@ export function EditorToolbar(
     [href.value],
   );
 
-  const { toggleWall, setCellContent, setDestination } = useEditor({
-    puzzle,
-    active,
-  });
+  const { toggleWall, toggleCorner, setCellContent, setDestination } =
+    useEditor({
+      puzzle,
+      active,
+    });
 
   const disabled = active == null;
 
@@ -68,17 +69,19 @@ export function EditorToolbar(
         <div className="size-5 border-l-[3px] border-ui-4" />
       </button>
 
+      <KeyHint className="row-[1/3]">W</KeyHint>
+
       <button
         type="button"
         className="flex items-center bg-transparent  border-2 border-link rounded-2"
-        aria-label="Both walls"
+        aria-label="Corner wall"
         disabled={disabled}
-        onClick={() => toggleWall("both")}
+        onClick={toggleCorner}
       >
         <div className="size-5 border-t-[3px] border-l-[3px] border-ui-4" />
       </button>
 
-      <KeyHint className="row-[1/4]">W</KeyHint>
+      <KeyHint>C</KeyHint>
 
       <button
         type="button"

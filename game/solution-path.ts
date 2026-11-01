@@ -1,4 +1,4 @@
-import { getMoveSlide, resolveMoves, type SlideOutcome } from "#/game/board.ts";
+import { getMoveSlide, resolveMoves } from "#/game/board.ts";
 import type { Board, Move, Piece, Position } from "#/game/types.ts";
 
 /**
@@ -9,7 +9,12 @@ import type { Board, Move, Piece, Position } from "#/game/types.ts";
 export type SolutionStep = {
   piece: Piece["type"];
   segments: Position[][];
-  outcome: SlideOutcome;
+};
+
+/** A cell a solution comes to rest on, and the moves that end there. */
+export type SolutionStop = Position & {
+  piece: Piece["type"];
+  moves: number[];
 };
 
 /**
@@ -31,10 +36,28 @@ export function getSolutionSteps(board: Board, moves: Move[]): SolutionStep[] {
     steps.push({
       piece: piece.type,
       segments: slide.segments,
-      outcome: slide.outcome,
     });
     current = resolveMoves(current, [move]);
   }
 
   return steps;
+}
+
+/**
+ * Where each move lands, one entry per cell: a piece coming back to a cell, or
+ * another stopping on it, adds its number to the one already there.
+ */
+export function getSolutionStops(steps: SolutionStep[]): SolutionStop[] {
+  const stops: SolutionStop[] = [];
+
+  steps.forEach((step, index) => {
+    const end = step.segments.at(-1)?.at(-1);
+    if (!end) return;
+
+    const stop = stops.find(({ x, y }) => x === end.x && y === end.y);
+    if (stop) stop.moves.push(index + 1);
+    else stops.push({ ...end, piece: step.piece, moves: [index + 1] });
+  });
+
+  return stops;
 }

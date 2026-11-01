@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 
-import { getSolutionSteps } from "./solution-path.ts";
+import { getSolutionSteps, getSolutionStops } from "./solution-path.ts";
 import type { Board } from "#/game/types.ts";
 
 const empty: Board = {
@@ -64,21 +64,6 @@ Deno.test("getSolutionSteps() should split a teleporting slide into one leg per 
   assertEquals(step.segments[1][0], { x: 6, y: 5 });
 });
 
-Deno.test("getSolutionSteps() should mark a move that ends in a hole as dropped", () => {
-  const board: Board = {
-    ...empty,
-    pieces: [
-      { x: 0, y: 0, type: "puck" },
-      { x: 2, y: 4, type: "blocker" },
-    ],
-    holes: [{ x: 2, y: 6 }],
-  };
-
-  const [step] = getSolutionSteps(board, [[{ x: 2, y: 4 }, { x: 2, y: 6 }]]);
-
-  assertEquals(step.outcome, "dropped");
-});
-
 Deno.test("getSolutionSteps() should stop at the first move the board no longer allows", () => {
   const board: Board = {
     ...empty,
@@ -92,4 +77,28 @@ Deno.test("getSolutionSteps() should stop at the first move the board no longer 
   ]);
 
   assertEquals(steps.length, 1);
+});
+
+Deno.test("getSolutionStops() should number each move at the end of its last leg", () => {
+  const stops = getSolutionStops([
+    {
+      piece: "puck",
+      segments: [
+        [{ x: 0, y: 2 }, { x: 3, y: 2 }],
+        [{ x: 6, y: 5 }, { x: 7, y: 5 }],
+      ],
+    },
+  ]);
+
+  assertEquals(stops, [{ x: 7, y: 5, piece: "puck", moves: [1] }]);
+});
+
+Deno.test("getSolutionStops() should keep one stop for a cell landed on twice", () => {
+  const stops = getSolutionStops([
+    { piece: "puck", segments: [[{ x: 0, y: 0 }, { x: 7, y: 0 }]] },
+    { piece: "puck", segments: [[{ x: 7, y: 0 }, { x: 7, y: 7 }]] },
+    { piece: "puck", segments: [[{ x: 7, y: 7 }, { x: 7, y: 0 }]] },
+  ]);
+
+  assertEquals(stops.map((stop) => stop.moves), [[1, 3], [2]]);
 });

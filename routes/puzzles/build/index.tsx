@@ -15,6 +15,7 @@ import { EditorAutosave } from "#/islands/editor-autosave.tsx";
 import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
 import { EditorPanel } from "#/islands/editor-panel.tsx";
+import { EditorSolutionToggle } from "#/islands/editor-solution-toggle.tsx";
 import { type EditorSolution, EditorSolver } from "#/islands/editor-solver.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
 import { SubmitDialog } from "#/islands/submit-dialog.tsx";
@@ -73,7 +74,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
           />
         </div>
 
-        <div className="relative max-lg:pb-fl-5">
+        <div className="relative">
           <Board
             puzzle={puzzle}
             href={href}
@@ -83,13 +84,20 @@ export default define.page<typeof handler>(function EditorPage(props) {
             className="lg:col-[1/2] lg:row-[4/5]"
           />
 
+          <EditorSolutionToggle
+            showSolution={showSolution}
+            className={clsx(
+              "max-lg:mt-fl-1 max-lg:justify-center",
+              "lg:absolute lg:ml-fl-1 lg:left-[calc(100%+1px)] lg:top-0",
+            )}
+          />
+
           <EditorToolbar
             puzzle={puzzle}
             href={href}
             className={clsx(
-              "absolute",
-              "max-lg:bottom-0 max-lg:left-1/2 max-lg:-translate-x-1/2",
-              "lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              "max-lg:mt-fl-1",
+              "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
             )}
           />
         </div>
@@ -101,7 +109,6 @@ export default define.page<typeof handler>(function EditorPage(props) {
         submissionsEnabled={canSendEmail &&
           Deno.env.has("SUBMISSIONS_EMAIL")}
         solveState={solveState}
-        showSolution={showSolution}
       />
       <SubmitDialog
         puzzle={puzzle}
@@ -116,7 +123,11 @@ export default define.page<typeof handler>(function EditorPage(props) {
         showSolution={showSolution}
       />
       <EditorAutosave puzzle={puzzle} />
-      <EditorKeyboardShortcuts puzzle={puzzle} href={href} />
+      <EditorKeyboardShortcuts
+        puzzle={puzzle}
+        href={href}
+        showSolution={showSolution}
+      />
     </>
   );
 });

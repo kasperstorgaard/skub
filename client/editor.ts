@@ -29,48 +29,51 @@ type UseEditorOptions = {
 export function useEditor(
   { active, puzzle, contents = CELL_CONTENTS }: UseEditorOptions,
 ) {
-  const toggleWall = useCallback(
-    (target: Wall["orientation"] | "both" | null) => {
+  const setWalls = useCallback(
+    (orientations: Wall["orientation"][]) => {
       if (!active) return;
 
-      // store matches of the active position
-      const matches = puzzle.value.board.walls.filter((wall) =>
-        isPositionSame(wall, active)
-      );
-
-      // clear the walls matching active as a starting point
-      let walls = puzzle.value.board.walls.filter((wall) =>
+      const walls = puzzle.value.board.walls.filter((wall) =>
         !isPositionSame(wall, active)
       );
 
-      // No target, clear walls
-      if (!target) {
-        updateBoard(puzzle, { walls });
-        return;
-      }
-
-      // Target is the same as current matches, clear walls
-      if (
-        (matches.length === 1 && matches[0].orientation === target) ||
-        (target === "both" && matches.length === 2)
-      ) {
-        updateBoard(puzzle, { walls });
-        return;
-      }
-
-      // Add whatever walls are desired
-      if (target === "both" || target === "horizontal") {
-        walls = [...walls, { ...active, orientation: "horizontal" as const }];
-      }
-
-      if (target === "both" || target === "vertical") {
-        walls = [...walls, { ...active, orientation: "vertical" as const }];
-      }
-
-      updateBoard(puzzle, { walls });
+      updateBoard(puzzle, {
+        walls: [
+          ...walls,
+          ...orientations.map((orientation) => ({ ...active, orientation })),
+        ],
+      });
     },
     [active, puzzle],
   );
+
+  const getOrientations = useCallback(
+    () =>
+      puzzle.value.board.walls
+        .filter((wall) => active && isPositionSame(wall, active))
+        .map((wall) => wall.orientation),
+    [active, puzzle],
+  );
+
+  // Each side of the cell toggles alone: the other one stays as it was.
+  const toggleWall = useCallback(
+    (orientation: Wall["orientation"]) => {
+      const current = getOrientations();
+
+      setWalls(
+        current.includes(orientation)
+          ? current.filter((other) => other !== orientation)
+          : [...current, orientation],
+      );
+    },
+    [getOrientations, setWalls],
+  );
+
+  const toggleCorner = useCallback(() => {
+    setWalls(
+      getOrientations().length === 2 ? [] : ["horizontal", "vertical"],
+    );
+  }, [getOrientations, setWalls]);
 
   const setCellContent = useCallback(
     (content: CellContent | null) => {
@@ -134,27 +137,13 @@ export function useEditor(
   }, [active, puzzle]);
 
   const cycleWall = useCallback(() => {
-    if (!active) return;
+    const current = getOrientations();
 
-    const { walls } = puzzle.value.board;
-    const activeWalls = walls.filter((wall) => isPositionSame(wall, active));
-
-    if (activeWalls.length === 0) {
-      toggleWall("horizontal");
-    } else if (
-      activeWalls.length === 1 &&
-      activeWalls[0].orientation === "horizontal"
-    ) {
-      toggleWall("vertical");
-    } else if (
-      activeWalls.length === 1 &&
-      activeWalls[0].orientation === "vertical"
-    ) {
-      toggleWall("both");
-    } else {
-      toggleWall(null);
-    }
-  }, [active, puzzle]);
+    if (current.length === 0) setWalls(["horizontal"]);
+    else if (current.length === 1 && current[0] === "horizontal") {
+      setWalls(["vertical"]);
+    } else setWalls([]);
+  }, [getOrientations, setWalls]);
 
   const cycleCell = useCallback(() => {
     if (!active) return;
@@ -166,7 +155,14 @@ export function useEditor(
     setCellContent(contents[index + 1] ?? null);
   }, [active, contents, puzzle, setCellContent]);
 
-  return { toggleWall, setCellContent, setDestination, cycleWall, cycleCell };
+  return {
+    toggleWall,
+    toggleCorner,
+    setCellContent,
+    setDestination,
+    cycleWall,
+    cycleCell,
+  };
 }
 
 // Applies a board mutation to the puzzle signal, clearing minMoves.

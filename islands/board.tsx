@@ -13,7 +13,10 @@ import { useMoves } from "#/client/moves.ts";
 import { calculateMoveSpeed } from "#/client/touch.ts";
 import { Icon, X } from "#/components/icons.tsx";
 import { PortalRings } from "#/components/portal-rings.tsx";
-import { SolutionOverlay } from "#/components/solution-overlay.tsx";
+import {
+  SolutionNumbers,
+  SolutionUnderlay,
+} from "#/components/solution-underlay.tsx";
 import {
   getGrid,
   getMoveSlide,
@@ -81,7 +84,7 @@ type BoardProps = {
   isNew?: boolean;
   /** Grid width, for the tile builder's 4x4 board. */
   size?: 4 | 8;
-  /** The editor's last solution, drawn over the board while shown. */
+  /** The editor's last solution, drawn under the pieces while shown. */
   solution?: Signal<EditorSolution | null>;
   showSolution?: Signal<boolean>;
   className?: string;
@@ -361,6 +364,8 @@ export default function Board(
           />
         ))}
 
+        {solutionSteps && <SolutionUnderlay steps={solutionSteps} />}
+
         {pieces.map((piece) => (
           <BoardPiece
             key={piece.id}
@@ -381,13 +386,7 @@ export default function Board(
           />
         ))}
 
-        {solutionSteps && (
-          <SolutionOverlay
-            steps={solutionSteps}
-            // Positioned and last, so it paints above the translated pieces.
-            className="relative col-[1/-1] row-[1/-1] pointer-events-none"
-          />
-        )}
+        {solutionSteps && <SolutionNumbers steps={solutionSteps} />}
 
         {
           /* Replay resolves the board to how it ends up, so a swallowed piece

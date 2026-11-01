@@ -26,8 +26,6 @@ type EditorPanelProps = {
   // Submissions are emailed, so the button needs somewhere to send them.
   submissionsEnabled: boolean;
   solveState: Signal<SolveState | undefined>;
-  /** Draws the solution over the board. */
-  showSolution: Signal<boolean>;
 };
 
 /**
@@ -43,7 +41,6 @@ export function EditorPanel(
     isDev,
     submissionsEnabled,
     solveState,
-    showSolution,
   }: EditorPanelProps,
 ) {
   const onLocationUpdated = useCallback((url: URL) => {
@@ -134,17 +131,6 @@ export function EditorPanel(
               <span className="sr-only">Mirror Vertically</span>
             </button>
           </div>
-
-          <label className="gui-switch text-1 text-text-2">
-            Solution
-            <input
-              type="checkbox"
-              role="switch"
-              checked={showSolution.value}
-              onChange={(event) =>
-                showSolution.value = event.currentTarget.checked}
-            />
-          </label>
 
           <button
             type="button"
