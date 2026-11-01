@@ -57,21 +57,21 @@ export function EditorKeyboardShortcuts(
     if (!showSolution) return;
 
     // Only a hold that turned it on turns it off: the switch may have it on.
-    let isHolding = false;
+    let isHoldingShift = false;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Shift" || showSolution.value) return;
       if (isTyping(event.target as HTMLElement)) return;
 
-      isHolding = true;
+      isHoldingShift = true;
       showSolution.value = true;
     };
 
     const release = (event: Event) => {
-      if (!isHolding) return;
+      if (!isHoldingShift) return;
       if (event instanceof KeyboardEvent && event.key !== "Shift") return;
 
-      isHolding = false;
+      isHoldingShift = false;
       showSolution.value = false;
     };
 
