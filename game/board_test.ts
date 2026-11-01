@@ -1441,17 +1441,6 @@ Deno.test("flipBoard() horizontal should mirror holes and portals", () => {
   assertEquals(result.portals, [{ x: 3, y: 5 }, { x: 1, y: 7 }]);
 });
 
-Deno.test("getGrid() should size itself when asked", () => {
-  const result = getGrid(4);
-
-  assertEquals(result, [
-    [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }],
-    [{ x: 0, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }],
-    [{ x: 0, y: 2 }, { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 }],
-    [{ x: 0, y: 3 }, { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 3, y: 3 }],
-  ]);
-});
-
 Deno.test("isReadyToSolve() should hold off on a board still being laid out", () => {
   // Blockers down, nothing to move yet.
   const arranging = {

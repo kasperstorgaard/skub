@@ -17,12 +17,12 @@ import {
 export const COLS = 8;
 export const ROWS = 8;
 
-// Generates a square grid of Position objects, board-sized unless told otherwise.
-export function getGrid(size = COLS): Position[][] {
+// Generates a grid of Position objects, one per cell of the board.
+export function getGrid(): Position[][] {
   const positions: Position[][] = [];
-  for (let y = 0; y < size; y++) {
+  for (let y = 0; y < ROWS; y++) {
     positions[y] = [];
-    for (let x = 0; x < size; x++) {
+    for (let x = 0; x < COLS; x++) {
       positions[y].push({ x, y });
     }
   }
@@ -70,18 +70,14 @@ const DELTAS: Record<Direction, Position> = {
 /**
  * Checks if a given position is out bounds of the board.
  * @param src The position to check
- * @param size Grid width to check against
  * @returns true if out of bounds, otherwise false
  */
-function isPositionOutOfBounds(
-  src: Position,
-  size = COLS,
-) {
+function isPositionOutOfBounds(src: Position) {
   return (
     src.x < 0 ||
-    src.x >= size ||
+    src.x >= COLS ||
     src.y < 0 ||
-    src.y >= size
+    src.y >= ROWS
   );
 }
 
@@ -303,10 +299,7 @@ export function validateBoard(board: BoardLike): ValidBoard {
  * would have to be at 0, and one along the high edge would be out of bounds.
  * Both are rejected here.
  */
-export function validateWalls(
-  walls: (Wall | null | undefined)[],
-  size = COLS,
-): Wall[] {
+function validateWalls(walls: (Wall | null | undefined)[]): Wall[] {
   const checked: Wall[] = [];
 
   for (const wall of walls) {
@@ -314,7 +307,7 @@ export function validateWalls(
       throw new BoardError("Wall is invalid");
     }
 
-    if (isPositionOutOfBounds(wall, size)) {
+    if (isPositionOutOfBounds(wall)) {
       throw new BoardError(`Wall at (${wall.x}, ${wall.y}) is out of bounds`);
     }
 
@@ -341,10 +334,9 @@ export function validateWalls(
 }
 
 // Bounds- and duplicate-checks a hazard list, returning it sanitized.
-export function validatePositions(
+function validatePositions(
   positions: (Position | null | undefined)[],
   label: string,
-  size = COLS,
 ): Position[] {
   const checked: Position[] = [];
 
@@ -355,7 +347,7 @@ export function validatePositions(
 
     const at = `(${position.x}, ${position.y})`;
 
-    if (isPositionOutOfBounds(position, size)) {
+    if (isPositionOutOfBounds(position)) {
       throw new BoardError(`${label} at ${at} is out of bounds`);
     }
 
@@ -639,21 +631,14 @@ export function isValidSolution(board: Pick<Board, "destination" | "pieces">) {
 export function rotateBoard(
   board: Board,
   direction: "right" | "left",
-  { size = COLS }: { size?: number } = {},
 ): Board {
   const destination = board.destination &&
-    rotatePosition(board.destination, direction, size);
-  const pieces = board.pieces.map((piece) =>
-    rotatePosition(piece, direction, size)
-  );
-  const walls = board.walls.map((wall) =>
-    rotatePosition(wall, direction, size)
-  );
-  const holes = board.holes.map((hole) =>
-    rotatePosition(hole, direction, size)
-  );
+    rotatePosition(board.destination, direction);
+  const pieces = board.pieces.map((piece) => rotatePosition(piece, direction));
+  const walls = board.walls.map((wall) => rotatePosition(wall, direction));
+  const holes = board.holes.map((hole) => rotatePosition(hole, direction));
   const portals = board.portals.map((portal) =>
-    rotatePosition(portal, direction, size)
+    rotatePosition(portal, direction)
   );
 
   return { destination, pieces, walls, holes, portals };
@@ -663,14 +648,12 @@ export function rotateBoard(
 function rotatePosition<TItem extends Position | Wall>(
   item: TItem,
   direction: "right" | "left" = "right",
-  size = COLS,
 ): TItem {
   if (direction !== "right") {
     // Rotate right 3 times
     return rotatePosition(
-      rotatePosition(rotatePosition(item, "right", size), "right", size),
+      rotatePosition(rotatePosition(item, "right"), "right"),
       "right",
-      size,
     );
   }
 
@@ -680,21 +663,21 @@ function rotatePosition<TItem extends Position | Wall>(
     if (wall.orientation === "horizontal") {
       return {
         ...item,
-        x: size - wall.y,
+        x: COLS - wall.y,
         y: wall.x,
         orientation: "vertical",
       };
     } else {
       return {
         ...item,
-        x: size - 1 - wall.y,
+        x: COLS - 1 - wall.y,
         y: wall.x,
         orientation: "horizontal",
       };
     }
   }
 
-  return { ...item, x: size - 1 - item.y, y: item.x };
+  return { ...item, x: COLS - 1 - item.y, y: item.x };
 }
 
 /**
@@ -705,16 +688,13 @@ function rotatePosition<TItem extends Position | Wall>(
 export function flipBoard(
   board: Board,
   axis: "horizontal" | "vertical",
-  { size = COLS }: { size?: number } = {},
 ): Board {
   const destination = board.destination &&
-    flipPosition(board.destination, axis, size);
-  const pieces = board.pieces.map((piece) => flipPosition(piece, axis, size));
-  const walls = board.walls.map((wall) => flipPosition(wall, axis, size));
-  const holes = board.holes.map((hole) => flipPosition(hole, axis, size));
-  const portals = board.portals.map((portal) =>
-    flipPosition(portal, axis, size)
-  );
+    flipPosition(board.destination, axis);
+  const pieces = board.pieces.map((piece) => flipPosition(piece, axis));
+  const walls = board.walls.map((wall) => flipPosition(wall, axis));
+  const holes = board.holes.map((hole) => flipPosition(hole, axis));
+  const portals = board.portals.map((portal) => flipPosition(portal, axis));
 
   return { destination, pieces, walls, holes, portals };
 }
@@ -723,7 +703,6 @@ export function flipBoard(
 function flipPosition<TItem extends Position | Wall>(
   item: TItem,
   axis: "horizontal" | "vertical",
-  size = COLS,
 ): TItem {
   const wall = "orientation" in item ? item as Wall : null;
 
@@ -732,14 +711,14 @@ function flipPosition<TItem extends Position | Wall>(
 
     return {
       ...item,
-      x: axis === "horizontal" ? size - 1 - item.x + offset : item.x,
-      y: axis === "vertical" ? size - 1 - item.y + offset : item.y,
+      x: axis === "horizontal" ? COLS - 1 - item.x + offset : item.x,
+      y: axis === "vertical" ? ROWS - 1 - item.y + offset : item.y,
     };
   }
 
   return {
     ...item,
-    x: axis === "horizontal" ? size - 1 - item.x : item.x,
-    y: axis === "vertical" ? size - 1 - item.y : item.y,
+    x: axis === "horizontal" ? COLS - 1 - item.x : item.x,
+    y: axis === "vertical" ? ROWS - 1 - item.y : item.y,
   };
 }

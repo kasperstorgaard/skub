@@ -55,9 +55,9 @@ export const REASON_TAG_VALUES: readonly string[] = [
 ];
 
 /**
- * The settings a pre-1.0.0 candidate was generated with, when boards were random
- * wall and blocker placement rather than composed tiles. Kept so those files
- * still round-trip; nothing writes it any more.
+ * The settings a pre-1.0.0 candidate was generated with, as random wall and
+ * blocker placement. Kept so those files still round-trip; nothing writes it
+ * any more.
  */
 export type GenOptions = {
   wallsRange?: [number, number];

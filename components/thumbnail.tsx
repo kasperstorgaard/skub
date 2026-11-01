@@ -1,5 +1,6 @@
 import { HTMLAttributes, SVGAttributes } from "preact";
 
+import { COLS } from "#/game/board.ts";
 import type { Board, Piece, Wall } from "#/game/types.ts";
 
 export type ThumbnailColors = {
@@ -26,8 +27,6 @@ export type BoardSvgProps = SVGAttributes<SVGSVGElement> & {
   board: Board;
   width?: number;
   height?: number;
-  /** Cells per side. */
-  size?: number;
   colors?: ThumbnailColors;
   background?: string;
 };
@@ -39,13 +38,12 @@ export function Thumbnail({
   board,
   width = 400,
   height = 400,
-  size = 8,
   colors = CSS_VAR_COLORS,
   background,
   ...rest
 }: BoardSvgProps) {
   const gap = width * 0.02;
-  const cellSize = (width - ((size - 1) * gap)) / size;
+  const cellSize = (width - ((COLS - 1) * gap)) / COLS;
   const pieceSize = cellSize * 0.7;
 
   const cellX = (x: number) => x * (cellSize + gap);
@@ -217,5 +215,4 @@ export type ThumbnailProps = HTMLAttributes<SVGSVGElement> & {
   board: Board;
   width?: number;
   height?: number;
-  size?: number;
 };

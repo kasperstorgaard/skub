@@ -17,9 +17,9 @@ export const workerUrl = isDev
  * measures ~175MB, visited set included.
  *
  * That doubles as the bound on a public endpoint, which is why it stays well
- * under the analysis budget. A hand-built board rarely passes 100K, but a
- * composed one carries hazards and more reachable geometry, and 500K was running
- * out on boards that do have an answer.
+ * under the analysis budget. A board rarely passes 100K, but one with hazards
+ * has more reachable geometry, and 500K was running out on boards that do have
+ * an answer.
  */
 export const EDITOR_MAX_STATES = 3_000_000;
 

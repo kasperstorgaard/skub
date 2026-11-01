@@ -86,7 +86,7 @@ const COMBINING_CIRCUMFLEX = "\u0302";
  * Always returns the raw contents — a draft is stored mid-build, before it has a
  * puck or a destination — so validating is the caller's call.
  */
-export function parseGrid(rows: string[], size = COLS): Board {
+function parseGrid(rows: string[]): Board {
   const pieces: Piece[] = [];
   let destination: Position | undefined;
   const walls: Wall[] = [];
@@ -102,7 +102,7 @@ export function parseGrid(rows: string[], size = COLS): Board {
     // Track the actual string index as we process combined characters
     let stringIndex = 0;
 
-    for (let x = 0; x < size; x++) {
+    for (let x = 0; x < COLS; x++) {
       // Each cell should be at position x*2, but combining characters shift the indices
       if (stringIndex >= cellContent.length) break;
 
@@ -287,7 +287,7 @@ export function parsePuzzle(
 /**
  * Extracts the board rows from the content.
  */
-export function extractRows(content: string): string[] {
+function extractRows(content: string): string[] {
   const lines = content.split(/[\r\n]/);
   const rows: string[] = [];
 
