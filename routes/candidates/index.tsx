@@ -26,7 +26,7 @@ type FamilyCard = {
   corpus: boolean;
 };
 
-type PageData = { families: FamilyCard[]; hidePromoted: boolean };
+type PageData = { families: FamilyCard[]; showPromoted: boolean };
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
@@ -50,14 +50,14 @@ export const handler = define.handlers<PageData>({
       };
     });
 
-    const hidePromoted =
-      new URL(ctx.req.url).searchParams.get("hide") === "promoted";
+    const showPromoted =
+      new URL(ctx.req.url).searchParams.get("show") === "promoted";
 
     return page({
-      families: hidePromoted
-        ? families.filter((family) => !family.promotedAs)
-        : families,
-      hidePromoted,
+      families: showPromoted
+        ? families
+        : families.filter((family) => !family.promotedAs),
+      showPromoted,
     });
   },
 });
@@ -85,10 +85,10 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
 
         <form method="get" action="/candidates">
           <Switch
-            label="Hide promoted"
-            name="hide"
+            label="Show promoted"
+            name="show"
             value="promoted"
-            checked={props.data.hidePromoted}
+            checked={props.data.showPromoted}
           />
           <noscript>
             <button type="submit" className="btn mt-fl-1">Apply</button>
