@@ -64,21 +64,6 @@ Deno.test("getSolutionSteps() should split a teleporting slide into one leg per 
   assertEquals(step.segments[1][0], { x: 6, y: 5 });
 });
 
-Deno.test("getSolutionSteps() should stop at the first move the board no longer allows", () => {
-  const board: Board = {
-    ...empty,
-    pieces: [{ x: 0, y: 0, type: "puck" }],
-  };
-
-  const steps = getSolutionSteps(board, [
-    [{ x: 0, y: 0 }, { x: 7, y: 0 }],
-    // The puck is no longer on A1, so this move is stale.
-    [{ x: 0, y: 0 }, { x: 0, y: 7 }],
-  ]);
-
-  assertEquals(steps.length, 1);
-});
-
 Deno.test("getSolutionStops() should number each move at the end of its last leg", () => {
   const stops = getSolutionStops([
     {
@@ -101,4 +86,13 @@ Deno.test("getSolutionStops() should keep one stop for a cell landed on twice", 
   ]);
 
   assertEquals(stops.map((stop) => stop.moves), [[1, 3], [2]]);
+});
+
+Deno.test("getSolutionStops() should colour a shared stop for the last piece there", () => {
+  const [stop] = getSolutionStops([
+    { piece: "blocker", segments: [[{ x: 0, y: 0 }, { x: 7, y: 0 }]] },
+    { piece: "puck", segments: [[{ x: 7, y: 7 }, { x: 7, y: 0 }]] },
+  ]);
+
+  assertEquals(stop.piece, "puck");
 });

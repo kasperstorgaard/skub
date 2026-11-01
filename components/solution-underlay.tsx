@@ -1,26 +1,24 @@
 import { clsx } from "clsx/lite";
 
-import { getSolutionStops, type SolutionStep } from "#/game/solution-path.ts";
+import type { SolutionStep, SolutionStop } from "#/game/solution-path.ts";
 import type { Piece, Position } from "#/game/types.ts";
 
-/** One dash and one gap, in px: how far the line flows per cycle. */
-const DASH_PERIOD = 14;
-
-type SolutionProps = {
+type SolutionUnderlayProps = {
   steps: SolutionStep[];
+  stops: SolutionStop[];
+};
+
+type SolutionNumbersProps = {
+  stops: SolutionStop[];
 };
 
 /**
- * A solution laid on the board's own grid, under the pieces: a line flowing
- * along each leg in its piece's colour, joined by a dot on every stop.
+ * A solution laid on the board's own grid, under the pieces: a line along
+ * each leg in its piece's colour, joined by a dot on every stop.
  */
-export function SolutionUnderlay({ steps }: SolutionProps) {
+export function SolutionUnderlay({ steps, stops }: SolutionUnderlayProps) {
   return (
     <>
-      <style>
-        {`@keyframes solution-flow { to { stroke-dashoffset: -${DASH_PERIOD}px; } }`}
-      </style>
-
       {steps.flatMap((step, stepIndex) =>
         step.segments
           .filter((leg) => leg.length > 1)
@@ -33,16 +31,19 @@ export function SolutionUnderlay({ steps }: SolutionProps) {
           ))
       )}
 
-      {getSolutionStops(steps).map((stop) => (
-        <SolutionDot key={`${stop.x}-${stop.y}`} {...stop} />
+      {stops.map((stop) => (
+        <SolutionDot
+          key={`${stop.x}-${stop.y}`}
+          {...stop}
+        />
       ))}
     </>
   );
 }
 
 /** Each stop's move numbers. Above the pieces, so a move back stays readable. */
-export function SolutionNumbers({ steps }: SolutionProps) {
-  return getSolutionStops(steps).map(({ x, y, moves }) => (
+export function SolutionNumbers({ stops }: SolutionNumbersProps) {
+  return stops.map(({ x, y, moves }) => (
     <span
       key={`${x}-${y}`}
       className={clsx(
@@ -71,8 +72,6 @@ function SolutionLine({ leg, piece }: SolutionLineProps) {
   const to = leg[leg.length - 1];
 
   const isVertical = from.x === to.x;
-  const isReversed = to.x < from.x || to.y < from.y;
-  const [start, end] = isReversed ? ["100%", "0"] : ["0", "100%"];
 
   return (
     <div
@@ -91,17 +90,13 @@ function SolutionLine({ leg, piece }: SolutionLineProps) {
     >
       <svg className="block size-full overflow-visible" aria-hidden="true">
         <line
-          x1={isVertical ? "50%" : start}
-          y1={isVertical ? start : "50%"}
-          x2={isVertical ? "50%" : end}
-          y2={isVertical ? end : "50%"}
+          x1={isVertical ? "50%" : "0"}
+          y1={isVertical ? "0" : "50%"}
+          x2={isVertical ? "50%" : "100%"}
+          y2={isVertical ? "100%" : "50%"}
           stroke="currentColor"
-          strokeWidth={3}
-          strokeLinecap="round"
-          strokeDasharray={`${DASH_PERIOD / 2} ${DASH_PERIOD / 2}`}
+          stroke-width={1}
           className={clsx(
-            "animate-[solution-flow_700ms_linear_infinite]",
-            "motion-reduce:animate-none",
             "opacity-80",
             piece === "puck" ? "text-ui-2" : "text-ui-3",
           )}

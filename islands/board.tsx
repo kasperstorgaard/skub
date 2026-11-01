@@ -26,7 +26,7 @@ import {
   resolveMoves,
 } from "#/game/board.ts";
 import { getGuides, Guide } from "#/game/guides.ts";
-import { getSolutionSteps } from "#/game/solution-path.ts";
+import { getSolutionSteps, getSolutionStops } from "#/game/solution-path.ts";
 import {
   type Direction,
   type Move,
@@ -156,6 +156,11 @@ export default function Board(
 
     return getSolutionSteps(puzzle.value.board, solution.value.moves);
   }, [mode.value, solution?.value, puzzle.value.board]);
+
+  const solutionStops = useMemo(
+    () => solutionSteps && getSolutionStops(solutionSteps),
+    [solutionSteps],
+  );
 
   // Drawn whenever there is a solution: showing it only flips this class.
   const solutionClass = showSolution?.value ? "contents" : "hidden";
@@ -367,9 +372,9 @@ export default function Board(
           />
         ))}
 
-        {solutionSteps && (
+        {solutionSteps && solutionStops && (
           <div className={solutionClass}>
-            <SolutionUnderlay steps={solutionSteps} />
+            <SolutionUnderlay steps={solutionSteps} stops={solutionStops} />
           </div>
         )}
 
@@ -393,9 +398,9 @@ export default function Board(
           />
         ))}
 
-        {solutionSteps && (
+        {solutionStops && (
           <div className={solutionClass}>
-            <SolutionNumbers steps={solutionSteps} />
+            <SolutionNumbers stops={solutionStops} />
           </div>
         )}
 

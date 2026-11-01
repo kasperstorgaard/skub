@@ -37,7 +37,7 @@ export function SolutionBadge(
       title={getSolveTitle(state) ?? "shortest possible solution"}
     >
       {error && <Icon icon={Warning} />}
-      {unsolved && "?"}
+      {unsolved && "∅"}
       {busy && (getSolveDepth(state) || "…")}
       {!state && (puzzle.value.minMoves || "—")}
     </span>
