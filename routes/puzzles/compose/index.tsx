@@ -2,12 +2,12 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
-import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft, newPuzzleDraft } from "#/db/user.ts";
 import { getTileOptions, setBuildMode } from "#/game/cookies.ts";
+import type { SolveState } from "#/game/solver.ts";
 import { readTiles } from "#/game/tile-store.ts";
 import { type ComposerConfig, type DealtTile } from "#/game/tiles.ts";
 import type { Puzzle, TileEntry } from "#/game/types.ts";
@@ -16,8 +16,8 @@ import { ComposerKeyboardShortcuts } from "#/islands/composer-keyboard-shortcuts
 import { ComposerPanel } from "#/islands/composer-panel.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
-import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { EditorSolver } from "#/islands/editor-solver.tsx";
+import { SolutionBadge } from "#/islands/solution-badge.tsx";
 import { TileArranger } from "#/islands/tile-arranger.tsx";
 import type { DiceThrows } from "#/lib/dice.ts";
 
@@ -88,7 +88,7 @@ export default define.page<typeof handler>(function ComposerPage(props) {
             </p>
           </div>
 
-          <EditorDifficultyBadge
+          <SolutionBadge
             puzzle={puzzle}
             solveState={solveState}
             className="lg:mt-1"

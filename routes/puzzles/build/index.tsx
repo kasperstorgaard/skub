@@ -2,21 +2,21 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
-import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft, newPuzzleDraft } from "#/db/user.ts";
 import { setBuildMode } from "#/game/cookies.ts";
+import type { SolveState } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
-import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
 import { EditorPanel } from "#/islands/editor-panel.tsx";
-import { EditorSolver } from "#/islands/editor-solver.tsx";
+import { type EditorSolution, EditorSolver } from "#/islands/editor-solver.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
+import { SolutionBadge } from "#/islands/solution-badge.tsx";
 import { SubmitDialog } from "#/islands/submit-dialog.tsx";
 import { canSendEmail } from "#/lib/email.ts";
 import { isDev } from "#/lib/env.ts";
@@ -38,6 +38,8 @@ export default define.page<typeof handler>(function EditorPage(props) {
   const href = useSignal(props.url.href);
   const mode = useSignal<"editor">("editor");
   const solveState = useSignal<SolveState | undefined>(undefined);
+  const solution = useSignal<EditorSolution | null>(null);
+  const showSolution = useSignal(false);
 
   const url = new URL(props.req.url);
 
@@ -64,18 +66,21 @@ export default define.page<typeof handler>(function EditorPage(props) {
             </p>
           </div>
 
-          <EditorDifficultyBadge
+          <SolutionBadge
             puzzle={puzzle}
             solveState={solveState}
+            showSolution={showSolution}
             className="lg:mt-1"
           />
         </div>
 
-        <div className="relative max-lg:pb-fl-5">
+        <div className="relative">
           <Board
             puzzle={puzzle}
             href={href}
             mode={mode}
+            solution={solution}
+            showSolution={showSolution}
             className="lg:col-[1/2] lg:row-[4/5]"
           />
 
@@ -83,9 +88,8 @@ export default define.page<typeof handler>(function EditorPage(props) {
             puzzle={puzzle}
             href={href}
             className={clsx(
-              "absolute",
-              "max-lg:bottom-0 max-lg:left-1/2 max-lg:-translate-x-1/2",
-              "lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              "max-lg:mt-fl-1",
+              "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
             )}
           />
         </div>
@@ -104,9 +108,17 @@ export default define.page<typeof handler>(function EditorPage(props) {
         solveState={solveState}
         userEmail={props.state.user.email}
       />
-      <EditorSolver puzzle={puzzle} solveState={solveState} />
+      <EditorSolver
+        puzzle={puzzle}
+        solveState={solveState}
+        solution={solution}
+      />
       <EditorAutosave puzzle={puzzle} />
-      <EditorKeyboardShortcuts puzzle={puzzle} href={href} />
+      <EditorKeyboardShortcuts
+        puzzle={puzzle}
+        href={href}
+        showSolution={showSolution}
+      />
     </>
   );
 });

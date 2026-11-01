@@ -10,11 +10,15 @@ type Props = {
   href: Signal<string>;
   /** What the cell cycle offers, when it isn't the full set. */
   contents?: readonly CellContent[];
+  /** Whether the solution shows. Holding Shift turns it on until release. */
+  showSolution?: Signal<boolean>;
 };
 
-export function EditorKeyboardShortcuts({ puzzle, href, contents }: Props) {
+export function EditorKeyboardShortcuts(
+  { puzzle, href, contents, showSolution }: Props,
+) {
   const active = useMemo(() => decodeState(href.value).active, [href.value]);
-  const { cycleWall, cycleCell, setDestination } = useEditor({
+  const { cycleWall, toggleCorner, cycleCell, setDestination } = useEditor({
     active,
     puzzle,
     contents,
@@ -25,14 +29,12 @@ export function EditorKeyboardShortcuts({ puzzle, href, contents }: Props) {
 
   useEffect(() => {
     const onKeyUp = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (
-        target.isContentEditable || target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA"
-      ) return;
+      if (isTyping(event.target as HTMLElement)) return;
       switch (event.key) {
         case "w":
           return cycleWall();
+        case "c":
+          return toggleCorner();
         case "p":
           return cycleCell();
         case "d":
@@ -42,7 +44,54 @@ export function EditorKeyboardShortcuts({ puzzle, href, contents }: Props) {
 
     if (active) self.addEventListener("keyup", onKeyUp);
     return () => self.removeEventListener("keyup", onKeyUp);
-  }, [active, cycleWall, cycleCell, hasDestination, setDestination]);
+  }, [
+    active,
+    cycleWall,
+    toggleCorner,
+    cycleCell,
+    hasDestination,
+    setDestination,
+  ]);
+
+  useEffect(() => {
+    if (!showSolution) return;
+
+    // Only a hold that turned it on turns it off: the switch may have it on.
+    let isHoldingShift = false;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Shift" || showSolution.value) return;
+      if (isTyping(event.target as HTMLElement)) return;
+
+      isHoldingShift = true;
+      showSolution.value = true;
+    };
+
+    const release = (event: Event) => {
+      if (!isHoldingShift) return;
+      if (event instanceof KeyboardEvent && event.key !== "Shift") return;
+
+      isHoldingShift = false;
+      showSolution.value = false;
+    };
+
+    self.addEventListener("keydown", onKeyDown);
+    self.addEventListener("keyup", release);
+    // Alt-tabbing away mid-hold never delivers the keyup.
+    self.addEventListener("blur", release);
+
+    return () => {
+      self.removeEventListener("keydown", onKeyDown);
+      self.removeEventListener("keyup", release);
+      self.removeEventListener("blur", release);
+    };
+  }, [showSolution]);
 
   return null;
 }
+
+// A clicked switch keeps focus, and it takes no text.
+const isTyping = (target: HTMLElement) =>
+  target.isContentEditable || target.tagName === "TEXTAREA" ||
+  (target.tagName === "INPUT" &&
+    (target as HTMLInputElement).type !== "checkbox");

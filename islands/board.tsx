@@ -14,6 +14,10 @@ import { calculateMoveSpeed } from "#/client/touch.ts";
 import { Icon, X } from "#/components/icons.tsx";
 import { PortalRings } from "#/components/portal-rings.tsx";
 import {
+  SolutionNumbers,
+  SolutionUnderlay,
+} from "#/components/solution-underlay.tsx";
+import {
   getGrid,
   getMoveSlide,
   getSlides,
@@ -22,6 +26,7 @@ import {
   resolveMoves,
 } from "#/game/board.ts";
 import { getGuides, Guide } from "#/game/guides.ts";
+import { getSolutionSteps, getSolutionStops } from "#/game/solution-path.ts";
 import {
   type Direction,
   type Move,
@@ -36,6 +41,7 @@ import {
   getMovesHref,
   getReplaySpeed,
 } from "#/game/url.ts";
+import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
   buildDiceKeyframes,
@@ -78,6 +84,10 @@ type BoardProps = {
   isNew?: boolean;
   /** Grid width, for the tile builder's 4x4 board. */
   size?: 4 | 8;
+  /** The editor's last solution, drawn under the pieces. */
+  solution?: Signal<EditorSolution | null>;
+  /** Whether that solution shows, rather than sitting hidden. */
+  showSolution?: Signal<boolean>;
   className?: string;
 };
 
@@ -90,6 +100,8 @@ export default function Board(
     size = 8,
     quadrant,
     dice,
+    solution,
+    showSolution,
     className,
   }: BoardProps,
 ) {
@@ -136,6 +148,23 @@ export default function Board(
   const { updateLocation } = useRouter({ onLocationUpdated });
 
   const spaces = useMemo(() => getGrid(size), [size]);
+
+  // Only a solution solved for exactly this board is drawn: one left over from
+  // before an edit would point at pieces that have moved.
+  const solutionSteps = useMemo(() => {
+    if (mode.value !== "editor") return null;
+    if (solution?.value?.board !== puzzle.value.board) return null;
+
+    return getSolutionSteps(puzzle.value.board, solution.value.moves);
+  }, [mode.value, solution?.value, puzzle.value.board]);
+
+  const solutionStops = useMemo(
+    () => solutionSteps && getSolutionStops(solutionSteps),
+    [solutionSteps],
+  );
+
+  // Drawn whenever there is a solution: showing it only flips this class.
+  const solutionClass = showSolution?.value ? "contents" : "hidden";
 
   const guides = useMemo(
     () =>
@@ -344,6 +373,12 @@ export default function Board(
           />
         ))}
 
+        {solutionSteps && solutionStops && (
+          <div className={solutionClass}>
+            <SolutionUnderlay steps={solutionSteps} stops={solutionStops} />
+          </div>
+        )}
+
         {pieces.map((piece) => (
           <BoardPiece
             key={piece.id}
@@ -363,6 +398,12 @@ export default function Board(
             }}
           />
         ))}
+
+        {solutionStops && (
+          <div className={solutionClass}>
+            <SolutionNumbers stops={solutionStops} />
+          </div>
+        )}
 
         {
           /* Replay resolves the board to how it ends up, so a swallowed piece

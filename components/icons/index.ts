@@ -15,6 +15,7 @@ export * from "./download.ts";
 export * from "./download-simple.ts";
 export * from "./envelope-simple.ts";
 export * from "./eye.ts";
+export * from "./eye-slash.ts";
 export * from "./flip-horizontal.ts";
 export * from "./flip-vertical.ts";
 export * from "./github-logo.ts";
