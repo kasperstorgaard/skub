@@ -1,9 +1,9 @@
 import type { Signal } from "@preact/signals";
 import { useCallback, useMemo } from "preact/hooks";
 
-import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { Icon, PaperPlaneTilt } from "#/components/icons.tsx";
 import { formatPuzzle } from "#/game/formatter.ts";
+import type { SolveState } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 import { useRouter } from "#/islands/router.tsx";

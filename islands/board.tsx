@@ -151,11 +151,14 @@ export default function Board(
   // Only a solution solved for exactly this board is drawn: one left over from
   // before an edit would point at pieces that have moved.
   const solutionSteps = useMemo(() => {
-    if (mode.value !== "editor" || !showSolution?.value) return null;
+    if (mode.value !== "editor") return null;
     if (solution?.value?.board !== puzzle.value.board) return null;
 
     return getSolutionSteps(puzzle.value.board, solution.value.moves);
-  }, [mode.value, showSolution?.value, solution?.value, puzzle.value.board]);
+  }, [mode.value, solution?.value, puzzle.value.board]);
+
+  // Drawn whenever there is a solution: showing it only flips this class.
+  const solutionClass = showSolution?.value ? "contents" : "hidden";
 
   const guides = useMemo(
     () =>
@@ -364,7 +367,11 @@ export default function Board(
           />
         ))}
 
-        {solutionSteps && <SolutionUnderlay steps={solutionSteps} />}
+        {solutionSteps && (
+          <div className={solutionClass}>
+            <SolutionUnderlay steps={solutionSteps} />
+          </div>
+        )}
 
         {pieces.map((piece) => (
           <BoardPiece
@@ -386,7 +393,11 @@ export default function Board(
           />
         ))}
 
-        {solutionSteps && <SolutionNumbers steps={solutionSteps} />}
+        {solutionSteps && (
+          <div className={solutionClass}>
+            <SolutionNumbers steps={solutionSteps} />
+          </div>
+        )}
 
         {
           /* Replay resolves the board to how it ends up, so a swallowed piece

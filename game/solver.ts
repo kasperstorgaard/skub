@@ -47,6 +47,12 @@ export class UnsolvablePuzzleError extends Error {
  */
 export type SolverErrorReason = "budget" | "unsolvable" | "invalid" | "failed";
 
+/** Where a board being edited is in its solve. */
+export type SolveState =
+  | { type: "waiting" }
+  | { type: "solving"; depth: number }
+  | { type: "error"; reason: SolverErrorReason; message: string };
+
 /** Classifies an error thrown while solving. */
 export function getSolverErrorReason(err: unknown): SolverErrorReason {
   if (err instanceof SolverDepthExceededError) return "budget";

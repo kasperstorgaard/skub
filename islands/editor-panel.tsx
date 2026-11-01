@@ -1,7 +1,6 @@
 import { type Signal } from "@preact/signals";
 import { useCallback } from "preact/hooks";
 
-import type { SolveState } from "#/components/difficulty-badge.tsx";
 import {
   ArrowClockwise,
   Eye,
@@ -15,6 +14,7 @@ import {
 import { Panel } from "#/components/panel.tsx";
 import { flipBoard, rotateBoard } from "#/game/board.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
+import type { SolveState } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { useRouter } from "#/islands/router.tsx";
 import { canSubmit } from "#/islands/submit-dialog.tsx";

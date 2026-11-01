@@ -3,6 +3,8 @@ import { clsx } from "clsx/lite";
 type KeyHintProps = {
   /** The key that does what the buttons beside it do. */
   children: preact.ComponentChildren;
+  /** Sits above its control, bracketed down to it, rather than beside it. */
+  above?: boolean;
   className?: string;
 };
 
@@ -13,30 +15,34 @@ type KeyHintProps = {
  * Which rows it spans is the toolbar's to say — it knows which buttons it drew
  * and how many — so placement comes in through className.
  */
-export function KeyHint({ children, className }: KeyHintProps) {
+export function KeyHint({ children, above, className }: KeyHintProps) {
   return (
     <div
       className={clsx(
-        "not-lg:hidden col-2 relative flex items-center justify-center p-1",
+        "not-lg:hidden relative flex items-center justify-center p-1",
+        !above && "col-2",
         className,
       )}
     >
-      <BracketBackground className="absolute inset-0" />
+      <BracketBackground above={above} className="absolute inset-0" />
       <kbd className="relative z-0">{children}</kbd>
     </div>
   );
 }
 
 type BracketProps = {
+  above?: boolean;
   className?: string;
 };
 
-// Open-left bracket connecting button rows to their kbd shortcut on desktop.
-function BracketBackground({ className }: BracketProps) {
+// Open bracket connecting buttons to their kbd shortcut on desktop: open to the
+// left beside them, open to the bottom above them.
+function BracketBackground({ above, className }: BracketProps) {
   return (
     <svg
       className={clsx(
-        "size-full pointer-events-none py-1",
+        "size-full pointer-events-none",
+        above ? "px-1" : "py-1",
         className,
       )}
       viewBox="0 0 100 100"
@@ -44,7 +50,7 @@ function BracketBackground({ className }: BracketProps) {
       aria-hidden="true"
     >
       <path
-        d="M 0 2 H 50 V 98 H 0"
+        d={above ? "M 2 100 V 50 H 98 V 100" : "M 0 2 H 50 V 98 H 0"}
         stroke="var(--color-text-3)"
         fill="none"
         stroke-width="1"

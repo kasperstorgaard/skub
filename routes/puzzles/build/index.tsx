@@ -2,22 +2,21 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
-import type { SolveState } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft, newPuzzleDraft } from "#/db/user.ts";
 import { setBuildMode } from "#/game/cookies.ts";
+import type { SolveState } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
-import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
 import { EditorPanel } from "#/islands/editor-panel.tsx";
-import { EditorSolutionToggle } from "#/islands/editor-solution-toggle.tsx";
 import { type EditorSolution, EditorSolver } from "#/islands/editor-solver.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
+import { SolutionBadge } from "#/islands/solution-badge.tsx";
 import { SubmitDialog } from "#/islands/submit-dialog.tsx";
 import { canSendEmail } from "#/lib/email.ts";
 import { isDev } from "#/lib/env.ts";
@@ -67,9 +66,10 @@ export default define.page<typeof handler>(function EditorPage(props) {
             </p>
           </div>
 
-          <EditorDifficultyBadge
+          <SolutionBadge
             puzzle={puzzle}
             solveState={solveState}
+            showSolution={showSolution}
             className="lg:mt-1"
           />
         </div>
@@ -82,14 +82,6 @@ export default define.page<typeof handler>(function EditorPage(props) {
             solution={solution}
             showSolution={showSolution}
             className="lg:col-[1/2] lg:row-[4/5]"
-          />
-
-          <EditorSolutionToggle
-            showSolution={showSolution}
-            className={clsx(
-              "max-lg:mt-fl-1 max-lg:justify-center",
-              "lg:absolute lg:ml-fl-1 lg:left-[calc(100%+1px)] lg:top-0",
-            )}
           />
 
           <EditorToolbar
@@ -120,7 +112,6 @@ export default define.page<typeof handler>(function EditorPage(props) {
         puzzle={puzzle}
         solveState={solveState}
         solution={solution}
-        showSolution={showSolution}
       />
       <EditorAutosave puzzle={puzzle} />
       <EditorKeyboardShortcuts
