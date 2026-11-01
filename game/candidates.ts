@@ -3,7 +3,7 @@ import { formatPuzzle } from "#/game/formatter.ts";
 import { parsePuzzle } from "#/game/parser.ts";
 import { CALIBRATION, type Metrics, type ScoredBoard } from "#/game/scoring.ts";
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
-import type { Difficulty, Move, Puzzle, TilePlacement } from "#/game/types.ts";
+import type { Difficulty, Move, Puzzle } from "#/game/types.ts";
 
 /**
  * The candidate store, relative to the project root (cwd). Tracked in git — the
@@ -55,9 +55,9 @@ export const REASON_TAG_VALUES: readonly string[] = [
 ];
 
 /**
- * The settings a pre-1.0.0 candidate was generated with, when boards were random
- * wall and blocker placement rather than composed tiles. Kept so those files
- * still round-trip; nothing writes it any more.
+ * The settings a pre-1.0.0 candidate was generated with, as random wall and
+ * blocker placement. Kept so those files still round-trip; nothing writes it
+ * any more.
  */
 export type GenOptions = {
   wallsRange?: [number, number];
@@ -205,9 +205,7 @@ export type Candidate = Puzzle & Feedback & {
   promotedAs?: string;
   /** Provenance for a pre-1.0.0 board; see `GenOptions`. */
   genOptions?: GenOptions;
-  /** The tiles a composed board was dealt from, and how each was turned. */
-  tiles?: TilePlacement[];
-  /** Generator algorithm version that produced this board (e.g. "0.5"). */
+  /** Generator algorithm version that produced this board (e.g. "0.5"); historical, nothing writes it any more. */
   generatorVersion?: string;
   /** Scores and metrics as last analysed; stale across a calibration bump. */
   scoring?: StoredScoring;

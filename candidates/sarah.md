@@ -5,17 +5,6 @@ createdAt: 2026-09-08T18:55:46.942Z
 difficulty: hard
 minMoves: 10
 source: edited
-tiles:
-  - id: b-01
-    rotation: 0
-  - id: z-01
-    rotation: 1
-    flipped: true
-  - id: p-01
-    rotation: 0
-    flipped: true
-  - id: a-01
-    rotation: 1
 generatorVersion: 1.0.0
 scoring:
   score: 0.4743

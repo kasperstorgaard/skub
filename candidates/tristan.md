@@ -5,15 +5,6 @@ createdAt: 2026-09-10T18:45:15.367Z
 difficulty: easy
 minMoves: 3
 source: edited
-tiles:
-  - id: z-01
-    rotation: 2
-  - id: b-03
-    rotation: 2
-  - id: b-03
-    rotation: 0
-  - id: z-01
-    rotation: 0
 generatorVersion: 1.0.0
 scoring:
   score: 0.3559

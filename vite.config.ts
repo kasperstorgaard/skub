@@ -15,9 +15,7 @@ export default defineConfig({
       // /api/candidates). Without this, Vite's dev watcher treats each new file
       // as a source change and full-reloads the page — wiping the just-shown
       // candidate back to the empty server state.
-      // The tile builder writes tile files here at runtime, the same way the
-      // curation flow writes candidates.
-      ignored: ["**/candidates/**", "**/static/tiles/**"],
+      ignored: ["**/candidates/**"],
     },
     // Transform the entries in the background as soon as the server boots,
     // rather than on the first request. Same total work, but it overlaps with

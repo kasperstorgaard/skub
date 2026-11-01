@@ -140,12 +140,6 @@ export function EditorPanel(
             <Icon icon={Trash} />
             Clear
           </button>
-
-          {isDev && (
-            <a href="/puzzles/compose" className="text-fl-0">
-              Compose from tiles
-            </a>
-          )}
         </div>
 
         <div className="flex flex-col flex-wrap gap-fl-1">

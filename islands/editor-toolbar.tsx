@@ -12,9 +12,6 @@ import { decodeState } from "#/game/url.ts";
 type EditorToolbarProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  /** A tile has neither, so its builder leaves both tools out. */
-  hidePuck?: boolean;
-  hideDestination?: boolean;
   className?: string;
 };
 
@@ -24,7 +21,7 @@ type EditorToolbarProps = {
  * On desktop: breaks out to the right of Main via absolute positioning.
  */
 export function EditorToolbar(
-  { href, puzzle, hidePuck, hideDestination, className }: EditorToolbarProps,
+  { href, puzzle, className }: EditorToolbarProps,
 ) {
   const active = useMemo(
     () => decodeState(href.value).active,
@@ -93,17 +90,15 @@ export function EditorToolbar(
         <div className="size-4 bg-ui-3 rounded-1" />
       </button>
 
-      {!hidePuck && (
-        <button
-          type="button"
-          className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
-          aria-label="Puck"
-          disabled={disabled}
-          onClick={() => setCellContent("puck")}
-        >
-          <div className="size-4 bg-ui-2 rounded-round" />
-        </button>
-      )}
+      <button
+        type="button"
+        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        aria-label="Puck"
+        disabled={disabled}
+        onClick={() => setCellContent("puck")}
+      >
+        <div className="size-4 bg-ui-2 rounded-round" />
+      </button>
 
       <button
         type="button"
@@ -127,29 +122,22 @@ export function EditorToolbar(
         </div>
       </button>
 
-      {
-        /* The bracket spans the cell buttons it belongs to, and a tile has no
-          puck among them. */
-      }
-      <KeyHint className={hidePuck ? "row-[4/7]" : "row-[4/8]"}>P</KeyHint>
+      {/* The bracket spans the cell buttons it belongs to. */}
+      <KeyHint className="row-[4/8]">P</KeyHint>
 
-      {!hideDestination && (
-        <>
-          <button
-            type="button"
-            className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
-            aria-label="Destination"
-            disabled={disabled}
-            onClick={setDestination}
-          >
-            <div className="size-5 border-2 border-ui-1 flex items-center justify-center">
-              <Icon icon={X} className="text-ui-1 text-fl-0" />
-            </div>
-          </button>
+      <button
+        type="button"
+        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        aria-label="Destination"
+        disabled={disabled}
+        onClick={setDestination}
+      >
+        <div className="size-5 border-2 border-ui-1 flex items-center justify-center">
+          <Icon icon={X} className="text-ui-1 text-fl-0" />
+        </div>
+      </button>
 
-          <KeyHint>D</KeyHint>
-        </>
-      )}
+      <KeyHint>D</KeyHint>
     </div>
   );
 }

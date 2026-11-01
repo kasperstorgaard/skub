@@ -6,7 +6,6 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft, newPuzzleDraft } from "#/db/user.ts";
-import { setBuildMode } from "#/game/cookies.ts";
 import type { SolveState } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
@@ -26,10 +25,7 @@ export const handler = define.handlers<Puzzle>({
     const puzzle = await getUserPuzzleDraft(ctx.state.userId) ??
       newPuzzleDraft();
 
-    const headers = new Headers();
-    setBuildMode(headers, "build");
-
-    return page(puzzle, { headers });
+    return page(puzzle);
   },
 });
 

@@ -45,27 +45,27 @@ export function formatPuzzle(puzzle: Puzzle): string {
  * Both are derived from the grid width so they can't drift from the rows: a row
  * is a digit, a space, two characters per cell, and the closing border.
  */
-export function formatGridBorder(size = COLS) {
+function formatGridBorder() {
   const letters = Array.from(
-    { length: size },
+    { length: COLS },
     (_, x) => String.fromCharCode(65 + x),
   );
 
   return {
     header: `+ ${letters.join(" ")} +`,
-    footer: `+${"-".repeat(size * 2 + 1)}+`,
+    footer: `+${"-".repeat(COLS * 2 + 1)}+`,
   };
 }
 
 // Renders the grid rows, one line each, closing border included.
-export function formatGridBody(board: Board, size = COLS): string {
+function formatGridBody(board: Board): string {
   let body = "";
 
-  for (let y = 0; y < size; y++) {
+  for (let y = 0; y < COLS; y++) {
     // Use chess y-axis notation, 1-indexed
     let row = `${y + 1} `;
 
-    for (let x = 0; x < size; x++) {
+    for (let x = 0; x < COLS; x++) {
       // Add the cell contents and separator
       row += formatCell(board, { x, y });
       row += formatCellSeparator(board, { x, y });

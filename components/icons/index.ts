@@ -28,7 +28,6 @@ export * from "./play.ts";
 export * from "./plus-square.ts";
 export * from "./printer.ts";
 export * from "./ranking.ts";
-export * from "./repeat.ts";
 export * from "./rocket-launch.ts";
 export * from "./share-network.ts";
 export * from "./shuffle.ts";

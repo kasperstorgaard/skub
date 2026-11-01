@@ -14,7 +14,7 @@ type EditorSolverProps = {
   puzzle: Signal<Puzzle>;
   solveState: Signal<SolveState | undefined>;
   /** The last solution found, kept for drawing on the board. */
-  solution?: Signal<EditorSolution | null>;
+  solution: Signal<EditorSolution | null>;
 };
 
 /** Long enough that a board mid-edit isn't solved on every change. */
@@ -35,9 +35,7 @@ export function EditorSolver(
       solveState.value = { type: "solving", depth: event.depth };
     } else if (event.type === "solution") {
       // Any edit cancels the solve in flight, so this is the board on screen.
-      if (solution) {
-        solution.value = { board: puzzle.value.board, moves: event.moves };
-      }
+      solution.value = { board: puzzle.value.board, moves: event.moves };
       if (puzzle.value.minMoves !== event.moves.length) {
         puzzle.value = { ...puzzle.value, minMoves: event.moves.length };
       }
@@ -62,8 +60,7 @@ export function EditorSolver(
 
     // A draft that already carries a count came from a solve, not an edit —
     // but it arrives without its moves, so those are fetched for the overlay.
-    const hasMoves = !solution || solution.value?.board === board;
-    if (minMoves && hasMoves) return;
+    if (minMoves && solution.value?.board === board) return;
 
     // No puck or destination yet: unfinished, not an error.
     if (!isReadyToSolve(board)) return;
