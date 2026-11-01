@@ -13,6 +13,7 @@ import { useMoves } from "#/client/moves.ts";
 import { calculateMoveSpeed } from "#/client/touch.ts";
 import { Icon, X } from "#/components/icons.tsx";
 import { PortalRings } from "#/components/portal-rings.tsx";
+import { SolutionOverlay } from "#/components/solution-overlay.tsx";
 import {
   getGrid,
   getMoveSlide,
@@ -22,6 +23,7 @@ import {
   resolveMoves,
 } from "#/game/board.ts";
 import { getGuides, Guide } from "#/game/guides.ts";
+import { getSolutionSteps } from "#/game/solution-path.ts";
 import {
   type Direction,
   type Move,
@@ -36,6 +38,7 @@ import {
   getMovesHref,
   getReplaySpeed,
 } from "#/game/url.ts";
+import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
   buildDiceKeyframes,
@@ -78,6 +81,9 @@ type BoardProps = {
   isNew?: boolean;
   /** Grid width, for the tile builder's 4x4 board. */
   size?: 4 | 8;
+  /** The editor's last solution, drawn over the board while shown. */
+  solution?: Signal<EditorSolution | null>;
+  showSolution?: Signal<boolean>;
   className?: string;
 };
 
@@ -90,6 +96,8 @@ export default function Board(
     size = 8,
     quadrant,
     dice,
+    solution,
+    showSolution,
     className,
   }: BoardProps,
 ) {
@@ -136,6 +144,15 @@ export default function Board(
   const { updateLocation } = useRouter({ onLocationUpdated });
 
   const spaces = useMemo(() => getGrid(size), [size]);
+
+  // Only a solution solved for exactly this board is drawn: one left over from
+  // before an edit would point at pieces that have moved.
+  const solutionSteps = useMemo(() => {
+    if (mode.value !== "editor" || !showSolution?.value) return null;
+    if (solution?.value?.board !== puzzle.value.board) return null;
+
+    return getSolutionSteps(puzzle.value.board, solution.value.moves);
+  }, [mode.value, showSolution?.value, solution?.value, puzzle.value.board]);
 
   const guides = useMemo(
     () =>
@@ -363,6 +380,14 @@ export default function Board(
             }}
           />
         ))}
+
+        {solutionSteps && (
+          <SolutionOverlay
+            steps={solutionSteps}
+            // Positioned and last, so it paints above the translated pieces.
+            className="relative col-[1/-1] row-[1/-1] pointer-events-none"
+          />
+        )}
 
         {
           /* Replay resolves the board to how it ends up, so a swallowed piece
