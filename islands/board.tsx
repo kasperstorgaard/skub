@@ -84,8 +84,9 @@ type BoardProps = {
   isNew?: boolean;
   /** Grid width, for the tile builder's 4x4 board. */
   size?: 4 | 8;
-  /** The editor's last solution, drawn under the pieces while shown. */
+  /** The editor's last solution, drawn under the pieces. */
   solution?: Signal<EditorSolution | null>;
+  /** Whether that solution shows, rather than sitting hidden. */
   showSolution?: Signal<boolean>;
   className?: string;
 };

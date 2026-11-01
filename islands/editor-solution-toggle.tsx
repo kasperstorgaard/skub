@@ -5,7 +5,7 @@ import { Eye, EyeSlash, Icon } from "#/components/icons.tsx";
 
 type EditorSolutionToggleProps = {
   showSolution: Signal<boolean>;
-  /** What the tile carries. */
+  /** Changes colour with the switch. */
   children: preact.ComponentChildren;
   className?: string;
 };

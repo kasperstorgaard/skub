@@ -10,7 +10,7 @@ type Props = {
   href: Signal<string>;
   /** What the cell cycle offers, when it isn't the full set. */
   contents?: readonly CellContent[];
-  /** Turned on for as long as Shift is held. */
+  /** Whether the solution shows. Holding Shift turns it on until release. */
   showSolution?: Signal<boolean>;
 };
 
