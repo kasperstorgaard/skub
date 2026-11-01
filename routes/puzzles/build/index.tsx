@@ -15,7 +15,7 @@ import { EditorAutosave } from "#/islands/editor-autosave.tsx";
 import { EditorDifficultyBadge } from "#/islands/editor-difficulty-badge.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
 import { EditorPanel } from "#/islands/editor-panel.tsx";
-import { EditorSolver } from "#/islands/editor-solver.tsx";
+import { type EditorSolution, EditorSolver } from "#/islands/editor-solver.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
 import { SubmitDialog } from "#/islands/submit-dialog.tsx";
 import { canSendEmail } from "#/lib/email.ts";
@@ -38,6 +38,8 @@ export default define.page<typeof handler>(function EditorPage(props) {
   const href = useSignal(props.url.href);
   const mode = useSignal<"editor">("editor");
   const solveState = useSignal<SolveState | undefined>(undefined);
+  const solution = useSignal<EditorSolution | null>(null);
+  const showSolution = useSignal(false);
 
   const url = new URL(props.req.url);
 
@@ -76,6 +78,8 @@ export default define.page<typeof handler>(function EditorPage(props) {
             puzzle={puzzle}
             href={href}
             mode={mode}
+            solution={solution}
+            showSolution={showSolution}
             className="lg:col-[1/2] lg:row-[4/5]"
           />
 
@@ -97,6 +101,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
         submissionsEnabled={canSendEmail &&
           Deno.env.has("SUBMISSIONS_EMAIL")}
         solveState={solveState}
+        showSolution={showSolution}
       />
       <SubmitDialog
         puzzle={puzzle}
@@ -104,7 +109,12 @@ export default define.page<typeof handler>(function EditorPage(props) {
         solveState={solveState}
         userEmail={props.state.user.email}
       />
-      <EditorSolver puzzle={puzzle} solveState={solveState} />
+      <EditorSolver
+        puzzle={puzzle}
+        solveState={solveState}
+        solution={solution}
+        showSolution={showSolution}
+      />
       <EditorAutosave puzzle={puzzle} />
       <EditorKeyboardShortcuts puzzle={puzzle} href={href} />
     </>
