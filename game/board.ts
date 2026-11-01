@@ -70,7 +70,7 @@ const DELTAS: Record<Direction, Position> = {
 /**
  * Checks if a given position is out bounds of the board.
  * @param src The position to check
- * @param size Grid width to check against, for tile-sized grids
+ * @param size Grid width to check against
  * @returns true if out of bounds, otherwise false
  */
 function isPositionOutOfBounds(
@@ -301,8 +301,7 @@ export function validateBoard(board: BoardLike): ValidBoard {
  *
  * A wall sits on the cell it blocks entry into, so a wall along the low edge
  * would have to be at 0, and one along the high edge would be out of bounds.
- * Both are rejected here, which is what lets a tile-sized grid be composed with
- * its neighbours without ever colliding at a seam.
+ * Both are rejected here.
  */
 export function validateWalls(
   walls: (Wall | null | undefined)[],
@@ -630,59 +629,6 @@ export function isValidSolution(board: Pick<Board, "destination" | "pieces">) {
   }
 
   return false;
-}
-
-/** Whether a cell has nothing standing on it that a piece could not share. */
-export function isCellFree(
-  board: Pick<Board, "pieces" | "holes" | "portals">,
-  position: Position,
-): boolean {
-  return !board.pieces.some((piece) =>
-    piece.type === "blocker" && isPositionSame(piece, position)
-  ) &&
-    !board.holes.some((hole) => isPositionSame(hole, position)) &&
-    !board.portals.some((portal) => isPositionSame(portal, position));
-}
-
-/** Enough throws to find two free cells; past that the board has none. */
-const MAX_DICE_ROLLS = 40;
-
-/**
- * Throws the dice for a puck and a destination, the way the tabletop game does:
- * one die for the column, one for the row.
- *
- * Every throw is kept, landings and misses alike — a die that comes down on a
- * blocker is thrown again, and the sequence records that rather than hiding it.
- * The last entry in each list is where the piece ends up.
- */
-export function rollDice(
-  board: Pick<Board, "pieces" | "holes" | "portals">,
-  { random = Math.random }: { random?: () => number } = {},
-): { puck: Position[]; destination: Position[] } {
-  const rollUntil = (accepts: (position: Position) => boolean): Position[] => {
-    const thrown: Position[] = [];
-
-    for (let attempt = 0; attempt < MAX_DICE_ROLLS; attempt++) {
-      const position = {
-        x: Math.floor(random() * COLS),
-        y: Math.floor(random() * ROWS),
-      };
-
-      thrown.push(position);
-      if (accepts(position)) return thrown;
-    }
-
-    throw new BoardError("The dice found nowhere free to land");
-  };
-
-  const puck = rollUntil((position) => isCellFree(board, position));
-  const landed = puck[puck.length - 1];
-
-  const destination = rollUntil((position) =>
-    isCellFree(board, position) && !isPositionSame(position, landed)
-  );
-
-  return { puck, destination };
 }
 
 /**

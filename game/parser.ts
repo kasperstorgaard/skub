@@ -84,8 +84,7 @@ const COMBINING_CIRCUMFLEX = "\u0302";
  * Parses the board grid into pieces, walls, and destination.
  *
  * Always returns the raw contents — a draft is stored mid-build, before it has a
- * puck or a destination, and a tile never gets either — so validating is the
- * caller's call. `size` covers the 4x4 tile grid, which uses the same grammar.
+ * puck or a destination — so validating is the caller's call.
  */
 export function parseGrid(rows: string[], size = COLS): Board {
   const pieces: Piece[] = [];

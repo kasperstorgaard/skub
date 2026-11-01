@@ -10,15 +10,14 @@ import { EditorSolutionToggle } from "#/islands/editor-solution-toggle.tsx";
 type SolutionBadgeProps = {
   puzzle: Signal<Puzzle>;
   solveState: Signal<SolveState | undefined>;
-  /** Given, the count becomes the overlay switch. */
-  showSolution?: Signal<boolean>;
+  /** The count doubles as this switch. */
+  showSolution: Signal<boolean>;
   className?: string;
 };
 
 /**
  * The editor's take on `DifficultyBadge`: the shortest solution's length, kept
- * live as `EditorSolver` solves the board. With `showSolution`, the count is
- * part of the overlay switch.
+ * live as `EditorSolver` solves the board, as part of the overlay switch.
  */
 export function SolutionBadge(
   { puzzle, solveState, showSolution, className }: SolutionBadgeProps,
@@ -45,7 +44,7 @@ export function SolutionBadge(
 
   return (
     <div className={clsx("flex flex-col gap-1", className)}>
-      {showSolution && <KeyHint above>Shift</KeyHint>}
+      <KeyHint above>Shift</KeyHint>
 
       <span
         className={clsx(
@@ -53,13 +52,9 @@ export function SolutionBadge(
           "border-2 border-link rounded-2 text-2 tracking-wider",
         )}
       >
-        {showSolution
-          ? (
-            <EditorSolutionToggle showSolution={showSolution}>
-              {count}
-            </EditorSolutionToggle>
-          )
-          : <span className="px-2 min-w-[3ch] bg-surface-3">{count}</span>}
+        <EditorSolutionToggle showSolution={showSolution}>
+          {count}
+        </EditorSolutionToggle>
       </span>
     </div>
   );

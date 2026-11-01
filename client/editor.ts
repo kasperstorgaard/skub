@@ -18,8 +18,6 @@ type UseEditorOptions = {
   puzzle: Signal<Puzzle>;
   // The active position, eg. the cell the user has selected
   active?: Position;
-  // What the cell cycle offers. A tile has no puck, so it drops that one.
-  contents?: readonly CellContent[];
 };
 
 /**
@@ -27,7 +25,7 @@ type UseEditorOptions = {
  * Returns handlers for mutating the board at the active position.
  */
 export function useEditor(
-  { active, puzzle, contents = CELL_CONTENTS }: UseEditorOptions,
+  { active, puzzle }: UseEditorOptions,
 ) {
   const setWalls = useCallback(
     (orientations: Wall["orientation"][]) => {
@@ -149,11 +147,11 @@ export function useEditor(
     if (!active) return;
 
     const current = getCellContent(puzzle.value.board, active);
-    const index = current ? contents.indexOf(current) : -1;
+    const index = current ? CELL_CONTENTS.indexOf(current) : -1;
 
     // Past the last content the cycle empties the cell again.
-    setCellContent(contents[index + 1] ?? null);
-  }, [active, contents, puzzle, setCellContent]);
+    setCellContent(CELL_CONTENTS[index + 1] ?? null);
+  }, [active, puzzle, setCellContent]);
 
   return {
     toggleWall,

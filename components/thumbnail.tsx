@@ -26,7 +26,7 @@ export type BoardSvgProps = SVGAttributes<SVGSVGElement> & {
   board: Board;
   width?: number;
   height?: number;
-  /** Cells per side. Four draws a tile; the drawing is otherwise the same. */
+  /** Cells per side. */
   size?: number;
   colors?: ThumbnailColors;
   background?: string;
