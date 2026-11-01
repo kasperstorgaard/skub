@@ -39,7 +39,8 @@ jobs:
   e2e:
     needs: [check-pr]
     if: needs.check-pr.outputs.should-run == 'true'
-    runs-on: ubuntu-latest
+    # Playwright 1.59 has no chromium build for ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
     permissions:
       statuses: write
     env:
