@@ -75,7 +75,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
           {isSubmitting
             ? <Icon icon={Spinner} className="animate-spin" />
             : <Icon icon={LightningFill} />}
-          Turn on Flash mode
+          Try Flash mode
         </button>
 
         {/* Keeps the game as it was when JS is off. */}
