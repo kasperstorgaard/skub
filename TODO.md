@@ -138,6 +138,11 @@ PR finishes only part of an item, trim the item to what is left.
   you've solved the puzzle. Separate solves earn stars too, so players without a
   perfect have a route to the unlock. Open: how many stars unlock it, 1 or 3?
 
+- **Every player sees how others solved a puzzle.** Showcase other people's
+  solutions where players already are, for new and old players alike, instead of
+  behind the highscore page where few find them. Stands on its own; the tiered
+  unlock in the stars item can layer on later.
+
 ## Login
 
 - **Logging in on a second device should bring that device's solves along.**
