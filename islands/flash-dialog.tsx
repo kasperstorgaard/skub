@@ -40,9 +40,8 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
 
         <p className="leading-snug">
           In a rush, or not really getting anywhere?<br />
-          Flash mode starts you{" "}
-          {flashStartLength === 1 ? "1 move" : `${flashStartLength} moves`}{" "}
-          ahead, with the cost of not going on the leaderboard for this puzzle.
+          Flash mode gives you a shorter version of this puzzle, but skips the
+          leaderboard.
         </p>
       </div>
 
@@ -56,7 +55,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
           {isSubmitting
             ? <Icon icon={Spinner} className="animate-spin" />
             : <Icon icon={LightningFill} />}
-          Turn on Flash
+          Turn on Flash mode
         </button>
 
         <a
