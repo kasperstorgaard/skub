@@ -2,16 +2,17 @@ import { HttpError } from "fresh";
 
 import {
   getFlashStart,
-  setFlashNudged,
+  setFlashExplained,
   setFlashStart,
 } from "#/game/cookies.ts";
 import { trackFlashEnabled } from "#/lib/tracking.ts";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 /**
- * Answers the Flash dialog. Turning Flash on starts the puzzle at its Flash
- * start and keeps it off the leaderboard for 24 hours; "Not now" changes
- * nothing but the nudge. Either answer retires the nudge on every puzzle.
+ * Turns Flash on, or answers its dialog. Turning Flash on starts the puzzle at
+ * its Flash start and keeps it off the leaderboard for 24 hours; "Not now"
+ * changes nothing else. Either way Flash counts as explained on every puzzle:
+ * no more dialog, no more nudge.
  */
 export const handler = define.handlers({
   async POST(ctx) {
@@ -20,7 +21,7 @@ export const handler = define.handlers({
     const form = await ctx.req.formData();
 
     const headers = new Headers();
-    setFlashNudged(headers);
+    setFlashExplained(headers);
 
     if (form.get("answer") === "not-now") {
       if (ctx.req.headers.get("accept")?.includes("application/json")) {

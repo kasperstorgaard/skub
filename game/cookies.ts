@@ -11,9 +11,9 @@ const HINT_COUNT_KEY = "hint_count";
 // 24 h in seconds
 const HINT_COUNT_DURATION = 60 * 60 * 24;
 
-const FLASH_NUDGED_KEY = "flash_nudged";
+const FLASH_EXPLAINED_KEY = "flash_explained";
 // 1 year in seconds
-const FLASH_NUDGED_DURATION = 60 * 60 * 24 * 365;
+const FLASH_EXPLAINED_DURATION = 60 * 60 * 24 * 365;
 
 const FLASH_KEY = "flash";
 // 24 h in seconds
@@ -124,18 +124,21 @@ export function setFlashStart(
   });
 }
 
-/** Whether the Flash nudge has been answered, either way. */
-export function isFlashNudged(headers: Headers) {
-  return getCookies(headers)[FLASH_NUDGED_KEY] === "1";
+/** Whether the Flash dialog has been answered, either way. */
+export function isFlashExplained(headers: Headers) {
+  return getCookies(headers)[FLASH_EXPLAINED_KEY] === "1";
 }
 
-/** Hides the Flash nudge on every puzzle; the badge stays the way in. */
-export function setFlashNudged(headers: Headers) {
+/**
+ * Marks Flash as explained on every puzzle: the badge turns it on without the
+ * dialog, and the nudge stays away.
+ */
+export function setFlashExplained(headers: Headers) {
   setCookie(headers, {
-    name: FLASH_NUDGED_KEY,
+    name: FLASH_EXPLAINED_KEY,
     value: "1",
     path: "/",
-    maxAge: FLASH_NUDGED_DURATION,
+    maxAge: FLASH_EXPLAINED_DURATION,
     httpOnly: true,
     sameSite: "Lax",
   });

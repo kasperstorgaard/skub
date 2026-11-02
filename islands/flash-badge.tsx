@@ -2,13 +2,17 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
+import { flashExplained } from "#/client/flash-signals.ts";
 import { Icon, Lightning, LightningFill } from "#/components/icons.tsx";
 import type { Puzzle } from "#/game/types.ts";
+import { getFlashHref } from "#/game/url.ts";
 
 type FlashBadgeProps = {
   puzzle: Signal<Puzzle>;
   href: Signal<string>;
   isOn: boolean;
+  /** The Flash dialog was answered before, so the switch skips it. */
+  isExplained: boolean;
   /** Hide the move count when the user hasn't solved this puzzle before. */
   hideMinMoves?: boolean;
   className?: string;
@@ -16,12 +20,14 @@ type FlashBadgeProps = {
 
 /**
  * The puzzle page's `DifficultyBadge`, with the Flash switch in place of the
- * difficulty label. Off, it opens the Flash dialog; on, it stays on for the day
- * and the badge turns pearl.
+ * difficulty label. Off, it opens the Flash dialog the first time and turns
+ * Flash on after that; on, it stays on for the day and the badge turns pearl.
  */
 export function FlashBadge(
-  { puzzle, href, isOn, hideMinMoves, className }: FlashBadgeProps,
+  { puzzle, href, isOn, isExplained, hideMinMoves, className }: FlashBadgeProps,
 ) {
+  const skipsDialog = isExplained || flashExplained.value;
+
   const dialogHref = useMemo(() => {
     const url = new URL(href.value);
     url.searchParams.set("dialog", "flash");
@@ -56,23 +62,17 @@ export function FlashBadge(
             <Icon icon={LightningFill} />
           </span>
         )
-        : (
-          <a
-            href={dialogHref}
-            role="switch"
-            aria-checked="false"
-            aria-label="Flash"
-            title="Flash: start a few moves in, off the leaderboard"
-            data-router
-            className={clsx(
-              "grid place-items-center min-w-[2.25rem] px-2",
-              "text-text-2 no-underline",
-              "hover:text-text-1",
-            )}
+        : skipsDialog
+        ? (
+          <form
+            method="post"
+            action={getFlashHref(href.value)}
+            className="contents"
           >
-            <Icon icon={Lightning} />
-          </a>
-        )}
+            <OffSwitch as="button" type="submit" />
+          </form>
+        )
+        : <OffSwitch as="a" href={dialogHref} data-router />}
 
       <span
         className={clsx(
@@ -97,5 +97,29 @@ export function FlashBadge(
         </span>
       </span>
     </span>
+  );
+}
+
+type OffSwitchProps =
+  | { as: "a"; href: string; "data-router": true }
+  | { as: "button"; type: "submit" };
+
+/** The switch while Flash is off: a link to the dialog, or straight on. */
+function OffSwitch({ as: Element, ...props }: OffSwitchProps) {
+  return (
+    <Element
+      {...props}
+      role="switch"
+      aria-checked="false"
+      aria-label="Flash"
+      title="Flash: start a few moves in, off the leaderboard"
+      className={clsx(
+        "grid place-items-center min-w-[2.25rem] px-2",
+        "bg-transparent text-text-2 no-underline cursor-pointer",
+        "hover:text-text-1",
+      )}
+    >
+      <Icon icon={Lightning} />
+    </Element>
   );
 }

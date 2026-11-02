@@ -54,7 +54,8 @@ client (`isStuck`); without JS there's no nudge. New players keep the tutorial
 nudge there instead.
 
 Either answer to the dialog, "Turn on Flash mode" or "Not now", sets a
-`flash_nudged` cookie that retires the nudge on every puzzle for a year. A
+`flash_explained` cookie for every puzzle, for a year. From then on the badge
+turns Flash on straight away, without the dialog, and the nudge stays away. A
 player who says not now can still find Flash on the badge. With JS, "Not now"
 answers in the background so the board stays as it is; without, it posts and
 comes back to the same game.
@@ -65,9 +66,10 @@ The switch links to `?dialog=flash`, a dialog that explains Flash. Its tone
 suits those two moments: friendly, never framed as giving up. It covers the
 Flash start and the leaderboard cost, not the 24-hour lock: a player in a hurry who
 plays the same puzzle again is a weird combo, and Flash doesn't cater to it. It
-shows on every turn-on. Accepting is a form POST to the new Flash action, which
-keeps the puzzle's Flash start in a `flash` cookie scoped to `/puzzles/<slug>`
-for 24 hours and 303s back to the puzzle. "Not now" just closes the dialog.
+shows only until it's answered once (see the nudge). Accepting is a form POST to
+the new Flash action, which keeps the puzzle's Flash start in a `flash` cookie
+scoped to `/puzzles/<slug>` for 24 hours and 303s back to the puzzle. "Not now"
+closes the dialog and changes nothing else.
 
 The cookie holds the moves themselves, so a Flash start that changes later (by
 hand, say) doesn't affect a player already playing it.

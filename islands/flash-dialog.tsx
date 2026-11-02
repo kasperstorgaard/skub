@@ -1,7 +1,7 @@
 import type { Signal } from "@preact/signals";
 import { useMemo, useState } from "preact/hooks";
 
-import { flashNudged } from "#/client/flash-signals.ts";
+import { flashExplained } from "#/client/flash-signals.ts";
 import { Icon, LightningFill, Spinner } from "#/components/icons.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { getFlashHref } from "#/game/url.ts";
@@ -32,7 +32,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
   // Answers in the background and closes, so the board stays as it is.
   const onNotNow = async (event: MouseEvent) => {
     event.preventDefault();
-    flashNudged.value = true;
+    flashExplained.value = true;
 
     const url = new URL(href.value);
     url.searchParams.delete("dialog");

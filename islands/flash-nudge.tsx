@@ -2,7 +2,7 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
-import { flashNudged } from "#/client/flash-signals.ts";
+import { flashExplained } from "#/client/flash-signals.ts";
 import { Icon, LightningFill } from "#/components/icons.tsx";
 import { isStuck } from "#/game/flash.ts";
 import type { Puzzle } from "#/game/types.ts";
@@ -41,7 +41,7 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
     return url.href;
   }, [href.value]);
 
-  if (!isShown || flashNudged.value) return null;
+  if (!isShown || flashExplained.value) return null;
 
   return (
     <aside
