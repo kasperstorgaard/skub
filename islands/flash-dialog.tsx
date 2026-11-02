@@ -77,7 +77,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
           name="answer"
           value="not-now"
           className={clsx(
-            "flex items-center bg-transparent p-0 text-text-2 cursor-pointer",
+            "link flex items-center bg-transparent p-0 text-text-2 cursor-pointer",
             "max-md:justify-center",
           )}
           onClick={onNotNow}
@@ -89,7 +89,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
           {isSubmitting
             ? <Icon icon={Spinner} className="animate-spin" />
             : <Icon icon={LightningFill} />}
-          Try Flash mode
+          Try it
         </button>
       </form>
     </Dialog>

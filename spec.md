@@ -54,7 +54,7 @@ solution in moves, or three times back (undo or starting over), counted on the
 client (`isStuck`); without JS there's no nudge. New players keep the tutorial
 nudge there instead.
 
-Either answer to the dialog, "Try Flash mode" or "Not now", sets a
+Either answer to the dialog, "Try it" or "Not now", sets a
 `flash_explained` cookie for every puzzle, for a year. From then on the badge
 turns Flash on straight away, without the dialog, and the nudge stays away. A
 player who says not now can still find Flash on the badge. With JS, "Not now"
