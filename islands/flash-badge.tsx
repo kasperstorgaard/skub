@@ -28,17 +28,13 @@ export function FlashBadge(
     return url.href;
   }, [href.value]);
 
-  const cell = "grid place-items-center h-full min-w-[2.25rem] px-2";
-
   return (
     <span
       className={clsx(
         "difficulty-badge relative flex items-stretch overflow-hidden",
         "leading-loose text-2 tracking-wider",
-        isOn &&
-          "bg-[radial-gradient(ellipse_at_25%_10%,rgb(255_255_255/0.45),transparent_60%),linear-gradient(115deg,var(--color-brand),var(--color-link))]",
-        isOn && "shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]",
-        isOn && "text-(--btn-active-text)",
+        "[--pearl:radial-gradient(ellipse_at_25%_10%,rgb(255_255_255/0.5),transparent_55%),linear-gradient(115deg,var(--color-brand),var(--color-link)_45%,var(--color-brand)_75%,var(--color-link))]",
+        isOn && "bg-surface-1",
         !isOn && "bg-surface-2",
         className,
       )}
@@ -51,7 +47,11 @@ export function FlashBadge(
             aria-disabled="true"
             aria-label="Flash"
             title="Flash is on for today"
-            className={cell}
+            className={clsx(
+              "grid place-items-center min-w-[2.25rem] px-2",
+              "bg-(image:--pearl) text-(--btn-active-text)",
+              "shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]",
+            )}
           >
             <Icon icon={LightningFill} />
           </span>
@@ -65,7 +65,7 @@ export function FlashBadge(
             title="Flash: start with a head start"
             data-router
             className={clsx(
-              cell,
+              "grid place-items-center min-w-[2.25rem] px-2",
               "text-text-2 no-underline",
               "hover:text-text-1",
             )}
@@ -76,14 +76,25 @@ export function FlashBadge(
 
       <span
         className={clsx(
-          "px-2 min-w-[3ch] text-center cursor-help",
+          "grid place-items-center px-2 min-w-[3ch] text-center cursor-help",
           !isOn && "bg-surface-3",
+          // A pearl border around the count, which is pearl too.
+          isOn && "border-2 border-transparent",
+          isOn &&
+            "[background:linear-gradient(var(--color-surface-1),var(--color-surface-1))_padding-box,var(--pearl)_border-box]",
         )}
         title={hideMinMoves
           ? "solve the puzzle to reveal"
           : "shortest possible solution"}
       >
-        {hideMinMoves ? "?" : puzzle.value.minMoves || "—"}
+        <span
+          className={clsx(
+            isOn && "bg-(image:--pearl) bg-clip-text text-transparent",
+            isOn && "font-bold",
+          )}
+        >
+          {hideMinMoves ? "?" : puzzle.value.minMoves || "—"}
+        </span>
       </span>
     </span>
   );
