@@ -127,9 +127,13 @@ PR finishes only part of an item, trim the item to what is left.
 - **Players earn stars each day for what they achieve.** 1 star for a solve, 2
   for a perfect, 1 for being first to find a solution, capped at 3 per puzzle
   per day: a perfect, never-seen solution is 3 stars on its own, and three
-  separate solves are 1 each. Stars add up into all-time leaderboards. Open:
-  should a solve only count within 2 moves of perfect? Should Flash solves show
-  on the leaderboard at all (a "+x flash" marker, perhaps), or not?
+  separate solves are 1 each. Stars add up into all-time leaderboards, and
+  puzzle thumbnails show each puzzle's stars so players can see what's left to
+  earn. Open: should a solve only count within 2 moves of perfect? Should Flash
+  solves show on the leaderboard at all (a "+x flash" marker, perhaps), or not?
+  Should a puzzle's solutions unlock at 3 stars for the day? Today they're open
+  to everyone, and a gate that high could lock out new players who learn from
+  them.
 
 ## Login
 
