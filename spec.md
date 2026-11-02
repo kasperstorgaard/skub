@@ -124,17 +124,29 @@ but progress and streak are keyed by slug and puzzle number, so it would need
 mapping back. It would also bring a leaderboard of its own (the open "+x flash"
 question), and routes for a puzzle that isn't a file.
 
+### Flash mode setting
+
+A profile setting, **Flash mode**: manual (the default, Flash per puzzle from
+its badge) or always. Stored on the user record and carried in the profile
+cookie as `flashMode`; absent means manual.
+
+With always, opening a puzzle that has a Flash start turns Flash on: the GET
+uses the stored start and sets the same per-puzzle 24-hour cookie the badge
+does. The cookie is what discourages cheating, so switching back to manual
+doesn't free a puzzle just played with Flash. A week later the cookie is long
+gone, and a normal solve counts. No dialog: the setting is the consent.
+
 ### Analytics
 
-- `flash_enabled` when the player accepts (puzzle, Flash start length).
+- `flash_enabled` when Flash turns on for a puzzle (Flash start length, and
+  `flash_mode`: manual from the badge, always on opening the puzzle).
+- `flash_mode_setting_changed` when the profile setting changes (`flash_mode`).
 - `puzzle_solved` gets a `flash` property rather than a new event.
 
 ## Non-goals
 
 - Stars, and a page for the Flash leaderboard (TODO.md → Play).
 - Choosing Flash starts by hand (TODO.md → Play).
-- Speedy boi, a setting that keeps Flash on for every puzzle. It builds on the
-  stored Flash start and comes next.
 - Signing the cookie. Clearing cookies already escapes the hint limit, so the
   same holds here.
 - Per-theme pearl styling. Themes that restyle `.difficulty-badge` may need a

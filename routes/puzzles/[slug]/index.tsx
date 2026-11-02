@@ -22,6 +22,7 @@ import {
   getFlashStart,
   getHintCount,
   isFlashExplained,
+  setFlashStart,
 } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
@@ -44,7 +45,11 @@ import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
-import { trackPuzzleSolved, trackSkillLevelUp } from "#/lib/tracking.ts";
+import {
+  trackFlashEnabled,
+  trackPuzzleSolved,
+  trackSkillLevelUp,
+} from "#/lib/tracking.ts";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type PageData = {
@@ -67,8 +72,25 @@ export const handler = define.handlers<PageData>({
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
-    const flashStart = getFlashStart(ctx.req.headers);
     const hasFlash = !!ctx.state.puzzle.flashStart;
+
+    // Flash mode "always" turns Flash on when a puzzle is opened, with the same
+    // 24-hour cookie as turning it on from the badge.
+    const headers = new Headers();
+    let flashStart = getFlashStart(ctx.req.headers);
+    if (
+      !flashStart && ctx.state.user.flashMode === "always" &&
+      ctx.state.puzzle.flashStart
+    ) {
+      flashStart = ctx.state.puzzle.flashStart;
+      setFlashStart(headers, { path: `/puzzles/${slug}`, flashStart });
+      trackFlashEnabled(ctx.state, ctx.state.puzzle, {
+        url: ctx.req.url,
+        flashStartLength: flashStart.length,
+        flashMode: "always",
+      });
+    }
+
     const puzzle = flashStart
       ? withFlashStart(ctx.state.puzzle, flashStart)
       : ctx.state.puzzle;
@@ -107,7 +129,7 @@ export const handler = define.handlers<PageData>({
       hasFlash,
       isFlashOn: !!flashStart,
       isFlashExplained: isFlashExplained(ctx.req.headers),
-    });
+    }, { headers });
   },
   async POST(ctx) {
     const { slug } = ctx.params;

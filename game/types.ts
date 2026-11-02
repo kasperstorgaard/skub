@@ -45,6 +45,9 @@ export type Difficulty = typeof DIFFICULTIES[number];
 
 export type SkillLevel = "beginner" | "intermediate" | "expert";
 
+/** How Flash turns on: per puzzle from its badge, or on every puzzle. */
+export type FlashMode = "manual" | "always";
+
 // A move as [from, to], plus the portal it went in by when the slide teleported.
 export type Move = [Position, Position, Position?];
 

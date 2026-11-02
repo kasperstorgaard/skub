@@ -2,14 +2,21 @@ import clsx from "clsx/lite";
 import { page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import { EnvelopeSimple, Icon } from "#/components/icons.tsx";
+import {
+  EnvelopeSimple,
+  Icon,
+  Lightning,
+  LightningFill,
+} from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { define } from "#/core.ts";
 import { setUser } from "#/db/user.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
+import type { FlashMode } from "#/game/types.ts";
 import { resolveTheme, type Theme, THEMES } from "#/lib/themes.ts";
+import { trackFlashModeSettingChanged } from "#/lib/tracking.ts";
 
 type PageData = {
   userStats: UserStats | null;
@@ -28,12 +35,19 @@ export const handler = define.handlers<PageData>({
 
     const name = form.get("name")?.toString().trim().slice(0, 30);
     const theme = form.get("theme")?.toString();
+    const flashMode = parseFlashMode(form.get("flashMode")?.toString());
+    const previousFlashMode = ctx.state.user.flashMode ?? "manual";
 
-    if (name || theme) {
+    if (name || theme || flashMode) {
       ctx.state.user = await setUser(ctx.state.userId, {
         ...(name && { name }),
         ...(theme && { theme }),
+        ...(flashMode && { flashMode }),
       });
+    }
+
+    if (flashMode && flashMode !== previousFlashMode) {
+      trackFlashModeSettingChanged(ctx.state, { url: ctx.req.url, flashMode });
     }
 
     return new Response(null, {
@@ -51,6 +65,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
   const inSection = (section: Theme["section"]) =>
     THEMES.filter((theme) => theme.section === section);
   const activeTheme = resolveTheme(user.theme);
+  const flashMode = user.flashMode ?? "manual";
 
   return (
     <>
@@ -176,6 +191,35 @@ export default define.page<typeof handler>(function ProfilePage(props) {
 
           <hr className="m-0 p-0" />
 
+          <section className="flex flex-col gap-fl-2">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-5">Flash mode</h2>
+              <p className="text-text-2">
+                Always starts every puzzle at its Flash start, off the
+                leaderboard. Manual turns Flash on per puzzle.
+              </p>
+            </div>
+
+            <form method="post" action="/profile" className="flex gap-fl-1">
+              {(["manual", "always"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="submit"
+                  name="flashMode"
+                  value={mode}
+                  className="btn capitalize"
+                  aria-pressed={mode === flashMode}
+                  data-primary={mode === flashMode ? true : undefined}
+                >
+                  <Icon icon={mode === "always" ? LightningFill : Lightning} />
+                  {mode}
+                </button>
+              ))}
+            </form>
+          </section>
+
+          <hr className="m-0 p-0" />
+
           {/* Theme */}
           <section className="flex flex-col gap-fl-2">
             <h2 className="flex flex-col gap-0.5 text-5">Theme</h2>
@@ -248,4 +292,8 @@ function ThemeGroup({ label, themes, active, className }: ThemeGroupProps) {
       </div>
     </div>
   );
+}
+
+function parseFlashMode(value?: string): FlashMode | undefined {
+  return value === "always" || value === "manual" ? value : undefined;
 }
