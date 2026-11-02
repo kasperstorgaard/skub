@@ -46,18 +46,17 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
   return (
     <aside
       className={clsx(
-        "flex flex-col place-content-center p-2 px-3",
+        "flex flex-col place-content-center gap-fl-1 p-2 px-3",
+        "text-text-2 text-pretty",
         "animate-fade-in",
         className,
       )}
     >
+      <p className="min-w-[16ch] text-center leading-snug">In a rush?</p>
+
       <a href={dialogHref} className="btn" data-router>
         <Icon icon={LightningFill} />
-        {/* A span, so the break works inside the flex button. */}
-        <span>
-          In a rush?<br />
-          Try Flash mode
-        </span>
+        Try Flash mode
       </a>
     </aside>
   );
