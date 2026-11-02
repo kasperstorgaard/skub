@@ -131,8 +131,10 @@ PR finishes only part of an item, trim the item to what is left.
   puzzle thumbnails show each puzzle's stars so players can see what's left to
   earn. Open: should a solve only count within 2 moves of perfect? Should Flash
   solves show on the leaderboard at all (a "+x flash" marker, perhaps), or not?
-  Should a puzzle's solutions unlock at 3 stars for the day? Today they're open
-  to everyone, and a gate that high could lock out new players who learn from
+  Should a puzzle's solutions unlock at 3 stars for the day? For: separate
+  solves earn stars too, so the gate gives players without a perfect a reason
+  and a route to keep going. Against: today solutions are open to everyone, and
+  three solves of one puzzle in a day is a lot for a new player who learns from
   them.
 
 ## Login
