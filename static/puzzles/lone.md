@@ -6,6 +6,7 @@ difficulty: easy
 minMoves: 5
 onboardingLevel: 3
 hidden: true
+flashStart: C6C8
 ---
 
 ```

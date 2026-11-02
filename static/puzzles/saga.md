@@ -5,6 +5,7 @@ createdAt: 2026-08-24T20:36:45.983Z
 difficulty: hard
 minMoves: 10
 number: 243
+flashStart: C1G1-H1H3-F3
 ---
 
 ```

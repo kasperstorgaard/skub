@@ -5,6 +5,7 @@ createdAt: 2026-05-02T14:54:59.723Z
 difficulty: medium
 minMoves: 7
 number: 142
+flashStart: E6E1
 ---
 
 ```

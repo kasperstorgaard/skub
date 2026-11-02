@@ -5,6 +5,7 @@ slug: pedro
 createdAt: 2026-02-15T10:38:50.254Z
 difficulty: hard
 minMoves: 12
+flashStart: G1G8-F8-F6F1
 ---
 
 ```

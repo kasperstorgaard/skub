@@ -5,6 +5,7 @@ slug: nina
 createdAt: 2026-10-11T19:04:59.888Z
 difficulty: medium
 minMoves: 8
+flashStart: E6E8-E1E5
 ---
 
 ```

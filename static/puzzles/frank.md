@@ -5,6 +5,7 @@ slug: frank
 createdAt: 2026-11-01T08:26:53.771Z
 difficulty: easy
 minMoves: 6
+flashStart: H3E3
 ---
 
 ```

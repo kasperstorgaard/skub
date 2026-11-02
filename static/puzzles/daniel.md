@@ -5,6 +5,7 @@ slug: daniel
 createdAt: 2026-09-27T14:44:07.000Z
 difficulty: medium
 minMoves: 9
+flashStart: F7F8-E1
 ---
 
 ```

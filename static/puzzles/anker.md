@@ -5,6 +5,7 @@ slug: anker
 createdAt: 2026-08-30T08:42:30.538Z
 difficulty: medium
 minMoves: 9
+flashStart: E3B3-G7G1
 ---
 
 ```

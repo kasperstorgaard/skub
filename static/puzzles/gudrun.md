@@ -5,6 +5,7 @@ slug: gudrun
 createdAt: 2026-05-23T07:40:45.303Z
 difficulty: medium
 minMoves: 7
+flashStart: B3B4
 ---
 
 ```

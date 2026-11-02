@@ -5,6 +5,7 @@ slug: sally
 createdAt: 2026-02-13T13:33:51.210Z
 difficulty: medium
 minMoves: 8
+flashStart: G7H7-F3F1
 ---
 
 ```

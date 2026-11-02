@@ -5,6 +5,7 @@ slug: ylva
 createdAt: 2026-02-22T12:12:16.516Z
 difficulty: medium
 minMoves: 8
+flashStart: A6A4-H4
 ---
 
 ```

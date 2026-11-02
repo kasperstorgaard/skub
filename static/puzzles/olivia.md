@@ -5,6 +5,7 @@ slug: olivia
 createdAt: 2026-09-08T18:38:03.688Z
 difficulty: easy
 minMoves: 6
+flashStart: C6H6
 ---
 
 ```

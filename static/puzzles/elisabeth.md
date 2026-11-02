@@ -5,6 +5,7 @@ slug: elisabeth
 createdAt: 2026-02-22T19:31:43.297Z
 difficulty: medium
 minMoves: 7
+flashStart: B4A4
 ---
 
 ```

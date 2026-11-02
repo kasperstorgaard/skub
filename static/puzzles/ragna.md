@@ -5,6 +5,7 @@ slug: ragna
 createdAt: 2026-03-03T14:22:59.410Z
 difficulty: medium
 minMoves: 6
+flashStart: H3H1
 ---
 
 ```

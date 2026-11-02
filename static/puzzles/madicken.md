@@ -5,6 +5,7 @@ slug: madicken
 createdAt: 2026-02-22T19:13:08.930Z
 difficulty: medium
 minMoves: 10
+flashStart: B3F3-G6C6-C1
 ---
 
 ```

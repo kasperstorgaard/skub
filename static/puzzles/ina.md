@@ -5,6 +5,7 @@ slug: ina
 createdAt: 2026-10-04T19:29:00.627Z
 difficulty: medium
 minMoves: 8
+flashStart: E5G5-G1
 ---
 
 ```

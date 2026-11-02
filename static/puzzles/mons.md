@@ -5,6 +5,7 @@ slug: mons
 createdAt: 2026-03-06T13:39:00.339Z
 difficulty: hard
 minMoves: 11
+flashStart: C6A6-A5-H5
 ---
 
 ```

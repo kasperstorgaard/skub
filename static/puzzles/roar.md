@@ -5,6 +5,7 @@ slug: roar
 createdAt: 2026-03-03T14:27:36.087Z
 difficulty: medium
 minMoves: 9
+flashStart: C2C1-H2H6
 ---
 
 ```

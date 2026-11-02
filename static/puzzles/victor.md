@@ -5,6 +5,7 @@ slug: victor
 createdAt: 2026-09-10T19:03:58.202Z
 difficulty: medium
 minMoves: 8
+flashStart: B2B1-E1
 ---
 
 ```

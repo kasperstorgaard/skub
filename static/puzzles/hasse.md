@@ -5,6 +5,7 @@ slug: hasse
 createdAt: 2026-03-03T20:04:10.528Z
 difficulty: hard
 minMoves: 10
+flashStart: D6H6-H5-E5
 ---
 
 ```

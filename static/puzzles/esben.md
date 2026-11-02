@@ -5,6 +5,7 @@ number: 155
 createdAt: 2026-05-23T07:15:48.411Z
 difficulty: medium
 minMoves: 7
+flashStart: E7E4
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: sara
 createdAt: 2026-02-13T12:19:26.320Z
 difficulty: hard
 minMoves: 8
+flashStart: A2D2-D7
 ---
 
 ```

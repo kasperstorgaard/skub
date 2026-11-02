@@ -5,6 +5,7 @@ slug: albert
 createdAt: 2026-09-27T14:40:42.911Z
 difficulty: medium
 minMoves: 7
+flashStart: F2G2
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: nova
 createdAt: 2026-10-04T19:42:36.213Z
 difficulty: medium
 minMoves: 8
+flashStart: G2H2-H6
 ---
 
 ```

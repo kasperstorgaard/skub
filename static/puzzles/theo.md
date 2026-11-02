@@ -5,6 +5,7 @@ slug: theo
 createdAt: 2026-08-30T08:30:52.985Z
 difficulty: medium
 minMoves: 8
+flashStart: G2G7-H7
 ---
 
 ```

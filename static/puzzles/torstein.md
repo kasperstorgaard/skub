@@ -5,6 +5,7 @@ slug: torstein
 createdAt: 2026-02-15T10:38:50.254Z
 difficulty: hard
 minMoves: 10
+flashStart: F2F8-H8-H3
 ---
 
 ```

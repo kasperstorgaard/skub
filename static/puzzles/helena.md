@@ -5,6 +5,7 @@ slug: helena
 createdAt: 2026-10-25T19:08:30.507Z
 difficulty: medium
 minMoves: 8
+flashStart: D8D6-G2G4
 ---
 
 ```

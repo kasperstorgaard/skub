@@ -5,6 +5,7 @@ slug: marina
 createdAt: 2026-02-15T10:30:19.050Z
 difficulty: medium
 minMoves: 8
+flashStart: H6H1-A1
 ---
 
 ```

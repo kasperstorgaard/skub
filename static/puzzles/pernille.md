@@ -5,6 +5,7 @@ createdAt: 2026-06-11T20:26:41.641Z
 difficulty: medium
 minMoves: 7
 number: 179
+flashStart: B2B1
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: anders-emil
 createdAt: 2026-03-06T13:39:00.339Z
 difficulty: easy
 minMoves: 5
+flashStart: A1D1
 ---
 
 ```

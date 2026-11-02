@@ -5,6 +5,7 @@ slug: keld
 createdAt: 2026-02-15T13:43:50.658Z
 difficulty: hard
 minMoves: 9
+flashStart: B4B3-H3C3
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: august
 createdAt: 2026-09-08T17:54:38.788Z
 difficulty: medium
 minMoves: 9
+flashStart: A3C3-C5
 ---
 
 ```

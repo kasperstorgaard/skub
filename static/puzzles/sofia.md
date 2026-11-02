@@ -5,6 +5,7 @@ createdAt: 2026-04-25T12:37:28.904Z
 difficulty: medium
 minMoves: 8
 number: 123
+flashStart: A6A8-F8B8
 ---
 
 ```

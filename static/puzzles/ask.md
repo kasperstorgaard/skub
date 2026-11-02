@@ -5,6 +5,7 @@ slug: ask
 createdAt: 2026-03-11T10:33:12.877Z
 difficulty: easy
 minMoves: 8
+flashStart: E5E3-D3
 ---
 
 ```

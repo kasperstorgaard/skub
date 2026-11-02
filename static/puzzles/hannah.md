@@ -5,6 +5,7 @@ slug: hannah
 createdAt: 2026-09-03T19:05:45.127Z
 difficulty: medium
 minMoves: 8
+flashStart: C7C5-H5
 ---
 
 ```

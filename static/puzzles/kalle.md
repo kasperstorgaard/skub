@@ -5,6 +5,7 @@ slug: kalle
 createdAt: 2026-02-22T12:20:24.241Z
 difficulty: medium
 minMoves: 8
+flashStart: C6C1-H1
 ---
 
 ```

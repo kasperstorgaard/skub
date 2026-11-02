@@ -5,6 +5,7 @@ slug: manish
 createdAt: 2026-09-27T14:48:57.579Z
 difficulty: medium
 minMoves: 8
+flashStart: H6G6-C1A1
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: jytte
 createdAt: 2026-09-14T19:15:51.218Z
 difficulty: medium
 minMoves: 8
+flashStart: F6H6-A1
 ---
 
 ```

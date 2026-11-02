@@ -5,6 +5,7 @@ slug: thorbjorn
 createdAt: 2026-03-28T21:18:42.722Z
 difficulty: medium
 minMoves: 8
+flashStart: F4F1-D6H6
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: tanja
 createdAt: 2026-10-18T08:17:59.603Z
 difficulty: medium
 minMoves: 8
+flashStart: A8F8-G2A6
 ---
 
 ```

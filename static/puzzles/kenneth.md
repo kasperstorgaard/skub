@@ -5,6 +5,7 @@ slug: kenneth
 createdAt: 2026-10-11T18:43:52.192Z
 difficulty: medium
 minMoves: 8
+flashStart: C8A8-A2
 ---
 
 ```

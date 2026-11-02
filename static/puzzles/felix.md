@@ -5,6 +5,7 @@ slug: felix
 createdAt: 2026-01-26T00:00:00.000Z
 difficulty: medium
 minMoves: 10
+flashStart: B2B6-G2A2-B6A6
 ---
 
 ```

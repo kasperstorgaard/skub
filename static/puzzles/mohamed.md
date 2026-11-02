@@ -5,6 +5,7 @@ slug: mohamed
 createdAt: 2026-10-18T08:22:08.470Z
 difficulty: medium
 minMoves: 8
+flashStart: H3F3-C2C5
 ---
 
 ```

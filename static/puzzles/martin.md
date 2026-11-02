@@ -5,6 +5,7 @@ slug: martin
 createdAt: 2026-11-01T08:44:53.683Z
 difficulty: hard
 minMoves: 10
+flashStart: E8E6-H6-H3
 ---
 
 ```

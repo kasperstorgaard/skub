@@ -5,6 +5,7 @@ slug: frederik
 createdAt: 2026-09-27T15:15:01.952Z
 difficulty: medium
 minMoves: 8
+flashStart: B7G7-G5
 ---
 
 ```

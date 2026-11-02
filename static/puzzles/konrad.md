@@ -5,6 +5,7 @@ createdAt: 2026-06-11T19:59:29.193Z
 difficulty: medium
 number: 167
 minMoves: 9
+flashStart: G7G1-E1
 ---
 
 ```

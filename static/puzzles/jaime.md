@@ -5,6 +5,7 @@ slug: jaime
 createdAt: 2026-02-10T19:03:11.838Z
 difficulty: hard
 minMoves: 8
+flashStart: E5H5-H1
 ---
 
 ```

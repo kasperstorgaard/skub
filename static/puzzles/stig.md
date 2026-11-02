@@ -5,6 +5,7 @@ slug: stig
 createdAt: 2026-02-15T10:30:19.050Z
 difficulty: medium
 minMoves: 7
+flashStart: A3A8
 ---
 
 ```

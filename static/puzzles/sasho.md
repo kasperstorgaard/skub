@@ -5,6 +5,7 @@ slug: sasho
 createdAt: 2026-03-03T19:27:44.463Z
 difficulty: hard
 minMoves: 9
+flashStart: H5A5-A1
 ---
 
 ```

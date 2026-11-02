@@ -5,6 +5,7 @@ createdAt: 2026-06-11T20:27:47.567Z
 difficulty: medium
 minMoves: 8
 number: 180
+flashStart: C2C6-G4G1
 ---
 
 ```

@@ -5,6 +5,7 @@ createdAt: 2026-07-25T08:24:14.752Z
 difficulty: easy
 minMoves: 7
 number: 216
+flashStart: C4C2
 ---
 
 ```

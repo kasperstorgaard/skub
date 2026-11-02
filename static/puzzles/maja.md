@@ -5,6 +5,7 @@ slug: maja
 createdAt: 2026-10-04T19:46:03.302Z
 difficulty: medium
 minMoves: 8
+flashStart: G6G1-A3A1
 ---
 
 ```

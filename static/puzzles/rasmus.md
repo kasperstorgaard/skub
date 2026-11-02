@@ -5,6 +5,7 @@ slug: rasmus
 createdAt: 2026-03-03T14:36:00.146Z
 difficulty: medium
 minMoves: 7
+flashStart: G2H2
 ---
 
 ```

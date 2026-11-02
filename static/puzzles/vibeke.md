@@ -5,6 +5,7 @@ slug: vibeke
 createdAt: 2026-10-04T19:21:41.596Z
 difficulty: medium
 minMoves: 9
+flashStart: G6G7-D7
 ---
 
 ```

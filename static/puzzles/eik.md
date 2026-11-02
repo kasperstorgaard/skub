@@ -5,6 +5,7 @@ slug: eik
 createdAt: 2026-03-03T14:19:01.057Z
 difficulty: hard
 minMoves: 10
+flashStart: A6A8-D8-A3D3
 ---
 
 ```

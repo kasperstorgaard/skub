@@ -5,6 +5,7 @@ slug: halfdan
 createdAt: 2026-05-23T07:45:18.971Z
 difficulty: medium
 minMoves: 9
+flashStart: E7E8-H2G2
 ---
 
 ```

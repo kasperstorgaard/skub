@@ -5,6 +5,7 @@ slug: dave
 createdAt: 2026-10-11T18:57:35.378Z
 difficulty: medium
 minMoves: 8
+flashStart: E5H5-H6H7
 ---
 
 ```

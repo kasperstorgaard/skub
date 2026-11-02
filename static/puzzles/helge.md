@@ -5,6 +5,7 @@ slug: helge
 createdAt: 2026-02-10T19:14:42.655Z
 difficulty: medium
 minMoves: 8
+flashStart: H8H1-F1
 ---
 
 ```

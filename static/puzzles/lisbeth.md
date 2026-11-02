@@ -5,6 +5,7 @@ slug: lisbeth
 createdAt: 2026-03-03T20:17:16.472Z
 difficulty: medium
 minMoves: 8
+flashStart: F5E5-E1
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: sabrina
 createdAt: 2026-09-10T18:50:25.147Z
 difficulty: medium
 minMoves: 7
+flashStart: A8A4
 ---
 
 ```

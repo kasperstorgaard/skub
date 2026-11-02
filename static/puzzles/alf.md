@@ -5,6 +5,7 @@ slug: alf
 createdAt: 2026-03-03T14:33:24.166Z
 difficulty: medium
 minMoves: 8
+flashStart: E6E8-F8
 ---
 
 ```

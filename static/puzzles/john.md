@@ -5,6 +5,7 @@ slug: john
 createdAt: 2026-02-13T13:30:48.857Z
 difficulty: hard
 minMoves: 9
+flashStart: H3H8-A8
 ---
 
 ```

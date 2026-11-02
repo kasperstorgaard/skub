@@ -5,6 +5,7 @@ slug: toke
 createdAt: 2026-02-15T13:43:50.658Z
 difficulty: medium
 minMoves: 9
+flashStart: G7G8-A8
 ---
 
 ```

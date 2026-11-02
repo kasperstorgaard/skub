@@ -5,6 +5,7 @@ slug: malou
 createdAt: 2026-10-18T08:23:14.834Z
 difficulty: medium
 minMoves: 7
+flashStart: D1D2
 ---
 
 ```

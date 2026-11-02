@@ -5,6 +5,7 @@ slug: magne
 createdAt: 2026-09-14T19:19:51.658Z
 difficulty: medium
 minMoves: 6
+flashStart: E8D2
 ---
 
 ```

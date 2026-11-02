@@ -5,6 +5,7 @@ slug: birk
 createdAt: 2026-10-04T20:01:00.461Z
 difficulty: medium
 minMoves: 7
+flashStart: G2G1
 ---
 
 ```

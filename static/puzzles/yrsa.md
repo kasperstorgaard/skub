@@ -5,6 +5,7 @@ slug: yrsa
 createdAt: 2026-10-04T18:57:24.232Z
 difficulty: easy
 minMoves: 6
+flashStart: B1A1
 ---
 
 ```

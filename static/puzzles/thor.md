@@ -5,6 +5,7 @@ slug: thor
 createdAt: 2026-09-03T19:22:59.592Z
 difficulty: medium
 minMoves: 9
+flashStart: A4F4-G4G5
 ---
 
 ```

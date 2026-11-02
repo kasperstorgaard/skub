@@ -5,6 +5,7 @@ slug: bastian
 createdAt: 2026-03-03T19:06:10.665Z
 difficulty: medium
 minMoves: 8
+flashStart: B2B7-G7
 ---
 
 ```

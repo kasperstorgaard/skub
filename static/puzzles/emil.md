@@ -5,6 +5,7 @@ slug: emil
 createdAt: 2026-03-03T19:08:21.725Z
 difficulty: medium
 minMoves: 6
+flashStart: H5H1
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: hjalte
 createdAt: 2026-08-30T18:39:12.183Z
 difficulty: medium
 minMoves: 9
+flashStart: C3C7-E7
 ---
 
 ```

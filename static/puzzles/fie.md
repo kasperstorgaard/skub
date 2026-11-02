@@ -5,6 +5,7 @@ slug: fie
 createdAt: 2026-03-03T14:31:15.218Z
 difficulty: easy
 minMoves: 7
+flashStart: G3H3
 ---
 
 ```
