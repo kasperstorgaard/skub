@@ -192,13 +192,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
           <hr className="m-0 p-0" />
 
           <section className="flex flex-col gap-fl-2">
-            <div className="flex flex-col gap-1">
-              <h2 className="text-5">Flash mode</h2>
-              <p className="text-text-2">
-                Always starts every puzzle at its Flash start, off the
-                leaderboard. Manual turns Flash on per puzzle.
-              </p>
-            </div>
+            <h2 className="text-5">Flash mode</h2>
 
             <form method="post" action="/profile" className="flex gap-fl-1">
               {(["manual", "always"] as const).map((mode) => (
