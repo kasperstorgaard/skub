@@ -4,7 +4,7 @@ import { useMemo, useState } from "preact/hooks";
 
 import { ArrowRight, Icon, Spinner } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import type { Move, Puzzle } from "#/game/types.ts";
+import type { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 
@@ -12,12 +12,12 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName?: string | null;
-  /** The head start while Flash is on: the solve stays off the leaderboard. */
-  flashMoves?: Move[] | null;
+  /** Flash is on: the solve stays off the leaderboard, so no name. */
+  isFlash?: boolean;
 };
 
 export function SolutionDialog(
-  { href, puzzle, savedName, flashMoves }: Props,
+  { href, puzzle, savedName, isFlash }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -43,20 +43,18 @@ export function SolutionDialog(
   // Opens on the JS path (anonymous user solves in browser) or the no-JS path
   // (server detects solve and redirects here with dialog=solution).
   const isOpen = dialog === "solution" ||
-    (hasSolution && (!savedName || !!flashMoves));
+    (hasSolution && !savedName && !isFlash);
 
-  if (flashMoves) {
+  // Without JS only; with it, a Flash solve gets the celebration.
+  if (isFlash) {
     return (
       <Dialog open={isOpen}>
         <div className="flex flex-col gap-fl-2 text-text-2">
           <h2 className="text-fl-2 font-semibold text-text-1">
-            Solved with Flash
+            Solved — {moves.length} moves
           </h2>
 
-          <p>
-            {moves.length} moves, the first {flashMoves.length}{" "}
-            played by Flash. Flash solves stay off the leaderboard.
-          </p>
+          <p>Flash solves stay off the leaderboard.</p>
         </div>
 
         {/* Saves the solve to your progress on the way, for when JS is off. */}

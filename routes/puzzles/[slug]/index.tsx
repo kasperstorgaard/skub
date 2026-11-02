@@ -16,16 +16,12 @@ import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getFlashMoves, getHintCount } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
-import { getHeadStartLength, isOnHeadStart } from "#/game/flash.ts";
+import { getHeadStartLength, withHeadStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
-import {
-  decodeState,
-  getFlashStartHref,
-  getPuzzleArchiveHref,
-} from "#/game/url.ts";
+import { decodeState, getPuzzleArchiveHref } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
 import {
@@ -48,31 +44,27 @@ type PageData = {
   savedName: string | null;
   hasSolved: boolean;
   showEdit: boolean;
-  /** The head start while Flash is on. */
-  flashMoves: Move[] | null;
+  /** The puzzle is long enough for Flash. */
+  hasFlash: boolean;
+  /** Flash is on: `puzzle` is the shorter one that starts after the head start. */
+  isFlashOn: boolean;
 };
 
 export const handler = define.handlers<PageData>({
   GET(ctx) {
     const { slug } = ctx.params;
-    const { puzzle } = ctx.state;
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
     const flashMoves = getFlashMoves(ctx.req.headers);
+    const hasFlash = getHeadStartLength(ctx.state.puzzle.minMoves) > 0;
+    const puzzle = flashMoves
+      ? withHeadStart(ctx.state.puzzle, flashMoves)
+      : ctx.state.puzzle;
 
     const hasSolved = slug in ctx.state.progress;
 
-    const state = decodeState(ctx.url);
-    const { moves } = state;
-
-    // While Flash is on, the head start is locked: anything short of it goes back.
-    if (flashMoves && !isOnHeadStart(state, flashMoves)) {
-      return Response.redirect(
-        getFlashStartHref(ctx.url.href, flashMoves),
-        303,
-      );
-    }
+    const { moves } = decodeState(ctx.url);
 
     // No-JS solve detection: moves are encoded in the URL on each navigation.
     // JS users go via AutoPostSolution → POST instead. The dialog guard prevents
@@ -101,12 +93,15 @@ export const handler = define.handlers<PageData>({
       savedName,
       hasSolved,
       showEdit,
-      flashMoves,
+      hasFlash,
+      isFlashOn: !!flashMoves,
     });
   },
   async POST(ctx) {
     const { slug } = ctx.params;
     const { puzzle } = ctx.state;
+    const flashMoves = getFlashMoves(ctx.req.headers);
+    const isFlash = flashMoves !== null;
     const referer = ctx.req.headers.get("referer") ?? "";
     const isJson = ctx.req.headers.get("content-type")?.includes(
       "application/json",
@@ -116,8 +111,8 @@ export const handler = define.handlers<PageData>({
       ? await ctx.req.json() as { name: string; moves: Move[] }
       : await parseSolveForm(ctx.req);
     const name = solve.name?.slice(0, 30) ?? "";
-    const { moves } = solve;
-    const isFlash = getFlashMoves(ctx.req.headers) !== null;
+    // Flash plays a shorter puzzle; the solve kept is the whole one.
+    const moves = [...(flashMoves ?? []), ...solve.moves];
 
     // A Flash solve stays off the leaderboard, so it needs no name.
     if (!name && !isFlash) {
@@ -157,7 +152,13 @@ export const handler = define.handlers<PageData>({
         });
       }
 
-      if (isJson) return Response.json({ flash: true });
+      // Off the leaderboard, so nothing to compare against.
+      if (isJson) {
+        return Response.json({
+          isNewPath: false,
+          puzzleStats: defaultPuzzleStats,
+        });
+      }
       return Response.redirect(new URL("/puzzles/recommended", ctx.url), 303);
     }
 
@@ -208,8 +209,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const celebrationData = useSignal<CelebrationData | null>(null);
   const celebrationError = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
-  const { flashMoves } = props.data;
-  const hasFlash = getHeadStartLength(props.data.puzzle.minMoves) > 0;
+  const { hasFlash, isFlashOn } = props.data;
 
   const back = isTodaysPuzzle(props.data.puzzle)
     ? { href: "/", label: "Back to Home" }
@@ -239,7 +239,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
               <FlashBadge
                 puzzle={puzzle}
                 href={href}
-                isOn={!!flashMoves}
+                isOn={isFlashOn}
                 hideMinMoves={!props.data.hasSolved}
                 className="lg:mt-1"
               />
@@ -279,7 +279,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         hintCount={props.data.hintCount}
         isDev={isDev}
         showEdit={props.data.showEdit}
-        flashMoves={flashMoves}
         className="print:hidden"
       />
 
@@ -305,18 +304,16 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         savedName={props.data.savedName}
-        flashMoves={flashMoves}
+        isFlash={isFlashOn}
       />
 
-      {hasFlash && (
-        <FlashDialog puzzle={puzzle} href={href} isOn={!!flashMoves} />
-      )}
+      {hasFlash && <FlashDialog puzzle={puzzle} href={href} isOn={isFlashOn} />}
 
-      {/* Flash solves post without a name and skip the celebration. */}
-      {flashMoves && <AutoPostSolution href={href} puzzle={puzzle} isFlash />}
-
-      {/* Celebration + auto-post are paired: only named users get them */}
-      {props.data.savedName && !flashMoves && (
+      {
+        /* Celebration + auto-post are paired: named users and Flash solves,
+          which post without a name, get them */
+      }
+      {(props.data.savedName || isFlashOn) && (
         <>
           <CelebrationDialog
             href={href}
@@ -324,11 +321,13 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             back={back}
             celebrationData={celebrationData}
             celebrationError={celebrationError}
+            isFlash={isFlashOn}
           />
           <AutoPostSolution
             href={href}
             puzzle={puzzle}
             savedName={props.data.savedName}
+            isFlash={isFlashOn}
             celebrationData={celebrationData}
             celebrationError={celebrationError}
           />

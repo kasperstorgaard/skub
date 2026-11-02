@@ -1,6 +1,5 @@
-import { isMoveSame } from "#/game/board.ts";
-import type { Move } from "#/game/types.ts";
-import type { GameState } from "#/game/url.ts";
+import { resolveMoves } from "#/game/board.ts";
+import type { Move, Puzzle } from "#/game/types.ts";
 
 /**
  * How many moves of an optimal solution Flash plays for you: 3 from 10 moves,
@@ -19,14 +18,13 @@ export function getHeadStart(solution: Move[], minMoves: number) {
 }
 
 /**
- * Whether a game still stands on its head start: the played moves begin with it.
- * The head start is locked, so anything else goes back to it.
+ * The puzzle as Flash plays it: a shorter puzzle that starts after the head
+ * start, which comes from an optimal solution, so the rest is optimal too.
  */
-export function isOnHeadStart(
-  state: Pick<GameState, "moves" | "cursor">,
-  headStart: Move[],
-) {
-  const played = state.moves.slice(0, state.cursor ?? state.moves.length);
-  if (played.length < headStart.length) return false;
-  return headStart.every((move, index) => isMoveSame(move, played[index]));
+export function withHeadStart(puzzle: Puzzle, headStart: Move[]): Puzzle {
+  return {
+    ...puzzle,
+    board: resolveMoves(puzzle.board, headStart),
+    minMoves: puzzle.minMoves - headStart.length,
+  };
 }

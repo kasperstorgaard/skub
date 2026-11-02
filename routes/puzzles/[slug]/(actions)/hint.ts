@@ -2,7 +2,8 @@ import { HttpError } from "fresh";
 
 import { incrementHintUsageCount } from "#/db/stats.ts";
 import { isLooped, resolveMoves } from "#/game/board.ts";
-import { getHintCount, setHintCount } from "#/game/cookies.ts";
+import { getFlashMoves, getHintCount, setHintCount } from "#/game/cookies.ts";
+import { withHeadStart } from "#/game/flash.ts";
 import { HINT_MAX_STATES, solveInWorker } from "#/game/solver-queue.ts";
 import { encodeMove } from "#/game/strings.ts";
 import type { Board, Move } from "#/game/types.ts";
@@ -28,6 +29,11 @@ export const handler = define.handlers({
   async POST(ctx) {
     const slug = ctx.params.slug;
     const { puzzle } = ctx.state;
+    // With Flash on, the moves in the URL play the shorter puzzle.
+    const flashMoves = getFlashMoves(ctx.req.headers);
+    const { board: start } = flashMoves
+      ? withHeadStart(puzzle, flashMoves)
+      : puzzle;
 
     const state = decodeState(ctx.req.url);
 
@@ -47,7 +53,7 @@ export const handler = define.handlers({
 
     let board: Board;
     try {
-      board = resolveMoves(puzzle.board, played);
+      board = resolveMoves(start, played);
     } catch {
       throw new HttpError(400, "Invalid moves");
     }
@@ -55,7 +61,7 @@ export const handler = define.handlers({
     // Dropping the puck in a hole, or getting caught in a portal loop, leaves
     // nothing to hint toward — undo is the only way on from either.
     const hasPuck = board.pieces.some((piece) => piece.type === "puck");
-    if (!hasPuck || isLooped(puzzle.board, played)) {
+    if (!hasPuck || isLooped(start, played)) {
       throw new HttpError(400, "No hint available from here");
     }
 

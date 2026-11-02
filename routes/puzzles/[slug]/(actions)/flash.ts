@@ -4,19 +4,19 @@ import { getFlashMoves, setFlashMoves } from "#/game/cookies.ts";
 import { getHeadStart, getHeadStartLength } from "#/game/flash.ts";
 import { HINT_MAX_STATES, solveInWorker } from "#/game/solver-queue.ts";
 import type { Move } from "#/game/types.ts";
-import { getFlashStartHref } from "#/game/url.ts";
 import { trackFlashEnabled } from "#/lib/tracking.ts";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 /**
- * Turns Flash on: plays the opening moves of an optimal solution and keeps the
- * puzzle off the leaderboard for 24 hours. POST, as it runs a solve.
+ * Turns Flash on: the puzzle starts after the opening moves of an optimal
+ * solution, and stays off the leaderboard for 24 hours. POST, as it runs a solve.
  */
 export const handler = define.handlers({
   async POST(ctx) {
     const { slug } = ctx.params;
     const { puzzle } = ctx.state;
     const puzzleHref = new URL(`/puzzles/${slug}`, ctx.url).href;
+    const headers = new Headers({ Location: puzzleHref });
 
     if (slug === "preview") {
       throw new HttpError(503, "Flash not allowed on preview");
@@ -26,13 +26,9 @@ export const handler = define.handlers({
       throw new HttpError(400, "Flash needs a longer puzzle");
     }
 
-    // Already on: back to the head start it was turned on with.
-    const current = getFlashMoves(ctx.req.headers);
-    if (current) {
-      return new Response(null, {
-        status: 303,
-        headers: { Location: getFlashStartHref(puzzleHref, current) },
-      });
+    // Already on: keep the head start it was turned on with.
+    if (getFlashMoves(ctx.req.headers)) {
+      return new Response(null, { headers, status: 303 });
     }
 
     let solution: Move[];
@@ -52,9 +48,6 @@ export const handler = define.handlers({
       headStart: headStart.length,
     });
 
-    const headers = new Headers({
-      Location: getFlashStartHref(puzzleHref, headStart),
-    });
     setFlashMoves(headers, { path: `/puzzles/${slug}`, moves: headStart });
 
     return new Response(null, { headers, status: 303 });

@@ -3,9 +3,9 @@ import { assertEquals } from "@std/assert";
 import {
   getHeadStart,
   getHeadStartLength,
-  isOnHeadStart,
+  withHeadStart,
 } from "#/game/flash.ts";
-import type { Move } from "#/game/types.ts";
+import type { Move, Puzzle } from "#/game/types.ts";
 
 const solution: Move[] = [
   [{ x: 0, y: 0 }, { x: 0, y: 7 }],
@@ -13,6 +13,23 @@ const solution: Move[] = [
   [{ x: 7, y: 7 }, { x: 7, y: 2 }],
   [{ x: 7, y: 2 }, { x: 3, y: 2 }],
 ];
+
+// A puck in the top-left corner of an open board, two slides from the corner
+// opposite.
+const puzzle: Puzzle = {
+  slug: "corner",
+  name: "Corner",
+  createdAt: new Date("2026-11-02"),
+  difficulty: "easy",
+  minMoves: 8,
+  board: {
+    destination: { x: 7, y: 7 },
+    walls: [],
+    pieces: [{ x: 0, y: 0, type: "puck" }],
+    holes: [],
+    portals: [],
+  },
+};
 
 Deno.test("getHeadStartLength() gives 3 moves from 10", () => {
   assertEquals(getHeadStartLength(10), 3);
@@ -46,25 +63,12 @@ Deno.test("getHeadStart() is empty for a short puzzle", () => {
   assertEquals(getHeadStart(solution, 4), []);
 });
 
-const headStart = solution.slice(0, 2);
-
-Deno.test("isOnHeadStart() holds on the head start itself", () => {
-  assertEquals(isOnHeadStart({ moves: headStart, cursor: 2 }, headStart), true);
+Deno.test("withHeadStart() starts the board after the head start", () => {
+  const flashed = withHeadStart(puzzle, solution.slice(0, 1));
+  assertEquals(flashed.board.pieces, [{ x: 0, y: 7, type: "puck" }]);
 });
 
-Deno.test("isOnHeadStart() holds with moves played after it", () => {
-  assertEquals(isOnHeadStart({ moves: solution, cursor: 4 }, headStart), true);
-});
-
-Deno.test("isOnHeadStart() fails once undo goes into it", () => {
-  assertEquals(isOnHeadStart({ moves: solution, cursor: 1 }, headStart), false);
-});
-
-Deno.test("isOnHeadStart() fails on a clean board", () => {
-  assertEquals(isOnHeadStart({ moves: [] }, headStart), false);
-});
-
-Deno.test("isOnHeadStart() fails when the opening differs", () => {
-  const moves: Move[] = [solution[1], solution[0], ...solution.slice(2)];
-  assertEquals(isOnHeadStart({ moves, cursor: 4 }, headStart), false);
+Deno.test("withHeadStart() takes the head start off the shortest solution", () => {
+  const flashed = withHeadStart(puzzle, solution.slice(0, 2));
+  assertEquals(flashed.minMoves, 6);
 });

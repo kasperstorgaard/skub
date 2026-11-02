@@ -6,7 +6,6 @@ import {
   getActiveHref,
   getDifficulty,
   getFlashHref,
-  getFlashStartHref,
   getHintHref,
   getMovesHref,
   getPage,
@@ -242,18 +241,6 @@ Deno.test("getFlashHref() should point at the flash route without game state", (
   );
 
   assertEquals(result, "http://example.com/puzzles/my-puzzle/flash");
-});
-
-Deno.test("getFlashStartHref() should replace the game with the head start", () => {
-  const result = getFlashStartHref(
-    "http://example.com/puzzles/my-puzzle?moves=A1A6-A1&cursor=2&dialog=hint&other=kept",
-    [[{ x: 0, y: 0 }, { x: 0, y: 5 }]],
-  );
-
-  assertEquals(
-    result,
-    "http://example.com/puzzles/my-puzzle?other=kept&moves=A1A6&cursor=1",
-  );
 });
 
 Deno.test("getReplaySpeed() should return the replay_speed param", () => {

@@ -69,19 +69,17 @@ export class PuzzlePage {
       heading: dialog.getByRole("heading", { name: "Flash" }),
       turnOn: async () => {
         await dialog.getByRole("button", { name: /Turn on Flash/i }).click();
-        await page.waitForURL(/moves=/);
+        // The Flash route redirects back to the clean puzzle.
+        await page.waitForURL(/\/puzzles\/[^/?]+$/);
         return this;
       },
     };
   }
 
-  // Shown after any Flash solve, named player or not
-  get flashSolvedDialog() {
-    const dialog = this.page.getByRole("dialog");
-    return {
-      heading: dialog.getByRole("heading", { name: /Solved with Flash/i }),
-      usernameInput: dialog.getByRole("textbox", { name: /username/i }),
-    };
+  // The leaderboard note in the dialog after a Flash solve
+  get flashSolvedNote() {
+    return this.page.getByRole("dialog")
+      .getByText(/Flash solves stay off the leaderboard/i);
   }
 
   // The move counter in the controls panel, as it reads ("02")
@@ -89,11 +87,6 @@ export class PuzzlePage {
     return this.page.getByRole("complementary").getByText(text, {
       exact: true,
     });
-  }
-
-  get undoLink() {
-    return this.page.getByRole("complementary")
-      .getByRole("link", { name: "Undo", exact: true });
   }
 
   get startOverLink() {

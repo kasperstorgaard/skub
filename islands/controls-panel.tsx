@@ -16,10 +16,9 @@ import {
 } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { isLooped } from "#/game/board.ts";
-import type { Move, Puzzle } from "#/game/types.ts";
+import { Puzzle } from "#/game/types.ts";
 import {
   decodeState,
-  getFlashStartHref,
   getHintHref,
   getRedoHref,
   getResetHref,
@@ -34,8 +33,6 @@ type ControlsPanelProps = {
   showEdit?: boolean;
   hintCount?: number;
   isPreview?: boolean;
-  /** The locked head start while Flash is on: undo stops there, reset goes there. */
-  flashMoves?: Move[] | null;
   className?: string;
 };
 
@@ -47,7 +44,6 @@ export function ControlsPanel(
     showEdit,
     hintCount,
     isPreview,
-    flashMoves,
     className,
   }: ControlsPanelProps,
 ) {
@@ -75,15 +71,11 @@ export function ControlsPanel(
     state.cursor,
   ]);
 
-  const canUndo = (state.cursor ?? 0) > (flashMoves?.length ?? 0);
-
-  const resetHref = flashMoves
-    ? getFlashStartHref(href.value, flashMoves)
-    : getResetHref(href.value);
-
   const { updateLocation } = useRouter();
 
-  const onReset = useCallback(() => updateLocation(resetHref), [resetHref]);
+  const onReset = useCallback(() => updateLocation(getResetHref(href.value)), [
+    href.value,
+  ]);
 
   // Opens the dialog straight away and lets it fetch the hint, rather than
   // waiting on the route's redirect. Without JS the form posts to the route
@@ -96,7 +88,7 @@ export function ControlsPanel(
   }, [href.value, hintDisabled]);
 
   useGameShortcuts({
-    onUndo: () => canUndo && self.history.back(),
+    onUndo: () => self.history.back(),
     onRedo: () => self.history.forward(),
     onReset,
     onHint,
@@ -141,14 +133,14 @@ export function ControlsPanel(
             )}
           >
             <a
-              href={canUndo ? getUndoHref(href.value, state) : href.value}
+              href={getUndoHref(href.value, state)}
               className="icon-btn"
-              aria-disabled={!canUndo ? true : undefined}
+              aria-disabled={!state.cursor ? true : undefined}
               data-primary
               data-size="lg"
               data-router="replace"
             >
-              <Icon icon={ArrowArcLeft} aria-label="Undo" />
+              <Icon icon={ArrowArcLeft} />
             </a>
 
             <div
@@ -171,7 +163,7 @@ export function ControlsPanel(
               data-size="lg"
               data-router="replace"
             >
-              <Icon icon={ArrowArcRight} aria-label="Redo" />
+              <Icon icon={ArrowArcRight} />
             </a>
           </div>
 
@@ -210,7 +202,7 @@ export function ControlsPanel(
             )}
 
             <a
-              href={resetHref}
+              href={getResetHref(href.value)}
               className="bg-transparent"
               data-router="replace"
             >
