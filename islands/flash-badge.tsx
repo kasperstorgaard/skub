@@ -46,7 +46,7 @@ export function FlashBadge(
             aria-checked="true"
             aria-disabled="true"
             aria-label="Flash"
-            title="Flash is on for 24 hours, off the leaderboard"
+            title="Flash mode on"
             className={clsx(
               "grid place-items-center min-w-[2.25rem] px-2",
               "bg-(image:--pearl) text-(--btn-active-text)",
