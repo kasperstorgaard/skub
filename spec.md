@@ -40,8 +40,9 @@ can't drift from what the player was shown.
 
 On the puzzle page, the difficulty badge becomes a switch, built like the
 editor's solution badge. A lightning-bolt cell replaces the difficulty label,
-with the move count beside it. When Flash is on, the whole badge takes a brand →
-link pearl gradient. Puzzles under 5 moves keep the plain badge, and the badge
+with the move count beside it. While Flash is off the bolt itself is filled
+with a brand → link pearl gradient (a CSS mask over the pearl); turning it on
+reverses that, so the cell fills with pearl and the count gets a pearl border. Puzzles under 5 moves keep the plain badge, and the badge
 on other pages (solutions, preview, candidates) is unchanged.
 
 ### The nudge

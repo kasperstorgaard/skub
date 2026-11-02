@@ -3,7 +3,7 @@ import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
 import { flashExplained } from "#/client/flash-signals.ts";
-import { Icon, Lightning, LightningFill } from "#/components/icons.tsx";
+import { Icon, LightningFill } from "#/components/icons.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { getFlashHref } from "#/game/url.ts";
 
@@ -115,11 +115,32 @@ function OffSwitch({ as: Element, ...props }: OffSwitchProps) {
       title="Flash: start a few moves in, off the leaderboard"
       className={clsx(
         "grid place-items-center min-w-[2.25rem] px-2",
-        "bg-transparent text-text-2 no-underline cursor-pointer",
-        "hover:text-text-1",
+        "bg-transparent no-underline cursor-pointer",
+        "hover:brightness-125",
       )}
     >
-      <Icon icon={Lightning} />
+      <PearlBolt />
     </Element>
+  );
+}
+
+// The filled bolt as a mask, so the badge's pearl shows through its shape.
+const BOLT_MASK = `url("data:image/svg+xml,${
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">${LightningFill}</svg>`,
+  )
+}")`;
+
+/** A bolt filled with the pearl; turning Flash on fills the cell instead. */
+function PearlBolt() {
+  return (
+    <span
+      aria-hidden="true"
+      className={clsx(
+        "inline-block size-[1em] bg-(image:--pearl)",
+        "[mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]",
+      )}
+      style={{ maskImage: BOLT_MASK, WebkitMaskImage: BOLT_MASK }}
+    />
   );
 }
