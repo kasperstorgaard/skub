@@ -66,7 +66,7 @@ export class PuzzlePage {
     const page = this.page;
     const dialog = page.getByRole("dialog");
     return {
-      heading: dialog.getByRole("heading", { name: "Flash" }),
+      heading: dialog.getByRole("heading", { name: "Flash mode" }),
       turnOn: async () => {
         await dialog.getByRole("button", { name: /Try Flash mode/i }).click();
         // The Flash route redirects back to the clean puzzle.

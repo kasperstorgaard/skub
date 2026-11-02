@@ -55,7 +55,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
     <Dialog open={open}>
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h2 className="text-4 text-text-1 font-semibold leading-tight">
-          Flash
+          Flash mode
         </h2>
 
         <p className="leading-snug">
