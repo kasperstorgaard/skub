@@ -59,7 +59,6 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
         </h2>
 
         <p className="leading-snug">
-          In a rush, or not really getting anywhere?<br />
           Flash mode gives you a shorter version of this puzzle, but skips the
           leaderboard.
         </p>

@@ -78,7 +78,9 @@ export class PuzzlePage {
 
   // Offered in place of the tutorial nudge once a player looks stuck
   get flashNudge() {
-    return this.page.getByRole("link", { name: /In a rush\? Try Flash mode/i });
+    return this.page.getByRole("link", {
+      name: /In a rush\?\s*Try Flash mode/i,
+    });
   }
 
   get flashDialogNotNow() {

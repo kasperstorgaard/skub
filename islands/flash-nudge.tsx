@@ -53,7 +53,11 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
     >
       <a href={dialogHref} className="btn" data-router>
         <Icon icon={LightningFill} />
-        In a rush? Try Flash mode
+        {/* A span, so the break works inside the flex button. */}
+        <span>
+          In a rush?<br />
+          Try Flash mode
+        </span>
       </a>
     </aside>
   );
