@@ -192,6 +192,29 @@ export function getHintHref(href: string) {
   return url.href;
 }
 
+/** The puzzle's Flash route, which turns Flash on and plays the head start. */
+export function getFlashHref(href: string) {
+  const url = new URL(getHintHref(href));
+  url.pathname = url.pathname.replace(/hint$/, "flash");
+  url.search = "";
+
+  return url.href;
+}
+
+/**
+ * The board with only the head start played, which is where starting over goes
+ * while Flash is on. Clears everything else, the dialog included.
+ */
+export function getFlashStartHref(href: string, headStart: Move[]) {
+  const url = new URL(getResetHref(href));
+  const state = encodeState({ moves: headStart, cursor: headStart.length });
+  new URLSearchParams(state).forEach((value, key) =>
+    url.searchParams.set(key, value)
+  );
+
+  return url.href;
+}
+
 // Reads the `replay_speed` search param from a URL
 export function getReplaySpeed(urlOrHref: URL | string): number | null {
   const url = typeof urlOrHref === "string" ? new URL(urlOrHref) : urlOrHref;

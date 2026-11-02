@@ -14,13 +14,18 @@ import { getPuzzleStats } from "#/db/stats.ts";
 import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getHintCount } from "#/game/cookies.ts";
+import { getFlashMoves, getHintCount } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
+import { getHeadStartLength, isOnHeadStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
-import { decodeState, getPuzzleArchiveHref } from "#/game/url.ts";
+import {
+  decodeState,
+  getFlashStartHref,
+  getPuzzleArchiveHref,
+} from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
 import {
@@ -28,6 +33,8 @@ import {
   CelebrationDialog,
 } from "#/islands/celebration-dialog.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
+import { FlashBadge } from "#/islands/flash-badge.tsx";
+import { FlashDialog } from "#/islands/flash-dialog.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
@@ -41,6 +48,8 @@ type PageData = {
   savedName: string | null;
   hasSolved: boolean;
   showEdit: boolean;
+  /** The head start while Flash is on. */
+  flashMoves: Move[] | null;
 };
 
 export const handler = define.handlers<PageData>({
@@ -50,13 +59,24 @@ export const handler = define.handlers<PageData>({
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
+    const flashMoves = getFlashMoves(ctx.req.headers);
 
     const hasSolved = slug in ctx.state.progress;
+
+    const state = decodeState(ctx.url);
+    const { moves } = state;
+
+    // While Flash is on, the head start is locked: anything short of it goes back.
+    if (flashMoves && !isOnHeadStart(state, flashMoves)) {
+      return Response.redirect(
+        getFlashStartHref(ctx.url.href, flashMoves),
+        303,
+      );
+    }
 
     // No-JS solve detection: moves are encoded in the URL on each navigation.
     // JS users go via AutoPostSolution → POST instead. The dialog guard prevents
     // re-processing when the page reloads after a redirect.
-    const { moves } = decodeState(ctx.url);
     if (moves.length > 0 && !ctx.url.searchParams.get("dialog")) {
       let board: Puzzle["board"];
       try {
@@ -75,7 +95,14 @@ export const handler = define.handlers<PageData>({
     }
 
     const showEdit = isDev && (puzzle.number ?? 0) > getTodaysPuzzleNumber();
-    return page({ puzzle, hintCount, savedName, hasSolved, showEdit });
+    return page({
+      puzzle,
+      hintCount,
+      savedName,
+      hasSolved,
+      showEdit,
+      flashMoves,
+    });
   },
   async POST(ctx) {
     const { slug } = ctx.params;
@@ -88,10 +115,14 @@ export const handler = define.handlers<PageData>({
     const solve = isJson
       ? await ctx.req.json() as { name: string; moves: Move[] }
       : await parseSolveForm(ctx.req);
-    const name = solve.name?.slice(0, 30);
+    const name = solve.name?.slice(0, 30) ?? "";
     const { moves } = solve;
+    const isFlash = getFlashMoves(ctx.req.headers) !== null;
 
-    if (!name) throw new HttpError(400, "Must provide a username");
+    // A Flash solve stays off the leaderboard, so it needs no name.
+    if (!name && !isFlash) {
+      throw new HttpError(400, "Must provide a username");
+    }
 
     if (!isValidSolution(resolveMoves(puzzle.board, moves))) {
       throw new HttpError(400, "Solution is not valid");
@@ -108,6 +139,7 @@ export const handler = define.handlers<PageData>({
           name,
           moves,
           userId: ctx.state.userId,
+          ...(isFlash && { flash: true }),
         });
         span.setAttribute("solution.is_new", result.isNew);
         span.setAttribute("solution.is_new_path", result.isNewPath);
@@ -115,6 +147,19 @@ export const handler = define.handlers<PageData>({
       },
     );
     ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
+
+    if (isFlash) {
+      if (isNew) {
+        trackPuzzleSolved(ctx.state, puzzle, {
+          moves,
+          url: referer,
+          flash: true,
+        });
+      }
+
+      if (isJson) return Response.json({ flash: true });
+      return Response.redirect(new URL("/puzzles/recommended", ctx.url), 303);
+    }
 
     const patch: Partial<Omit<User, "id">> = {};
     if (name !== ctx.state.user.name) patch.name = name;
@@ -163,6 +208,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const celebrationData = useSignal<CelebrationData | null>(null);
   const celebrationError = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
+  const { flashMoves } = props.data;
+  const hasFlash = getHeadStartLength(props.data.puzzle.minMoves) > 0;
 
   const back = isTodaysPuzzle(props.data.puzzle)
     ? { href: "/", label: "Back to Home" }
@@ -187,11 +234,23 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             <span className="font-5">{props.data.puzzle.name}</span>
           </h1>
 
-          <DifficultyBadge
-            puzzle={puzzle.value}
-            hideMinMoves={!props.data.hasSolved}
-            className="lg:mt-1"
-          />
+          {hasFlash
+            ? (
+              <FlashBadge
+                puzzle={puzzle}
+                href={href}
+                isOn={!!flashMoves}
+                hideMinMoves={!props.data.hasSolved}
+                className="lg:mt-1"
+              />
+            )
+            : (
+              <DifficultyBadge
+                puzzle={puzzle.value}
+                hideMinMoves={!props.data.hasSolved}
+                className="lg:mt-1"
+              />
+            )}
         </div>
 
         <div className="relative">
@@ -220,6 +279,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         hintCount={props.data.hintCount}
         isDev={isDev}
         showEdit={props.data.showEdit}
+        flashMoves={flashMoves}
         className="print:hidden"
       />
 
@@ -245,10 +305,18 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         savedName={props.data.savedName}
+        flashMoves={flashMoves}
       />
 
+      {hasFlash && (
+        <FlashDialog puzzle={puzzle} href={href} isOn={!!flashMoves} />
+      )}
+
+      {/* Flash solves post without a name and skip the celebration. */}
+      {flashMoves && <AutoPostSolution href={href} puzzle={puzzle} isFlash />}
+
       {/* Celebration + auto-post are paired: only named users get them */}
-      {props.data.savedName && (
+      {props.data.savedName && !flashMoves && (
         <>
           <CelebrationDialog
             href={href}

@@ -11,7 +11,9 @@ import { useRouter } from "#/islands/router.tsx";
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  savedName: string;
+  savedName?: string | null;
+  /** Flash solves post without a name; the server keeps them off the leaderboard. */
+  isFlash?: boolean;
   celebrationData?: Signal<CelebrationData | null>;
   celebrationError?: Signal<boolean>;
 };
@@ -23,7 +25,8 @@ type Props = {
  * navigate to the redirected URL. Renders nothing.
  */
 export function AutoPostSolution(
-  { href, puzzle, savedName, celebrationData, celebrationError }: Props,
+  { href, puzzle, savedName, isFlash, celebrationData, celebrationError }:
+    Props,
 ) {
   const { updateLocation } = useRouter();
   const postingRef = useRef(false);
@@ -48,7 +51,7 @@ export function AutoPostSolution(
 
   const hasSolution = useMemo(() => isValidSolution(board), [board]);
 
-  const isEnabled = hasSolution && !!savedName && !dialog;
+  const isEnabled = hasSolution && (!!savedName || !!isFlash) && !dialog;
 
   useEffect(() => {
     if (!isEnabled) return;
@@ -68,7 +71,7 @@ export function AutoPostSolution(
     fetch(href.value, {
       method: "POST",
       headers,
-      body: JSON.stringify({ name: savedName, moves }),
+      body: JSON.stringify({ name: savedName ?? "", moves }),
     }).then(async (response) => {
       completedRef.current = true;
 

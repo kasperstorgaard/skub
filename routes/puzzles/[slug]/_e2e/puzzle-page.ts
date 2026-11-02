@@ -57,6 +57,55 @@ export class PuzzlePage {
     };
   }
 
+  // The badge's lightning switch, beside the move count
+  get flashSwitch() {
+    return this.page.getByRole("switch", { name: "Flash" });
+  }
+
+  get flashDialog() {
+    const page = this.page;
+    const dialog = page.getByRole("dialog");
+    return {
+      heading: dialog.getByRole("heading", { name: "Flash" }),
+      turnOn: async () => {
+        await dialog.getByRole("button", { name: /Turn on Flash/i }).click();
+        await page.waitForURL(/moves=/);
+        return this;
+      },
+    };
+  }
+
+  // Shown after any Flash solve, named player or not
+  get flashSolvedDialog() {
+    const dialog = this.page.getByRole("dialog");
+    return {
+      heading: dialog.getByRole("heading", { name: /Solved with Flash/i }),
+      usernameInput: dialog.getByRole("textbox", { name: /username/i }),
+    };
+  }
+
+  // The move counter in the controls panel, as it reads ("02")
+  moveCount(text: string) {
+    return this.page.getByRole("complementary").getByText(text, {
+      exact: true,
+    });
+  }
+
+  get undoLink() {
+    return this.page.getByRole("complementary")
+      .getByRole("link", { name: "Undo", exact: true });
+  }
+
+  get startOverLink() {
+    return this.page.getByRole("complementary")
+      .getByRole("link", { name: /Start over/i });
+  }
+
+  async clickSeeSolves() {
+    await this.seeSolvesLink.click();
+    return new SolutionsPage(this.page);
+  }
+
   get tutorialNudge() {
     return this.page.getByRole("link", { name: /learn the basics/i });
   }

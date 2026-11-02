@@ -17,6 +17,8 @@ export type Solution = {
   name: string;
   moves: Move[];
   userId: string;
+  /** Solved with a head start: the player's own record only, no leaderboard. */
+  flash?: true;
 };
 
 // One entry per canonical move group for a puzzle, maintained as best-effort aggregate

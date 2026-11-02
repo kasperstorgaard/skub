@@ -12,7 +12,7 @@ import { posthog } from "#/lib/posthog.ts";
 export function trackPuzzleSolved(
   state: State,
   puzzle: Puzzle,
-  options: { moves: Move[]; url: string },
+  options: { moves: Move[]; url: string; flash?: boolean },
 ): void {
   posthog?.capture({
     distinctId: state.trackingId,
@@ -24,6 +24,29 @@ export function trackPuzzleSolved(
       puzzle_difficulty: puzzle.difficulty,
       puzzle_min_moves: puzzle.minMoves,
       game_moves: options.moves.length,
+      flash: options.flash ?? false,
+    },
+  });
+}
+
+/**
+ * Track Flash being turned on for a puzzle.
+ */
+export function trackFlashEnabled(
+  state: State,
+  puzzle: Puzzle,
+  options: { url: string; headStart: number },
+): void {
+  posthog?.capture({
+    distinctId: state.trackingId,
+    event: "flash_enabled",
+    properties: {
+      $current_url: options.url,
+      $process_person_profile: state.cookieChoice === "accepted",
+      puzzle_slug: puzzle.slug,
+      puzzle_difficulty: puzzle.difficulty,
+      puzzle_min_moves: puzzle.minMoves,
+      head_start: options.headStart,
     },
   });
 }
