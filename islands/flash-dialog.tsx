@@ -40,15 +40,10 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
         </h2>
 
         <p className="leading-snug">
-          The puzzle starts over with the first{" "}
-          {headStart === 1 ? "move" : `${headStart} moves`}{" "}
-          of a shortest solution already played. They're locked in, so it's like
-          taking {headStart === 1 ? "a hint" : `${headStart} hints`} at once.
-        </p>
-
-        <p className="leading-snug">
-          Flash solves stay off the leaderboard, and Flash stays on for this
-          puzzle for 24 hours.
+          In a rush, or not really getting anywhere?<br />
+          Flash mode starts you{" "}
+          {headStart === 1 ? "1 move" : `${headStart} moves`}{" "}
+          ahead, with the cost of not going on the leaderboard for this puzzle.
         </p>
       </div>
 
