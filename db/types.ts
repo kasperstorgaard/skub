@@ -17,7 +17,7 @@ export type Solution = {
   name: string;
   moves: Move[];
   userId: string;
-  /** Solved with a head start: the player's own record only, no leaderboard. */
+  /** Solved from the Flash start, which `moves` include: kept off the leaderboard. */
   flash?: true;
 };
 

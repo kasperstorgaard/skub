@@ -25,12 +25,19 @@ type Props = {
   back: { href: string; label: string };
   celebrationData: Signal<CelebrationData | null>;
   celebrationError: Signal<boolean>;
-  /** A Flash solve: off the leaderboard, so no stats to compare against. */
-  isFlash?: boolean;
+  /** A Flash solve: off the leaderboard, so it states the Flash start instead of stats. */
+  flashStartLength?: number;
 };
 
 export function CelebrationDialog(
-  { href, puzzle, back, celebrationData, celebrationError, isFlash }: Props,
+  {
+    href,
+    puzzle,
+    back,
+    celebrationData,
+    celebrationError,
+    flashStartLength,
+  }: Props,
 ) {
   const destination = puzzle.value.board.destination;
   const rippleDuration = useMemo(
@@ -68,7 +75,7 @@ export function CelebrationDialog(
 
   const data = celebrationData.value;
   const isError = celebrationError.value;
-  const isLoading = isOpen && !isFlash && !data && !isError;
+  const isLoading = isOpen && !flashStartLength && !data && !isError;
 
   const puzzleStats = data?.puzzleStats ?? defaultPuzzleStats;
   const isNewPath = data?.isNewPath ?? false;
@@ -112,8 +119,10 @@ export function CelebrationDialog(
           )
           : (
             <p className="text-3 text-text-2">
-              {isFlash
-                ? "Flash solves stay off the leaderboard."
+              {flashStartLength
+                ? `Started ${flashStartLength} ${
+                  flashStartLength === 1 ? "move" : "moves"
+                } in with Flash`
                 : isError
                 ? "Couldn't load stats."
                 : body}

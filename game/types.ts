@@ -57,6 +57,11 @@ export type Puzzle = {
   createdAt: Date;
   difficulty: Difficulty;
   minMoves: number;
+  /**
+   * Where Flash starts: the opening moves of an optimal solution, generated on
+   * promotion. Puzzles under 5 moves have none, and so no Flash.
+   */
+  flashStart?: Move[];
   onboardingLevel?: number;
   hidden?: boolean;
 };

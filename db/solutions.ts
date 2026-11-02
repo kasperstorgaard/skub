@@ -16,8 +16,9 @@ import { Move } from "#/game/types.ts";
  * - by user (user history)
  * - by user + puzzle slug (user's attempts at a specific puzzle)
  *
- * A Flash solve gets the user-scoped keys only, so it counts for progress but
- * never reaches the leaderboard, and needs no `updateSolutionAggregates`.
+ * A Flash solve is stored the same way, marked `flash`, but needs no
+ * `updateSolutionAggregates`: the leaderboard is built from those aggregates, so
+ * it never shows.
  *
  * Uses an atomic transaction so all entries are written together or not at all.
  * Resolves after the commit; a new solution still needs `updateSolutionAggregates`.
@@ -58,7 +59,8 @@ export async function saveSolution(
 
   const id = ulid().toLowerCase();
   const solution = { ...payload, id };
-  const isNewPath = existingGroup.value === null;
+  // A Flash solve isn't on the leaderboard, so it finds no new path on it.
+  const isNewPath = !payload.flash && existingGroup.value === null;
 
   // simple key by slug for easy direct lookup
   const primaryKey = ["solutions_by_puzzle", puzzleSlug, id];
@@ -71,16 +73,12 @@ export async function saveSolution(
     id,
   ];
 
-  const atomic = kv.atomic();
-
   // publicly available keys
-  if (!payload.flash) {
-    atomic
-      .check({ key: primaryKey, versionstamp: null })
-      .check({ key: byCanonicalKey, versionstamp: null })
-      .set(primaryKey, solution)
-      .set(byCanonicalKey, solution);
-  }
+  const atomic = kv.atomic()
+    .check({ key: primaryKey, versionstamp: null })
+    .check({ key: byCanonicalKey, versionstamp: null })
+    .set(primaryKey, solution)
+    .set(byCanonicalKey, solution);
 
   // user-scoped keys
   const byUserKey = ["solutions_by_user", payload.userId, id];

@@ -1,10 +1,11 @@
 import { assertEquals } from "@std/assert";
 
 import {
-  getHeadStart,
-  getHeadStartLength,
-  withHeadStart,
+  generateFlashStart,
+  getFlashStartLength,
+  withFlashStart,
 } from "#/game/flash.ts";
+import { parsePuzzle } from "#/game/parser.ts";
 import type { Move, Puzzle } from "#/game/types.ts";
 
 const solution: Move[] = [
@@ -31,44 +32,47 @@ const puzzle: Puzzle = {
   },
 };
 
-Deno.test("getHeadStartLength() gives 3 moves from 10", () => {
-  assertEquals(getHeadStartLength(10), 3);
+Deno.test("getFlashStartLength() gives 3 moves from 10", () => {
+  assertEquals(getFlashStartLength(10), 3);
 });
 
-Deno.test("getHeadStartLength() gives 2 moves at 9", () => {
-  assertEquals(getHeadStartLength(9), 2);
+Deno.test("getFlashStartLength() gives 2 moves at 9", () => {
+  assertEquals(getFlashStartLength(9), 2);
 });
 
-Deno.test("getHeadStartLength() gives 2 moves from 8", () => {
-  assertEquals(getHeadStartLength(8), 2);
+Deno.test("getFlashStartLength() gives 2 moves from 8", () => {
+  assertEquals(getFlashStartLength(8), 2);
 });
 
-Deno.test("getHeadStartLength() gives 1 move at 7", () => {
-  assertEquals(getHeadStartLength(7), 1);
+Deno.test("getFlashStartLength() gives 1 move at 7", () => {
+  assertEquals(getFlashStartLength(7), 1);
 });
 
-Deno.test("getHeadStartLength() gives 1 move from 5", () => {
-  assertEquals(getHeadStartLength(5), 1);
+Deno.test("getFlashStartLength() gives 1 move from 5", () => {
+  assertEquals(getFlashStartLength(5), 1);
 });
 
-Deno.test("getHeadStartLength() gives nothing below 5", () => {
-  assertEquals(getHeadStartLength(4), 0);
+Deno.test("getFlashStartLength() gives nothing below 5", () => {
+  assertEquals(getFlashStartLength(4), 0);
 });
 
-Deno.test("getHeadStart() takes the opening moves of the solution", () => {
-  assertEquals(getHeadStart(solution, 8), solution.slice(0, 2));
-});
-
-Deno.test("getHeadStart() is empty for a short puzzle", () => {
-  assertEquals(getHeadStart(solution, 4), []);
-});
-
-Deno.test("withHeadStart() starts the board after the head start", () => {
-  const flashed = withHeadStart(puzzle, solution.slice(0, 1));
+Deno.test("withFlashStart() starts the board after the Flash start", () => {
+  const flashed = withFlashStart(puzzle, solution.slice(0, 1));
   assertEquals(flashed.board.pieces, [{ x: 0, y: 7, type: "puck" }]);
 });
 
-Deno.test("withHeadStart() takes the head start off the shortest solution", () => {
-  const flashed = withHeadStart(puzzle, solution.slice(0, 2));
+Deno.test("withFlashStart() takes the Flash start off the shortest solution", () => {
+  const flashed = withFlashStart(puzzle, solution.slice(0, 2));
   assertEquals(flashed.minMoves, 6);
+});
+
+Deno.test("generateFlashStart() plays 2 moves into an 8-move puzzle", async () => {
+  const alice = parsePuzzle(
+    await Deno.readTextFile("./static/puzzles/alice.md"),
+  );
+  assertEquals(generateFlashStart(alice)?.length, 2);
+});
+
+Deno.test("generateFlashStart() gives none below 5 moves", () => {
+  assertEquals(generateFlashStart({ ...puzzle, minMoves: 2 }), undefined);
 });

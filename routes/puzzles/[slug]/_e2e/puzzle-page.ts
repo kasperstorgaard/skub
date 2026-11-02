@@ -76,12 +76,6 @@ export class PuzzlePage {
     };
   }
 
-  // The leaderboard note in the dialog after a Flash solve
-  get flashSolvedNote() {
-    return this.page.getByRole("dialog")
-      .getByText(/Flash solves stay off the leaderboard/i);
-  }
-
   // The move counter in the controls panel, as it reads ("02")
   moveCount(text: string) {
     return this.page.getByRole("complementary").getByText(text, {

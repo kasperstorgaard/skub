@@ -1,6 +1,7 @@
 import { stringify as stringifyYaml } from "@std/yaml";
 
 import { COLS, isPositionSame } from "#/game/board.ts";
+import { encodeMoves } from "#/game/strings.ts";
 import { Board, Position, type Puzzle } from "#/game/types.ts";
 
 // Combining low line character (U+0332)
@@ -13,7 +14,11 @@ const COMBINING_CIRCUMFLEX = "\u0302";
  * Formats a puzzle into markdown format for easy viewing/editing
  */
 export function formatPuzzle(puzzle: Puzzle): string {
-  const { board, ...metadata } = puzzle;
+  const { board, flashStart, ...rest } = puzzle;
+  const metadata = {
+    ...rest,
+    ...(flashStart && { flashStart: encodeMoves(flashStart) }),
+  };
 
   // Fix for "cannot stringify undefined" bug
   for (const [key, value] of Object.entries(metadata)) {

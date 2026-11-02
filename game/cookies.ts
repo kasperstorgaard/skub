@@ -89,30 +89,30 @@ export function setHintCount(
 }
 
 /**
- * The Flash head start for a puzzle, or `null` when Flash is off.
+ * The Flash start for a puzzle, or `null` when Flash is off.
  * Turns itself off after 24 hours (enforced by cookie expiry).
  */
-export function getFlashMoves(headers: Headers): Move[] | null {
+export function getFlashStart(headers: Headers): Move[] | null {
   const raw = getCookies(headers)[FLASH_KEY];
   return raw ? decodeMoves(raw) : null;
 }
 
 type SetFlashCookieOptions = {
   path: string;
-  moves: Move[];
+  flashStart: Move[];
 };
 
 /**
- * Turns Flash on for a puzzle, keeping its head start.
+ * Turns Flash on for a puzzle, keeping its Flash start.
  * Path-scoped to /puzzles/<slug> and expires after 24 hours.
  */
-export function setFlashMoves(
+export function setFlashStart(
   headers: Headers,
-  { path, moves }: SetFlashCookieOptions,
+  { path, flashStart }: SetFlashCookieOptions,
 ) {
   setCookie(headers, {
     name: FLASH_KEY,
-    value: encodeMoves(moves),
+    value: encodeMoves(flashStart),
     path,
     maxAge: FLASH_DURATION,
     httpOnly: true,

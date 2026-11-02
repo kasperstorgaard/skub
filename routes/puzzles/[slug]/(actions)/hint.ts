@@ -2,8 +2,8 @@ import { HttpError } from "fresh";
 
 import { incrementHintUsageCount } from "#/db/stats.ts";
 import { isLooped, resolveMoves } from "#/game/board.ts";
-import { getFlashMoves, getHintCount, setHintCount } from "#/game/cookies.ts";
-import { withHeadStart } from "#/game/flash.ts";
+import { getFlashStart, getHintCount, setHintCount } from "#/game/cookies.ts";
+import { withFlashStart } from "#/game/flash.ts";
 import { HINT_MAX_STATES, solveInWorker } from "#/game/solver-queue.ts";
 import { encodeMove } from "#/game/strings.ts";
 import type { Board, Move } from "#/game/types.ts";
@@ -30,9 +30,9 @@ export const handler = define.handlers({
     const slug = ctx.params.slug;
     const { puzzle } = ctx.state;
     // With Flash on, the moves in the URL play the shorter puzzle.
-    const flashMoves = getFlashMoves(ctx.req.headers);
-    const { board: start } = flashMoves
-      ? withHeadStart(puzzle, flashMoves)
+    const flashStart = getFlashStart(ctx.req.headers);
+    const { board: start } = flashStart
+      ? withFlashStart(puzzle, flashStart)
       : puzzle;
 
     const state = decodeState(ctx.req.url);

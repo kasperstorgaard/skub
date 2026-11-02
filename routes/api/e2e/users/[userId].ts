@@ -58,6 +58,8 @@ export const handler = define.handlers({
         canonicalKey,
         solution.id,
       ]);
+      // A Flash solve never joined a group, so the group is someone else's.
+      if (solution.flash) continue;
       await kv.delete([
         "solution_groups_by_puzzle",
         solution.puzzleSlug,

@@ -108,6 +108,16 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## UI
 
+- **Buttons with more punch.** One pass over buttons:
+  - The pearl gradient from the Flash badge (brand → link with a white sheen,
+    `--pearl` in `islands/flash-badge.tsx`) becomes the background of primary
+    buttons, including the game's main controls (undo, redo), and the border of
+    secondary buttons. Means promoting it to a design token in `styles.css`. Not
+    for the retro themes, which keep their own button styles.
+  - The arrows in the main controls read thin; bump their weight, or adjust the
+    controls more generally.
+  - The secondary button background is a bit drab in places and needs an update.
+
 - **Calendar touch-up.** The archives calendar and month strip need a visual
   pass.
 
@@ -124,17 +134,27 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## Play
 
+- **Flash starts can be chosen by hand.** Today each puzzle's Flash start is
+  generated on promotion: the opening moves of the solver's first optimal
+  solution. Let Kasper or helpers pick a more interesting starting point
+  instead, for example in the editor or on the candidate page.
+
+- **Flash solves get a leaderboard of their own.** Flash solves are already
+  stored with names, as regular solutions marked `flash`; the leaderboard skips
+  them because they never enter the aggregates. Give them a board beside the
+  normal one (a tab or filter on the solutions page) and stats of their own, so
+  the celebration can compare a Flash solve against other Flash solves.
+
 - **Players earn stars each day for what they achieve.** 1 star for a solve, 2
   for a perfect, 1 for being first to find a solution, capped at 3 per puzzle
   per day: a perfect, never-seen solution is 3 stars on its own, and three
   separate solves are 1 each. Stars add up into all-time leaderboards, and
   puzzle thumbnails show each puzzle's stars so players can see what's left to
-  earn. Open: should a solve only count within 2 moves of perfect? Should Flash
-  solves show on the leaderboard at all (a "+x flash" marker, perhaps), or not?
-  Leaning towards a tiered solutions page: suboptimal solutions stay open to
-  everyone, and the optimal ones unlock once you've earned stars on the puzzle
-  yourself. New players learn from the solutions within reach; the best play is
-  the reward. This fits the badge, which already hides the shortest count until
+  earn. Open: should a solve only count within 2 moves of perfect? Leaning
+  towards a tiered solutions page: suboptimal solutions stay open to everyone,
+  and the optimal ones unlock once you've earned stars on the puzzle yourself.
+  New players learn from the solutions within reach; the best play is the
+  reward. This fits the badge, which already hides the shortest count until
   you've solved the puzzle. Separate solves earn stars too, so players without a
   perfect have a route to the unlock. Open: how many stars unlock it, 1 or 3?
 

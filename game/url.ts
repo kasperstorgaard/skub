@@ -192,7 +192,7 @@ export function getHintHref(href: string) {
   return url.href;
 }
 
-/** The puzzle's Flash route, which turns Flash on and plays the head start. */
+/** The puzzle's Flash route, which turns Flash on and plays the Flash start. */
 export function getFlashHref(href: string) {
   const url = new URL(getHintHref(href));
   url.pathname = url.pathname.replace(/hint$/, "flash");

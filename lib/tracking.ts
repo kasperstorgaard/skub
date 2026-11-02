@@ -35,7 +35,7 @@ export function trackPuzzleSolved(
 export function trackFlashEnabled(
   state: State,
   puzzle: Puzzle,
-  options: { url: string; headStart: number },
+  options: { url: string; flashStartLength: number },
 ): void {
   posthog?.capture({
     distinctId: state.trackingId,
@@ -46,7 +46,7 @@ export function trackFlashEnabled(
       puzzle_slug: puzzle.slug,
       puzzle_difficulty: puzzle.difficulty,
       puzzle_min_moves: puzzle.minMoves,
-      head_start: options.headStart,
+      flash_start_moves: options.flashStartLength,
     },
   });
 }

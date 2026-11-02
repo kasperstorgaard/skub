@@ -2,7 +2,6 @@ import type { Signal } from "@preact/signals";
 import { useMemo, useState } from "preact/hooks";
 
 import { Icon, LightningFill, Spinner } from "#/components/icons.tsx";
-import { getHeadStartLength } from "#/game/flash.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { getFlashHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -17,13 +16,13 @@ type FlashDialogProps = {
 /** Explains Flash before it's turned on. Accepting posts to the Flash route. */
 export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const headStart = getHeadStartLength(puzzle.value.minMoves);
+  const flashStartLength = puzzle.value.flashStart?.length ?? 0;
 
   const open = useMemo(
     () =>
-      !isOn && headStart > 0 &&
+      !isOn && flashStartLength > 0 &&
       new URL(href.value).searchParams.get("dialog") === "flash",
-    [href.value, isOn, headStart],
+    [href.value, isOn, flashStartLength],
   );
 
   const closeHref = useMemo(() => {
@@ -42,7 +41,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
         <p className="leading-snug">
           In a rush, or not really getting anywhere?<br />
           Flash mode starts you{" "}
-          {headStart === 1 ? "1 move" : `${headStart} moves`}{" "}
+          {flashStartLength === 1 ? "1 move" : `${flashStartLength} moves`}{" "}
           ahead, with the cost of not going on the leaderboard for this puzzle.
         </p>
       </div>
