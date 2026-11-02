@@ -25,7 +25,13 @@ It's stored with the puzzle, as a `flashStart` line in its frontmatter,
 generated on promotion by solving the board (`generateFlashStart`). A one-off
 script backfilled the puzzles shipped before Flash
 (`scripts/backfill-flash-starts.ts`); it adds the line without reformatting, so
-the boards are untouched. Choosing a Flash start by hand is a TODO.md item.
+the boards are untouched. Ulf's start is chosen by hand: with 28 blockers it's
+too slow per state to solve, and a crowded candidate could stall promotion the
+same way. A tool for choosing Flash starts by hand is a TODO.md item; for now
+it's a frontmatter edit.
+
+A hand-chosen start can be any length. The shorter puzzle's minimum assumes it
+lies on an optimal path.
 
 Because it's stored, turning Flash on runs no solver, and the leaderboard rule
 can't drift from what the player was shown.
