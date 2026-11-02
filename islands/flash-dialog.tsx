@@ -1,4 +1,5 @@
 import type { Signal } from "@preact/signals";
+import { clsx } from "clsx/lite";
 import { useMemo, useState } from "preact/hooks";
 
 import { flashExplained } from "#/client/flash-signals.ts";
@@ -54,11 +55,9 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
   return (
     <Dialog open={open}>
       <div className="flex flex-col gap-fl-2 text-text-2">
-        <h2 className="text-4 text-text-1 font-semibold leading-tight">
-          Flash mode
-        </h2>
+        <h2 className="text-fl-2 font-semibold text-text-1">Flash mode</h2>
 
-        <p className="leading-snug">
+        <p>
           Flash mode gives you a shorter version of this puzzle, but skips the
           leaderboard.
         </p>
@@ -67,16 +66,9 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
       <form
         method="post"
         action={getFlashHref(href.value)}
-        className="flex items-center gap-fl-2"
+        className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse"
         onSubmit={() => setIsSubmitting(true)}
       >
-        <button type="submit" className="btn" disabled={isSubmitting}>
-          {isSubmitting
-            ? <Icon icon={Spinner} className="animate-spin" />
-            : <Icon icon={LightningFill} />}
-          Try Flash mode
-        </button>
-
         {/* Keeps the game as it was when JS is off. */}
         <input type="hidden" name="search" value={new URL(href.value).search} />
 
@@ -84,10 +76,20 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
           type="submit"
           name="answer"
           value="not-now"
-          className="link p-0 bg-transparent cursor-pointer"
+          className={clsx(
+            "flex items-center bg-transparent p-0 text-text-2 cursor-pointer",
+            "max-md:justify-center",
+          )}
           onClick={onNotNow}
         >
           Not now
+        </button>
+
+        <button type="submit" className="btn" disabled={isSubmitting}>
+          {isSubmitting
+            ? <Icon icon={Spinner} className="animate-spin" />
+            : <Icon icon={LightningFill} />}
+          Try Flash mode
         </button>
       </form>
     </Dialog>
