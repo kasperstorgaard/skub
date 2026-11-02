@@ -52,7 +52,9 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
         className,
       )}
     >
-      <p className="min-w-[16ch] text-center leading-snug">In a rush?</p>
+      <p className="min-w-[16ch] text-center leading-snug">
+        In a rush, or stuck?
+      </p>
 
       <a href={dialogHref} className="btn" data-router>
         <Icon icon={LightningFill} />

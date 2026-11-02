@@ -48,8 +48,8 @@ on other pages (solutions, preview, candidates) is unchanged.
 ### The nudge
 
 The badge is the way in on every puzzle, but it's easy to miss. So once a
-returning player looks stuck, the tutorial nudge's spot offers "In a rush? Try
-Flash mode", which opens the Flash dialog. "Stuck" is twice the shortest
+returning player looks stuck, the tutorial nudge's spot asks "In a rush, or
+stuck?" above a "Try Flash mode" button, which opens the Flash dialog. "Stuck" is twice the shortest
 solution in moves, or three times back (undo or starting over), counted on the
 client (`isStuck`); without JS there's no nudge. New players keep the tutorial
 nudge there instead.
