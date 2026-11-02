@@ -46,7 +46,7 @@ export function FlashBadge(
             aria-checked="true"
             aria-disabled="true"
             aria-label="Flash"
-            title="Flash is on for today"
+            title="Flash is on for 24 hours, off the leaderboard"
             className={clsx(
               "grid place-items-center min-w-[2.25rem] px-2",
               "bg-(image:--pearl) text-(--btn-active-text)",
@@ -62,7 +62,7 @@ export function FlashBadge(
             role="switch"
             aria-checked="false"
             aria-label="Flash"
-            title="Flash: start with a head start"
+            title="Flash: start a few moves in, off the leaderboard"
             data-router
             className={clsx(
               "grid place-items-center min-w-[2.25rem] px-2",
