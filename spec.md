@@ -30,8 +30,10 @@ on other pages (solutions, preview, candidates) is unchanged.
 ### Accepting
 
 The switch links to `?dialog=flash`, a dialog that explains Flash. Its tone
-suits those two moments: friendly, never framed as giving up. It shows on every
-turn-on, since each one locks that puzzle for a day. Accepting is a form POST to
+suits those two moments: friendly, never framed as giving up. It covers the head
+start and the leaderboard cost, not the 24-hour lock: a player in a hurry who
+plays the same puzzle again is a weird combo, and Flash doesn't cater to it. It
+shows on every turn-on. Accepting is a form POST to
 the new Flash action. The action solves the clean board (the same worker the
 hint uses), keeps the head-start moves in a `flash` cookie scoped to
 `/puzzles/<slug>` for 24 hours, and 303s to the puzzle with only the head start
