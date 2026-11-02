@@ -132,14 +132,15 @@ cookie as `flashMode`; absent means manual.
 
 With always, opening a puzzle that has a Flash start turns Flash on: the GET
 uses the stored start and sets the same per-puzzle 24-hour cookie the badge
-does. The cookie is what discourages cheating, so switching back to manual
+does. Moves already in the URL were played on the full puzzle, so they don't
+carry over: the GET redirects to a clean Flash start, cookie included. The cookie is what discourages cheating, so switching back to manual
 doesn't free a puzzle just played with Flash. A week later the cookie is long
 gone, and a normal solve counts. No dialog: the setting is the consent.
 
 ### Analytics
 
-- `flash_enabled` when Flash turns on for a puzzle (Flash start length, and
-  `flash_mode`: manual from the badge, always on opening the puzzle).
+- `flash_enabled` when the badge turns Flash on (Flash start length). Always
+  mode turns it on by page load, which isn't tracked; the setting change is.
 - `flash_mode_setting_changed` when the profile setting changes (`flash_mode`).
 - `puzzle_solved` gets a `flash` property rather than a new event.
 

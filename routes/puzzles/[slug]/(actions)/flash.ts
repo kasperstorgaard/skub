@@ -51,7 +51,6 @@ export const handler = define.handlers({
     trackFlashEnabled(ctx.state, puzzle, {
       url: ctx.req.headers.get("referer") ?? puzzleHref,
       flashStartLength: puzzle.flashStart.length,
-      flashMode: "manual",
     });
 
     setFlashStart(headers, {

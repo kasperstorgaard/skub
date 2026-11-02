@@ -30,13 +30,13 @@ export function trackPuzzleSolved(
 }
 
 /**
- * Track Flash being turned on for a puzzle, from its badge (manual) or on
- * opening it (always).
+ * Track Flash being turned on for a puzzle from its badge. Flash mode
+ * "always" turns it on by page load, so that isn't tracked here.
  */
 export function trackFlashEnabled(
   state: State,
   puzzle: Puzzle,
-  options: { url: string; flashStartLength: number; flashMode: FlashMode },
+  options: { url: string; flashStartLength: number },
 ): void {
   posthog?.capture({
     distinctId: state.trackingId,
@@ -48,7 +48,6 @@ export function trackFlashEnabled(
       puzzle_difficulty: puzzle.difficulty,
       puzzle_min_moves: puzzle.minMoves,
       flash_start_moves: options.flashStartLength,
-      flash_mode: options.flashMode,
     },
   });
 }

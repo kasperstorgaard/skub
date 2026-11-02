@@ -201,12 +201,12 @@ export default define.page<typeof handler>(function ProfilePage(props) {
                   type="submit"
                   name="flashMode"
                   value={mode}
-                  className="btn capitalize"
+                  className="btn"
                   aria-pressed={mode === flashMode}
                   data-primary={mode === flashMode ? true : undefined}
                 >
                   <Icon icon={mode === "always" ? LightningFill : Lightning} />
-                  {mode}
+                  {mode === "always" ? "Always" : "Manual"}
                 </button>
               ))}
             </form>
