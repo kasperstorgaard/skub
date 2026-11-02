@@ -122,6 +122,15 @@ PR finishes only part of an item, trim the item to what is left.
 - **Smoother page changes.** View transitions between pages, opt-in per
   navigation. Needs the Fresh 2.3 upgrade first.
 
+## Play
+
+- **Players earn stars each day for what they achieve.** 1 star for a solve, 2
+  for a perfect, 1 for being first to find a solution, capped at 3 per puzzle
+  per day: a perfect, never-seen solution is 3 stars on its own, and three
+  separate solves are 1 each. Open: should a solve only count within 2 moves of
+  perfect? Should Flash solves show on the leaderboard at all (a "+x flash"
+  marker, perhaps), or not?
+
 ## Login
 
 - **Logging in on a second device should bring that device's solves along.**
