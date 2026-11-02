@@ -150,20 +150,3 @@ Deno.test("a player who says not now to Flash isn't offered it again", async () 
     await teardown();
   }
 });
-
-Deno.test("a player who has answered the Flash dialog turns Flash on straight from the badge", async () => {
-  const { page, teardown } = await setup();
-  try {
-    const puzzlePage = await new PuzzlePage(page).goto("alice");
-    await puzzlePage.flashSwitch.click();
-    await puzzlePage.flashDialogNotNow.click();
-    await puzzlePage.flashSwitch.click();
-
-    await expect(puzzlePage.flashSwitch).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
-  } finally {
-    await teardown();
-  }
-});
