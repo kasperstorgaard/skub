@@ -14,7 +14,7 @@ import { define } from "#/core.ts";
 import { setUser } from "#/db/user.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
-import type { FlashMode } from "#/game/types.ts";
+import { FLASH_MODES, type FlashMode } from "#/game/types.ts";
 import { resolveTheme, type Theme, THEMES } from "#/lib/themes.ts";
 import { trackFlashModeSettingChanged } from "#/lib/tracking.ts";
 
@@ -201,7 +201,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
             <h2 className="text-5">Flash mode</h2>
 
             <form method="post" action="/profile" className="flex gap-fl-1">
-              {(["manual", "always"] as const).map((mode) => (
+              {FLASH_MODES.map((mode) => (
                 <button
                   key={mode}
                   type="submit"
@@ -295,5 +295,5 @@ function ThemeGroup({ label, themes, active, className }: ThemeGroupProps) {
 }
 
 function parseFlashMode(value?: string): FlashMode | undefined {
-  return value === "always" || value === "manual" ? value : undefined;
+  return FLASH_MODES.find((mode) => mode === value);
 }
