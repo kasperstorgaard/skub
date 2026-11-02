@@ -82,8 +82,9 @@ name, named players get the auto-post and the celebration. Only where it's
 stored differs.
 
 - The celebration's headline (Perfect / Great / Solved) compares against the
-  shorter puzzle. In place of the stats line, which compares against the
-  leaderboard, it says "Started N moves in with Flash".
+  shorter puzzle. Its stats line compares against the other Flash solves
+  ("Joined 3 others"), from a per-puzzle `flash_solve_count` counted on each
+  new Flash solve. It counts solves, not players.
 - A Flash solution is a regular solution with one bool on it, `flash`, and the
   Flash start coded into its moves: the POST puts the start back in front, so
   the solve kept is the whole puzzle. It's stored under the same keys as any

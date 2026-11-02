@@ -46,7 +46,7 @@ export function FlashBadge(
             aria-checked="true"
             aria-disabled="true"
             aria-label="Flash"
-            title="Flash mode on"
+            title="Flash mode: activated"
             className={clsx(
               "grid place-items-center min-w-[2.25rem] px-2",
               "bg-(image:--pearl) text-(--btn-active-text)",

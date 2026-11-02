@@ -10,7 +10,11 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
-import { getPuzzleStats } from "#/db/stats.ts";
+import {
+  getFlashSolveCount,
+  getPuzzleStats,
+  incrementFlashSolveCount,
+} from "#/db/stats.ts";
 import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
@@ -166,8 +170,9 @@ export const handler = define.handlers<PageData>({
       }
     }
 
-    // One user write, alongside the aggregates. Flash solves have none.
-    const [user, puzzleStats] = await Promise.all([
+    // One user write, alongside the aggregates. A Flash solve only counts
+    // towards the Flash solves, apart from the leaderboard.
+    const [user, puzzleStats, flashSolves] = await Promise.all([
       Object.keys(patch).length > 0
         ? setUser(ctx.state.userId, patch)
         : ctx.state.user,
@@ -176,14 +181,21 @@ export const handler = define.handlers<PageData>({
         : isNew
         ? updateSolutionAggregates(solution)
         : getPuzzleStats(slug),
+      !isFlash
+        ? undefined
+        : isNew
+        ? incrementFlashSolveCount(slug)
+        : getFlashSolveCount(slug),
     ]);
     ctx.state.user = user;
 
     if (isJson) {
-      return Response.json({
+      const data: CelebrationData = {
         isNewPath,
         puzzleStats: puzzleStats ?? defaultPuzzleStats,
-      });
+        flashSolves,
+      };
+      return Response.json(data);
     }
 
     const solutionsUrl = new URL(`/puzzles/${slug}/solutions`, ctx.url);
@@ -199,9 +211,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const celebrationError = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
   const { hasFlash, isFlashOn } = props.data;
-  const flashStartLength = isFlashOn
-    ? props.data.puzzle.flashStart?.length
-    : undefined;
 
   const back = isTodaysPuzzle(props.data.puzzle)
     ? { href: "/", label: "Back to Home" }
@@ -309,7 +318,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             back={back}
             celebrationData={celebrationData}
             celebrationError={celebrationError}
-            flashStartLength={flashStartLength}
+            isFlash={isFlashOn}
           />
           <AutoPostSolution
             href={href}

@@ -89,3 +89,19 @@ export async function incrementHintUsageCount(
     if (result.ok) break;
   }
 }
+
+/** How many Flash solves a puzzle has: its own count, apart from the leaderboard. */
+export async function getFlashSolveCount(puzzleSlug: string): Promise<number> {
+  const res = await kv.get<Deno.KvU64>(["flash_solve_count", puzzleSlug]);
+  return Number(res.value?.value ?? 0n);
+}
+
+/** Counts a new Flash solve for a puzzle and returns the count, this one included. */
+export async function incrementFlashSolveCount(
+  puzzleSlug: string,
+): Promise<number> {
+  await kv.atomic()
+    .sum(["flash_solve_count", puzzleSlug], 1n)
+    .commit();
+  return await getFlashSolveCount(puzzleSlug);
+}

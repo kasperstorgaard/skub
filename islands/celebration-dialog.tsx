@@ -17,6 +17,8 @@ import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 export type CelebrationData = {
   isNewPath: boolean;
   puzzleStats: PuzzleStats;
+  /** Flash solves of this puzzle, this one included, for a Flash solve. */
+  flashSolves?: number;
 };
 
 type Props = {
@@ -25,8 +27,8 @@ type Props = {
   back: { href: string; label: string };
   celebrationData: Signal<CelebrationData | null>;
   celebrationError: Signal<boolean>;
-  /** A Flash solve: off the leaderboard, so it states the Flash start instead of stats. */
-  flashStartLength?: number;
+  /** A Flash solve: compared with other Flash solves, not the leaderboard. */
+  isFlash?: boolean;
 };
 
 export function CelebrationDialog(
@@ -36,7 +38,7 @@ export function CelebrationDialog(
     back,
     celebrationData,
     celebrationError,
-    flashStartLength,
+    isFlash,
   }: Props,
 ) {
   const destination = puzzle.value.board.destination;
@@ -75,7 +77,7 @@ export function CelebrationDialog(
 
   const data = celebrationData.value;
   const isError = celebrationError.value;
-  const isLoading = isOpen && !flashStartLength && !data && !isError;
+  const isLoading = isOpen && !data && !isError;
 
   const puzzleStats = data?.puzzleStats ?? defaultPuzzleStats;
   const isNewPath = data?.isNewPath ?? false;
@@ -91,13 +93,14 @@ export function CelebrationDialog(
 
   const body = useMemo(
     () => {
+      if (isFlash) return getFlashMessage(data?.flashSolves ?? 1);
       const type = getCelebrationType(moves.length, puzzle.value, {
         puzzleStats,
         isNewPath,
       });
       return getMessage(type, moves.length, puzzleStats);
     },
-    [moves.length, puzzle.value, puzzleStats, isNewPath],
+    [moves.length, puzzle.value, puzzleStats, isNewPath, isFlash, data],
   );
 
   return (
@@ -119,13 +122,7 @@ export function CelebrationDialog(
           )
           : (
             <p className="text-3 text-text-2">
-              {flashStartLength
-                ? `Started ${flashStartLength} ${
-                  flashStartLength === 1 ? "move" : "moves"
-                } in with Flash`
-                : isError
-                ? "Couldn't load stats."
-                : body}
+              {isError ? "Couldn't load stats." : body}
             </p>
           )}
       </div>
@@ -162,6 +159,27 @@ export function CelebrationDialog(
       </div>
     </Dialog>
   );
+}
+
+/** The stats line for a Flash solve, against the other Flash solves. */
+function getFlashMessage(flashSolves: number): string {
+  const count = flashSolves - 1;
+
+  if (count === 0) {
+    return pickRandom([
+      "First to solve it with Flash",
+      "First Flash solve so far",
+      "No one else has solved it with Flash yet",
+    ]);
+  }
+
+  return pickRandom([
+    `Joined ${count} ${count === 1 ? "other" : "others"}`,
+    `${count} other Flash ${count === 1 ? "solve" : "solves"} so far`,
+    `${count} ${
+      count === 1 ? "other has" : "others have"
+    } solved it with Flash`,
+  ]);
 }
 
 function pickRandom<T>(items: readonly T[]): T {
