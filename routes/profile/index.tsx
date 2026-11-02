@@ -35,8 +35,14 @@ export const handler = define.handlers<PageData>({
 
     const name = form.get("name")?.toString().trim().slice(0, 30);
     const theme = form.get("theme")?.toString();
-    const flashMode = parseFlashMode(form.get("flashMode")?.toString());
-    const previousFlashMode = ctx.state.user.flashMode ?? "manual";
+    const submittedFlashMode = parseFlashMode(
+      form.get("flashMode")?.toString(),
+    );
+    // Only a change is saved: picking the current mode again does nothing.
+    const flashMode =
+      submittedFlashMode !== (ctx.state.user.flashMode ?? "manual")
+        ? submittedFlashMode
+        : undefined;
 
     if (name || theme || flashMode) {
       ctx.state.user = await setUser(ctx.state.userId, {
@@ -46,7 +52,7 @@ export const handler = define.handlers<PageData>({
       });
     }
 
-    if (flashMode && flashMode !== previousFlashMode) {
+    if (flashMode) {
       trackFlashModeSettingChanged(ctx.state, { url: ctx.req.url, flashMode });
     }
 
