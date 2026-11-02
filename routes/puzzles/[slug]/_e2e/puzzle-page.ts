@@ -76,6 +76,16 @@ export class PuzzlePage {
     };
   }
 
+  // Offered in place of the tutorial nudge once a player looks stuck
+  get flashNudge() {
+    return this.page.getByRole("link", { name: /In a rush\? Try Flash mode/i });
+  }
+
+  get flashDialogNotNow() {
+    return this.page.getByRole("dialog")
+      .getByRole("button", { name: "Not now", exact: true });
+  }
+
   // The move counter in the controls panel, as it reads ("02")
   moveCount(text: string) {
     return this.page.getByRole("complementary").getByText(text, {

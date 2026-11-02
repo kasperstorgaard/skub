@@ -11,6 +11,10 @@ const HINT_COUNT_KEY = "hint_count";
 // 24 h in seconds
 const HINT_COUNT_DURATION = 60 * 60 * 24;
 
+const FLASH_NUDGED_KEY = "flash_nudged";
+// 1 year in seconds
+const FLASH_NUDGED_DURATION = 60 * 60 * 24 * 365;
+
 const FLASH_KEY = "flash";
 // 24 h in seconds
 const FLASH_DURATION = 60 * 60 * 24;
@@ -115,6 +119,23 @@ export function setFlashStart(
     value: encodeMoves(flashStart),
     path,
     maxAge: FLASH_DURATION,
+    httpOnly: true,
+    sameSite: "Lax",
+  });
+}
+
+/** Whether the Flash nudge has been answered, either way. */
+export function isFlashNudged(headers: Headers) {
+  return getCookies(headers)[FLASH_NUDGED_KEY] === "1";
+}
+
+/** Hides the Flash nudge on every puzzle; the badge stays the way in. */
+export function setFlashNudged(headers: Headers) {
+  setCookie(headers, {
+    name: FLASH_NUDGED_KEY,
+    value: "1",
+    path: "/",
+    maxAge: FLASH_NUDGED_DURATION,
     httpOnly: true,
     sameSite: "Lax",
   });

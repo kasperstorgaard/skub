@@ -1,10 +1,12 @@
 import type { Signal } from "@preact/signals";
 import { useMemo, useState } from "preact/hooks";
 
+import { flashNudged } from "#/client/flash-signals.ts";
 import { Icon, LightningFill, Spinner } from "#/components/icons.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { getFlashHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
+import { useRouter } from "#/islands/router.tsx";
 
 type FlashDialogProps = {
   puzzle: Signal<Puzzle>;
@@ -25,11 +27,29 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
     [href.value, isOn, flashStartLength],
   );
 
-  const closeHref = useMemo(() => {
+  const { updateLocation } = useRouter();
+
+  // Answers in the background and closes, so the board stays as it is.
+  const onNotNow = async (event: MouseEvent) => {
+    event.preventDefault();
+    flashNudged.value = true;
+
     const url = new URL(href.value);
     url.searchParams.delete("dialog");
-    return url.href;
-  }, [href.value]);
+    updateLocation(url.href, { replace: true });
+
+    const body = new FormData();
+    body.set("answer", "not-now");
+    try {
+      await fetch(getFlashHref(href.value), {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body,
+      });
+    } catch {
+      // The nudge is gone for this page view either way.
+    }
+  };
 
   return (
     <Dialog open={open}>
@@ -58,13 +78,18 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
           Turn on Flash mode
         </button>
 
-        <a
-          href={closeHref}
-          className="link p-0 bg-transparent"
-          data-router="replace"
+        {/* Keeps the game as it was when JS is off. */}
+        <input type="hidden" name="search" value={new URL(href.value).search} />
+
+        <button
+          type="submit"
+          name="answer"
+          value="not-now"
+          className="link p-0 bg-transparent cursor-pointer"
+          onClick={onNotNow}
         >
           Not now
-        </a>
+        </button>
       </form>
     </Dialog>
   );

@@ -44,6 +44,21 @@ with the move count beside it. When Flash is on, the whole badge takes a brand â
 link pearl gradient. Puzzles under 5 moves keep the plain badge, and the badge
 on other pages (solutions, preview, candidates) is unchanged.
 
+### The nudge
+
+The badge is the way in on every puzzle, but it's easy to miss. So once a
+returning player looks stuck, the tutorial nudge's spot offers "In a rush? Try
+Flash mode", which opens the Flash dialog. "Stuck" is twice the shortest
+solution in moves, or three times back (undo or starting over), counted on the
+client (`isStuck`); without JS there's no nudge. New players keep the tutorial
+nudge there instead.
+
+Either answer to the dialog, "Turn on Flash mode" or "Not now", sets a
+`flash_nudged` cookie that retires the nudge on every puzzle for a year. A
+player who says not now can still find Flash on the badge. With JS, "Not now"
+answers in the background so the board stays as it is; without, it posts and
+comes back to the same game.
+
 ### Accepting
 
 The switch links to `?dialog=flash`, a dialog that explains Flash. Its tone

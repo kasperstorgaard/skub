@@ -43,3 +43,14 @@ export function generateFlashStart(puzzle: Puzzle): Move[] | undefined {
     return undefined;
   }
 }
+
+/**
+ * Whether a player looks stuck enough to be offered Flash: twice the shortest
+ * solution in moves, or three times back (undo or starting over).
+ */
+export function isStuck(
+  play: { moves: number; reversals: number },
+  minMoves: number,
+) {
+  return play.moves >= minMoves * 2 || play.reversals >= 3;
+}

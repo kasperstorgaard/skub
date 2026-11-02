@@ -3,6 +3,7 @@ import { assertEquals } from "@std/assert";
 import {
   generateFlashStart,
   getFlashStartLength,
+  isStuck,
   withFlashStart,
 } from "#/game/flash.ts";
 import { parsePuzzle } from "#/game/parser.ts";
@@ -75,4 +76,16 @@ Deno.test("generateFlashStart() plays 2 moves into an 8-move puzzle", async () =
 
 Deno.test("generateFlashStart() gives none below 5 moves", () => {
   assertEquals(generateFlashStart({ ...puzzle, minMoves: 2 }), undefined);
+});
+
+Deno.test("isStuck() offers Flash after twice the shortest solution in moves", () => {
+  assertEquals(isStuck({ moves: 16, reversals: 0 }, 8), true);
+});
+
+Deno.test("isStuck() holds off before that", () => {
+  assertEquals(isStuck({ moves: 15, reversals: 2 }, 8), false);
+});
+
+Deno.test("isStuck() offers Flash after three times back", () => {
+  assertEquals(isStuck({ moves: 4, reversals: 3 }, 8), true);
 });

@@ -18,7 +18,7 @@ import {
 import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getFlashStart, getHintCount } from "#/game/cookies.ts";
+import { getFlashStart, getHintCount, isFlashNudged } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
@@ -35,6 +35,7 @@ import {
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { FlashBadge } from "#/islands/flash-badge.tsx";
 import { FlashDialog } from "#/islands/flash-dialog.tsx";
+import { FlashNudge } from "#/islands/flash-nudge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
@@ -52,6 +53,8 @@ type PageData = {
   hasFlash: boolean;
   /** Flash is on: `puzzle` is the shorter one that starts after the Flash start. */
   isFlashOn: boolean;
+  /** Offer Flash once the player looks stuck; gone once answered. */
+  showFlashNudge: boolean;
 };
 
 export const handler = define.handlers<PageData>({
@@ -99,6 +102,8 @@ export const handler = define.handlers<PageData>({
       showEdit,
       hasFlash,
       isFlashOn: !!flashStart,
+      showFlashNudge: hasFlash && !flashStart &&
+        !isFlashNudged(ctx.req.headers),
     });
   },
   async POST(ctx) {
@@ -262,15 +267,20 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             isNew={props.state.user.skillLevel === null}
           />
 
-          {props.state.user.skillLevel === null && (
-            <TutorialNudge
-              className={clsx(
-                "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
-                "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
-                "print:hidden",
+          {/* New players get the basics; the rest get Flash once stuck. */}
+          <div
+            className={clsx(
+              "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
+              "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              "empty:hidden print:hidden",
+            )}
+          >
+            {props.state.user.skillLevel === null
+              ? <TutorialNudge />
+              : props.data.showFlashNudge && (
+                <FlashNudge puzzle={puzzle} href={href} />
               )}
-            />
-          )}
+          </div>
         </div>
       </Main>
 

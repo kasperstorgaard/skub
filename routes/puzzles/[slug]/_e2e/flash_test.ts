@@ -114,3 +114,39 @@ Deno.test("without JavaScript — a player turns on Flash and solves", async () 
     await teardown();
   }
 });
+
+Deno.test("a returning player who keeps starting over is offered Flash", async () => {
+  const { page, asUser, teardown } = await setup();
+  try {
+    await asUser({ name: "e2estuck", skillLevel: "beginner" });
+    const moves = await solvePuzzle("alice");
+    const puzzlePage = await new PuzzlePage(page).goto("alice");
+    for (let i = 0; i < 3; i++) {
+      await puzzlePage.solveByClicking(moves.slice(0, 1));
+      await puzzlePage.startOverLink.click();
+    }
+
+    await expect(puzzlePage.flashNudge).toBeVisible();
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("a player who says not now to Flash isn't offered it again", async () => {
+  const { page, asUser, teardown } = await setup();
+  try {
+    await asUser({ name: "e2enotnow", skillLevel: "beginner" });
+    const moves = await solvePuzzle("alice");
+    const puzzlePage = await new PuzzlePage(page).goto("alice");
+    for (let i = 0; i < 3; i++) {
+      await puzzlePage.solveByClicking(moves.slice(0, 1));
+      await puzzlePage.startOverLink.click();
+    }
+    await puzzlePage.flashNudge.click();
+    await puzzlePage.flashDialogNotNow.click();
+
+    await expect(puzzlePage.flashNudge).not.toBeVisible();
+  } finally {
+    await teardown();
+  }
+});
