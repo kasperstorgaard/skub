@@ -32,6 +32,8 @@ export function Header({ back, hideBuild, hideProfile }: Props) {
         {!hideBuild && (
           <a
             href="/puzzles/new"
+            // Full navigation: /puzzles/new redirects, which client nav drops
+            f-client-nav={false}
             className={clsx(
               "inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mr-[2px]",
               "no-underline text-inherit text-5 hover:text-link",
