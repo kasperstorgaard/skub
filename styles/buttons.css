@@ -99,21 +99,23 @@
     }
   }
 
-  /* Pearl buttons for every theme outside the retro section, which keep their
-     own looks: a pearl border ring, a faint pearl wash, a full pearl when
-     filled (primary or hover). The ring is a masked ::before so the button
+  /* Pearl, outside the retro themes (which keep their own looks). The effect
+     only holds for one or two buttons in view, so resting buttons stay flat:
+     primary buttons get a pearl ring and a faint pearl wash, and any button
+     fills with pearl on hover. The ring is a masked ::before so the button
      stays see-through on any surface. */
   :root:not([data-theme-section="retro"]) {
-    .btn,
-    .icon-btn {
+    .btn[data-primary],
+    .icon-btn[data-primary] {
       position: relative;
       border-color: transparent;
       background-color: transparent;
       background-image: var(--pearl-tint);
+      color: var(--color-text-1);
     }
 
-    .btn::before,
-    .icon-btn::before {
+    .btn[data-primary]::before,
+    .icon-btn[data-primary]::before {
       content: "";
       position: absolute;
       inset: calc(-1 * var(--border-size-2));
@@ -127,12 +129,12 @@
     }
 
     .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
-    .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
-    .btn[data-primary],
-    .icon-btn[data-primary] {
+    .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]) {
       border-color: transparent;
       background-color: transparent;
       background-image: var(--pearl);
+      color: var(--btn-active-text);
+      filter: none;
     }
   }
 }
