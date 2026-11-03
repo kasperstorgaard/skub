@@ -4,7 +4,7 @@
     align-items: center;
     justify-content: center;
     flex-wrap: nowrap;
-    gap: calc(var(--size-fluid-1) - 4px);
+    gap: var(--size-2);
     min-height: 44px;
     padding-inline: var(--size-3);
     padding-block: var(--size-1);

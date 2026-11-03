@@ -7,8 +7,10 @@ import { useGameShortcuts } from "#/client/keyboard.ts";
 import {
   ArrowArcLeft,
   ArrowArcRight,
+  ArrowCounterClockwise,
   Download,
   Icon,
+  Lightbulb,
   Pencil,
   Printer,
   Ranking,
@@ -124,11 +126,11 @@ export function ControlsPanel(
     <Panel className={className}>
       <div
         className={clsx(
-          "grid max-lg:col-[2/3] grid-cols-subgrid place-content-center items-center w-full max-lg:gap-8",
-          "lg:grid lg:row-[3/4] lg:items-start lg:grid-rows-[1fr_auto] gap-fl-3",
+          "grid max-lg:col-[2/3] grid-cols-subgrid place-content-center items-center w-full gap-fl-4",
+          "lg:grid lg:row-[3/4] lg:items-start lg:grid-rows-[1fr_auto]",
         )}
       >
-        <div className="flex flex-col gap-fl-2 justify-start">
+        <div className="flex flex-col gap-3 justify-start">
           <div
             className={clsx(
               "flex place-items-center justify-center gap-3 w-full",
@@ -139,7 +141,7 @@ export function ControlsPanel(
               href={getUndoHref(href.value, state)}
               className="icon-btn"
               aria-disabled={!state.cursor ? true : undefined}
-              data-primary
+              aria-label="Undo"
               data-size="lg"
               data-router="replace"
             >
@@ -162,7 +164,7 @@ export function ControlsPanel(
                   state.cursor === state.moves.length
                 ? true
                 : undefined}
-              data-primary
+              aria-label="Redo"
               data-size="lg"
               data-router="replace"
             >
@@ -195,10 +197,11 @@ export function ControlsPanel(
               >
                 <button
                   type="submit"
-                  className="link p-0 bg-transparent cursor-pointer"
+                  className="btn"
                   disabled={hintDisabled}
                   aria-disabled={hintDisabled ? true : undefined}
                 >
+                  <Icon icon={Lightbulb} />
                   {hintSpent ? "Hint used" : "Get a hint"}
                 </button>
               </form>
@@ -206,23 +209,16 @@ export function ControlsPanel(
 
             <a
               href={getResetHref(href.value)}
-              className="bg-transparent"
+              className="btn"
               data-router="replace"
             >
+              <Icon icon={ArrowCounterClockwise} />
               Start over
             </a>
           </div>
         </div>
 
         <div className="flex justify-center gap-fl-1 flex-wrap lg:grid lg:grid-cols-1">
-          <button
-            type="button"
-            className="btn"
-            onClick={() => globalThis.print()}
-          >
-            <Icon icon={Printer} /> Print
-          </button>
-
           {!isPreview && !isFlash && (
             <a
               href={`/puzzles/${puzzle.value.slug}/solutions`}
@@ -231,6 +227,14 @@ export function ControlsPanel(
               <Icon icon={Ranking} /> See solves
             </a>
           )}
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => globalThis.print()}
+          >
+            <Icon icon={Printer} /> Print
+          </button>
 
           {isPreview && (
             <a href="/api/export" download className="btn">
