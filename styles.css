@@ -541,13 +541,14 @@
     }
   }
 
-  /* Builder link: faint board pieces drift between two arrangements under a pencil */
+  /* Builder link: faint board whose pieces slide from one random arrangement
+     to another on page load, with a pencil on top */
   .builder-icon-board {
     opacity: 0.3;
   }
   .builder-icon-board > * {
-    transform: translate(var(--ax), var(--ay));
-    animation: builder-drift 9s ease-in-out infinite;
+    transform: translate(var(--bx), var(--by));
+    animation: builder-drift 1.2s ease-in-out 600ms both;
   }
   .builder-icon-pencil {
     fill: currentColor;
@@ -556,13 +557,7 @@
     paint-order: stroke;
   }
   @keyframes builder-drift {
-    0%, 40% {
-      transform: translate(var(--ax), var(--ay));
-    }
-    50%, 90% {
-      transform: translate(var(--bx), var(--by));
-    }
-    100% {
+    from {
       transform: translate(var(--ax), var(--ay));
     }
   }

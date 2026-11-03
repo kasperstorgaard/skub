@@ -21,9 +21,9 @@ function getArrangements() {
 }
 
 /**
- * Builder link icon: a faint favicon board whose pieces drift between two
- * random arrangements, with a pencil on top. Randomized per render, animated
- * in CSS only (`.builder-icon` in styles.css), still under reduced motion.
+ * Builder link icon: a faint favicon board whose pieces slide from one random
+ * arrangement to another on page load, with a pencil on top. Randomized per
+ * render, CSS only (`.builder-icon` in styles.css), static under reduced motion.
  */
 export function BuilderIcon() {
   const { from, to } = getArrangements();
