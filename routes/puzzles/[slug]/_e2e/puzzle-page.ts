@@ -62,46 +62,20 @@ export class PuzzlePage {
     return this.page.getByRole("switch", { name: "Flash" });
   }
 
-  get flashDialog() {
-    const page = this.page;
-    const dialog = page.getByRole("dialog");
-    return {
-      heading: dialog.getByRole("heading", { name: "Flash mode" }),
-      turnOn: async () => {
-        await dialog.getByRole("button", { name: "Try it", exact: true })
-          .click();
-        // The Flash route redirects back to the clean puzzle.
-        await page.waitForURL(/\/puzzles\/[^/?]+$/);
-        return this;
-      },
-    };
+  // The first time, the switch opens a dialog that turns Flash on
+  async turnOnFlash() {
+    await this.flashSwitch.click();
+    await this.page.getByRole("dialog")
+      .getByRole("button", { name: "Try it", exact: true })
+      .click();
+    // The Flash route redirects back to the clean puzzle.
+    await this.page.waitForURL(/\/puzzles\/[^/?]+$/);
+    return this;
   }
 
-  // Offered in place of the tutorial nudge once a player looks stuck
-  get flashNudge() {
-    return this.page.getByRole("link", { name: "Try Flash mode", exact: true });
-  }
-
-  get flashDialogNotNow() {
-    return this.page.getByRole("dialog")
-      .getByRole("button", { name: "Not now", exact: true });
-  }
-
-  // The move counter in the controls panel, as it reads ("02")
-  moveCount(text: string) {
-    return this.page.getByRole("complementary").getByText(text, {
-      exact: true,
-    });
-  }
-
-  get startOverLink() {
-    return this.page.getByRole("complementary")
-      .getByRole("link", { name: /Start over/i });
-  }
-
-  async clickSeeSolves() {
-    await this.seeSolvesLink.click();
-    return new SolutionsPage(this.page);
+  // Whichever dialog a solve opens: the celebration, or the name prompt
+  get dialogHeading() {
+    return this.page.getByRole("dialog").getByRole("heading");
   }
 
   get tutorialNudge() {
