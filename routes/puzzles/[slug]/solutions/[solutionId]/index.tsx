@@ -48,16 +48,13 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
   const puzzle = useSignal(props.data.puzzle);
   const href = useSignal(props.url.href);
   const mode = useSignal<"replay">("replay");
-  const url = new URL(props.req.url);
   const backHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
 
   return (
     <>
       <Main>
         <Header
-          url={url}
           back={{ href: backHref }}
-          share={{ params: true }}
         />
 
         <div className="flex items-center justify-between place-self-start mt-2 w-full flex-wrap">

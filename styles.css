@@ -541,6 +541,32 @@
     }
   }
 
+  /* Builder link: faint board whose pieces slide from one random arrangement
+     to another on page load, with a pencil on top */
+  .builder-icon-board {
+    opacity: 0.3;
+  }
+  .builder-icon-board > * {
+    transform: translate(var(--bx), var(--by));
+    animation: builder-drift 1.2s ease-in-out 600ms both;
+  }
+  .builder-icon-pencil {
+    fill: currentColor;
+    stroke: var(--color-surface-1);
+    stroke-width: 28px;
+    paint-order: stroke;
+  }
+  @keyframes builder-drift {
+    from {
+      transform: translate(var(--ax), var(--ay));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .builder-icon-board > * {
+      animation: none;
+    }
+  }
+
   /* Post-solve ripple: tiles pulse outward ring by ring from the destination.
      Per-tile delay (--ripple-delay) is set by a JS-generated stylesheet
      (lib/board-ripple.ts → islands/board.tsx), keyed by data-exit-key.

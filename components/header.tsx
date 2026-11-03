@@ -1,20 +1,16 @@
 import clsx from "clsx/lite";
 
+import { BuilderIcon } from "#/components/builder-icon.tsx";
 import { ArrowLeft, Icon, UserCircle } from "#/components/icons.tsx";
-import { ShareButton } from "#/islands/share-button.tsx";
 
 type Props = {
-  url: URL;
   back?: { href: string };
-  share?: boolean | { params: boolean };
+  /** Hide the puzzle builder link, e.g. on the builder itself */
+  hideBuild?: boolean;
   hideProfile?: boolean;
 };
 
-export function Header({ url, back, share, hideProfile }: Props) {
-  const shareUrl = typeof share === "object" && share.params
-    ? url.href
-    : url.origin + url.pathname;
-
+export function Header({ back, hideBuild, hideProfile }: Props) {
   return (
     <header
       f-client-nav
@@ -33,7 +29,21 @@ export function Header({ url, back, share, hideProfile }: Props) {
         </a>
       )}
       <div className="flex items-center ml-auto">
-        {share && <ShareButton url={shareUrl} />}
+        {!hideBuild && (
+          <a
+            href="/puzzles/new"
+            // Full navigation: /puzzles/new redirects, which client nav drops
+            f-client-nav={false}
+            className={clsx(
+              "inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mr-[2px]",
+              "no-underline text-inherit text-5 hover:text-link",
+            )}
+            aria-label="Build a puzzle"
+            title="Build a puzzle"
+          >
+            <BuilderIcon />
+          </a>
+        )}
         {!hideProfile && (
           <a
             href="/profile"

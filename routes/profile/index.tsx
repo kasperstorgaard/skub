@@ -44,7 +44,6 @@ export const handler = define.handlers<PageData>({
 });
 
 export default define.page<typeof handler>(function ProfilePage(props) {
-  const url = new URL(props.req.url);
   const { user } = props.state;
   const { userStats } = props.data;
 
@@ -56,7 +55,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
   return (
     <>
       <Main className="max-lg:row-span-full">
-        <Header url={url} back={{ href: "/" }} hideProfile />
+        <Header back={{ href: "/" }} hideProfile />
 
         <div className="flex flex-col gap-fl-4 mt-fl-2">
           <h1 className="text-6">

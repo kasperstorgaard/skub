@@ -8,7 +8,6 @@ import {
   GithubLogo,
   Icon,
   LinkedinLogo,
-  Pencil,
 } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
@@ -51,8 +50,6 @@ export const handler = define.handlers<PageData>({
 });
 
 export default define.page<typeof handler>(function Home(ctx) {
-  const url = new URL(ctx.req.url);
-
   const {
     dailyPuzzle,
     recommendedPuzzle,
@@ -64,7 +61,7 @@ export default define.page<typeof handler>(function Home(ctx) {
   return (
     <>
       <Main className="max-lg:row-span-full items-stretch place-content-stretch">
-        <Header url={url} share />
+        <Header />
 
         <div className="title-card flex flex-col">
           <h1 className="text-8 leading-tight text-brand flex items-baseline gap-fl-1">
@@ -147,21 +144,29 @@ export default define.page<typeof handler>(function Home(ctx) {
       </Main>
 
       <Panel className="max-lg:gap-fl-3">
-        <p
+        <div
           className={clsx(
-            "col-[2/3]",
+            "col-[2/3] flex justify-between gap-fl-2",
             "text-text-1 text-fl-1",
-            "lg:col-auto lg:row-start-1 lg:text-fl-0",
+            "lg:col-auto lg:row-start-1 lg:flex-col lg:text-fl-0",
           )}
         >
-          Inspired by <br />
-          <a
-            href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
-            className="text-2 text-text-2"
-          >
-            Ricochet Robots
-          </a>
-        </p>
+          <p>
+            Inspired by <br />
+            <a
+              href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
+              className="text-2 text-text-2"
+            >
+              Ricochet Robots
+            </a>
+          </p>
+          <p className="text-right lg:text-left">
+            Feeling creative? <br />
+            <a href="/puzzles/new" className="text-2 text-text-2">
+              Build a puzzle
+            </a>
+          </p>
+        </div>
 
         <div
           className={clsx(
@@ -172,14 +177,6 @@ export default define.page<typeof handler>(function Home(ctx) {
           {userStats && (
             <StatsSummary stats={userStats} className="lg:w-full" />
           )}
-
-          <div className="flex flex-col items-start gap-fl-1">
-            <span className="text-text-2 text-2">Feeling creative?</span>
-            <a href="/puzzles/new" className="btn">
-              <Icon icon={Pencil} />
-              Build a puzzle
-            </a>
-          </div>
 
           <div className="flex gap-2 lg:flex-col lg:mt-auto">
             <a

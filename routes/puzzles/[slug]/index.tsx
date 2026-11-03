@@ -164,19 +164,17 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const celebrationError = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
 
-  const url = new URL(props.req.url);
-
   const back = isTodaysPuzzle(props.data.puzzle)
     ? { href: "/", label: "Back to Home" }
     : {
       href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
-      label: "Back to archives",
+      label: "Back to archive",
     };
 
   return (
     <>
       <Main>
-        <Header url={url} back={{ href: back.href }} share />
+        <Header back={{ href: back.href }} />
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
           <h1 className="text-6 text-brand leading-tight">

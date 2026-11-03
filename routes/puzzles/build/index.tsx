@@ -37,12 +37,10 @@ export default define.page<typeof handler>(function EditorPage(props) {
   const solution = useSignal<EditorSolution | null>(null);
   const showSolution = useSignal(false);
 
-  const url = new URL(props.req.url);
-
   return (
     <>
       <Main className="lg:relative">
-        <Header url={url} back={{ href: "/" }} />
+        <Header back={{ href: "/" }} hideBuild />
 
         <div className="flex justify-between items-center gap-fl-1 mt-2">
           <div className="flex flex-col group">

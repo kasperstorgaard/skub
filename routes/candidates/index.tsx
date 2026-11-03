@@ -64,8 +64,6 @@ export const handler = define.handlers<PageData>({
 
 /** Every board in the candidate store, one card per family, newest first. */
 export default define.page<typeof handler>(function CandidatesPage(props) {
-  const url = new URL(props.req.url);
-
   return (
     <Main
       className={clsx(
@@ -73,7 +71,7 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
         "lg:max-w-5xl!",
       )}
     >
-      <Header url={url} back={{ href: "/" }} />
+      <Header back={{ href: "/" }} />
 
       <div className="flex items-center justify-between gap-fl-2">
         <div className="flex flex-col gap-0">

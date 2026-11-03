@@ -159,12 +159,10 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
       | "solve",
   );
 
-  const url = new URL(props.req.url);
-
   return (
     <>
       <Main>
-        <Header url={url} back={{ href: "/" }} />
+        <Header back={{ href: "/" }} />
 
         <h1 className="text-5 text-brand mt-2">{puzzle.value.name}</h1>
 

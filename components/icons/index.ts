@@ -29,7 +29,6 @@ export * from "./plus-square.ts";
 export * from "./printer.ts";
 export * from "./ranking.ts";
 export * from "./rocket-launch.ts";
-export * from "./share-network.ts";
 export * from "./shuffle.ts";
 export * from "./spinner.ts";
 export * from "./star.ts";

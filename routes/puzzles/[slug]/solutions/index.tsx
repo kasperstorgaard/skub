@@ -71,7 +71,6 @@ type SolutionRowProps = {
 
 export default define.page<typeof handler>(function SolutionsListPage(props) {
   const puzzle = useSignal(props.data.puzzle);
-  const url = new URL(props.req.url);
   const { groups, extraGroup, userCanonicalKeys } = props.data;
   const minMoves = props.data.puzzle.minMoves;
   const solutionsHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
@@ -85,7 +84,6 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
     <>
       <Main className="justify-stretch min-h-96">
         <Header
-          url={url}
           back={{ href: backHref }}
         />
 

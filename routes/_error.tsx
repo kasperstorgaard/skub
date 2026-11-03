@@ -50,7 +50,7 @@ export default define.page(function ErrorPage(props) {
   return (
     <>
       <Main className="max-lg:row-span-full">
-        <Header url={props.url} back={{ href: "/" }} />
+        <Header back={{ href: "/" }} />
 
         <div className="flex flex-col gap-fl-2 py-fl-3">
           <ErrorAnimation status={status}>
