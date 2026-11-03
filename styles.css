@@ -307,6 +307,13 @@
   );
 }
 
+/* Open Props' dark shadow values, for the non-retro dark themes (tokens.css
+   carries the light ones). Retro themes draw their own shadows. */
+:root:is([data-theme-section="dark"], [data-theme-section="accessibility"]) {
+  --shadow-color: 220 40% 2%;
+  --shadow-strength: 25%;
+}
+
 @media (min-width: 768px) {
   :root {
     font-size: 16px;
