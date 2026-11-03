@@ -41,7 +41,7 @@ export function Header({ url, back, share, build, hideProfile }: Props) {
           <a
             href="/puzzles/new"
             className={clsx(
-              "inline-flex items-center justify-center min-w-[44px] min-h-[44px]",
+              "inline-flex items-center justify-center min-w-[44px] min-h-[44px] -mr-[2px]",
               "no-underline text-inherit text-5 hover:text-link",
             )}
             aria-label="Build a puzzle"
