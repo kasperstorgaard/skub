@@ -124,8 +124,8 @@ export function ControlsPanel(
     <Panel className={className}>
       <div
         className={clsx(
-          "grid max-lg:col-[2/3] grid-cols-subgrid place-content-center items-center w-full max-lg:gap-8",
-          "lg:grid lg:row-[3/4] lg:items-start lg:grid-rows-[1fr_auto] gap-fl-3",
+          "grid max-lg:col-[2/3] grid-cols-subgrid place-content-center items-center w-full gap-fl-4",
+          "lg:grid lg:row-[3/4] lg:items-start lg:grid-rows-[1fr_auto]",
         )}
       >
         <div className="flex flex-col gap-fl-2 justify-start">
@@ -172,7 +172,7 @@ export function ControlsPanel(
 
           <div
             className={clsx(
-              "flex gap-2 justify-center flex-wrap",
+              "flex gap-fl-2 justify-center flex-wrap",
               "lg:justify-self-center",
             )}
           >
