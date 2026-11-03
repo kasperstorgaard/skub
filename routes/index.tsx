@@ -50,8 +50,6 @@ export const handler = define.handlers<PageData>({
 });
 
 export default define.page<typeof handler>(function Home(ctx) {
-  const url = new URL(ctx.req.url);
-
   const {
     dailyPuzzle,
     recommendedPuzzle,
@@ -63,7 +61,7 @@ export default define.page<typeof handler>(function Home(ctx) {
   return (
     <>
       <Main className="max-lg:row-span-full items-stretch place-content-stretch">
-        <Header url={url} build />
+        <Header />
 
         <div className="title-card flex flex-col">
           <h1 className="text-8 leading-tight text-brand flex items-baseline gap-fl-1">

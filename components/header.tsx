@@ -2,22 +2,15 @@ import clsx from "clsx/lite";
 
 import { BuilderIcon } from "#/components/builder-icon.tsx";
 import { ArrowLeft, Icon, UserCircle } from "#/components/icons.tsx";
-import { ShareButton } from "#/islands/share-button.tsx";
 
 type Props = {
-  url: URL;
   back?: { href: string };
-  share?: boolean | { params: boolean };
-  /** Link to the puzzle builder */
-  build?: boolean;
+  /** Hide the puzzle builder link, e.g. on the builder itself */
+  hideBuild?: boolean;
   hideProfile?: boolean;
 };
 
-export function Header({ url, back, share, build, hideProfile }: Props) {
-  const shareUrl = typeof share === "object" && share.params
-    ? url.href
-    : url.origin + url.pathname;
-
+export function Header({ back, hideBuild, hideProfile }: Props) {
   return (
     <header
       f-client-nav
@@ -36,8 +29,7 @@ export function Header({ url, back, share, build, hideProfile }: Props) {
         </a>
       )}
       <div className="flex items-center ml-auto">
-        {share && <ShareButton url={shareUrl} />}
-        {build && (
+        {!hideBuild && (
           <a
             href="/puzzles/new"
             className={clsx(

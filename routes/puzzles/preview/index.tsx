@@ -37,12 +37,10 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
   const mode = useSignal<"solve">("solve");
   const printUrl = props.url.hostname + props.url.pathname;
 
-  const url = new URL(props.req.url);
-
   return (
     <>
       <Main>
-        <Header url={url} back={{ href: "/" }} />
+        <Header back={{ href: "/" }} hideBuild />
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
           <h1 className="text-6 text-brand leading-tight">

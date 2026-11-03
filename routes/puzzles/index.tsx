@@ -81,7 +81,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
     entries,
   } = props.data;
 
-  const url = new URL(props.req.url);
   const href = useSignal(props.url.href);
 
   const dateLabel = new Date(
@@ -101,7 +100,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           "lg:max-w-3xl!",
         )}
       >
-        <Header url={url} back={{ href: "/" }} share />
+        <Header back={{ href: "/" }} />
 
         <div className="flex flex-col gap-0">
           <h1 className="text-brand text-6 leading-flat">Archive</h1>
