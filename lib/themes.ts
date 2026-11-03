@@ -111,3 +111,7 @@ export const THEMES: Theme[] = [
 export function resolveTheme(stored: string | undefined): string {
   return THEMES.find((theme) => theme.key === stored)?.key ?? "skub";
 }
+
+export function getThemeSection(key: string): Theme["section"] {
+  return THEMES.find((theme) => theme.key === key)?.section ?? "dark";
+}

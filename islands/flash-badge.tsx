@@ -39,7 +39,6 @@ export function FlashBadge(
       className={clsx(
         "difficulty-badge relative flex items-stretch overflow-hidden",
         "leading-loose text-2 tracking-wider",
-        "[--pearl:radial-gradient(ellipse_at_25%_10%,rgb(255_255_255/0.5),transparent_55%),linear-gradient(115deg,var(--color-brand),var(--color-link)_45%,var(--color-brand)_75%,var(--color-link))]",
         isOn && "bg-surface-1",
         !isOn && "bg-surface-2",
         className,

@@ -283,6 +283,28 @@
   --color-hole: #05060a;
   --color-portal: var(--blue-4);
   --color-portal-alt: var(--indigo-9);
+
+  /* Pearl: brand/link sheen with a soft highlight, used for Flash and buttons */
+  --pearl:
+    radial-gradient(
+      ellipse at 25% 10%,
+      rgb(255 255 255 / 0.5),
+      transparent 55%
+    ),
+    linear-gradient(
+      115deg,
+      var(--color-brand),
+      var(--color-link) 45%,
+      var(--color-brand) 75%,
+      var(--color-link)
+    );
+  --pearl-tint: linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--color-brand) 14%, transparent),
+    color-mix(in srgb, var(--color-link) 14%, transparent) 45%,
+    color-mix(in srgb, var(--color-brand) 14%, transparent) 75%,
+    color-mix(in srgb, var(--color-link) 14%, transparent)
+  );
 }
 
 @media (min-width: 768px) {

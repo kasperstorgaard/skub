@@ -98,4 +98,41 @@
       outline-offset: 5px;
     }
   }
+
+  /* Pearl buttons for every theme outside the retro section, which keep their
+     own looks: a pearl border ring, a faint pearl wash, a full pearl when
+     filled (primary or hover). The ring is a masked ::before so the button
+     stays see-through on any surface. */
+  :root:not([data-theme-section="retro"]) {
+    .btn,
+    .icon-btn {
+      position: relative;
+      border-color: transparent;
+      background-color: transparent;
+      background-image: var(--pearl-tint);
+    }
+
+    .btn::before,
+    .icon-btn::before {
+      content: "";
+      position: absolute;
+      inset: calc(-1 * var(--border-size-2));
+      padding: var(--border-size-2);
+      border-radius: inherit;
+      background: var(--pearl);
+      mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+
+    .btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+    .icon-btn:is(:hover, :focus):not([disabled], [aria-disabled]),
+    .btn[data-primary],
+    .icon-btn[data-primary] {
+      border-color: transparent;
+      background-color: transparent;
+      background-image: var(--pearl);
+    }
+  }
 }
