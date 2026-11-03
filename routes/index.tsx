@@ -146,21 +146,29 @@ export default define.page<typeof handler>(function Home(ctx) {
       </Main>
 
       <Panel className="max-lg:gap-fl-3">
-        <p
+        <div
           className={clsx(
-            "col-[2/3]",
+            "col-[2/3] flex justify-between gap-fl-2",
             "text-text-1 text-fl-1",
-            "lg:col-auto lg:row-start-1 lg:text-fl-0",
+            "lg:col-auto lg:row-start-1 lg:flex-col lg:text-fl-0",
           )}
         >
-          Inspired by <br />
-          <a
-            href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
-            className="text-2 text-text-2"
-          >
-            Ricochet Robots
-          </a>
-        </p>
+          <p>
+            Inspired by <br />
+            <a
+              href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
+              className="text-2 text-text-2"
+            >
+              Ricochet Robots
+            </a>
+          </p>
+          <p className="text-right lg:text-left">
+            Got a puzzle in you? <br />
+            <a href="/puzzles/new" className="text-2 text-text-2">
+              Build one
+            </a>
+          </p>
+        </div>
 
         <div
           className={clsx(

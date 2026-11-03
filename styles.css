@@ -541,6 +541,37 @@
     }
   }
 
+  /* Builder link: faint board pieces drift between two arrangements under a pencil */
+  .builder-icon-board {
+    opacity: 0.3;
+  }
+  .builder-icon-board > * {
+    transform: translate(var(--ax), var(--ay));
+    animation: builder-drift 9s ease-in-out infinite;
+  }
+  .builder-icon-pencil {
+    fill: currentColor;
+    stroke: var(--color-surface-1);
+    stroke-width: 28px;
+    paint-order: stroke;
+  }
+  @keyframes builder-drift {
+    0%, 40% {
+      transform: translate(var(--ax), var(--ay));
+    }
+    50%, 90% {
+      transform: translate(var(--bx), var(--by));
+    }
+    100% {
+      transform: translate(var(--ax), var(--ay));
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .builder-icon-board > * {
+      animation: none;
+    }
+  }
+
   /* Post-solve ripple: tiles pulse outward ring by ring from the destination.
      Per-tile delay (--ripple-delay) is set by a JS-generated stylesheet
      (lib/board-ripple.ts → islands/board.tsx), keyed by data-exit-key.

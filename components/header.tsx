@@ -1,13 +1,14 @@
 import clsx from "clsx/lite";
 
-import { ArrowLeft, Icon, Pencil, UserCircle } from "#/components/icons.tsx";
+import { BuilderIcon } from "#/components/builder-icon.tsx";
+import { ArrowLeft, Icon, UserCircle } from "#/components/icons.tsx";
 import { ShareButton } from "#/islands/share-button.tsx";
 
 type Props = {
   url: URL;
   back?: { href: string };
   share?: boolean | { params: boolean };
-  /** Link to the puzzle builder, with a small dot to draw the eye */
+  /** Link to the puzzle builder */
   build?: boolean;
   hideProfile?: boolean;
 };
@@ -40,17 +41,13 @@ export function Header({ url, back, share, build, hideProfile }: Props) {
           <a
             href="/puzzles/new"
             className={clsx(
-              "relative inline-flex items-center justify-center min-w-[44px] min-h-[44px]",
+              "inline-flex items-center justify-center min-w-[44px] min-h-[44px]",
               "no-underline text-inherit text-5 hover:text-link",
             )}
             aria-label="Build a puzzle"
             title="Build a puzzle"
           >
-            <Icon icon={Pencil} />
-            <span
-              className="absolute top-2 right-1 size-2 rounded-full bg-brand"
-              aria-hidden="true"
-            />
+            <BuilderIcon />
           </a>
         )}
         {!hideProfile && (
