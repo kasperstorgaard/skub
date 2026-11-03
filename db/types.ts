@@ -1,4 +1,4 @@
-import { Move, PuzzleStats, SkillLevel } from "#/game/types.ts";
+import { FlashMode, Move, PuzzleStats, SkillLevel } from "#/game/types.ts";
 
 export type { PuzzleStats };
 
@@ -8,6 +8,8 @@ export type User = {
   skillLevel: SkillLevel | null;
   email?: string;
   name?: string;
+  /** Absent means manual. */
+  flashMode?: FlashMode;
 };
 
 // Human entered solution for a puzzle

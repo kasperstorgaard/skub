@@ -50,7 +50,16 @@ async function readProfile(headers: Headers): Promise<Profile | null> {
 
 /** JSON payload for `profile`, keys in a fixed order so equal profiles compare equal. */
 export function encodeProfile(profile: Profile): string {
-  const { id, sessionId, syncedAt, skillLevel, theme, name, email } = profile;
+  const {
+    id,
+    sessionId,
+    syncedAt,
+    skillLevel,
+    theme,
+    name,
+    email,
+    flashMode,
+  } = profile;
   return JSON.stringify({
     v: 1,
     id,
@@ -60,6 +69,7 @@ export function encodeProfile(profile: Profile): string {
     theme,
     name,
     email,
+    flashMode,
   });
 }
 

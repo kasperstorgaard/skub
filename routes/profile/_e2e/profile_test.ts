@@ -18,6 +18,10 @@ class ProfilePage {
     return this.page.getByRole("button", { name: "Save", exact: true });
   }
 
+  flashModeButton(mode: "Manual" | "Always") {
+    return this.page.getByRole("button", { name: mode, exact: true });
+  }
+
   async goto() {
     await this.page.goto(`${BASE_URL}/profile`);
     return this;
@@ -98,6 +102,21 @@ Deno.test("a returning player's theme renders from the cookie once their record 
     await expect(page.locator("html")).toHaveAttribute(
       "data-theme",
       "dookie",
+    );
+  } finally {
+    await teardown();
+  }
+});
+
+Deno.test("a player who chooses Flash mode always sees it selected", async () => {
+  const { page, teardown } = await setup();
+  try {
+    const profilePage = await new ProfilePage(page).goto();
+    await profilePage.flashModeButton("Always").click();
+
+    await expect(profilePage.flashModeButton("Always")).toHaveAttribute(
+      "aria-pressed",
+      "true",
     );
   } finally {
     await teardown();

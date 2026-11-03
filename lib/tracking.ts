@@ -3,7 +3,7 @@
 // boilerplate (distinctId, $process_person_profile, $current_url) is
 // derived automatically.
 import type { State } from "#/core.ts";
-import type { Move, Puzzle, SkillLevel } from "#/game/types.ts";
+import type { FlashMode, Move, Puzzle, SkillLevel } from "#/game/types.ts";
 import { posthog } from "#/lib/posthog.ts";
 
 /**
@@ -30,7 +30,8 @@ export function trackPuzzleSolved(
 }
 
 /**
- * Track Flash being turned on for a puzzle.
+ * Track Flash being turned on for a puzzle from its badge. Flash mode
+ * "always" turns it on by page load, so that isn't tracked here.
  */
 export function trackFlashEnabled(
   state: State,
@@ -47,6 +48,24 @@ export function trackFlashEnabled(
       puzzle_difficulty: puzzle.difficulty,
       puzzle_min_moves: puzzle.minMoves,
       flash_start_moves: options.flashStartLength,
+    },
+  });
+}
+
+/**
+ * Track the Flash mode setting changing, from the profile.
+ */
+export function trackFlashModeSettingChanged(
+  state: State,
+  options: { url: string; flashMode: FlashMode },
+): void {
+  posthog?.capture({
+    distinctId: state.trackingId,
+    event: "flash_mode_setting_changed",
+    properties: {
+      $current_url: options.url,
+      $process_person_profile: state.cookieChoice === "accepted",
+      flash_mode: options.flashMode,
     },
   });
 }

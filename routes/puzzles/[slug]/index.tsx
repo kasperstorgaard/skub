@@ -22,6 +22,7 @@ import {
   getFlashStart,
   getHintCount,
   isFlashExplained,
+  setFlashStart,
 } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
@@ -29,7 +30,7 @@ import { withSolve } from "#/game/progress.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
-import { decodeState, getPuzzleArchiveHref } from "#/game/url.ts";
+import { decodeState, getPuzzleArchiveHref, getResetHref } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
 import {
@@ -67,15 +68,32 @@ export const handler = define.handlers<PageData>({
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
-    const flashStart = getFlashStart(ctx.req.headers);
     const hasFlash = !!ctx.state.puzzle.flashStart;
+
+    // Flash mode "always" turns Flash on when a puzzle is opened, with the same
+    // 24-hour cookie as turning it on from the badge. Moves played on the full
+    // puzzle don't carry over, so the game starts over at the Flash start.
+    const { moves } = decodeState(ctx.url);
+    const headers = new Headers();
+    let flashStart = getFlashStart(ctx.req.headers);
+    if (
+      !flashStart && ctx.state.user.flashMode === "always" &&
+      ctx.state.puzzle.flashStart
+    ) {
+      flashStart = ctx.state.puzzle.flashStart;
+      setFlashStart(headers, { path: `/puzzles/${slug}`, flashStart });
+
+      if (moves.length > 0) {
+        headers.set("Location", getResetHref(ctx.url.href));
+        return new Response(null, { headers, status: 303 });
+      }
+    }
+
     const puzzle = flashStart
       ? withFlashStart(ctx.state.puzzle, flashStart)
       : ctx.state.puzzle;
 
     const hasSolved = slug in ctx.state.progress;
-
-    const { moves } = decodeState(ctx.url);
 
     // No-JS solve detection: moves are encoded in the URL on each navigation.
     // JS users go via AutoPostSolution → POST instead. The dialog guard prevents
@@ -107,7 +125,7 @@ export const handler = define.handlers<PageData>({
       hasFlash,
       isFlashOn: !!flashStart,
       isFlashExplained: isFlashExplained(ctx.req.headers),
-    });
+    }, { headers });
   },
   async POST(ctx) {
     const { slug } = ctx.params;
