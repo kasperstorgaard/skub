@@ -20,34 +20,40 @@ export function StatsSummary({ stats, className }: Props) {
         className,
       )}
     >
-      <div className="flex flex-col">
-        <dd className="m-0 text-5 font-semibold leading-flat tracking-wide text-brand">
-          {stats.currentStreak}
-          <span className="text-2 font-normal text-text-3">
-            {" / "}
-            {stats.bestStreak} <span className="max-sm:hidden">best</span>
-          </span>
-        </dd>
-        <dt className="text-2 text-text-2">Streak</dt>
-      </div>
-
-      <div className="flex flex-col">
-        <dd className="m-0 text-5 font-semibold tracking-wide leading-flat text-text-1">
-          {stats.totalSolves}
-        </dd>
-        <dt className="text-2 text-text-2">Solves</dt>
-      </div>
-
-      <div className="flex flex-col">
-        <dd className="m-0 text-5 font-semibold tracking-wide leading-flat text-text-1">
-          {stats.optimalSolves}
-          <span className="text-2 font-normal text-text-3">
-            {" / "}
-            {optimalRate}%
-          </span>
-        </dd>
-        <dt className="text-2 text-text-2">Perfect</dt>
-      </div>
+      <Stat
+        value={stats.currentStreak}
+        label="Streak"
+        detail={`best ${stats.bestStreak}`}
+        className="text-brand"
+      />
+      <Stat value={stats.totalSolves} label="Solves" />
+      <Stat
+        value={stats.optimalSolves}
+        label="Perfect"
+        detail={`${optimalRate}%`}
+      />
     </dl>
+  );
+}
+
+type StatProps = {
+  value: number;
+  label: string;
+  /** Muted qualifier next to the label, e.g. "best 12" or "64%" */
+  detail?: string;
+  className?: string;
+};
+
+function Stat({ value, label, detail, className }: StatProps) {
+  return (
+    <div className="flex flex-col gap-1">
+      <dd className={clsx("m-0 type-stat", className ?? "text-text-1")}>
+        {value}
+      </dd>
+      <dt className="type-meta text-text-2">
+        {label}
+        {detail && <span className="text-text-3">{` · ${detail}`}</span>}
+      </dt>
+    </div>
   );
 }

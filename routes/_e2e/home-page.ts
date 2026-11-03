@@ -57,10 +57,10 @@ export class HomePage {
     return new PuzzlePage(this.page);
   }
 
+  /** A stat's value (dd) and label (dt), e.g. "3" over "Streak · best 3" */
   stat(label: string) {
-    return this.page.locator("dt", { hasText: label }).locator("..").locator(
-      "dd",
-    );
+    const term = this.page.locator("dt", { hasText: label });
+    return { value: term.locator("..").locator("dd"), label: term };
   }
 
   async clickArchivesLink() {
