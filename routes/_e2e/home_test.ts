@@ -3,11 +3,11 @@ import { expect, setup } from "#/e2e/base.ts";
 import { solvePuzzle } from "#/e2e/helpers.ts";
 import { getAvailableEntries, getTodaysPuzzle } from "#/game/loader.ts";
 
-Deno.test("home — share button is visible", async () => {
+Deno.test("home — build a puzzle link is visible", async () => {
   const { page, teardown } = await setup();
   try {
     const home = await new HomePage(page).goto();
-    await expect(home.shareButton).toBeVisible();
+    await expect(home.buildLink).toBeVisible();
   } finally {
     await teardown();
   }

@@ -6,7 +6,6 @@ export * from "./arrow-counter-clockwise.ts";
 export * from "./arrow-left.ts";
 export * from "./arrow-right.ts";
 export * from "./arrow-square-in.ts";
-export * from "./calendar-dots.ts";
 export * from "./caret-down.ts";
 export * from "./caret-left.ts";
 export * from "./caret-right.ts";

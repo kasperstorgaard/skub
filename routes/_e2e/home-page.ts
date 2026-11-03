@@ -18,8 +18,8 @@ export class HomePage {
     return this.page.getByRole("heading", { name: /Skub/i });
   }
 
-  get shareButton() {
-    return this.page.getByRole("button", { name: /share/i });
+  get buildLink() {
+    return this.page.getByRole("link", { name: /build a puzzle/i });
   }
 
   get profileLink() {
