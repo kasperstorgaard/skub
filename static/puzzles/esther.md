@@ -5,6 +5,7 @@ slug: esther
 createdAt: 2026-02-15T12:35:22.322Z
 difficulty: medium
 minMoves: 7
+flashStart: F6F4
 ---
 
 ```

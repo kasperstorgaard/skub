@@ -5,6 +5,7 @@ slug: britta
 createdAt: 2026-03-03T18:55:00.362Z
 difficulty: medium
 minMoves: 8
+flashStart: G7G6-A6
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: joakim
 createdAt: 2026-05-23T08:28:24.619Z
 difficulty: medium
 minMoves: 8
+flashStart: D4D2-A2
 ---
 
 ```

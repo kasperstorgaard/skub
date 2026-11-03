@@ -5,6 +5,7 @@ slug: cecilie
 createdAt: 2026-02-22T12:12:16.516Z
 difficulty: medium
 minMoves: 9
+flashStart: A3A2-D2
 ---
 
 ```

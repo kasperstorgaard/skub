@@ -192,6 +192,22 @@ export function getHintHref(href: string) {
   return url.href;
 }
 
+/** The puzzle's Flash route, which turns Flash on and plays the Flash start. */
+export function getFlashHref(href: string) {
+  const url = new URL(href);
+  const slugMatcher = /\/puzzles\/([^/]+)/;
+
+  const matches = url.pathname.match(slugMatcher) ?? [];
+  const slug = matches[1];
+
+  if (!slug) throw new Error("Unable to get slug from URL");
+
+  url.pathname = `/puzzles/${slug}/flash`;
+  url.search = "";
+
+  return url.href;
+}
+
 // Reads the `replay_speed` search param from a URL
 export function getReplaySpeed(urlOrHref: URL | string): number | null {
   const url = typeof urlOrHref === "string" ? new URL(urlOrHref) : urlOrHref;

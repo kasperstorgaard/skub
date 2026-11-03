@@ -5,6 +5,7 @@ slug: ragnar
 createdAt: 2026-02-11T16:44:47.326Z
 difficulty: hard
 minMoves: 9
+flashStart: B7A7-A2
 ---
 
 ```

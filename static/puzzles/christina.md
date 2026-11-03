@@ -5,6 +5,7 @@ slug: christina
 createdAt: 2026-09-03T19:14:48.253Z
 difficulty: hard
 minMoves: 10
+flashStart: B8A8-A7-C7
 ---
 
 ```

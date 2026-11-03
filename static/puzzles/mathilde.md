@@ -5,6 +5,7 @@ slug: mathilde
 createdAt: 2026-09-03T19:04:41.339Z
 difficulty: medium
 minMoves: 8
+flashStart: G2G1-D1
 ---
 
 ```

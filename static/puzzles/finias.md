@@ -5,6 +5,7 @@ slug: finias
 createdAt: 2026-09-16T18:24:08.691Z
 difficulty: medium
 minMoves: 7
+flashStart: D1A1
 ---
 
 ```

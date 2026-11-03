@@ -5,6 +5,7 @@ slug: paola
 createdAt: 2026-02-13T12:31:39.655Z
 difficulty: medium
 minMoves: 8
+flashStart: C2H2-F3H3
 ---
 
 ```

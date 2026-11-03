@@ -5,6 +5,7 @@ slug: gretha
 createdAt: 2026-01-27T00:00:00.000Z
 difficulty: medium
 minMoves: 8
+flashStart: G7G1-B1
 ---
 
 ```

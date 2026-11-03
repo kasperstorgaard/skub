@@ -5,6 +5,7 @@ slug: jamie
 createdAt: 2026-02-13T12:39:59.631Z
 difficulty: medium
 minMoves: 7
+flashStart: G8G4
 ---
 
 ```

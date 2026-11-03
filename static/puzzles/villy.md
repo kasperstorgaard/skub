@@ -5,6 +5,7 @@ slug: villy
 createdAt: 2026-02-15T11:34:56.690Z
 difficulty: hard
 minMoves: 10
+flashStart: C5C6-H6-H1
 ---
 
 ```

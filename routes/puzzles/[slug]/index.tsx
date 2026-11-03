@@ -10,12 +10,21 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
-import { getPuzzleStats } from "#/db/stats.ts";
+import {
+  getFlashSolveCount,
+  getPuzzleStats,
+  incrementFlashSolveCount,
+} from "#/db/stats.ts";
 import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import { getHintCount } from "#/game/cookies.ts";
+import {
+  getFlashStart,
+  getHintCount,
+  isFlashExplained,
+} from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
+import { withFlashStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
@@ -28,6 +37,9 @@ import {
   CelebrationDialog,
 } from "#/islands/celebration-dialog.tsx";
 import { ControlsPanel } from "#/islands/controls-panel.tsx";
+import { FlashBadge } from "#/islands/flash-badge.tsx";
+import { FlashDialog } from "#/islands/flash-dialog.tsx";
+import { FlashNudge } from "#/islands/flash-nudge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
@@ -41,22 +53,33 @@ type PageData = {
   savedName: string | null;
   hasSolved: boolean;
   showEdit: boolean;
+  /** The puzzle is long enough for Flash. */
+  hasFlash: boolean;
+  /** Flash is on: `puzzle` is the shorter one that starts after the Flash start. */
+  isFlashOn: boolean;
+  /** The Flash dialog was answered: no more dialog, no more nudge. */
+  isFlashExplained: boolean;
 };
 
 export const handler = define.handlers<PageData>({
   GET(ctx) {
     const { slug } = ctx.params;
-    const { puzzle } = ctx.state;
     const savedName = ctx.state.user?.name ?? null;
 
     const hintCount = getHintCount(ctx.req.headers);
+    const flashStart = getFlashStart(ctx.req.headers);
+    const hasFlash = !!ctx.state.puzzle.flashStart;
+    const puzzle = flashStart
+      ? withFlashStart(ctx.state.puzzle, flashStart)
+      : ctx.state.puzzle;
 
     const hasSolved = slug in ctx.state.progress;
+
+    const { moves } = decodeState(ctx.url);
 
     // No-JS solve detection: moves are encoded in the URL on each navigation.
     // JS users go via AutoPostSolution → POST instead. The dialog guard prevents
     // re-processing when the page reloads after a redirect.
-    const { moves } = decodeState(ctx.url);
     if (moves.length > 0 && !ctx.url.searchParams.get("dialog")) {
       let board: Puzzle["board"];
       try {
@@ -75,11 +98,22 @@ export const handler = define.handlers<PageData>({
     }
 
     const showEdit = isDev && (puzzle.number ?? 0) > getTodaysPuzzleNumber();
-    return page({ puzzle, hintCount, savedName, hasSolved, showEdit });
+    return page({
+      puzzle,
+      hintCount,
+      savedName,
+      hasSolved,
+      showEdit,
+      hasFlash,
+      isFlashOn: !!flashStart,
+      isFlashExplained: isFlashExplained(ctx.req.headers),
+    });
   },
   async POST(ctx) {
     const { slug } = ctx.params;
     const { puzzle } = ctx.state;
+    const flashStart = getFlashStart(ctx.req.headers);
+    const isFlash = flashStart !== null;
     const referer = ctx.req.headers.get("referer") ?? "";
     const isJson = ctx.req.headers.get("content-type")?.includes(
       "application/json",
@@ -88,8 +122,9 @@ export const handler = define.handlers<PageData>({
     const solve = isJson
       ? await ctx.req.json() as { name: string; moves: Move[] }
       : await parseSolveForm(ctx.req);
-    const name = solve.name?.slice(0, 30);
-    const { moves } = solve;
+    const name = solve.name?.slice(0, 30) ?? "";
+    // Flash plays a shorter puzzle; the solve kept is the whole one.
+    const moves = [...(flashStart ?? []), ...solve.moves];
 
     if (!name) throw new HttpError(400, "Must provide a username");
 
@@ -100,28 +135,39 @@ export const handler = define.handlers<PageData>({
     const activeSpan = trace.getActiveSpan();
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const { isNew, isNewPath, solution } = await withSpan(
-      "puzzle.save_solution",
-      async (span) => {
-        const result = await saveSolution({
-          puzzleSlug: slug,
-          name,
-          moves,
-          userId: ctx.state.userId,
-        });
-        span.setAttribute("solution.is_new", result.isNew);
-        span.setAttribute("solution.is_new_path", result.isNewPath);
-        return result;
-      },
-    );
+    // The Flash count is read alongside the save, so it never includes this
+    // solve and costs no round trip of its own.
+    const [{ isNew, isNewPath, solution }, flashSolvesBefore] = await Promise
+      .all([
+        withSpan("puzzle.save_solution", async (span) => {
+          const result = await saveSolution({
+            puzzleSlug: slug,
+            name,
+            moves,
+            userId: ctx.state.userId,
+            ...(isFlash && { flash: true }),
+          });
+          span.setAttribute("solution.is_new", result.isNew);
+          span.setAttribute("solution.is_new_path", result.isNewPath);
+          return result;
+        }),
+        isFlash ? getFlashSolveCount(slug) : undefined,
+      ]);
     ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
 
     const patch: Partial<Omit<User, "id">> = {};
     if (name !== ctx.state.user.name) patch.name = name;
 
     if (isNew) {
-      trackPuzzleSolved(ctx.state, puzzle, { moves, url: referer });
+      trackPuzzleSolved(ctx.state, puzzle, {
+        moves,
+        url: referer,
+        flash: isFlash,
+      });
+    }
 
+    // A Flash solve played part of the puzzle, so it says nothing about skill.
+    if (isNew && !isFlash) {
       const { skillLevel } = ctx.state.user;
       const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
 
@@ -135,20 +181,33 @@ export const handler = define.handlers<PageData>({
       }
     }
 
-    // One user write, alongside the aggregates.
+    // One user write, alongside the aggregates. A Flash solve only counts
+    // towards the Flash solves, apart from the leaderboard.
     const [user, puzzleStats] = await Promise.all([
       Object.keys(patch).length > 0
         ? setUser(ctx.state.userId, patch)
         : ctx.state.user,
-      isNew ? updateSolutionAggregates(solution) : getPuzzleStats(slug),
+      isFlash
+        ? null
+        : isNew
+        ? updateSolutionAggregates(solution)
+        : getPuzzleStats(slug),
+      isFlash && isNew ? incrementFlashSolveCount(slug) : undefined,
     ]);
     ctx.state.user = user;
 
+    // This solve included, like the leaderboard's own count.
+    const flashSolves = flashSolvesBefore === undefined
+      ? undefined
+      : flashSolvesBefore + (isNew ? 1 : 0);
+
     if (isJson) {
-      return Response.json({
+      const data: CelebrationData = {
         isNewPath,
         puzzleStats: puzzleStats ?? defaultPuzzleStats,
-      });
+        flashSolves,
+      };
+      return Response.json(data);
     }
 
     const solutionsUrl = new URL(`/puzzles/${slug}/solutions`, ctx.url);
@@ -163,6 +222,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const celebrationData = useSignal<CelebrationData | null>(null);
   const celebrationError = useSignal(false);
   const printUrl = props.url.hostname + props.url.pathname;
+  const { hasFlash, isFlashOn } = props.data;
 
   const back = isTodaysPuzzle(props.data.puzzle)
     ? { href: "/", label: "Back to Home" }
@@ -187,11 +247,24 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             <span className="font-5">{props.data.puzzle.name}</span>
           </h1>
 
-          <DifficultyBadge
-            puzzle={puzzle.value}
-            hideMinMoves={!props.data.hasSolved}
-            className="lg:mt-1"
-          />
+          {hasFlash
+            ? (
+              <FlashBadge
+                puzzle={puzzle}
+                href={href}
+                isOn={isFlashOn}
+                isExplained={props.data.isFlashExplained}
+                hideMinMoves={!props.data.hasSolved}
+                className="lg:mt-1"
+              />
+            )
+            : (
+              <DifficultyBadge
+                puzzle={puzzle.value}
+                hideMinMoves={!props.data.hasSolved}
+                className="lg:mt-1"
+              />
+            )}
         </div>
 
         <div className="relative">
@@ -202,15 +275,20 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             isNew={props.state.user.skillLevel === null}
           />
 
-          {props.state.user.skillLevel === null && (
-            <TutorialNudge
-              className={clsx(
-                "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
-                "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
-                "print:hidden",
+          {/* New players get the basics; the rest get Flash once stuck. */}
+          <div
+            className={clsx(
+              "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
+              "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+              "empty:hidden print:hidden",
+            )}
+          >
+            {props.state.user.skillLevel === null
+              ? <TutorialNudge />
+              : hasFlash && !isFlashOn && !props.data.isFlashExplained && (
+                <FlashNudge puzzle={puzzle} href={href} />
               )}
-            />
-          )}
+          </div>
         </div>
       </Main>
 
@@ -247,6 +325,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         savedName={props.data.savedName}
       />
 
+      {hasFlash && <FlashDialog puzzle={puzzle} href={href} isOn={isFlashOn} />}
+
       {/* Celebration + auto-post are paired: only named users get them */}
       {props.data.savedName && (
         <>
@@ -256,6 +336,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             back={back}
             celebrationData={celebrationData}
             celebrationError={celebrationError}
+            isFlash={isFlashOn}
           />
           <AutoPostSolution
             href={href}

@@ -5,6 +5,7 @@ slug: lisa
 createdAt: 2026-02-15T10:37:50.664Z
 difficulty: medium
 minMoves: 7
+flashStart: H5H1
 ---
 
 ```

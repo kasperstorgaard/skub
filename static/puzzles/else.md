@@ -5,6 +5,7 @@ slug: else
 createdAt: 2026-02-15T12:00:53.695Z
 difficulty: medium
 minMoves: 8
+flashStart: D5D3-B3
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: milas
 createdAt: 2026-10-11T19:06:16.311Z
 difficulty: medium
 minMoves: 7
+flashStart: D1G1
 ---
 
 ```

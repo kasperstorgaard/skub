@@ -5,6 +5,7 @@ slug: inga
 createdAt: 2026-05-23T08:01:25.556Z
 difficulty: medium
 minMoves: 7
+flashStart: D5D1
 ---
 
 ```

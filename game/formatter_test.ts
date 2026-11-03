@@ -129,3 +129,24 @@ Deno.test("formatPuzzle - formats puzzle with piece on destination and wall", ()
   );
   assertEquals(blockerOnDest !== undefined, true);
 });
+
+Deno.test("formatPuzzle - keeps the Flash start through a round trip", () => {
+  const puzzle: Puzzle = {
+    number: 5,
+    name: "Flash Puzzle",
+    slug: "flash-puzzle",
+    createdAt: new Date("2024-06-20T00:00:00.000Z"),
+    difficulty: "medium",
+    minMoves: 7,
+    flashStart: [[{ x: 1, y: 1 }, { x: 1, y: 7 }]],
+    board: {
+      holes: [],
+      portals: [],
+      destination: { x: 3, y: 7 },
+      pieces: [{ x: 1, y: 1, type: "puck" }],
+      walls: [],
+    },
+  };
+
+  assertEquals(parsePuzzle(formatPuzzle(puzzle)), puzzle);
+});

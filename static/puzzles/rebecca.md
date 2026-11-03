@@ -5,6 +5,7 @@ slug: rebecca
 createdAt: 2026-10-25T20:03:56.866Z
 difficulty: easy
 minMoves: 5
+flashStart: G6G7
 ---
 
 ```

@@ -17,6 +17,8 @@ import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 export type CelebrationData = {
   isNewPath: boolean;
   puzzleStats: PuzzleStats;
+  /** Flash solves of this puzzle, this one included, for a Flash solve. */
+  flashSolves?: number;
 };
 
 type Props = {
@@ -25,10 +27,19 @@ type Props = {
   back: { href: string; label: string };
   celebrationData: Signal<CelebrationData | null>;
   celebrationError: Signal<boolean>;
+  /** A Flash solve: compared with other Flash solves, not the leaderboard. */
+  isFlash?: boolean;
 };
 
 export function CelebrationDialog(
-  { href, puzzle, back, celebrationData, celebrationError }: Props,
+  {
+    href,
+    puzzle,
+    back,
+    celebrationData,
+    celebrationError,
+    isFlash,
+  }: Props,
 ) {
   const destination = puzzle.value.board.destination;
   const rippleDuration = useMemo(
@@ -82,13 +93,14 @@ export function CelebrationDialog(
 
   const body = useMemo(
     () => {
+      if (isFlash) return getFlashMessage(data?.flashSolves ?? 1);
       const type = getCelebrationType(moves.length, puzzle.value, {
         puzzleStats,
         isNewPath,
       });
       return getMessage(type, moves.length, puzzleStats);
     },
-    [moves.length, puzzle.value, puzzleStats, isNewPath],
+    [moves.length, puzzle.value, puzzleStats, isNewPath, isFlash, data],
   );
 
   return (
@@ -147,6 +159,27 @@ export function CelebrationDialog(
       </div>
     </Dialog>
   );
+}
+
+/** The stats line for a Flash solve, against the other Flash solves. */
+function getFlashMessage(flashSolves: number): string {
+  const count = flashSolves - 1;
+
+  if (count === 0) {
+    return pickRandom([
+      "First to solve it with Flash",
+      "First Flash solve so far",
+      "No one else has solved it with Flash yet",
+    ]);
+  }
+
+  return pickRandom([
+    `Joined ${count} ${count === 1 ? "other" : "others"}`,
+    `${count} other Flash ${count === 1 ? "solve" : "solves"} so far`,
+    `${count} ${
+      count === 1 ? "other has" : "others have"
+    } solved it with Flash`,
+  ]);
 }
 
 function pickRandom<T>(items: readonly T[]): T {

@@ -5,6 +5,7 @@ slug: lena
 createdAt: 2026-02-15T10:37:50.664Z
 difficulty: medium
 minMoves: 8
+flashStart: D1B1-B8
 ---
 
 ```

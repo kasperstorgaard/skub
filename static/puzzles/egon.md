@@ -5,6 +5,7 @@ slug: egon
 createdAt: 2026-01-27T00:00:00.000Z
 difficulty: medium
 minMoves: 9
+flashStart: E2C2-C3C6
 ---
 
 ```

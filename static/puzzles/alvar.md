@@ -5,6 +5,7 @@ slug: alvar
 createdAt: 2026-02-15T13:38:23.385Z
 difficulty: easy
 minMoves: 7
+flashStart: A1A8
 ---
 
 ```

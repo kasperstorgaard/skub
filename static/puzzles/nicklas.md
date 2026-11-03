@@ -5,6 +5,7 @@ slug: nicklas
 createdAt: 2026-10-25T19:17:01.472Z
 difficulty: medium
 minMoves: 7
+flashStart: E3D6
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: benny
 createdAt: 2026-02-10T19:03:11.838Z
 difficulty: hard
 minMoves: 10
+flashStart: D4D1-B8A8-A1
 ---
 
 ```

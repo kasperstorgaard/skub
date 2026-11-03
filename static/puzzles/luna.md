@@ -5,6 +5,7 @@ slug: luna
 createdAt: 2026-10-18T08:15:14.270Z
 difficulty: medium
 minMoves: 8
+flashStart: H7B7-B1
 ---
 
 ```

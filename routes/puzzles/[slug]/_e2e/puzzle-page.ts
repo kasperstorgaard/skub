@@ -57,6 +57,27 @@ export class PuzzlePage {
     };
   }
 
+  // The badge's lightning switch, beside the move count
+  get flashSwitch() {
+    return this.page.getByRole("switch", { name: "Flash" });
+  }
+
+  // The first time, the switch opens a dialog that turns Flash on
+  async turnOnFlash() {
+    await this.flashSwitch.click();
+    await this.page.getByRole("dialog")
+      .getByRole("button", { name: "Try it", exact: true })
+      .click();
+    // The Flash route redirects back to the clean puzzle.
+    await this.page.waitForURL(/\/puzzles\/[^/?]+$/);
+    return this;
+  }
+
+  // Whichever dialog a solve opens: the celebration, or the name prompt
+  get dialogHeading() {
+    return this.page.getByRole("dialog").getByRole("heading");
+  }
+
   get tutorialNudge() {
     return this.page.getByRole("link", { name: /learn the basics/i });
   }

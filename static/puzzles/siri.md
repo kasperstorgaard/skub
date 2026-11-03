@@ -5,6 +5,7 @@ slug: siri
 createdAt: 2026-03-03T14:34:35.907Z
 difficulty: hard
 minMoves: 10
+flashStart: C5C1-H1-H8
 ---
 
 ```

@@ -1,5 +1,8 @@
 import { getCookies, setCookie } from "@std/http/cookie";
 
+import { decodeMoves, encodeMoves } from "#/game/strings.ts";
+import type { Move } from "#/game/types.ts";
+
 const TRACKING_ID_KEY = "tracking_id";
 // 1 year
 const TRACKING_DURATION = 1000 * 60 * 60 * 24 * 365;
@@ -7,6 +10,14 @@ const TRACKING_DURATION = 1000 * 60 * 60 * 24 * 365;
 const HINT_COUNT_KEY = "hint_count";
 // 24 h in seconds
 const HINT_COUNT_DURATION = 60 * 60 * 24;
+
+const FLASH_EXPLAINED_KEY = "flash_explained";
+// 1 year in seconds
+const FLASH_EXPLAINED_DURATION = 60 * 60 * 24 * 365;
+
+const FLASH_KEY = "flash";
+// 24 h in seconds
+const FLASH_DURATION = 60 * 60 * 24;
 
 /**
  * Generates a tracking ID using Web Crypto API.
@@ -78,5 +89,57 @@ export function setHintCount(
     path,
     maxAge: HINT_COUNT_DURATION,
     httpOnly: true,
+  });
+}
+
+/**
+ * The Flash start for a puzzle, or `null` when Flash is off.
+ * Turns itself off after 24 hours (enforced by cookie expiry).
+ */
+export function getFlashStart(headers: Headers): Move[] | null {
+  const raw = getCookies(headers)[FLASH_KEY];
+  return raw ? decodeMoves(raw) : null;
+}
+
+type SetFlashCookieOptions = {
+  path: string;
+  flashStart: Move[];
+};
+
+/**
+ * Turns Flash on for a puzzle, keeping its Flash start.
+ * Path-scoped to /puzzles/<slug> and expires after 24 hours.
+ */
+export function setFlashStart(
+  headers: Headers,
+  { path, flashStart }: SetFlashCookieOptions,
+) {
+  setCookie(headers, {
+    name: FLASH_KEY,
+    value: encodeMoves(flashStart),
+    path,
+    maxAge: FLASH_DURATION,
+    httpOnly: true,
+    sameSite: "Lax",
+  });
+}
+
+/** Whether the Flash dialog has been answered, either way. */
+export function isFlashExplained(headers: Headers) {
+  return getCookies(headers)[FLASH_EXPLAINED_KEY] === "1";
+}
+
+/**
+ * Marks Flash as explained on every puzzle: the badge turns it on without the
+ * dialog, and the nudge stays away.
+ */
+export function setFlashExplained(headers: Headers) {
+  setCookie(headers, {
+    name: FLASH_EXPLAINED_KEY,
+    value: "1",
+    path: "/",
+    maxAge: FLASH_EXPLAINED_DURATION,
+    httpOnly: true,
+    sameSite: "Lax",
   });
 }

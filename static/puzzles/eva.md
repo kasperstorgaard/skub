@@ -5,6 +5,7 @@ slug: eva
 createdAt: 2026-02-22T19:05:30.265Z
 difficulty: medium
 minMoves: 8
+flashStart: C5G5-G2
 ---
 
 ```

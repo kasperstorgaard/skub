@@ -5,6 +5,7 @@ slug: otto
 createdAt: 2026-01-30T00:00:00.000Z
 difficulty: easy
 minMoves: 7
+flashStart: F3F1
 ---
 
 ```

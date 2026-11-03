@@ -5,6 +5,7 @@ slug: dirk
 createdAt: 2026-09-27T14:50:18.204Z
 difficulty: medium
 minMoves: 8
+flashStart: C3D3-B6B5
 ---
 
 ```

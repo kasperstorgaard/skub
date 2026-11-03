@@ -17,6 +17,8 @@ export type Solution = {
   name: string;
   moves: Move[];
   userId: string;
+  /** Solved from the Flash start, which `moves` include: kept off the leaderboard. */
+  flash?: true;
 };
 
 // One entry per canonical move group for a puzzle, maintained as best-effort aggregate

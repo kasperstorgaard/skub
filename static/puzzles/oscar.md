@@ -5,6 +5,7 @@ slug: oscar
 createdAt: 2026-10-18T08:15:41.636Z
 difficulty: easy
 minMoves: 6
+flashStart: B5G4
 ---
 
 ```

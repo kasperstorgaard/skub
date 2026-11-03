@@ -5,6 +5,7 @@ slug: thomas
 createdAt: 2026-02-22T19:31:43.297Z
 difficulty: easy
 minMoves: 7
+flashStart: A4G4
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: malthe
 createdAt: 2026-10-18T08:16:37.891Z
 difficulty: medium
 minMoves: 9
+flashStart: F3F1-A1
 ---
 
 ```

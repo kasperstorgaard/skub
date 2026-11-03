@@ -5,6 +5,7 @@ slug: viggo
 createdAt: 2026-02-10T19:14:42.655Z
 difficulty: hard
 minMoves: 11
+flashStart: C2C8-H8-G7G6
 ---
 
 ```

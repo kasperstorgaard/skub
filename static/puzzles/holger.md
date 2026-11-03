@@ -5,6 +5,7 @@ slug: holger
 createdAt: 2026-05-23T07:52:37.853Z
 difficulty: medium
 minMoves: 7
+flashStart: C5C1
 ---
 
 ```

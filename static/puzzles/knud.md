@@ -5,6 +5,7 @@ slug: knud
 createdAt: 2026-05-23T08:33:49.803Z
 difficulty: medium
 minMoves: 8
+flashStart: F7F5-A5
 ---
 
 ```

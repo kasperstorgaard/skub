@@ -5,6 +5,7 @@ import {
   encodeState,
   getActiveHref,
   getDifficulty,
+  getFlashHref,
   getHintHref,
   getMovesHref,
   getPage,
@@ -232,6 +233,14 @@ Deno.test("getHintHref() should rewrite pathname to hint route", () => {
 
 Deno.test("getHintHref() should throw when URL has no puzzle slug", () => {
   assertThrows(() => getHintHref("http://example.com/other/path"));
+});
+
+Deno.test("getFlashHref() should point at the flash route without game state", () => {
+  const result = getFlashHref(
+    "http://example.com/puzzles/my-puzzle?moves=A1A6&cursor=1&dialog=flash",
+  );
+
+  assertEquals(result, "http://example.com/puzzles/my-puzzle/flash");
 });
 
 Deno.test("getReplaySpeed() should return the replay_speed param", () => {

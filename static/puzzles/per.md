@@ -5,6 +5,7 @@ slug: per
 createdAt: 2026-03-03T14:29:01.652Z
 difficulty: hard
 minMoves: 9
+flashStart: E2A2-A8
 ---
 
 ```

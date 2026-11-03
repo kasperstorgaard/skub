@@ -5,6 +5,7 @@ slug: henning
 createdAt: 2026-05-23T07:50:50.849Z
 difficulty: medium
 minMoves: 8
+flashStart: F4F8-F2F7
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: andrea
 createdAt: 2026-02-22T19:05:30.265Z
 difficulty: medium
 minMoves: 8
+flashStart: F3G3-D4B4
 ---
 
 ```

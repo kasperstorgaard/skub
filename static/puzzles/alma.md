@@ -5,6 +5,7 @@ slug: alma
 createdAt: 2026-02-15T12:00:53.695Z
 difficulty: medium
 minMoves: 7
+flashStart: B8H8
 ---
 
 ```

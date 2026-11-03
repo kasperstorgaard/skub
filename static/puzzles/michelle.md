@@ -5,6 +5,7 @@ slug: michelle
 createdAt: 2026-10-11T18:52:37.542Z
 difficulty: medium
 minMoves: 9
+flashStart: D1C1-D2D1
 ---
 
 ```

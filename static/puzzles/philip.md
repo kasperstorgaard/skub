@@ -5,6 +5,7 @@ slug: philip
 createdAt: 2026-11-01T08:52:35.518Z
 difficulty: medium
 minMoves: 8
+flashStart: H1H8-A3H3
 ---
 
 ```

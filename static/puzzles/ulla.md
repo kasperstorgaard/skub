@@ -5,6 +5,7 @@ slug: ulla
 createdAt: 2026-10-04T19:25:54.008Z
 difficulty: easy
 minMoves: 6
+flashStart: A5A4
 ---
 
 ```

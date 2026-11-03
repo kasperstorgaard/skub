@@ -5,6 +5,7 @@ slug: mikkel
 createdAt: 2026-09-27T14:41:26.634Z
 difficulty: medium
 minMoves: 9
+flashStart: C3C5-G5
 ---
 
 ```

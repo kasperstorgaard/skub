@@ -5,6 +5,7 @@ slug: kasper
 createdAt: 2026-02-11T16:44:47.326Z
 difficulty: medium
 minMoves: 8
+flashStart: B3B1-H1
 ---
 
 ```

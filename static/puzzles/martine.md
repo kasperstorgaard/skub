@@ -5,6 +5,7 @@ slug: martine
 createdAt: 2026-11-01T08:34:08.651Z
 difficulty: medium
 minMoves: 8
+flashStart: D5D3-B3
 ---
 
 ```

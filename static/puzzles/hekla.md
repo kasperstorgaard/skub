@@ -5,6 +5,7 @@ slug: hekla
 createdAt: 2026-11-01T08:40:52.339Z
 difficulty: hard
 minMoves: 10
+flashStart: B6A6-A5-E6E1
 ---
 
 ```

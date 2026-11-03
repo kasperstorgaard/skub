@@ -5,6 +5,7 @@ createdAt: 2026-04-25T13:10:58.660Z
 difficulty: medium
 minMoves: 7
 number: 124
+flashStart: D2D3
 ---
 
 ```

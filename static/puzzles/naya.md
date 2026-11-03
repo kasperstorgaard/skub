@@ -5,6 +5,7 @@ slug: naya
 createdAt: 2026-10-18T08:23:45.471Z
 difficulty: medium
 minMoves: 9
+flashStart: G6E6-E8
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: frida
 createdAt: 2026-05-23T07:36:57.406Z
 difficulty: medium
 minMoves: 8
+flashStart: G2G1-E1
 ---
 
 ```

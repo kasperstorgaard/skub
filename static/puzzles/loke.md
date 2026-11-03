@@ -5,6 +5,7 @@ createdAt: 2026-04-25T19:49:50.197Z
 difficulty: ultra
 hidden: true
 minMoves: 15
+flashStart: H1F1-F8-A8C8
 ---
 
 ```

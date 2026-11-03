@@ -5,6 +5,7 @@ slug: vibe
 createdAt: 2026-02-15T12:38:14.381Z
 difficulty: medium
 minMoves: 7
+flashStart: G1A1
 ---
 
 ```

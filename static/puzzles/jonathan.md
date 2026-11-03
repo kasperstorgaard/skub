@@ -5,6 +5,7 @@ slug: jonathan
 createdAt: 2026-10-18T08:24:57.323Z
 difficulty: medium
 minMoves: 8
+flashStart: C2E2-F2F6
 ---
 
 ```

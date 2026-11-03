@@ -5,6 +5,7 @@ slug: ursula
 createdAt: 2026-11-01T08:35:11.336Z
 difficulty: medium
 minMoves: 8
+flashStart: A1H1-H8H2
 ---
 
 ```

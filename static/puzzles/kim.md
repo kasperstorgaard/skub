@@ -5,6 +5,7 @@ slug: kim
 createdAt: 2026-02-15T13:49:38.739Z
 difficulty: easy
 minMoves: 8
+flashStart: G1A1-C5C8
 ---
 
 ```

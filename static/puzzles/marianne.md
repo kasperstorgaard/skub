@@ -5,6 +5,7 @@ slug: marianne
 createdAt: 2026-10-25T19:32:27.240Z
 difficulty: medium
 minMoves: 8
+flashStart: D8D7-A3B3
 ---
 
 ```

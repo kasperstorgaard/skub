@@ -5,6 +5,7 @@ slug: silas
 createdAt: 2026-09-10T18:24:41.300Z
 difficulty: medium
 minMoves: 9
+flashStart: C4E4-E1
 ---
 
 ```

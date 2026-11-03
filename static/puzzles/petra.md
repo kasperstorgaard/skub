@@ -5,6 +5,7 @@ slug: petra
 createdAt: 2026-10-25T19:40:14.592Z
 difficulty: medium
 minMoves: 9
+flashStart: G8G4-G3H3
 ---
 
 ```

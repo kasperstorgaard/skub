@@ -5,6 +5,7 @@ slug: laerke
 createdAt: 2026-01-24T00:00:00.000Z
 difficulty: medium
 minMoves: 9
+flashStart: F3A3-H4H6
 ---
 
 ```

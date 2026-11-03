@@ -5,6 +5,7 @@ slug: karla
 createdAt: 2026-01-20T00:00:00.000Z
 difficulty: easy
 minMoves: 5
+flashStart: A6A8
 ---
 
 ```

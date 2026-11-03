@@ -5,6 +5,7 @@ slug: bror
 createdAt: 2026-03-09T20:59:42.559Z
 difficulty: medium
 minMoves: 10
+flashStart: E5E2-B2B3-E3
 ---
 
 ```

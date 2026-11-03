@@ -1,6 +1,7 @@
 import { extractYaml } from "@std/front-matter";
 
 import { COLS, ROWS, validateBoard } from "#/game/board.ts";
+import { decodeMoves } from "#/game/strings.ts";
 import { Board, Piece, Position, type Puzzle, Wall } from "#/game/types.ts";
 
 /**
@@ -259,11 +260,14 @@ export function parsePuzzle(
   content: string,
   options: { validate?: boolean } = {},
 ): Puzzle {
-  const { attrs, body } = extractYaml<Omit<Puzzle, "board">>(content);
+  const { attrs, body } = extractYaml<
+    Omit<Puzzle, "board" | "flashStart"> & { flashStart?: string }
+  >(content);
+  const { flashStart, ...metadata } = attrs;
 
   // A draft is stored before it is named — a board earns a name when it becomes
   // a candidate — so only a puzzle claiming to be finished must carry one.
-  if (options.validate !== false && !attrs.name) {
+  if (options.validate !== false && !metadata.name) {
     throw new ParserError("Metadata must include 'name' field");
   }
 
@@ -279,7 +283,8 @@ export function parsePuzzle(
   const board = options.validate === false ? grid : validateBoard(grid);
 
   return {
-    ...attrs,
+    ...metadata,
+    ...(flashStart && { flashStart: decodeMoves(flashStart) }),
     board,
   };
 }

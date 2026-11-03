@@ -5,6 +5,7 @@ slug: bruno
 createdAt: 2026-02-10T18:46:31.252Z
 difficulty: medium
 minMoves: 7
+flashStart: D5D8
 ---
 
 ```

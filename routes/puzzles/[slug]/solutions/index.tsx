@@ -32,10 +32,14 @@ export const handler = define.handlers<Data>({
     const { puzzle, userId } = ctx.state;
     const userCanonicalKeys: string[] = [];
 
-    const [groups, userSolutions] = await Promise.all([
+    const [groups, allUserSolutions] = await Promise.all([
       listCanonicalGroups(slug, { limit: 6 }),
       listUserPuzzleSolutions(userId, slug, { limit: 100 }),
     ]);
+    // Flash solves stay off the leaderboard, so none of its rows are theirs.
+    const userSolutions = allUserSolutions.filter((solution) =>
+      !solution.flash
+    );
 
     const groupKeySet = new Set(groups.map((g) => g.canonicalKey));
 

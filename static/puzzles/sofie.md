@@ -5,6 +5,7 @@ slug: sofie
 createdAt: 2026-11-01T08:48:39.229Z
 difficulty: easy
 minMoves: 5
+flashStart: A4H5
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: momo
 createdAt: 2026-02-15T10:47:52.605Z
 difficulty: hard
 minMoves: 12
+flashStart: D6D8-H8-H1
 ---
 
 ```

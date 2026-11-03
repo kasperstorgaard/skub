@@ -5,6 +5,7 @@ slug: louise
 createdAt: 2026-10-11T19:38:18.613Z
 difficulty: medium
 minMoves: 9
+flashStart: G4G8-A2
 ---
 
 ```

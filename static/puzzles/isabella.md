@@ -5,6 +5,7 @@ slug: isabella
 createdAt: 2026-02-11T16:44:47.326Z
 difficulty: easy
 minMoves: 7
+flashStart: E7A7
 ---
 
 ```

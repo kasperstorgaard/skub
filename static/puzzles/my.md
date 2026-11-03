@@ -5,6 +5,7 @@ slug: my
 createdAt: 2026-03-09T20:59:42.559Z
 difficulty: medium
 minMoves: 9
+flashStart: H2H3-H1C1
 ---
 
 ```

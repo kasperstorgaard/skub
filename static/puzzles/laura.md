@@ -5,6 +5,7 @@ slug: laura
 createdAt: 2026-10-18T08:24:07.719Z
 difficulty: hard
 minMoves: 10
+flashStart: G2G8-C3G3-C2C8
 ---
 
 ```

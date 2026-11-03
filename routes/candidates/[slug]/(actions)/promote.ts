@@ -8,6 +8,7 @@ import {
   writeCandidate,
 } from "#/game/candidate-store.ts";
 import { promoteTarget } from "#/game/candidates.ts";
+import { generateFlashStart } from "#/game/flash.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
 import { invalidateCorpus } from "#/game/loader.ts";
 import type { Puzzle } from "#/game/types.ts";
@@ -19,7 +20,8 @@ const PUZZLES_DIR = "./static/puzzles";
 /**
  * Promotes a reviewed candidate into the corpus: writes the plain puzzle to
  * `static/puzzles` and regenerates the manifest. Only the `Puzzle` fields
- * travel; the feedback and analysis stay in the store. Always a new puzzle — a
+ * travel, plus a generated Flash start; the feedback and analysis stay in the
+ * store. Always a new puzzle — a
  * shipped one is never overwritten. A board with no usable name goes back to
  * the page's name dialog, which posts the chosen `name` here.
  */
@@ -61,7 +63,7 @@ export const handler = define.handlers({
       ({ name, slug } = target);
     }
 
-    const puzzle: Puzzle = {
+    const promoted: Puzzle = {
       number: await nextPuzzleNumber(),
       name,
       slug,
@@ -70,6 +72,7 @@ export const handler = define.handlers({
       minMoves: candidate.minMoves,
       board: candidate.board,
     };
+    const puzzle = { ...promoted, flashStart: generateFlashStart(promoted) };
 
     // `createNew` fails rather than overwrite: shipped puzzles are immutable.
     await Deno.writeTextFile(

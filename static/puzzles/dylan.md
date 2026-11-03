@@ -5,6 +5,7 @@ slug: dylan
 createdAt: 2026-03-07T13:27:33.906Z
 difficulty: medium
 minMoves: 12
+flashStart: G6E6-E5-B5
 ---
 
 ```

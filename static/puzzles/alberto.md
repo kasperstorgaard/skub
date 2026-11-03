@@ -5,6 +5,7 @@ slug: alberto
 createdAt: 2026-10-11T18:59:43.099Z
 difficulty: medium
 minMoves: 7
+flashStart: G7F7
 ---
 
 ```

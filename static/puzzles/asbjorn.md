@@ -5,6 +5,7 @@ slug: asbjorn
 createdAt: 2026-03-28T21:18:42.722Z
 difficulty: medium
 minMoves: 9
+flashStart: D5E5-H4G4
 ---
 
 ```

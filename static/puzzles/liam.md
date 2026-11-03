@@ -5,6 +5,7 @@ slug: liam
 createdAt: 2026-11-01T08:30:12.072Z
 difficulty: medium
 minMoves: 9
+flashStart: B7B8-D8
 ---
 
 ```

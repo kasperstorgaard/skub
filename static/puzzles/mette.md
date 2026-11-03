@@ -5,6 +5,7 @@ slug: mette
 createdAt: 2026-02-13T12:31:39.655Z
 difficulty: medium
 minMoves: 7
+flashStart: G5G8
 ---
 
 ```

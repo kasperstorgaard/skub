@@ -5,6 +5,7 @@ slug: alice
 createdAt: 2026-03-03T19:58:17.502Z
 difficulty: medium
 minMoves: 8
+flashStart: G4G6-E6
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: ene
 createdAt: 2026-03-09T20:59:42.559Z
 difficulty: medium
 minMoves: 7
+flashStart: C6C3
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: ida
 createdAt: 2026-05-23T07:56:53.037Z
 difficulty: medium
 minMoves: 8
+flashStart: C3C1-B3C3
 ---
 
 ```

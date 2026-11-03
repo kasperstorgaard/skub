@@ -5,6 +5,7 @@ slug: mads
 createdAt: 2026-09-10T19:08:27.119Z
 difficulty: medium
 minMoves: 8
+flashStart: G2G1-C6C3
 ---
 
 ```

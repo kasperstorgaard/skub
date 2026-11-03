@@ -5,6 +5,7 @@ slug: yngvild
 createdAt: 2026-02-15T13:43:50.658Z
 difficulty: medium
 minMoves: 9
+flashStart: D1D6-F1A1
 ---
 
 ```

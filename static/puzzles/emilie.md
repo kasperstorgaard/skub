@@ -5,6 +5,7 @@ slug: emilie
 createdAt: 2026-08-30T18:43:46.190Z
 difficulty: medium
 minMoves: 7
+flashStart: G2G4
 ---
 
 ```

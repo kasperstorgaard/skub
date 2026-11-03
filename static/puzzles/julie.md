@@ -5,6 +5,7 @@ slug: julie
 createdAt: 2026-09-27T14:43:01.393Z
 difficulty: medium
 minMoves: 9
+flashStart: A2G2-G4
 ---
 
 ```

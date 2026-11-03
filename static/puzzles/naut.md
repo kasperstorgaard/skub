@@ -5,6 +5,7 @@ slug: naut
 createdAt: 2026-03-03T14:38:12.541Z
 difficulty: medium
 minMoves: 6
+flashStart: D4D8
 ---
 
 ```

@@ -5,6 +5,7 @@ slug: jeppe
 createdAt: 2026-05-23T08:04:09.427Z
 difficulty: medium
 minMoves: 8
+flashStart: C6C8-G4G8
 ---
 
 ```

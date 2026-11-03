@@ -5,6 +5,7 @@ slug: lili
 createdAt: 2026-09-27T14:53:18.739Z
 difficulty: easy
 minMoves: 6
+flashStart: E7D7
 ---
 
 ```

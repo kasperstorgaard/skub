@@ -5,6 +5,7 @@ slug: gertrud
 createdAt: 2026-03-03T19:04:40.862Z
 difficulty: hard
 minMoves: 11
+flashStart: E7E4-A4-A1A3
 ---
 
 ```

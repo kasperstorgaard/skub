@@ -5,6 +5,7 @@ slug: vilma
 createdAt: 2026-10-18T08:18:17.195Z
 difficulty: medium
 minMoves: 8
+flashStart: H3B6-B2B5
 ---
 
 ```

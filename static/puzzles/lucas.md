@@ -5,6 +5,7 @@ slug: lucas
 createdAt: 2026-09-08T19:02:25.003Z
 difficulty: medium
 minMoves: 7
+flashStart: C3E3
 ---
 
 ```

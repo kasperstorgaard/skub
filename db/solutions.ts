@@ -16,6 +16,10 @@ import { Move } from "#/game/types.ts";
  * - by user (user history)
  * - by user + puzzle slug (user's attempts at a specific puzzle)
  *
+ * A Flash solve is stored the same way, marked `flash`, but needs no
+ * `updateSolutionAggregates`: the leaderboard is built from those aggregates, so
+ * it never shows.
+ *
  * Uses an atomic transaction so all entries are written together or not at all.
  * Resolves after the commit; a new solution still needs `updateSolutionAggregates`.
  */
@@ -40,7 +44,7 @@ export async function saveSolution(
   // User-level dedup: skip if this user already submitted this exact canonical path
   const [existingSolution, existingGroup] = await Promise.all([
     payload.userId
-      ? getCanonicalUserSolution(payload.userId, puzzleSlug, moves)
+      ? getCanonicalUserSolution(payload.userId, puzzleSlug, payload)
       : null,
     kv.get<CanonicalGroup>(groupKey),
   ]);
@@ -55,7 +59,8 @@ export async function saveSolution(
 
   const id = ulid().toLowerCase();
   const solution = { ...payload, id };
-  const isNewPath = existingGroup.value === null;
+  // A Flash solve isn't on the leaderboard, so it finds no new path on it.
+  const isNewPath = !payload.flash && existingGroup.value === null;
 
   // simple key by slug for easy direct lookup
   const primaryKey = ["solutions_by_puzzle", puzzleSlug, id];
@@ -274,19 +279,21 @@ export async function getPuzzleSolution(
 
 /**
  * Checks whether a user already has a solution with the same canonical move set
- * for a given puzzle. Returns the existing solution or null.
+ * for a given puzzle, Flash or not alike. Returns the existing solution or null.
  * Uses a list scan — fine since users post very few solutions per puzzle.
  */
 async function getCanonicalUserSolution(
   userId: string,
   puzzleSlug: string,
-  moves: Move[],
+  { moves, flash }: Pick<Solution, "moves" | "flash">,
 ): Promise<Solution | null> {
   const existing = await listUserPuzzleSolutions(userId, puzzleSlug, {
     limit: 100,
   });
   const canonicalKey = getCanonicalMoveKey(moves);
   return (
-    existing.find((s) => getCanonicalMoveKey(s.moves) === canonicalKey) ?? null
+    existing.find((s) =>
+      s.flash === flash && getCanonicalMoveKey(s.moves) === canonicalKey
+    ) ?? null
   );
 }

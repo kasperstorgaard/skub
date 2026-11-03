@@ -5,6 +5,7 @@ slug: christian
 createdAt: 2026-09-08T18:07:15.536Z
 difficulty: easy
 minMoves: 5
+flashStart: D1D5
 ---
 
 ```

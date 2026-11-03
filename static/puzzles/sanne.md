@@ -5,6 +5,7 @@ slug: sanne
 createdAt: 2026-02-15T11:31:28.416Z
 difficulty: medium
 minMoves: 7
+flashStart: E5E8
 ---
 
 ```

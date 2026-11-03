@@ -1,6 +1,7 @@
 import type { BrowserContext } from "playwright";
 
 import type { Solution, User } from "#/db/types.ts";
+import { withFlashStart } from "#/game/flash.ts";
 import { getPuzzle } from "#/game/loader.ts";
 import { solveSync } from "#/game/solver.ts";
 import type { Move } from "#/game/types.ts";
@@ -107,6 +108,16 @@ export async function solvePuzzle(slug: string): Promise<Move[]> {
   const puzzle = await getPuzzle(slug);
   if (!puzzle) throw new Error(`Puzzle not found: ${slug}`);
   return solveSync(puzzle);
+}
+
+/**
+ * The optimal solution of the shorter puzzle Flash plays, from the puzzle's
+ * stored Flash start. Throws if the puzzle has none.
+ */
+export async function solveFlashPuzzle(slug: string): Promise<Move[]> {
+  const puzzle = await getPuzzle(slug);
+  if (!puzzle?.flashStart) throw new Error(`No Flash start: ${slug}`);
+  return solveSync(withFlashStart(puzzle, puzzle.flashStart));
 }
 
 function seedHeaders() {

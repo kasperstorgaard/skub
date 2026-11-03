@@ -5,6 +5,7 @@ slug: susanna
 createdAt: 2026-02-13T13:16:20.150Z
 difficulty: medium
 minMoves: 7
+flashStart: C5C1
 ---
 
 ```

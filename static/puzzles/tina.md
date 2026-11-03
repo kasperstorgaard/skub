@@ -5,6 +5,7 @@ createdAt: 2026-04-25T12:52:07.022Z
 difficulty: hard
 minMoves: 10
 number: 122
+flashStart: B2B8-G2C2-C3
 ---
 
 ```

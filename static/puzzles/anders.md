@@ -5,6 +5,7 @@ slug: anders
 createdAt: 2026-02-11T16:44:47.326Z
 difficulty: hard
 minMoves: 9
+flashStart: D3A3-A5A8
 ---
 
 ```

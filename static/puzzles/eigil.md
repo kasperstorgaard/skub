@@ -5,6 +5,7 @@ slug: eigil
 createdAt: 2026-02-10T19:25:31.392Z
 difficulty: medium
 minMoves: 7
+flashStart: D3D2
 ---
 
 ```

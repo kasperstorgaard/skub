@@ -5,6 +5,7 @@ number: 153
 createdAt: 2026-05-23T07:14:21.592Z
 difficulty: medium
 minMoves: 9
+flashStart: G3G1-B7B8
 ---
 
 ```

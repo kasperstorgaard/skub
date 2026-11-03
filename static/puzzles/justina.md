@@ -5,6 +5,7 @@ slug: justina
 createdAt: 2026-03-03T19:22:59.980Z
 difficulty: medium
 minMoves: 8
+flashStart: A5A6-F7F6
 ---
 
 ```

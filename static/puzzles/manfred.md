@@ -5,6 +5,7 @@ slug: manfred
 createdAt: 2026-11-01T08:35:33.713Z
 difficulty: medium
 minMoves: 7
+flashStart: A1A3
 ---
 
 ```
