@@ -96,12 +96,11 @@ export async function getFlashSolveCount(puzzleSlug: string): Promise<number> {
   return Number(res.value?.value ?? 0n);
 }
 
-/** Counts a new Flash solve for a puzzle and returns the count, this one included. */
+/** Counts a new Flash solve for a puzzle. */
 export async function incrementFlashSolveCount(
   puzzleSlug: string,
-): Promise<number> {
+): Promise<void> {
   await kv.atomic()
     .sum(["flash_solve_count", puzzleSlug], 1n)
     .commit();
-  return await getFlashSolveCount(puzzleSlug);
 }

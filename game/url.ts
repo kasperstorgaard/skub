@@ -194,8 +194,15 @@ export function getHintHref(href: string) {
 
 /** The puzzle's Flash route, which turns Flash on and plays the Flash start. */
 export function getFlashHref(href: string) {
-  const url = new URL(getHintHref(href));
-  url.pathname = url.pathname.replace(/hint$/, "flash");
+  const url = new URL(href);
+  const slugMatcher = /\/puzzles\/([^/]+)/;
+
+  const matches = url.pathname.match(slugMatcher) ?? [];
+  const slug = matches[1];
+
+  if (!slug) throw new Error("Unable to get slug from URL");
+
+  url.pathname = `/puzzles/${slug}/flash`;
   url.search = "";
 
   return url.href;

@@ -135,21 +135,24 @@ export const handler = define.handlers<PageData>({
     const activeSpan = trace.getActiveSpan();
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    const { isNew, isNewPath, solution } = await withSpan(
-      "puzzle.save_solution",
-      async (span) => {
-        const result = await saveSolution({
-          puzzleSlug: slug,
-          name,
-          moves,
-          userId: ctx.state.userId,
-          ...(isFlash && { flash: true }),
-        });
-        span.setAttribute("solution.is_new", result.isNew);
-        span.setAttribute("solution.is_new_path", result.isNewPath);
-        return result;
-      },
-    );
+    // The Flash count is read alongside the save, so it never includes this
+    // solve and costs no round trip of its own.
+    const [{ isNew, isNewPath, solution }, flashSolvesBefore] = await Promise
+      .all([
+        withSpan("puzzle.save_solution", async (span) => {
+          const result = await saveSolution({
+            puzzleSlug: slug,
+            name,
+            moves,
+            userId: ctx.state.userId,
+            ...(isFlash && { flash: true }),
+          });
+          span.setAttribute("solution.is_new", result.isNew);
+          span.setAttribute("solution.is_new_path", result.isNewPath);
+          return result;
+        }),
+        isFlash ? getFlashSolveCount(slug) : undefined,
+      ]);
     ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
 
     const patch: Partial<Omit<User, "id">> = {};
@@ -180,7 +183,7 @@ export const handler = define.handlers<PageData>({
 
     // One user write, alongside the aggregates. A Flash solve only counts
     // towards the Flash solves, apart from the leaderboard.
-    const [user, puzzleStats, flashSolves] = await Promise.all([
+    const [user, puzzleStats] = await Promise.all([
       Object.keys(patch).length > 0
         ? setUser(ctx.state.userId, patch)
         : ctx.state.user,
@@ -189,13 +192,14 @@ export const handler = define.handlers<PageData>({
         : isNew
         ? updateSolutionAggregates(solution)
         : getPuzzleStats(slug),
-      !isFlash
-        ? undefined
-        : isNew
-        ? incrementFlashSolveCount(slug)
-        : getFlashSolveCount(slug),
+      isFlash && isNew ? incrementFlashSolveCount(slug) : undefined,
     ]);
     ctx.state.user = user;
+
+    // This solve included, like the leaderboard's own count.
+    const flashSolves = flashSolvesBefore === undefined
+      ? undefined
+      : flashSolvesBefore + (isNew ? 1 : 0);
 
     if (isJson) {
       const data: CelebrationData = {
