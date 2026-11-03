@@ -37,7 +37,7 @@ export function RangeSlider(
         <label htmlFor={name} className="text-fl-0 text-text-2">
           {label}
         </label>
-        <span className="text-1 text-text-1 font-weight-7 tabular-nums">
+        <span className="text-1 text-text-1 font-semibold tabular-nums">
           {format ? format(value) : value}
         </span>
       </div>
