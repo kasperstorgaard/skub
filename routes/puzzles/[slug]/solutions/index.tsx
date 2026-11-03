@@ -137,7 +137,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
                     ? (
                       <li
                         key="delimiter"
-                        className="p-0 text-text-3 text-fl-0 px-fl-1 pr-fl-2"
+                        className="p-0 text-text-3 text-0 px-2 pr-3"
                       >
                         …
                       </li>
@@ -204,7 +204,7 @@ function SolutionRow(
         href={`${solutionsHref}/${group.firstSolution.id}`}
         className={clsx(
           "group grid grid-cols-[3rem_1fr_auto] items-center gap-x-fl-1",
-          "px-fl-1 pr-fl-2 py-2 rounded-2 no-underline",
+          "px-2 pr-3 py-2 rounded-2 no-underline",
           "bg-surface-3/20 border-text-3/20 border-1 border-l-3 border-l-text-3",
           "hover:brightness-(--hover-brightness)",
           "data-found:border-l-brand",

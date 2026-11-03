@@ -52,7 +52,7 @@ export function SolutionTags({ slug, moves, initialTags }: SolutionTagsProps) {
             type="button"
             aria-pressed={active}
             className={clsx(
-              "text-fl-0 rounded-1 px-fl-1 py-1 cursor-pointer border-none",
+              "text-0 rounded-1 px-2 py-1 cursor-pointer border-none",
               active
                 ? "bg-brand text-surface-1 font-semibold"
                 : "bg-surface-1 text-text-2 hover:bg-surface-3",

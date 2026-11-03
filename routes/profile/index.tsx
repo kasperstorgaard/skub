@@ -107,7 +107,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
                     value={savedName ?? undefined}
                     placeholder="Set a username"
                     className={clsx(
-                      "min-w-0 px-fl-1 py-1",
+                      "min-w-0 px-2 py-1",
                       "border border-r-0 border-surface-4 bg-surface-2 rounded-r-none",
                     )}
                   />

@@ -142,22 +142,22 @@ export default define.page<typeof handler>(function Home(ctx) {
         <div
           className={clsx(
             "col-[2/3] flex justify-between gap-fl-2",
-            "text-text-1 text-fl-1",
-            "lg:col-auto lg:row-start-1 lg:flex-col lg:text-fl-0",
+            "type-meta text-text-2",
+            "lg:col-auto lg:row-start-1 lg:flex-col",
           )}
         >
           <p>
             Inspired by <br />
             <a
               href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
-              className="text-2 text-text-2"
+              className="text-2 text-text-1"
             >
               Ricochet Robots
             </a>
           </p>
           <p className="text-right lg:text-left">
             Feeling creative? <br />
-            <a href="/puzzles/new" className="text-2 text-text-2">
+            <a href="/puzzles/new" className="text-2 text-text-1">
               Build a puzzle
             </a>
           </p>
