@@ -358,6 +358,49 @@
     background-color: var(--color-surface-1);
   }
 
+  /* Outside retro (which paints its own backdrops): the page fades very
+     slightly toward black on dark themes and white on light ones, with a
+     faint grain on top. html carries both so body's pseudo-elements stay free. */
+  :root:not([data-theme-section="retro"]) {
+    background:
+      linear-gradient(
+        to bottom,
+        var(--color-surface-1),
+        color-mix(in srgb, var(--color-surface-1), light-dark(#fff, #000) 12%)
+      )
+      fixed,
+      var(--color-surface-1);
+
+    body {
+      background: transparent;
+    }
+
+    &::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image: var(--noise-4);
+      background-size: 256px;
+      filter: var(--noise-filter-4);
+      opacity: 0.035;
+      pointer-events: none;
+    }
+  }
+
+  /* Print keeps body's own print palette, without the fade or grain */
+  @media print {
+    :root:not([data-theme-section="retro"]) {
+      body {
+        background: var(--color-surface-1);
+      }
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+
   /* Set default text color */
   body {
     color: var(--color-text-1);
