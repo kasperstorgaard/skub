@@ -92,7 +92,7 @@ export default define.page<typeof handler>(function Home(ctx) {
               {user.skillLevel === null && (
                 <a
                   href="/puzzles/tutorial"
-                  className="puzzle-card group flex flex-col gap-2 text-text-1 no-underline"
+                  className="puzzle-card group flex flex-col gap-3 text-text-1 no-underline"
                 >
                   <div
                     className={clsx(
