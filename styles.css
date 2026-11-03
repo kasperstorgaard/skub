@@ -307,13 +307,6 @@
   );
 }
 
-/* Open Props' dark shadow values, for the non-retro dark themes (tokens.css
-   carries the light ones). Retro themes draw their own shadows. */
-:root:is([data-theme-section="dark"], [data-theme-section="accessibility"]) {
-  --shadow-color: 220 40% 2%;
-  --shadow-strength: 25%;
-}
-
 @media (min-width: 768px) {
   :root {
     font-size: 16px;
@@ -363,65 +356,6 @@
      takes the theme's surface, not normalize's own */
   html {
     background-color: var(--color-surface-1);
-  }
-
-  /* Outside retro (which paints its own backdrops): a soft radial glow from
-     the top of the viewport, with a faint grain on top.
-     Both are fixed layers on html, so they track the viewport on mobile too
-     and body's pseudo-elements stay free. */
-  :root:not([data-theme-section="retro"]) {
-    /* Dark themes lift the glow toward white; light surfaces are already
-       near white, so they glow whiter and let the edges dip slightly */
-    --backdrop-glow: light-dark(
-      color-mix(in srgb, var(--color-surface-1), #fff 70%),
-      color-mix(in srgb, var(--color-surface-1), #fff 8%)
-    );
-    --backdrop-edge: light-dark(
-      color-mix(in srgb, var(--color-surface-1), #000 5%),
-      var(--color-surface-1)
-    );
-
-    body {
-      background: transparent;
-    }
-
-    &::before,
-    &::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    &::before {
-      background: radial-gradient(
-        ellipse 120% 70% at 50% 0%,
-        var(--backdrop-glow),
-        var(--backdrop-edge) 70%
-      );
-    }
-
-    &::after {
-      background-image: var(--noise-4);
-      background-size: 256px;
-      filter: var(--noise-filter-4);
-      opacity: 0.06;
-    }
-  }
-
-  /* Print keeps body's own print palette, without the fade or grain */
-  @media print {
-    :root:not([data-theme-section="retro"]) {
-      body {
-        background: var(--color-surface-1);
-      }
-
-      &::before,
-      &::after {
-        display: none;
-      }
-    }
   }
 
   /* Set default text color */

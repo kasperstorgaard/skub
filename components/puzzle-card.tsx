@@ -49,7 +49,7 @@ export function PuzzleCard({
     >
       <div
         class={clsx(
-          "puzzle-card-thumb relative flex border-2 border-link rounded-1 shadow-3",
+          "puzzle-card-thumb relative flex border-2 border-link rounded-1",
           "group-hover:filter-[lighten(1.3)] transition-colors",
         )}
       >
