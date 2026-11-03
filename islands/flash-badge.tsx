@@ -39,8 +39,7 @@ export function FlashBadge(
       className={clsx(
         "difficulty-badge relative flex items-stretch overflow-hidden",
         "leading-loose text-2 tracking-wider",
-        isOn && "bg-surface-1",
-        !isOn && "bg-surface-2",
+        "bg-surface-2",
         className,
       )}
     >
@@ -72,7 +71,7 @@ export function FlashBadge(
       <span
         className={clsx(
           "grid place-items-center px-2 min-w-[3ch] text-center cursor-help",
-          !isOn && "bg-surface-3",
+          "bg-surface-3",
         )}
         title={hideMinMoves
           ? "solve the puzzle to reveal"
@@ -82,8 +81,8 @@ export function FlashBadge(
       </span>
 
       {
-        // On: a pearl ring inside the badge's edge, so it keeps its size and
-        // nothing is filled
+        // On: the off look plus a pearl ring inside the badge's edge, so it
+        // keeps its size
         isOn && (
           <span
             aria-hidden="true"
