@@ -359,12 +359,20 @@
   }
 
   /* Outside retro (which paints its own backdrops): a soft radial glow from
-     the top of the viewport, toward white on dark themes (black on light
-     ones), with a faint grain on top.
+     the top of the viewport, with a faint grain on top.
      Both are fixed layers on html, so they track the viewport on mobile too
      and body's pseudo-elements stay free. */
   :root:not([data-theme-section="retro"]) {
-    --backdrop-lift: light-dark(#000, #fff);
+    /* Dark themes lift the glow toward white; light surfaces are already
+       near white, so they glow whiter and let the edges dip slightly */
+    --backdrop-glow: light-dark(
+      color-mix(in srgb, var(--color-surface-1), #fff 70%),
+      color-mix(in srgb, var(--color-surface-1), #fff 8%)
+    );
+    --backdrop-edge: light-dark(
+      color-mix(in srgb, var(--color-surface-1), #000 5%),
+      var(--color-surface-1)
+    );
 
     body {
       background: transparent;
@@ -382,8 +390,8 @@
     &::before {
       background: radial-gradient(
         ellipse 120% 70% at 50% 0%,
-        color-mix(in srgb, var(--color-surface-1), var(--backdrop-lift) 8%),
-        var(--color-surface-1) 70%
+        var(--backdrop-glow),
+        var(--backdrop-edge) 70%
       );
     }
 
