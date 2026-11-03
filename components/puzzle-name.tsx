@@ -10,9 +10,9 @@ type Props = {
 };
 
 /**
- * A puzzle's number and name as one title: the number sits one size down at
- * regular weight, on the name's baseline. On page titles it is also muted, so
- * the brand colour stays on the name.
+ * A puzzle's number and name as one title, on one baseline, the number at
+ * regular weight. Cards set it one size down; page titles keep the size and
+ * mute it instead, so the brand colour stays on the name.
  */
 export function PuzzleName({ puzzle, size = "md", className }: Props) {
   return (
@@ -27,7 +27,7 @@ export function PuzzleName({ puzzle, size = "md", className }: Props) {
         <span
           className={clsx(
             "font-4",
-            size === "lg" ? "text-4 text-text-3" : "text-3",
+            size === "lg" ? "text-text-3" : "text-3",
           )}
         >
           #{puzzle.number}
