@@ -42,7 +42,7 @@ export function PuzzleCard({
     <a
       href={`/puzzles/${puzzle.slug}`}
       class={clsx(
-        "puzzle-card group flex flex-col gap-3 text-text-1 no-underline",
+        "puzzle-card group flex flex-col gap-2 text-text-1 no-underline",
         className,
       )}
       {...rest}

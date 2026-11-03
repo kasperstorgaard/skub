@@ -60,7 +60,7 @@ export default define.page<typeof handler>(function Home(ctx) {
 
   return (
     <>
-      <Main className="items-stretch place-content-stretch">
+      <Main className="max-lg:row-span-full items-stretch place-content-stretch">
         <Header />
 
         <div className="title-card flex flex-col">
@@ -78,7 +78,7 @@ export default define.page<typeof handler>(function Home(ctx) {
           </p>
         </div>
 
-        <div className="grid content-start gap-fl-4 mt-fl-2">
+        <div className="grid content-start gap-fl-2">
           <ul className="grid grid-cols-[repeat(2,1fr)] gap-fl-4 list-none pl-0">
             <li className="list-none pl-0 min-w-0">
               <PuzzleCard
@@ -92,7 +92,7 @@ export default define.page<typeof handler>(function Home(ctx) {
               {user.skillLevel === null && (
                 <a
                   href="/puzzles/tutorial"
-                  className="puzzle-card group flex flex-col gap-3 text-text-1 no-underline"
+                  className="puzzle-card group flex flex-col gap-2 text-text-1 no-underline"
                 >
                   <div
                     className={clsx(

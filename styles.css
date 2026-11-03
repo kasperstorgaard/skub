@@ -511,7 +511,7 @@
   weight and colour, e.g. a muted type-meta lead over a type-title.
 */
 @utility type-title-lg {
-  font-size: var(--font-size-5);
+  font-size: var(--font-size-6);
   font-weight: var(--font-weight-5);
   line-height: var(--font-lineheight-1);
 }
