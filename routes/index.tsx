@@ -78,7 +78,7 @@ export default define.page<typeof handler>(function Home(ctx) {
           </p>
         </div>
 
-        <div className="grid content-start gap-fl-2 mt-fl-2">
+        <div className="grid content-start gap-fl-4 mt-fl-2">
           <ul className="grid grid-cols-[repeat(2,1fr)] gap-fl-4 list-none pl-0">
             <li className="list-none pl-0 min-w-0">
               <PuzzleCard
