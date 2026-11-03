@@ -249,7 +249,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
       <Main>
         <Header back={{ href: back.href }} />
 
-        <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
+        <div className="flex items-center justify-between gap-fl-1 flex-wrap">
           <h1 className="text-brand">
             <PuzzleName puzzle={props.data.puzzle} size="lg" />
           </h1>

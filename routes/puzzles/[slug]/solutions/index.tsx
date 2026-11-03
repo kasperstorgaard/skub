@@ -92,7 +92,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           back={{ href: backHref }}
         />
 
-        <div className="flex items-center justify-between mt-2 flex-wrap gap-fl-1">
+        <div className="flex items-center justify-between flex-wrap gap-fl-1">
           <div className="flex flex-col">
             <h1 className="text-brand">
               <PuzzleName puzzle={props.data.puzzle} size="lg" />

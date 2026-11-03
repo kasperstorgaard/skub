@@ -164,7 +164,7 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
       <Main>
         <Header back={{ href: "/" }} />
 
-        <h1 className="text-5 text-brand mt-2">{puzzle.value.name}</h1>
+        <h1 className="text-5 text-brand">{puzzle.value.name}</h1>
 
         <div className="relative max-lg:pb-fl-7">
           <Board

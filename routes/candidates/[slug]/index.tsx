@@ -145,7 +145,7 @@ export default define.page<typeof handler>(function CandidatePage(props) {
       <Main className="lg:relative">
         <Header back={{ href: "/candidates" }} />
 
-        <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
+        <div className="flex items-center justify-between gap-fl-1 flex-wrap">
           <div className="flex flex-col">
             <h1 className="text-5 text-brand pr-1 leading-flat font-5">
               {props.data.label}

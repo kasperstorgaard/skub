@@ -14,7 +14,7 @@ export function Header({ back, hideBuild, hideProfile }: Props) {
   return (
     <header
       f-client-nav
-      className="print:hidden flex items-center justify-between text-5 text-text-2"
+      className="print:hidden flex items-center justify-between mb-fl-2 text-5 text-text-2"
     >
       {back && (
         <a

@@ -57,7 +57,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
       <Main className="max-lg:row-span-full">
         <Header back={{ href: "/" }} hideProfile />
 
-        <div className="flex flex-col gap-fl-4 mt-fl-2">
+        <div className="flex flex-col gap-fl-4">
           <h1 className="text-6">
             Profile
           </h1>

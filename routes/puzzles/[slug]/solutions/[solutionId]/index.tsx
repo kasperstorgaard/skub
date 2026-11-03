@@ -58,7 +58,7 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           back={{ href: backHref }}
         />
 
-        <div className="flex items-center justify-between place-self-start mt-2 w-full flex-wrap">
+        <div className="flex items-center justify-between place-self-start w-full flex-wrap">
           <div className="flex flex-col">
             <h1 className="text-brand">
               <PuzzleName puzzle={props.data.puzzle} size="lg" />

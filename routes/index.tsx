@@ -78,8 +78,8 @@ export default define.page<typeof handler>(function Home(ctx) {
           </p>
         </div>
 
-        <div className="grid gap-fl-2">
-          <ul className="grid grid-cols-[repeat(2,1fr)] gap-fl-3 gap-y-fl-4 list-none pl-0">
+        <div className="grid content-start gap-fl-2 mt-fl-2">
+          <ul className="grid grid-cols-[repeat(2,1fr)] gap-fl-4 list-none pl-0">
             <li className="list-none pl-0 min-w-0">
               <PuzzleCard
                 puzzle={dailyPuzzle}
@@ -141,7 +141,7 @@ export default define.page<typeof handler>(function Home(ctx) {
         </div>
       </Main>
 
-      <Panel className="max-lg:gap-fl-3">
+      <Panel className="max-lg:gap-y-fl-4">
         <div
           className={clsx(
             "col-[2/3] flex justify-between gap-fl-2",
@@ -168,7 +168,7 @@ export default define.page<typeof handler>(function Home(ctx) {
 
         <div
           className={clsx(
-            "col-[2/3] flex flex-col gap-fl-3 justify-between items-start text-2 text-text-2",
+            "col-[2/3] flex flex-col gap-fl-4 justify-between items-start text-2 text-text-2",
             "lg:col-auto lg:row-start-3 lg:justify-between lg:self-stretch",
           )}
         >
