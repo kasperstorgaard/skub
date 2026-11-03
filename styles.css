@@ -512,6 +512,50 @@
   Newly available custom properties definition syntax,
   which allows us to transition values without javascript.
 */
+/*
+  Type roles: size, weight, leading and tracking that belong together.
+  Colour stays separate. Pair neighbours so they differ on two of size,
+  weight and colour, e.g. a muted type-meta lead over a type-title.
+*/
+@utility type-title-lg {
+  font-size: var(--font-size-5);
+  font-weight: var(--font-weight-5);
+  line-height: var(--font-lineheight-1);
+}
+
+@utility type-title {
+  font-size: var(--font-size-4);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-lineheight-1);
+}
+
+@utility type-stat {
+  font-size: var(--font-size-5);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-lineheight-00);
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-body {
+  font-size: var(--font-size-2);
+  font-weight: var(--font-weight-4);
+  line-height: var(--font-lineheight-3);
+}
+
+@utility type-meta {
+  font-size: var(--font-size-1);
+  font-weight: var(--font-weight-4);
+  line-height: var(--font-lineheight-1);
+}
+
+@utility type-tag {
+  font-size: var(--font-size-0);
+  font-weight: var(--font-weight-5);
+  line-height: var(--font-lineheight-00);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 @utility slashed {
   background-image: linear-gradient(
     to bottom right,

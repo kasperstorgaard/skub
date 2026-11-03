@@ -8,6 +8,7 @@ import { Header } from "#/components/header.tsx";
 import { Icon, Play, Shuffle, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import {
   getCanonicalGroup,
   listCanonicalGroups,
@@ -93,9 +94,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
 
         <div className="flex items-center justify-between mt-2 flex-wrap gap-fl-1">
           <div className="flex flex-col">
-            <h1 className="text-5 text-brand leading-flat">
-              {props.data.puzzle.number && `#${props.data.puzzle.number} `}
-              {props.data.puzzle.name}
+            <h1 className="text-brand">
+              <PuzzleName puzzle={props.data.puzzle} size="lg" />
             </h1>
 
             <p className="text-text-3 ml-1">

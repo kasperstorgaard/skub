@@ -11,7 +11,7 @@ import {
 } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { PuzzleCard } from "#/components/puzzle-card.tsx";
+import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getAvailableEntries, getTodaysPuzzle } from "#/game/loader.ts";
@@ -92,7 +92,7 @@ export default define.page<typeof handler>(function Home(ctx) {
               {user.skillLevel === null && (
                 <a
                   href="/puzzles/tutorial"
-                  className="puzzle-card flex flex-col gap-2 text-text-1 no-underline"
+                  className="puzzle-card group flex flex-col gap-2 text-text-1 no-underline"
                 >
                   <div
                     className={clsx(
@@ -107,14 +107,9 @@ export default define.page<typeof handler>(function Home(ctx) {
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <span className="puzzle-card-tagline text-1 text-text-2 tracking-wide leading-tight">
-                      New here?
-                    </span>
-                    <span className="text-text-1 text-3 font-semibold leading-flat items-center">
-                      Learn the basics
-                    </span>
-                  </div>
+                  <PuzzleCardCaption tagline="New here?">
+                    <span className="type-title">Learn the basics</span>
+                  </PuzzleCardCaption>
                 </a>
               )}
 

@@ -9,6 +9,7 @@ import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft } from "#/db/user.ts";
 import type { Puzzle } from "#/game/types.ts";
@@ -43,16 +44,8 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
         <Header back={{ href: "/" }} hideBuild />
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
-          <h1 className="text-6 text-brand leading-tight">
-            {props.data.puzzle.number
-              ? (
-                <span className="font-4 tracking-wide">
-                  #{props.data.puzzle.number}
-                  {" "}
-                </span>
-              )
-              : null}
-            <span className="font-5">{props.data.puzzle.name}</span>
+          <h1 className="text-brand">
+            <PuzzleName puzzle={props.data.puzzle} size="lg" />
           </h1>
 
           <DifficultyBadge puzzle={puzzle.value} className="lg:mt-1" />

@@ -2,6 +2,7 @@ import { clsx } from "clsx/lite";
 import { AnchorHTMLAttributes } from "preact";
 
 import { Check, Icon, Play, Trophy } from "#/components/icons.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { Thumbnail } from "#/components/thumbnail.tsx";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -41,7 +42,7 @@ export function PuzzleCard({
     <a
       href={`/puzzles/${puzzle.slug}`}
       class={clsx(
-        "puzzle-card group flex flex-col gap-1 text-text-1 no-underline",
+        "puzzle-card group flex flex-col gap-2 text-text-1 no-underline",
         className,
       )}
       {...rest}
@@ -107,23 +108,35 @@ export function PuzzleCard({
         )}
       </div>
 
-      <div className="flex flex-col gap-1">
-        {tagline && (
-          <span
-            className={clsx(
-              "puzzle-card-tagline text-1 text-text-2 tracking-wide leading-tight",
-              "group-hover:text-current",
-            )}
-          >
-            {tagline}
-          </span>
-        )}
-        <span className="text-4 font-semibold leading-flat">
-          {puzzle.number && (
-            <span className="tracking-wide font-normal">#{puzzle.number}</span>
-          )} <span>{puzzle.name}</span>
-        </span>
-      </div>
+      <PuzzleCardCaption tagline={tagline}>
+        <PuzzleName puzzle={puzzle} />
+      </PuzzleCardCaption>
     </a>
+  );
+}
+
+type PuzzleCardCaptionProps = {
+  tagline?: string;
+  children: preact.ComponentChildren;
+};
+
+/** The lead and title under a card's thumbnail. */
+export function PuzzleCardCaption(
+  { tagline, children }: PuzzleCardCaptionProps,
+) {
+  return (
+    <div className="flex flex-col gap-1">
+      {tagline && (
+        <span
+          className={clsx(
+            "puzzle-card-tagline type-meta text-text-2",
+            "group-hover:text-current",
+          )}
+        >
+          {tagline}
+        </span>
+      )}
+      {children}
+    </div>
   );
 }

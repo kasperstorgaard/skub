@@ -8,6 +8,7 @@ import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
 import {
@@ -249,14 +250,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         <Header back={{ href: back.href }} />
 
         <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
-          <h1 className="text-6 text-brand leading-tight">
-            {props.data.puzzle.number && (
-              <span className="font-4 tracking-wide">
-                #{props.data.puzzle.number}
-                {" "}
-              </span>
-            )}
-            <span className="font-5">{props.data.puzzle.name}</span>
+          <h1 className="text-brand">
+            <PuzzleName puzzle={props.data.puzzle} size="lg" />
           </h1>
 
           {hasFlash
