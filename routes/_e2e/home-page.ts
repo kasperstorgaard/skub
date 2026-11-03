@@ -18,12 +18,6 @@ export class HomePage {
     return this.page.getByRole("heading", { name: /Skub/i });
   }
 
-  get buildLink() {
-    return this.page.getByRole("banner").getByRole("link", {
-      name: /build a puzzle/i,
-    });
-  }
-
   get profileLink() {
     return this.page.getByRole("link", { name: /profile/i });
   }
