@@ -3,7 +3,7 @@ import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
 import { flashExplained } from "#/client/flash-signals.ts";
-import { Icon, LightningFill } from "#/components/icons.tsx";
+import { LightningFill } from "#/components/icons.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { getFlashHref } from "#/game/url.ts";
 
@@ -52,13 +52,9 @@ export function FlashBadge(
             aria-disabled="true"
             aria-label="Flash"
             title="Flash mode: activated"
-            className={clsx(
-              "grid place-items-center min-w-[2.25rem] px-2",
-              "bg-(image:--pearl) text-(--btn-active-text)",
-              "shadow-[inset_0_1px_0_rgb(255_255_255/0.35)]",
-            )}
+            className="grid place-items-center min-w-[2.25rem] px-2"
           >
-            <Icon icon={LightningFill} />
+            <PearlBolt />
           </span>
         )
         : skipsDialog
@@ -77,24 +73,28 @@ export function FlashBadge(
         className={clsx(
           "grid place-items-center px-2 min-w-[3ch] text-center cursor-help",
           !isOn && "bg-surface-3",
-          // A pearl border around the count, which is pearl too.
-          isOn && "border-2 border-transparent",
-          isOn &&
-            "[background:linear-gradient(var(--color-surface-1),var(--color-surface-1))_padding-box,var(--pearl)_border-box]",
         )}
         title={hideMinMoves
           ? "solve the puzzle to reveal"
           : "shortest possible solution"}
       >
-        <span
-          className={clsx(
-            isOn && "bg-(image:--pearl) bg-clip-text text-transparent",
-            isOn && "font-bold",
-          )}
-        >
-          {hideMinMoves ? "?" : puzzle.value.minMoves || "—"}
-        </span>
+        {hideMinMoves ? "?" : puzzle.value.minMoves || "—"}
       </span>
+
+      {
+        // On: a pearl ring inside the badge's edge, so it keeps its size and
+        // nothing is filled
+        isOn && (
+          <span
+            aria-hidden="true"
+            className={clsx(
+              "absolute inset-0 p-[2px] pointer-events-none",
+              "bg-(image:--pearl)",
+              "[mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]",
+            )}
+          />
+        )
+      }
     </span>
   );
 }
