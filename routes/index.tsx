@@ -84,7 +84,6 @@ export default define.page<typeof handler>(function Home(ctx) {
               <PuzzleCard
                 puzzle={dailyPuzzle}
                 tagline="Daily puzzle"
-                pearl
                 bestMoves={bestMoves[dailyPuzzle.slug]}
               />
             </li>

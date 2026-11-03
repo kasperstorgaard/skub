@@ -13,8 +13,6 @@ export type PuzzleCardProps =
     bestMoves?: number;
     tagline?: string;
     showPlay?: boolean;
-    /** Pearl border: the one card to draw the eye to, e.g. the daily */
-    pearl?: boolean;
   };
 
 /**
@@ -32,7 +30,6 @@ export function PuzzleCard({
   bestMoves,
   tagline,
   showPlay,
-  pearl,
   className,
   ...rest
 }: PuzzleCardProps) {
@@ -53,7 +50,6 @@ export function PuzzleCard({
       <div
         class={clsx(
           "puzzle-card-thumb relative flex border-2 border-link rounded-1",
-          pearl && "pearl-border",
           "group-hover:filter-[lighten(1.3)] transition-colors",
         )}
       >

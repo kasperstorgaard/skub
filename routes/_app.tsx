@@ -7,7 +7,7 @@ import { Router } from "#/islands/router.tsx";
 import { TrackingScript } from "#/islands/tracking-script.tsx";
 import { sharedChunks } from "#/lib/shared-chunks.ts";
 import { THEME_ASSETS } from "#/lib/theme-assets.ts";
-import { getThemeSection, resolveTheme } from "#/lib/themes.ts";
+import { resolveTheme } from "#/lib/themes.ts";
 
 export default define.page(
   function AppWrapper({ Component, state, url }) {
@@ -33,7 +33,6 @@ export default define.page(
         className="min-h-dvh"
         lang="en"
         data-theme={theme}
-        data-theme-section={getThemeSection(theme)}
       >
         <head>
           <meta charset="utf-8" />
