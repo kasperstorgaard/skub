@@ -358,14 +358,13 @@
     background-color: var(--color-surface-1);
   }
 
-  /* Outside retro (which paints its own backdrops): a soft fade across the
-     viewport, lit toward white at the top on dark themes (black on light
-     ones) and sinking the other way at the bottom, with a faint grain on top.
+  /* Outside retro (which paints its own backdrops): a soft radial glow from
+     the top of the viewport, toward white on dark themes (black on light
+     ones), with a faint grain on top.
      Both are fixed layers on html, so they track the viewport on mobile too
      and body's pseudo-elements stay free. */
   :root:not([data-theme-section="retro"]) {
     --backdrop-lift: light-dark(#000, #fff);
-    --backdrop-sink: light-dark(#fff, #000);
 
     body {
       background: transparent;
@@ -381,11 +380,10 @@
     }
 
     &::before {
-      background: linear-gradient(
-        to bottom,
-        color-mix(in srgb, var(--color-surface-1), var(--backdrop-lift) 7%),
-        var(--color-surface-1) 45%,
-        color-mix(in srgb, var(--color-surface-1), var(--backdrop-sink) 25%)
+      background: radial-gradient(
+        ellipse 120% 70% at 50% 0%,
+        color-mix(in srgb, var(--color-surface-1), var(--backdrop-lift) 8%),
+        var(--color-surface-1) 70%
       );
     }
 
