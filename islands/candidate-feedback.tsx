@@ -119,7 +119,7 @@ export function CandidateFeedback(
                 className={clsx(
                   "text-fl-0 rounded-1 px-fl-1 py-1 cursor-pointer",
                   active
-                    ? "bg-brand text-surface-1 font-weight-7"
+                    ? "bg-brand text-surface-1 font-semibold"
                     : "bg-surface-1 text-text-2 hover:bg-surface-3",
                 )}
                 onClick={() => toggleReason(tag.value)}

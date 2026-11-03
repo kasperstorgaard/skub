@@ -38,7 +38,7 @@ function ScoreStat(
       title={hint ? `${label} — ${hint}` : undefined}
     >
       <dt className={clsx("text-text-2", hint && "cursor-help")}>{label}</dt>
-      <dd className="text-text-1 font-weight-7 tabular-nums">{display}</dd>
+      <dd className="text-text-1 font-semibold tabular-nums">{display}</dd>
     </div>
   );
 }
@@ -230,7 +230,7 @@ function SolutionList(
             className={clsx(
               "text-fl-0 rounded-1 px-fl-1 py-1 no-underline tabular-nums",
               selected === route.index
-                ? "bg-brand text-surface-1 font-weight-7"
+                ? "bg-brand text-surface-1 font-semibold"
                 : "bg-surface-1 text-text-2 hover:bg-surface-3",
             )}
           >
@@ -262,7 +262,7 @@ function SolutionDetail(
     <div className="flex flex-col gap-fl-1">
       <p className="flex justify-between gap-fl-1 text-1 leading-tight">
         <span className="text-text-2">Solution {index + 1}</span>
-        <span className="text-text-1 font-weight-7 tabular-nums">
+        <span className="text-text-1 font-semibold tabular-nums">
           {route.score.toFixed(2)}
         </span>
       </p>

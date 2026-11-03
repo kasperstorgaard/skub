@@ -38,7 +38,7 @@
     min-height: 44px;
 
     font-size: var(--font-size-fluid-1);
-    font-weight: var(--font-weight-7);
+    font-weight: var(--font-weight-semibold);
     text-decoration: none;
     line-height: 1;
     color: var(--color-text-1);
