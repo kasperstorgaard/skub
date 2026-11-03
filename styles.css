@@ -584,6 +584,27 @@
 }
 
 @layer components {
+  /* Pearl border ring for the one highlighted thing in view (the daily
+     puzzle). A masked ::before keeps the element see-through. Retro themes
+     keep the element's own border. */
+  :root:not([data-theme-section="retro"]) .pearl-border {
+    position: relative;
+    border-color: transparent;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: calc(-1 * var(--border-size-2));
+      padding: var(--border-size-2);
+      border-radius: inherit;
+      background: var(--pearl);
+      mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+      pointer-events: none;
+    }
+  }
+
   /* Three sequenced dots to indicate loading */
   .loading-dots > span {
     display: inline-block;
