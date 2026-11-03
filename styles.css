@@ -358,33 +358,42 @@
     background-color: var(--color-surface-1);
   }
 
-  /* Outside retro (which paints its own backdrops): the page fades very
-     slightly toward black on dark themes and white on light ones, with a
-     faint grain on top. html carries both so body's pseudo-elements stay free. */
+  /* Outside retro (which paints its own backdrops): a soft fade across the
+     viewport, lit toward white at the top on dark themes (black on light
+     ones) and sinking the other way at the bottom, with a faint grain on top.
+     Both are fixed layers on html, so they track the viewport on mobile too
+     and body's pseudo-elements stay free. */
   :root:not([data-theme-section="retro"]) {
-    background:
-      linear-gradient(
-        to bottom,
-        var(--color-surface-1),
-        color-mix(in srgb, var(--color-surface-1), light-dark(#fff, #000) 12%)
-      )
-      fixed,
-      var(--color-surface-1);
+    --backdrop-lift: light-dark(#000, #fff);
+    --backdrop-sink: light-dark(#fff, #000);
 
     body {
       background: transparent;
     }
 
-    &::before {
+    &::before,
+    &::after {
       content: "";
       position: fixed;
       inset: 0;
       z-index: -1;
+      pointer-events: none;
+    }
+
+    &::before {
+      background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--color-surface-1), var(--backdrop-lift) 7%),
+        var(--color-surface-1) 45%,
+        color-mix(in srgb, var(--color-surface-1), var(--backdrop-sink) 25%)
+      );
+    }
+
+    &::after {
       background-image: var(--noise-4);
       background-size: 256px;
       filter: var(--noise-filter-4);
-      opacity: 0.035;
-      pointer-events: none;
+      opacity: 0.06;
     }
   }
 
@@ -395,7 +404,8 @@
         background: var(--color-surface-1);
       }
 
-      &::before {
+      &::before,
+      &::after {
         display: none;
       }
     }
