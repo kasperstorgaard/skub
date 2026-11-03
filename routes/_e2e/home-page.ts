@@ -19,7 +19,9 @@ export class HomePage {
   }
 
   get buildLink() {
-    return this.page.getByRole("link", { name: /build a puzzle/i });
+    return this.page.getByRole("banner").getByRole("link", {
+      name: /build a puzzle/i,
+    });
   }
 
   get profileLink() {

@@ -163,9 +163,9 @@ export default define.page<typeof handler>(function Home(ctx) {
             </a>
           </p>
           <p className="text-right lg:text-left">
-            Got a puzzle in you? <br />
+            Feeling creative? <br />
             <a href="/puzzles/new" className="text-2 text-text-2">
-              Build one
+              Build a puzzle
             </a>
           </p>
         </div>
