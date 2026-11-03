@@ -108,7 +108,9 @@ export default define.page<typeof handler>(function Home(ctx) {
                   </div>
 
                   <PuzzleCardCaption tagline="New here?">
-                    <span className="type-title">Learn the basics</span>
+                    <span className="type-title leading-flat!">
+                      Learn the basics
+                    </span>
                   </PuzzleCardCaption>
                 </a>
               )}

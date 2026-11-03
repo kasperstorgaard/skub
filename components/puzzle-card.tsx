@@ -109,7 +109,7 @@ export function PuzzleCard({
       </div>
 
       <PuzzleCardCaption tagline={tagline}>
-        <PuzzleName puzzle={puzzle} />
+        <PuzzleName puzzle={puzzle} className="leading-flat!" />
       </PuzzleCardCaption>
     </a>
   );
