@@ -170,7 +170,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
     ? { href: "/", label: "Back to Home" }
     : {
       href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
-      label: "Back to archives",
+      label: "Back to archive",
     };
 
   return (

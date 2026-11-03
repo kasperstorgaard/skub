@@ -8,7 +8,7 @@ export class ArchivesPage {
   constructor(private page: Page) {}
 
   get heading() {
-    return this.page.getByRole("heading", { name: /Archives/i });
+    return this.page.getByRole("heading", { name: /Archive/i });
   }
 
   /** The calendar grid container. */

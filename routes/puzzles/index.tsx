@@ -104,7 +104,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
         <Header url={url} back={{ href: "/" }} share />
 
         <div className="flex flex-col gap-0">
-          <h1 className="text-brand text-6 leading-flat">Archives</h1>
+          <h1 className="text-brand text-6 leading-flat">Archive</h1>
           <span className="text-3 text-text-2">{selectedDate.year}</span>
         </div>
 

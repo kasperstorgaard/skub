@@ -68,7 +68,7 @@ export class HomePage {
   }
 
   async clickArchivesLink() {
-    await this.page.getByRole("link", { name: /archives/i }).click();
+    await this.page.getByRole("link", { name: /archive/i }).click();
     return new ArchivesPage(this.page);
   }
 }

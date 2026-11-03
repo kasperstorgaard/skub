@@ -3,7 +3,7 @@ import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
 import {
-  ArrowRight,
+  CalendarDots,
   ChalkboardTeacher,
   GithubLogo,
   Icon,
@@ -140,9 +140,16 @@ export default define.page<typeof handler>(function Home(ctx) {
             </li>
           </ul>
 
-          <a href="/puzzles" className="btn place-self-start" data-size="lg">
-            Archives <Icon icon={ArrowRight} />
-          </a>
+          <div className="flex flex-wrap gap-fl-1">
+            <a href="/puzzles" className="btn" data-size="lg">
+              <Icon icon={CalendarDots} />
+              Browse archive
+            </a>
+            <a href="/puzzles/new" className="btn" data-size="lg">
+              <Icon icon={Pencil} />
+              Build a puzzle
+            </a>
+          </div>
         </div>
       </Main>
 
@@ -172,14 +179,6 @@ export default define.page<typeof handler>(function Home(ctx) {
           {userStats && (
             <StatsSummary stats={userStats} className="lg:w-full" />
           )}
-
-          <div className="flex flex-col items-start gap-fl-1">
-            <span className="text-text-2 text-2">Feeling creative?</span>
-            <a href="/puzzles/new" className="btn">
-              <Icon icon={Pencil} />
-              Build a puzzle
-            </a>
-          </div>
 
           <div className="flex gap-2 lg:flex-col lg:mt-auto">
             <a
