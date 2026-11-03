@@ -109,7 +109,7 @@ export function PuzzleCard({
       </div>
 
       <PuzzleCardCaption tagline={tagline}>
-        <PuzzleName puzzle={puzzle} className="leading-flat!" />
+        <PuzzleName puzzle={puzzle} />
       </PuzzleCardCaption>
     </a>
   );
@@ -125,7 +125,7 @@ export function PuzzleCardCaption(
   { tagline, children }: PuzzleCardCaptionProps,
 ) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col">
       {tagline && (
         <span
           className={clsx(

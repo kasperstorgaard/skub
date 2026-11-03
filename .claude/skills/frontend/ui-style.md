@@ -54,3 +54,6 @@ levels, each about twice the one below, and nothing in between:
   needs `content-start`, or the free space lands in its gaps.
 - On `Panel` (a column subgrid) set `gap-y-*` only: a column gap shifts the
   content off `Main`'s edge.
+- Between stacked lines of text (a lead over a title), the line-height is the
+  spacing: no gap, and let the type role's line-height do the work rather
+  than forcing leading.
