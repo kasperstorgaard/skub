@@ -184,6 +184,12 @@ PR finishes only part of an item, trim the item to what is left.
   the solve. The first celebration a player sees explains what stars are and how
   to earn them. The solutions page shows the stars earned on the puzzle.
 
+- **Players play without being asked for a name.** Today a new player's first
+  solve asks for a name before anything else. Ask only when they want their name
+  somewhere: submitting a solve to a leaderboard, or opening a puzzle's
+  solutions or the high score page. Until then solves are saved anonymously as
+  now, and the name joins them once given.
+
 - **Players can see who has the most stars.** A high score page ranks players by
   all-time stars, linked from home's sidebar, the archive and the solutions
   page. Builds on the stars item above.
