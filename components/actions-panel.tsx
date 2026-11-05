@@ -54,6 +54,30 @@ export function ActionsPanel(
           </a>
         )}
       </div>
+
+      {/* Mobile only, like home's footer; desktop has these in the sidebar */}
+      <div className="lg:hidden col-[2/3] mt-fl-4 flex justify-between gap-fl-2 type-meta text-text-2">
+        <p className="m-0">
+          Inspired by <br />
+          <a
+            href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
+            className="text-2 text-text-1"
+          >
+            Ricochet Robots
+          </a>
+        </p>
+        <p className="m-0 text-right">
+          Feeling creative? <br />
+          <a
+            href="/puzzles/new"
+            // Full navigation: /puzzles/new redirects, which client nav drops
+            f-client-nav={false}
+            className="text-2 text-text-1"
+          >
+            Build a puzzle
+          </a>
+        </p>
+      </div>
     </Panel>
   );
 }
