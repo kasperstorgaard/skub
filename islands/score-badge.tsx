@@ -109,8 +109,9 @@ function OffSwitch({ as: Element, ...props }: OffSwitchProps) {
       title="Flash: start a few moves in, off the leaderboard"
       className={clsx(
         // Square: the badge is leading-loose, 2em tall; aspect-ratio can't see
-        // a flex item's stretched height
-        "grid place-items-center w-[2em]",
+        // a flex item's stretched height. Links get their own font-size from
+        // the base styles, so take the badge's for the em to match.
+        "grid place-items-center w-[2em] [font-size:inherit]",
         "bg-transparent no-underline cursor-pointer text-text-3",
         "hover:text-text-2",
       )}
