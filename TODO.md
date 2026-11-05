@@ -191,6 +191,13 @@ PR finishes only part of an item, trim the item to what is left.
   put it on the board. Opening a puzzle's solutions or the high score page
   offers the same prompt to players who skipped it.
 
+  Solves are keyed by user id; the name is a copy saved on each one, which
+  renaming in the profile doesn't touch today. So: solves start anonymous, and
+  picking or changing a name writes it back to that user's solves (listed by
+  `solutions_by_user`: all four keys per solve, plus a leaderboard group's
+  `firstSolution` where it's theirs), soon enough that their next look at a
+  board shows it. Keeps leaderboard reads free of user lookups.
+
 - **Players can see who has the most stars.** A high score page ranks players by
   all-time stars, linked from home's sidebar, the archive and the solutions
   page. Builds on the stars item above.
