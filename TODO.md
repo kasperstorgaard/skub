@@ -144,10 +144,13 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## Play
 
-- **Every player can rate a puzzle.** A Rate action in the puzzle page's sidebar
-  (the footer on mobile) opens a dialog for difficulty, fun and a line of
-  feedback, so ratings come from players, not only from Kasper's local rating
-  flow. The local flow stays as it is, for calibration.
+- **Every player can rate a puzzle.** A Rate action opens a dialog for
+  difficulty, fun and a line of feedback, so ratings come from players, not only
+  from Kasper's local rating flow. It's offered where a player has just played
+  or looked back: the puzzle page's sidebar (the footer on mobile), the
+  celebration after a solve, and the solutions page. The celebration already has
+  two calls to action, its limit, so Rate takes one of those slots or its one
+  link. The local flow stays as it is, for calibration.
 
 - **Flash starts can be chosen by hand.** Today each puzzle's Flash start is
   generated on promotion: the opening moves of the solver's first optimal
