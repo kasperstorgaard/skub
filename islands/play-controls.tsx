@@ -37,6 +37,8 @@ type PlayControlsProps = {
 const TOOL = clsx(
   TOOL_BUTTON,
   "text-text-1 aria-disabled:opacity-40",
+  // Mobile: the row's 3.5rem columns, as tall as they are wide
+  "max-lg:aspect-square",
 );
 
 // Not a control. Desktop only; touch swipes.
@@ -123,7 +125,7 @@ export function PlayControls(
   }, [href.value]);
 
   return (
-    <Toolbar className={clsx("print:hidden", className)}>
+    <Toolbar size="lg" className={clsx("print:hidden", className)}>
       <a
         href={getUndoHref(href.value, state)}
         className={TOOL}
@@ -131,7 +133,10 @@ export function PlayControls(
         aria-label="Undo"
         data-router="replace"
       >
-        <Icon icon={ArrowArcLeft} className="text-[1.25rem]" />
+        <Icon
+          icon={ArrowArcLeft}
+          className="text-[1.25rem] max-lg:text-[2rem]"
+        />
       </a>
       <KeyHint>U</KeyHint>
 
@@ -145,7 +150,10 @@ export function PlayControls(
         aria-label="Redo"
         data-router="replace"
       >
-        <Icon icon={ArrowArcRight} className="text-[1.25rem]" />
+        <Icon
+          icon={ArrowArcRight}
+          className="text-[1.25rem] max-lg:text-[2rem]"
+        />
       </a>
       <KeyHint>R</KeyHint>
 
@@ -175,7 +183,10 @@ export function PlayControls(
               aria-label={hintSpent ? "Hint used" : "Get a hint"}
               title={hintSpent ? "Hint used" : "Get a hint"}
             >
-              <Icon icon={Lightbulb} className="text-[1.25rem]" />
+              <Icon
+                icon={Lightbulb}
+                className="text-[1.25rem] max-lg:text-[2rem]"
+              />
             </button>
           </form>
           <KeyHint>H</KeyHint>
@@ -189,7 +200,10 @@ export function PlayControls(
         title="Start over"
         data-router="replace"
       >
-        <Icon icon={ArrowCounterClockwise} className="text-[1.25rem]" />
+        <Icon
+          icon={ArrowCounterClockwise}
+          className="text-[1.25rem] max-lg:text-[2rem]"
+        />
       </a>
       <KeyHint>⇧U</KeyHint>
 

@@ -57,7 +57,7 @@ export function ScoreBadge(
             aria-disabled="true"
             aria-label="Flash"
             title="Flash mode: activated"
-            className="grid place-items-center min-w-[2.25rem] px-2"
+            className="grid place-items-center aspect-square"
           >
             <PearlBolt />
           </span>
@@ -108,7 +108,7 @@ function OffSwitch({ as: Element, ...props }: OffSwitchProps) {
       aria-label="Flash"
       title="Flash: start a few moves in, off the leaderboard"
       className={clsx(
-        "grid place-items-center min-w-[2.25rem] px-2",
+        "grid place-items-center aspect-square",
         "bg-transparent no-underline cursor-pointer text-text-3",
         "hover:text-text-2",
       )}

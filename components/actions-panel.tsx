@@ -17,7 +17,7 @@ export function ActionsPanel(
 ) {
   return (
     <Panel className={className}>
-      <div className="flex justify-start gap-fl-1 flex-wrap max-lg:col-[2/3] lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start">
+      <div className="flex justify-center lg:justify-start gap-fl-1 flex-wrap max-lg:col-[2/3] lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start">
         {!isPreview && !isFlash && (
           <a href={`/puzzles/${slug}/solutions`} className="btn">
             <Icon icon={Ranking} /> See solves

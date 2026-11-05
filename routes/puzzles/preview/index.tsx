@@ -64,7 +64,8 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
             isDev={isDev}
             isPreview
             className={clsx(
-              "max-lg:mt-fl-1",
+              // Mobile: as far under the board as the old footer's controls sat
+              "max-lg:mt-fl-4",
               "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
             )}
           />
