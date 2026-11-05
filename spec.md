@@ -20,7 +20,8 @@ puzzle: modern and a little refined, friendly rather than editorial.
 - Puzzle titles stack the number over the name: on cards the number joins the
   lead ("Daily puzzle #309", then the name); on pages it's a light, muted line
   above the name.
-- The home wordmark sits at 700 and swells once, barely, on load.
+- The home wordmark ripples once on load: each letter swells 300 → 600 and
+  settles at 500, staggered left to right.
 
 ### Surface
 

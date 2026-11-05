@@ -29,12 +29,12 @@
     U+FFFD;
 }
 
-/* The home wordmark breathes once on load: a slight swell past 700 and
-   back, easy to miss */
+/* The home wordmark ripples once on load: each letter swells from light to
+   600 and settles at 500, staggered left to right */
 .wordmark {
   display: inline-flex;
   flex-direction: column;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 /* Reserves the swell's width, so it doesn't push its neighbours */
@@ -43,26 +43,26 @@
   height: 0;
   overflow: hidden;
   visibility: hidden;
-  font-weight: 780;
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .wordmark {
-    animation: wordmark-bounce 0.5s 1s both;
+  .wordmark-letter {
+    animation: wordmark-ripple 0.5s var(--delay) both;
   }
 }
 
-@keyframes wordmark-bounce {
+@keyframes wordmark-ripple {
   0% {
-    font-weight: 660;
+    font-weight: 300;
     animation-timing-function: ease-out;
   }
-  45% {
-    font-weight: 780;
+  50% {
+    font-weight: 600;
     animation-timing-function: ease-in-out;
   }
   100% {
-    font-weight: 700;
+    font-weight: 500;
   }
 }
 

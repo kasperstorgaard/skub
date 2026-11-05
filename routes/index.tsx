@@ -66,7 +66,22 @@ export default define.page<typeof handler>(function Home(ctx) {
         <div className="title-card flex flex-col">
           <h1 className="text-8 leading-tight text-brand flex items-baseline gap-fl-1">
             <span className="wordmark" data-text="Skub">
-              Skub
+              {/* One span per letter, so the load ripple can stagger them */}
+              <span>
+                {[..."Skub"].map((letter, index, letters) => (
+                  <span
+                    key={index}
+                    className="wordmark-letter"
+                    style={{
+                      "--delay": `${
+                        0.5 + (index * 0.5) / (letters.length - 1)
+                      }s`,
+                    }}
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </span>
             </span>
             <span className="text-1 text-text-3">
               [ˈsgɔb]
