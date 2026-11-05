@@ -124,7 +124,7 @@ PR finishes only part of an item, trim the item to what is left.
   cells (today they're slightly off).
 
 - **Flash on feels alive.** While Flash is on, the bolt in the score badge gives
-  off a slow trickle of particles. Subtle, never distracting, and still under
+  off a slow trickle of particles. Subtle, never distracting, and off under
   reduced motion.
 
 - **Undo and redo are easy to hit with a mouse.** Check whether the desktop
