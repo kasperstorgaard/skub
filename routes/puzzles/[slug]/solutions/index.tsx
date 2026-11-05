@@ -3,10 +3,10 @@ import clsx from "clsx/lite";
 import { page } from "fresh";
 import { useMemo } from "preact/hooks";
 
-import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Icon, Play, Shuffle, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
+import { PanelCredits } from "#/components/panel-credits.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import {
@@ -17,6 +17,7 @@ import {
 import { CanonicalGroup } from "#/db/types.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { Puzzle } from "#/game/types.ts";
+import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
@@ -24,6 +25,8 @@ type Data = {
   groups: CanonicalGroup[];
   extraGroup: CanonicalGroup | null;
   userCanonicalKeys: string[];
+  /** The player's best regular solve, for the score badge */
+  bestMoves: number | null;
   userId: string;
 };
 
@@ -63,7 +66,18 @@ export const handler = define.handlers<Data>({
       }
     }
 
-    return page({ puzzle, groups, extraGroup, userCanonicalKeys, userId });
+    const bestMoves = userSolutions.length
+      ? Math.min(...userSolutions.map((solution) => solution.moves.length))
+      : null;
+
+    return page({
+      puzzle,
+      groups,
+      extraGroup,
+      userCanonicalKeys,
+      bestMoves,
+      userId,
+    });
   },
 });
 
@@ -76,6 +90,7 @@ type SolutionRowProps = {
 
 export default define.page<typeof handler>(function SolutionsListPage(props) {
   const puzzle = useSignal(props.data.puzzle);
+  const href = useSignal(props.url.href);
   const { groups, extraGroup, userCanonicalKeys } = props.data;
   const minMoves = props.data.puzzle.minMoves;
   const solutionsHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
@@ -103,7 +118,11 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             </p>
           </div>
 
-          <DifficultyBadge puzzle={puzzle.value} />
+          <ScoreBadge
+            puzzle={puzzle}
+            href={href}
+            moves={props.data.bestMoves}
+          />
         </div>
 
         {
@@ -160,8 +179,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
       <Panel>
         <div
           className={clsx(
-            "max-lg:col-[2/3] flex flex-col gap-fl-2 items-start place-content-end w-full",
-            "lg:row-[3/4] lg:gap-fl-3 lg:grid lg:grid-cols-1",
+            "max-lg:col-[2/3] flex flex-col gap-fl-2 items-center place-content-end w-full",
+            "lg:row-[3/4] lg:gap-fl-3 lg:grid lg:grid-cols-1 lg:justify-items-start",
           )}
         >
           <a
@@ -171,6 +190,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             <Icon icon={Shuffle} /> Remix
           </a>
         </div>
+
+        <PanelCredits className="mt-fl-4" />
       </Panel>
     </>
   );

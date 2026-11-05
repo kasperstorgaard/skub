@@ -17,6 +17,8 @@ type ScoreBadgeProps = {
     /** The Flash dialog was answered before, so the switch skips it. */
     isExplained: boolean;
   };
+  /** A fixed count instead of the URL's moves, see `MoveScore` */
+  moves?: number | null;
   /** Hide the shortest solution when the user hasn't solved this puzzle. */
   hideMinMoves?: boolean;
   className?: string;
@@ -29,7 +31,7 @@ type ScoreBadgeProps = {
  * the badge turns pearl.
  */
 export function ScoreBadge(
-  { puzzle, href, flash, hideMinMoves, className }: ScoreBadgeProps,
+  { puzzle, href, flash, moves, hideMinMoves, className }: ScoreBadgeProps,
 ) {
   const isOn = flash?.isOn ?? false;
   const skipsDialog = flash?.isExplained || flashExplained.value;
@@ -86,6 +88,7 @@ export function ScoreBadge(
       >
         <MoveScore
           href={href}
+          moves={moves}
           minMoves={puzzle.value.minMoves}
           hideMinMoves={hideMinMoves}
         />

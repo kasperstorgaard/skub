@@ -10,6 +10,7 @@ import {
   LinkedinLogo,
 } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
+import { PanelCredits } from "#/components/panel-credits.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
@@ -156,28 +157,7 @@ export default define.page<typeof handler>(function Home(ctx) {
       </Main>
 
       <Panel className="max-lg:gap-y-fl-4">
-        <div
-          className={clsx(
-            "col-[2/3] flex justify-between gap-fl-2 lg:hidden",
-            "type-meta text-text-2",
-          )}
-        >
-          <p>
-            Inspired by <br />
-            <a
-              href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
-              className="text-2 text-text-1"
-            >
-              Ricochet Robots
-            </a>
-          </p>
-          <p className="text-right lg:text-left">
-            Feeling creative? <br />
-            <a href="/puzzles/new" className="text-2 text-text-1">
-              Build a puzzle
-            </a>
-          </p>
-        </div>
+        <PanelCredits />
 
         <div
           className={clsx(

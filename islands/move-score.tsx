@@ -4,15 +4,21 @@ import { decodeState } from "#/game/url.ts";
 
 type MoveScoreProps = {
   href: Signal<string>;
+  /** A fixed count instead of the URL's, e.g. a best solve; null for none */
+  moves?: number | null;
   minMoves?: number;
   /** Show "?" for the shortest solution until the puzzle is solved. */
   hideMinMoves?: boolean;
 };
 
 /** Moves played over the shortest solution, e.g. "3/10" or "3/?". */
-export function MoveScore({ href, minMoves, hideMinMoves }: MoveScoreProps) {
-  const { moves, cursor } = decodeState(href.value);
-  const count = Math.min(moves.length, cursor ?? 0);
+export function MoveScore(
+  { href, moves, minMoves, hideMinMoves }: MoveScoreProps,
+) {
+  const state = decodeState(href.value);
+  const count = moves === undefined
+    ? Math.min(state.moves.length, state.cursor ?? 0)
+    : moves ?? "–";
 
   return (
     <span className="tabular-nums tracking-widest">

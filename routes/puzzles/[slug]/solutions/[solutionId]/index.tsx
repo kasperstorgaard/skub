@@ -2,10 +2,10 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
-import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
+import { PanelCredits } from "#/components/panel-credits.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { getPuzzleSolution } from "#/db/solutions.ts";
@@ -13,6 +13,7 @@ import { Solution } from "#/db/types.ts";
 import { Puzzle } from "#/game/types.ts";
 import { encodeState } from "#/game/url.ts";
 import Board from "#/islands/board.tsx";
+import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
@@ -69,7 +70,7 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             </p>
           </div>
 
-          <DifficultyBadge puzzle={puzzle.value} className="lg:mt-1" />
+          <ScoreBadge puzzle={puzzle} href={href} className="lg:mt-1" />
         </div>
 
         <Board puzzle={puzzle} href={href} mode={mode} />
@@ -78,8 +79,8 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
       <Panel>
         <div
           className={clsx(
-            "col-[2/3] flex items-start gap-fl-1 flex-wrap",
-            "lg:col-auto lg:row-start-3 lg:flex-col lg:self-end",
+            "col-[2/3] flex items-start justify-center gap-fl-1 flex-wrap",
+            "lg:col-auto lg:row-start-3 lg:flex-col lg:self-end lg:justify-start",
           )}
         >
           <a
@@ -90,6 +91,8 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             Watch again
           </a>
         </div>
+
+        <PanelCredits className="mt-fl-4" />
       </Panel>
     </>
   );
