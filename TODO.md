@@ -185,10 +185,11 @@ PR finishes only part of an item, trim the item to what is left.
   to earn them. The solutions page shows the stars earned on the puzzle.
 
 - **Players play without being asked for a name.** Today a new player's first
-  solve asks for a name before anything else. Ask only when they want their name
-  somewhere: submitting a solve to a leaderboard, or opening a puzzle's
-  solutions or the high score page. Until then solves are saved anonymously as
-  now, and the name joins them once given.
+  solve asks for a name before anything else. Instead, every solve is saved and
+  counts from the start, anonymous or not, and the name prompt comes as the
+  natural next step after the first star: you just earned a star, pick a name to
+  put it on the board. Opening a puzzle's solutions or the high score page
+  offers the same prompt to players who skipped it.
 
 - **Players can see who has the most stars.** A high score page ranks players by
   all-time stars, linked from home's sidebar, the archive and the solutions
