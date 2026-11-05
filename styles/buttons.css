@@ -12,7 +12,8 @@
 
     white-space: nowrap;
     font-size: var(--font-size-2);
-    font-weight: var(--font-weight-semibold);
+    font-weight: calc(var(--font-weight-semibold) - 50);
+    letter-spacing: 0.02em;
     text-decoration: none;
     color: var(--color-text-1);
     border: var(--border-size-2) solid var(--color-link);
@@ -96,6 +97,58 @@
     .btn:focus:not(:active),
     .icon-btn:focus:not(:active) {
       outline-offset: 5px;
+    }
+  }
+
+  /* Pearl ring, outside retro and high contrast. A masked ::before, so the
+     button stays see-through. */
+  :root:not(
+    [data-theme-section="retro"],
+    [data-theme-section="accessibility"]
+  ) {
+    :is(.btn, .icon-btn) {
+      position: relative;
+      border: 3px solid transparent;
+
+      &::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        padding: 3px;
+        border-radius: inherit;
+        background: var(--pearl-border);
+        filter: saturate(0.75);
+        mask:
+          linear-gradient(#000 0 0) content-box exclude,
+          linear-gradient(#000 0 0);
+        pointer-events: none;
+      }
+
+      /* Secondary: a faint ring, full on hover */
+      &:not([data-primary])::before {
+        opacity: 0.5;
+      }
+
+      /* A softer hover fill, primary included */
+      &:is(:hover, :focus):not([disabled], [aria-disabled]) {
+        background-color: color-mix(
+          in srgb,
+          var(--color-link) 50%,
+          transparent
+        );
+        filter: none;
+
+        &::before {
+          opacity: 1;
+        }
+      }
+
+      /* Disabled: a flat ring, so the pearl doesn't fade to mud */
+      &:is([disabled], [aria-disabled])::before {
+        background: var(--color-surface-4);
+        filter: none;
+        opacity: 1;
+      }
     }
   }
 }

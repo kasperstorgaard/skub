@@ -94,7 +94,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
 
         <div className="flex items-center justify-between flex-wrap gap-fl-1">
           <div className="flex flex-col">
-            <h1 className="text-brand">
+            <h1 className="text-text-1">
               <PuzzleName puzzle={props.data.puzzle} size="lg" />
             </h1>
 

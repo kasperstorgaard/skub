@@ -40,7 +40,7 @@ export default define.page<typeof handler>(function EditorPage(props) {
   return (
     <>
       <Main className="lg:relative">
-        <Header back={{ href: "/" }} hideBuild />
+        <Header back={{ href: "/" }} />
 
         <div className="flex justify-between items-center gap-fl-1">
           <div className="flex flex-col group">

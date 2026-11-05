@@ -3,30 +3,36 @@ import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
 import { flashExplained } from "#/client/flash-signals.ts";
-import { LightningFill } from "#/components/icons.tsx";
+import { Icon, LightningFill } from "#/components/icons.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { getFlashHref } from "#/game/url.ts";
+import { MoveScore } from "#/islands/move-score.tsx";
 
-type FlashBadgeProps = {
+type ScoreBadgeProps = {
   puzzle: Signal<Puzzle>;
   href: Signal<string>;
-  isOn: boolean;
-  /** The Flash dialog was answered before, so the switch skips it. */
-  isExplained: boolean;
-  /** Hide the move count when the user hasn't solved this puzzle before. */
+  /** The Flash switch, for puzzles that have a Flash start. */
+  flash?: {
+    isOn: boolean;
+    /** The Flash dialog was answered before, so the switch skips it. */
+    isExplained: boolean;
+  };
+  /** Hide the shortest solution when the user hasn't solved this puzzle. */
   hideMinMoves?: boolean;
   className?: string;
 };
 
 /**
- * The puzzle page's `DifficultyBadge`, with the Flash switch in place of the
- * difficulty label. Off, it opens the Flash dialog the first time and turns
- * Flash on after that; on, it stays on for the day and the badge turns pearl.
+ * While playing: moves played over the shortest solution, behind the Flash
+ * switch when the puzzle has one. Off, the switch opens the Flash dialog the
+ * first time and turns Flash on after that; on, it stays on for the day and
+ * the badge turns pearl.
  */
-export function FlashBadge(
-  { puzzle, href, isOn, isExplained, hideMinMoves, className }: FlashBadgeProps,
+export function ScoreBadge(
+  { puzzle, href, flash, hideMinMoves, className }: ScoreBadgeProps,
 ) {
-  const skipsDialog = isExplained || flashExplained.value;
+  const isOn = flash?.isOn ?? false;
+  const skipsDialog = flash?.isExplained || flashExplained.value;
 
   const dialogHref = useMemo(() => {
     const url = new URL(href.value);
@@ -37,13 +43,13 @@ export function FlashBadge(
   return (
     <span
       className={clsx(
-        "difficulty-badge relative flex items-stretch overflow-hidden",
-        "leading-loose text-2 tracking-wider",
+        "difficulty-badge relative flex items-stretch overflow-hidden rounded-2",
+        "leading-loose text-3 tracking-wider",
         "bg-surface-2",
         className,
       )}
     >
-      {isOn
+      {!flash ? null : isOn
         ? (
           <span
             role="switch"
@@ -70,30 +76,20 @@ export function FlashBadge(
 
       <span
         className={clsx(
-          "grid place-items-center px-2 min-w-[3ch] text-center cursor-help",
+          // 71px at the badge's 20px text, scaling with it
+          "grid place-items-center px-2 min-w-[3.55em] text-center cursor-help",
           "bg-surface-3",
         )}
         title={hideMinMoves
-          ? "solve the puzzle to reveal"
-          : "shortest possible solution"}
+          ? "moves played / solve the puzzle to reveal the shortest"
+          : "moves played / shortest possible solution"}
       >
-        {hideMinMoves ? "?" : puzzle.value.minMoves || "—"}
+        <MoveScore
+          href={href}
+          minMoves={puzzle.value.minMoves}
+          hideMinMoves={hideMinMoves}
+        />
       </span>
-
-      {
-        // On: the off look plus a pearl ring inside the badge's edge, so it
-        // keeps its size
-        isOn && (
-          <span
-            aria-hidden="true"
-            className={clsx(
-              "absolute inset-0 p-[2px] pointer-events-none",
-              "bg-(image:--pearl)",
-              "[mask:linear-gradient(#000_0_0)_content-box_exclude,linear-gradient(#000_0_0)]",
-            )}
-          />
-        )
-      }
     </span>
   );
 }
@@ -113,11 +109,12 @@ function OffSwitch({ as: Element, ...props }: OffSwitchProps) {
       title="Flash: start a few moves in, off the leaderboard"
       className={clsx(
         "grid place-items-center min-w-[2.25rem] px-2",
-        "bg-transparent no-underline cursor-pointer",
-        "hover:brightness-125",
+        "bg-transparent no-underline cursor-pointer text-text-3",
+        "hover:text-text-2",
       )}
     >
-      <PearlBolt />
+      {/* Off: a grey bolt; on, it fills with the pearl */}
+      <Icon icon={LightningFill} />
     </Element>
   );
 }
@@ -129,7 +126,7 @@ const BOLT_MASK = `url("data:image/svg+xml,${
   )
 }")`;
 
-/** A bolt filled with the pearl; turning Flash on fills the cell instead. */
+/** A bolt filled with the pearl. */
 function PearlBolt() {
   return (
     <span

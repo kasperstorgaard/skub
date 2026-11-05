@@ -2,7 +2,6 @@ import { clsx } from "clsx/lite";
 import { AnchorHTMLAttributes } from "preact";
 
 import { Check, Icon, Play, Trophy } from "#/components/icons.tsx";
-import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { Thumbnail } from "#/components/thumbnail.tsx";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -67,16 +66,6 @@ export function PuzzleCard({
           </div>
         )}
 
-        <div
-          class={clsx(
-            "puzzle-card-difficulty absolute bottom-0 right-0 px-3 bg-surface-2",
-            "text-current leading-relaxed text-1 uppercase tracking-wider",
-            "[clip-path:polygon(10%_0,100%_0,100%_100%,0_100%)]",
-          )}
-        >
-          {puzzle.difficulty}
-        </div>
-
         {isSolved && (
           <div
             class={clsx(
@@ -108,8 +97,13 @@ export function PuzzleCard({
         )}
       </div>
 
-      <PuzzleCardCaption tagline={tagline}>
-        <PuzzleName puzzle={puzzle} />
+      {/* The number joins the lead, so the name stands alone */}
+      <PuzzleCardCaption
+        tagline={[tagline, puzzle.number && `#${puzzle.number}`]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <span className="type-title">{puzzle.name}</span>
       </PuzzleCardCaption>
     </a>
   );
@@ -129,7 +123,7 @@ export function PuzzleCardCaption(
       {tagline && (
         <span
           className={clsx(
-            "puzzle-card-tagline type-meta text-text-2",
+            "puzzle-card-tagline type-meta [font-weight:300] leading-(--font-lineheight-1) text-text-2",
             "group-hover:text-current",
           )}
         >

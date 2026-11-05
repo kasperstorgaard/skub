@@ -7,7 +7,7 @@ import { Router } from "#/islands/router.tsx";
 import { TrackingScript } from "#/islands/tracking-script.tsx";
 import { sharedChunks } from "#/lib/shared-chunks.ts";
 import { THEME_ASSETS } from "#/lib/theme-assets.ts";
-import { resolveTheme } from "#/lib/themes.ts";
+import { getThemeSection, resolveTheme } from "#/lib/themes.ts";
 
 export default define.page(
   function AppWrapper({ Component, state, url }) {
@@ -33,6 +33,7 @@ export default define.page(
         className="min-h-dvh"
         lang="en"
         data-theme={theme}
+        data-theme-section={getThemeSection(theme)}
       >
         <head>
           <meta charset="utf-8" />
@@ -99,7 +100,7 @@ export default define.page(
             "sm:grid-cols-[minmax(var(--size-fluid-3),auto)_max-content_minmax(var(--size-fluid-3),auto)]",
             "grid-rows-[auto_auto_1fr_auto] place-items-[flex-end_center] gap-y-fl-3",
             // 16 rem is the sidebar, 6rem is a min height on the first row
-            "lg:grid-cols-[1fr_16rem] lg:grid-rows-[minmax(6rem,auto)_auto_1fr_auto] lg:content-center",
+            "lg:grid-cols-[1fr_16rem] lg:grid-rows-[minmax(6rem,auto)_auto_1fr_auto] lg:content-center-safe",
             "print:grid-cols-[1fr_max-content_1fr] print:grid-rows-[auto_1fr] print:gap-0",
           )}
         >

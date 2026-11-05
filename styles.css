@@ -84,6 +84,7 @@
   --color-surface-2: var(--color-surface-2);
   --color-surface-3: var(--color-surface-3);
   --color-surface-4: var(--color-surface-4);
+  --color-panel: var(--color-panel);
   --color-text-1: var(--color-text-1);
   --color-text-2: var(--color-text-2);
   --color-text-3: var(--color-text-3);
@@ -219,6 +220,7 @@
   --font-family-mono: var(--font-mono);
 
   /* Font Weight */
+  --font-weight-3: var(--font-weight-3);
   --font-weight-4: var(--font-weight-4);
   --font-weight-5: var(--font-weight-5);
   --font-weight-7: var(--font-weight-7);
@@ -248,7 +250,7 @@
 
 :root {
   font-size: 14px;
-  --font-sans: "Chakra Petch", system-ui, sans-serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
   --font-display: var(--font-sans);
 }
 
@@ -270,6 +272,8 @@
   --color-surface-2: var(--gray-8);
   --color-surface-3: var(--gray-7);
   --color-surface-4: var(--gray-6);
+  /* The sidebar; themes without their own use surface-2 */
+  --color-panel: var(--color-surface-2);
 
   --color-text-1: var(--gray-1);
   --color-text-2: var(--gray-4);
@@ -287,17 +291,33 @@
   /* Pearl: brand/link sheen with a soft highlight, Flash mode's own look */
   --pearl:
     radial-gradient(
-      ellipse at 25% 10%,
-      rgb(255 255 255 / 0.5),
-      transparent 55%
-    ),
+    ellipse at 25% 10%,
+    rgb(255 255 255 / 0.5),
+    transparent 55%
+  ),
     linear-gradient(
-      115deg,
-      var(--color-brand),
-      var(--color-link) 45%,
-      var(--color-brand) 75%,
-      var(--color-link)
-    );
+    115deg,
+    var(--color-brand),
+    var(--color-link) 45%,
+    var(--color-brand) 75%,
+    var(--color-link)
+  );
+
+  /* Button rings: mostly brand, a softer sheen */
+  --pearl-border:
+    radial-gradient(
+    ellipse at 25% 10%,
+    rgb(255 255 255 / 0.35),
+    transparent 55%
+  ),
+    linear-gradient(
+    115deg,
+    var(--color-brand) 0 45%,
+    var(--color-link) 95%
+  );
+
+  /* Fine grayscale grain for the page backdrop */
+  --grain: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
 @media (min-width: 768px) {
@@ -355,10 +375,48 @@
   body {
     color: var(--color-text-1);
     font-family: var(--font-sans);
-    font-weight: 400;
+    font-weight: var(--font-weight-4);
     background: var(--color-surface-1);
     /* normalize defaults to 1.5 (prose), tighten for a game UI */
     line-height: var(--font-lineheight-2); /* 1.375 */
+  }
+
+  /* Grain over the surface, outside retro (own backdrops) and high contrast.
+     Fixed layers on html, so body goes see-through. */
+  @media screen {
+    :root:not(
+      [data-theme-section="retro"],
+      [data-theme-section="accessibility"]
+    ) {
+      body {
+        background: transparent;
+      }
+
+      /* The surface as its own layer, so the grain has something to blend
+         with */
+      &::before,
+      &::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      &::before {
+        background-color: var(--color-surface-1);
+      }
+
+      &::after {
+        background-image: var(--grain);
+        background-size: 200px;
+        filter: contrast(180%);
+        /* Blended, so the grain moves around the surface colour rather than
+           lifting it toward grey */
+        mix-blend-mode: overlay;
+        opacity: 0.35;
+      }
+    }
   }
 
   /* App-scale headings — normalize defaults are editorial (h1=3.5rem), too large for a game UI */
@@ -375,7 +433,7 @@
   :where(h1, h2, h3, h4, h5, h6) {
     color: var(--color-brand);
     font-family: var(--font-display);
-    font-weight: 500;
+    font-weight: var(--font-weight-5);
   }
 
   dialog {
@@ -455,7 +513,7 @@
   /* Global link defaults */
   a, .link {
     color: var(--color-link);
-    font-weight: 500;
+    font-weight: var(--font-weight-5);
     font-size: var(--text-2);
     text-decoration: underline;
     text-decoration-thickness: 1px;
@@ -519,14 +577,7 @@
 @utility type-title {
   font-size: var(--font-size-4);
   font-weight: var(--font-weight-semibold);
-  line-height: var(--font-lineheight-1);
-}
-
-@utility type-stat {
-  font-size: var(--font-size-5);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--font-lineheight-00);
-  font-variant-numeric: tabular-nums;
+  line-height: var(--font-lineheight-0);
 }
 
 @utility type-body {
@@ -538,7 +589,7 @@
 @utility type-meta {
   font-size: var(--font-size-1);
   font-weight: var(--font-weight-4);
-  line-height: var(--font-lineheight-1);
+  line-height: var(--font-lineheight-0);
 }
 
 @utility type-tag {
@@ -597,32 +648,6 @@
     }
     30% {
       opacity: 1;
-    }
-  }
-
-  /* Builder link: faint board whose pieces slide from one random arrangement
-     to another on page load, with a pencil on top */
-  .builder-icon-board {
-    opacity: 0.3;
-  }
-  .builder-icon-board > * {
-    transform: translate(var(--bx), var(--by));
-    animation: builder-drift 1.2s ease-in-out 600ms both;
-  }
-  .builder-icon-pencil {
-    fill: currentColor;
-    stroke: var(--color-surface-1);
-    stroke-width: 28px;
-    paint-order: stroke;
-  }
-  @keyframes builder-drift {
-    from {
-      transform: translate(var(--ax), var(--ay));
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .builder-icon-board > * {
-      animation: none;
     }
   }
 

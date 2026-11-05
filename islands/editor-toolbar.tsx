@@ -1,11 +1,11 @@
 import type { Signal } from "@preact/signals";
-import clsx from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
 import { useEditor } from "#/client/editor.ts";
 import { Icon, X } from "#/components/icons.tsx";
 import { KeyHint } from "#/components/key-hint.tsx";
 import { PortalRings } from "#/components/portal-rings.tsx";
+import { TOOL_BUTTON, Toolbar } from "#/components/toolbar.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 
@@ -37,18 +37,10 @@ export function EditorToolbar(
   const disabled = active == null;
 
   return (
-    <div
-      className={clsx(
-        "grid h-fit place-content-center gap-1",
-        // Columns flow, so the row fits however many tools got drawn.
-        "max-lg:w-full max-lg:grid-flow-col max-lg:auto-cols-[minmax(0,2.5rem)]",
-        "lg:grid-cols-[auto_1.5rem] lg:auto-rows-[2.5rem]",
-        className,
-      )}
-    >
+    <Toolbar className={className}>
       <button
         type="button"
-        className="p-1.5 bg-transparent border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Horizontal wall"
         disabled={disabled}
         onClick={() => toggleWall("horizontal")}
@@ -58,7 +50,7 @@ export function EditorToolbar(
 
       <button
         type="button"
-        className="flex items-center bg-transparent  border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Vertical wall"
         disabled={disabled}
         onClick={() => toggleWall("vertical")}
@@ -70,7 +62,7 @@ export function EditorToolbar(
 
       <button
         type="button"
-        className="flex items-center bg-transparent  border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Corner wall"
         disabled={disabled}
         onClick={toggleCorner}
@@ -82,7 +74,7 @@ export function EditorToolbar(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Blocker"
         disabled={disabled}
         onClick={() => setCellContent("blocker")}
@@ -92,7 +84,7 @@ export function EditorToolbar(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Puck"
         disabled={disabled}
         onClick={() => setCellContent("puck")}
@@ -102,7 +94,7 @@ export function EditorToolbar(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Hole"
         disabled={disabled}
         onClick={() => setCellContent("hole")}
@@ -112,7 +104,7 @@ export function EditorToolbar(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Portal"
         disabled={disabled}
         onClick={() => setCellContent("portal")}
@@ -127,7 +119,7 @@ export function EditorToolbar(
 
       <button
         type="button"
-        className="flex items-center justify-center bg-transparent  border-2 border-link rounded-2"
+        className={TOOL_BUTTON}
         aria-label="Destination"
         disabled={disabled}
         onClick={setDestination}
@@ -138,6 +130,6 @@ export function EditorToolbar(
       </button>
 
       <KeyHint>D</KeyHint>
-    </div>
+    </Toolbar>
   );
 }

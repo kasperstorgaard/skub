@@ -2,11 +2,13 @@
 
 ## Visual language
 
-The core aesthetic is bold, retro-futuristic, and playful — like a classic
-gaming console. Dark and light themes both exist; dark has the richer colour
-palette, light is more restrained. The primary font is "Chakra Petch": techno,
-sharp-angled, used for headlines, interactive elements, and sparingly for body
-text.
+The core aesthetic is modern and a little refined: a calm thinking puzzle, not
+an arcade game, and friendly rather than editorial or precious. Texture over
+techno: a fine grain on the backdrop, pearl rings on buttons, round type. Retro
+lives in the retro themes, not the main look. Dark and light themes both exist;
+dark has the richer colour palette, light is more restrained. The primary font
+is "Outfit": geometric, round and friendly, with a variable weight axis
+(100–900), used for headlines, interactive elements and body text.
 
 ## Icons
 
@@ -26,7 +28,7 @@ Three main layout components, controlled by a global grid in `routes/_app.tsx`:
 
 - **Main** — the primary page container
   - **Header** — current page and breadcrumb
-  - **Panel** — secondary content (e.g. `ControlsPanel` on the puzzle page)
+  - **Panel** — secondary content (e.g. `ActionsPanel` on the puzzle page)
 - Everything else — modals, print
 
 On mobile, primary content is on top and the panel sits below, leading to a
@@ -40,11 +42,11 @@ There is no footer, the Panel serves this role.
 Space says how related two things are: closer means more related. Use three
 levels, each about twice the one below, and nothing in between:
 
-| Level | Between | Token |
-|---|---|---|
-| Inside | parts of one component: icon and label, lead and title, thumb and caption | static `1`–`3` |
-| Siblings | related items in a group: a card caption and the action under it | `fl-2` |
-| Groups | separate groups: header, page title and content; footer blocks | `fl-4` |
+| Level    | Between                                                                   | Token          |
+| -------- | ------------------------------------------------------------------------- | -------------- |
+| Inside   | parts of one component: icon and label, lead and title, thumb and caption | static `1`–`3` |
+| Siblings | related items in a group: a card caption and the action under it          | `fl-2`         |
+| Groups   | separate groups: header, page title and content; footer blocks            | `fl-4`         |
 
 - Static inside components, fluid between them. Never mix the two at the same
   level.
@@ -55,5 +57,5 @@ levels, each about twice the one below, and nothing in between:
 - On `Panel` (a column subgrid) set `gap-y-*` only: a column gap shifts the
   content off `Main`'s edge.
 - Between stacked lines of text (a lead over a title), the line-height is the
-  spacing: no gap, and let the type role's line-height do the work rather
-  than forcing leading.
+  spacing: no gap, and let the type role's line-height do the work rather than
+  forcing leading.

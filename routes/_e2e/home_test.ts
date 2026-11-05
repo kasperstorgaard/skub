@@ -134,11 +134,9 @@ Deno.test("home — stats show streak and solve count after solving first daily"
 
     const homePage = await new HomePage(page).goto();
 
-    await expect(homePage.stat("Streak").value).toHaveText("1");
-    await expect(homePage.stat("Streak").label).toHaveText("Streak · best 1");
-    await expect(homePage.stat("Solves").value).toHaveText("1");
-    await expect(homePage.stat("Perfect").value).toHaveText("1");
-    await expect(homePage.stat("Perfect").label).toHaveText("Perfect · 100%");
+    await expect(homePage.stat("Streak")).toContainText("1 / 1");
+    await expect(homePage.stat("Solves")).toContainText("1");
+    await expect(homePage.stat("Perfect")).toContainText("1 / 100%");
   } finally {
     await teardown();
   }
@@ -165,11 +163,9 @@ Deno.test("home — stats show streak and solve count after solving multiple dai
 
     const homePage = await new HomePage(page).goto();
 
-    await expect(homePage.stat("Streak").value).toHaveText("3");
-    await expect(homePage.stat("Streak").label).toHaveText("Streak · best 3");
-    await expect(homePage.stat("Solves").value).toHaveText("3");
-    await expect(homePage.stat("Perfect").value).toHaveText("3");
-    await expect(homePage.stat("Perfect").label).toHaveText("Perfect · 100%");
+    await expect(homePage.stat("Streak")).toContainText("3 / 3");
+    await expect(homePage.stat("Solves")).toContainText("3");
+    await expect(homePage.stat("Perfect")).toContainText("3 / 100%");
   } finally {
     await teardown();
   }

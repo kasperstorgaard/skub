@@ -1,6 +1,6 @@
 /* Acid — matrix/terminal neon.
    Colour only, on Skub's type and shapes. */
-/* Skub's type: Chakra Petch */
+/* Skub's type: Outfit */
 @import "./skub.css";
 
 :root[data-theme="acid"] {
@@ -9,6 +9,7 @@
   --btn-active-text: #0d0d0d;
   --color-surface-1: #0d0d0d;
   --color-surface-2: #141414;
+  --color-panel: #050505;
   --color-surface-3: #1c1c1c;
   --color-surface-4: #2a2a2a;
   --color-text-1: #e0ffe0;

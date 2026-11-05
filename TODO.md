@@ -108,15 +108,11 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## UI
 
-- **Buttons with more punch.** One pass over buttons:
-  - The pearl gradient from the Flash badge (brand → link with a white sheen,
-    `--pearl` in `islands/flash-badge.tsx`) becomes the background of primary
-    buttons, including the game's main controls (undo, redo), and the border of
-    secondary buttons. Means promoting it to a design token in `styles.css`. Not
-    for the retro themes, which keep their own button styles.
-  - The arrows in the main controls read thin; bump their weight, or adjust the
-    controls more generally.
-  - The secondary button background is a bit drab in places and needs an update.
+- **Retro themes follow the new layout.** The main look moved on: play controls
+  are a toolbar beside the board, the score badge replaced the difficulty badge
+  and move counter, the sidebar has a footer, and cards lost their difficulty
+  tag. Retro themes still style the old pieces (`.move-counter`,
+  `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
 - **Calendar touch-up.** The archives calendar and month strip need a visual
   pass.

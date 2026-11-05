@@ -65,7 +65,7 @@ export default define.page<typeof handler>(function Home(ctx) {
 
         <div className="title-card flex flex-col">
           <h1 className="text-8 leading-tight text-brand flex items-baseline gap-fl-1">
-            <span>
+            <span className="wordmark" data-text="Skub">
               Skub
             </span>
             <span className="text-1 text-text-3">
@@ -143,9 +143,8 @@ export default define.page<typeof handler>(function Home(ctx) {
       <Panel className="max-lg:gap-y-fl-4">
         <div
           className={clsx(
-            "col-[2/3] flex justify-between gap-fl-2",
+            "col-[2/3] flex justify-between gap-fl-2 lg:hidden",
             "type-meta text-text-2",
-            "lg:col-auto lg:row-start-1 lg:flex-col",
           )}
         >
           <p>
@@ -175,7 +174,7 @@ export default define.page<typeof handler>(function Home(ctx) {
             <StatsSummary stats={userStats} className="lg:w-full" />
           )}
 
-          <div className="flex gap-2 lg:flex-col lg:mt-auto">
+          <div className="flex gap-2 lg:hidden">
             <a
               href="https://github.com/kasperstorgaard/ricochet"
               className="flex gap-1 text-text-2"

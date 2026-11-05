@@ -1,4 +1,5 @@
 import type { Signal } from "@preact/signals";
+import { clsx } from "clsx/lite";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { Dialog } from "./dialog.tsx";
@@ -219,21 +220,24 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               The next move is highlighted on the board
             </p>
 
-            <div class="flex items-center gap-fl-2 mt-fl-1">
-              <a href={resetHref} class="btn">
-                <Icon icon={ArrowCounterClockwise} />
-                Start over
-              </a>
-
+            <div className="flex gap-fl-2 justify-between flex-wrap w-full mt-fl-1 max-md:flex-col-reverse">
               <a
                 href={closeHref}
-                className="link p-0 bg-transparent"
+                className={clsx(
+                  "link flex items-center bg-transparent p-0 text-text-2",
+                  "max-md:justify-center",
+                )}
                 onClick={(event) => {
                   event.preventDefault();
                   closeModal();
                 }}
               >
                 Keep going
+              </a>
+
+              <a href={resetHref} class="btn">
+                <Icon icon={ArrowCounterClockwise} />
+                Start over
               </a>
             </div>
           </>
@@ -253,7 +257,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               The first move is highlighted, the rest is on you
             </p>
 
-            <div class="flex items-center gap-fl-2 mt-fl-1">
+            <div class="flex items-center justify-end gap-fl-2 mt-fl-1">
               <a
                 href={closeHref}
                 className="btn"
@@ -278,7 +282,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               Couldn't get a hint right now.
             </p>
 
-            <div class="flex items-center gap-fl-2 mt-fl-1">
+            <div class="flex items-center justify-end gap-fl-2 mt-fl-1">
               <button
                 type="button"
                 className="btn"
