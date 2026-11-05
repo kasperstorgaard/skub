@@ -177,16 +177,29 @@ export function PlayControls(
           >
             <button
               type="submit"
+              // Spent: faded like any off tool, and struck through
               className={TOOL}
               disabled={hintDisabled}
               aria-disabled={hintDisabled ? true : undefined}
               aria-label={hintSpent ? "Hint used" : "Get a hint"}
               title={hintSpent ? "Hint used" : "Get a hint"}
             >
-              <Icon
-                icon={Lightbulb}
-                className="text-[1.25rem] max-lg:text-[2rem]"
-              />
+              <span className="relative grid place-items-center">
+                <Icon
+                  icon={Lightbulb}
+                  className="text-[1.25rem] max-lg:text-[2rem]"
+                />
+                {hintSpent && (
+                  <span
+                    aria-hidden="true"
+                    className={clsx(
+                      "absolute inset-0 pointer-events-none",
+                      // A 2px line from bottom-left to top-right
+                      "[background:linear-gradient(to_bottom_right,transparent_calc(50%-1px),currentColor_calc(50%-1px)_calc(50%+1px),transparent_calc(50%+1px))]",
+                    )}
+                  />
+                )}
+              </span>
             </button>
           </form>
           <KeyHint>H</KeyHint>
