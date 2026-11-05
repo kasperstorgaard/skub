@@ -114,8 +114,22 @@ PR finishes only part of an item, trim the item to what is left.
   tag. Retro themes still style the old pieces (`.move-counter`,
   `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
-- **Calendar touch-up.** The archives calendar and month strip need a visual
-  pass.
+- **The archive reads like a week on mobile.** On phones, the archive works like
+  a calendar app's week view: a strip of days to swipe through, the chosen day's
+  puzzle below. Desktop keeps the month calendar, which still needs a visual
+  pass too.
+
+- **Board walls look built, not drawn.** Walls that meet join up into one shape
+  instead of separate strokes, and every wall sits exactly on the line between
+  cells (today they're slightly off).
+
+- **Flash on feels alive.** While Flash is on, the bolt in the score badge gives
+  off a slow trickle of particles. Subtle, never distracting, and still under
+  reduced motion.
+
+- **Undo and redo are easy to hit with a mouse.** Check whether the desktop
+  toolbar's buttons, sized like the editor's, are too small for quick undo/redo,
+  and size them up if so.
 
 - **A theme with more edge.** The design is clean but flat. Subtle noise or
   grain, soft gradients, a few geometric shapes as accents. The main theme stays
@@ -129,6 +143,11 @@ PR finishes only part of an item, trim the item to what is left.
   navigation. Needs the Fresh 2.3 upgrade first.
 
 ## Play
+
+- **Every player can rate a puzzle.** A Rate action in the puzzle page's sidebar
+  (the footer on mobile) opens a dialog for difficulty, fun and a line of
+  feedback, so ratings come from players, not only from Kasper's local rating
+  flow. The local flow stays as it is, for calibration.
 
 - **Flash starts can be chosen by hand.** Today each puzzle's Flash start is
   generated on promotion: the opening moves of the solver's first optimal
@@ -153,6 +172,9 @@ PR finishes only part of an item, trim the item to what is left.
   reward. This fits the badge, which already hides the shortest count until
   you've solved the puzzle. Separate solves earn stars too, so players without a
   perfect have a route to the unlock. Open: how many stars unlock it, 1 or 3?
+  Simpler cousin, also open: should See solves stay closed until you've solved
+  the puzzle at all? Puzzle cards show your result where the difficulty tag used
+  to sit (bottom right): your best score, and your stars once they exist.
 
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of
