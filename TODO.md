@@ -137,7 +137,9 @@ PR finishes only part of an item, trim the item to what is left.
   for it.
 
 - **A celebration that feels like a win.** Revamp the solve dialog: the wording
-  (factual, never grading the play) and the celebration moment itself.
+  (factual, never grading the play) and the celebration moment itself. The
+  payoff is the stars you just earned animating in (see the stars item under
+  Play).
 
 - **Smoother page changes.** View transitions between pages, opt-in per
   navigation. Needs the Fresh 2.3 upgrade first.
@@ -178,6 +180,8 @@ PR finishes only part of an item, trim the item to what is left.
   Simpler cousin, also open: should See solves stay closed until you've solved
   the puzzle at all? Puzzle cards show your result where the difficulty tag used
   to sit (bottom right): your best score, and your stars once they exist.
+  Earning stars is the celebration's payoff: they animate in as the moment of
+  the solve.
 
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of
