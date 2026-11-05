@@ -163,3 +163,23 @@ Deno.test("returns current intermediate when solve does not qualify for expert",
   );
   assertEquals(result, "intermediate");
 });
+
+// -- Flash ---
+
+Deno.test("a Flash solve makes a new player a beginner", () => {
+  const result = assessSkillLevel(
+    { difficulty: "easy", minMoves: 6 },
+    moves(3),
+    { flash: true },
+  );
+  assertEquals(result, "beginner");
+});
+
+Deno.test("a perfect Flash solve of a hard puzzle does not promote", () => {
+  const result = assessSkillLevel(
+    { difficulty: "hard", minMoves: 8 },
+    moves(8),
+    { current: "beginner", flash: true },
+  );
+  assertEquals(result, "beginner");
+});

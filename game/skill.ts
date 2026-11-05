@@ -8,14 +8,22 @@ import type { Move, Puzzle, SkillLevel } from "#/game/types.ts";
  *   expert       — medium/hard solved perfectly
  *   intermediate — medium solved within 1.33× optimal, OR easy solved perfectly with minMoves > 5
  *   beginner     — any solve by a user with no skill level yet (skip-tutorial path)
+ *
+ * A Flash solve played only the end of the puzzle, so it never promotes past
+ * beginner: it does show a new player can play, though.
  */
 export function assessSkillLevel(
   puzzle: Pick<Puzzle, "difficulty" | "minMoves">,
   moves: Move[],
-  { current = null }: { current?: SkillLevel | null } = {},
+  { current = null, flash = false }: {
+    current?: SkillLevel | null;
+    flash?: boolean;
+  } = {},
 ): SkillLevel | null {
   const { difficulty, minMoves } = puzzle;
   const count = moves.length;
+
+  if (flash) return current ?? "beginner";
 
   if (current === "expert") return "expert";
 

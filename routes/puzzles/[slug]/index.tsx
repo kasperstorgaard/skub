@@ -166,10 +166,12 @@ export const handler = define.handlers<PageData>({
       });
     }
 
-    // A Flash solve played part of the puzzle, so it says nothing about skill.
-    if (isNew && !isFlash) {
+    if (isNew) {
       const { skillLevel } = ctx.state.user;
-      const newLevel = assessSkillLevel(puzzle, moves, { current: skillLevel });
+      const newLevel = assessSkillLevel(puzzle, moves, {
+        current: skillLevel,
+        flash: isFlash,
+      });
 
       if (newLevel && newLevel !== skillLevel) {
         patch.skillLevel = newLevel;
