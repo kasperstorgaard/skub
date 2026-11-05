@@ -124,9 +124,27 @@
         pointer-events: none;
       }
 
+      /* Solid mixes into the page colour, not transparency, so buttons look
+         the same on the page and on the darker sidebar */
+      &.btn:not([data-primary]) {
+        background-color: color-mix(
+          in srgb,
+          var(--color-link) 12%,
+          var(--color-surface-1)
+        );
+      }
+
+      &.icon-btn:not([data-primary]) {
+        background-color: color-mix(
+          in srgb,
+          var(--color-link) 10%,
+          var(--color-surface-1)
+        );
+      }
+
       /* Secondary: a faint ring, full on hover */
       &:not([data-primary])::before {
-        opacity: 0.5;
+        background: var(--pearl-border-faint);
       }
 
       /* A softer hover fill, primary included */
@@ -134,12 +152,12 @@
         background-color: color-mix(
           in srgb,
           var(--color-link) 50%,
-          transparent
+          var(--color-surface-1)
         );
         filter: none;
 
         &::before {
-          opacity: 1;
+          background: var(--pearl-border);
         }
       }
 
@@ -147,7 +165,6 @@
       &:is([disabled], [aria-disabled])::before {
         background: var(--color-surface-4);
         filter: none;
-        opacity: 1;
       }
     }
   }

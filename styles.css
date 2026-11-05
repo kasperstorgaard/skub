@@ -316,6 +316,20 @@
     var(--color-link) 95%
   );
 
+  /* The ring at half strength, mixed into the page instead of see-through,
+     so it reads the same on any surface */
+  --pearl-border-faint:
+    radial-gradient(
+    ellipse at 25% 10%,
+    rgb(255 255 255 / 0.175),
+    transparent 55%
+  ),
+    linear-gradient(
+    115deg,
+    color-mix(in srgb, var(--color-brand), var(--color-surface-1)) 0 45%,
+    color-mix(in srgb, var(--color-link), var(--color-surface-1)) 95%
+  );
+
   /* Fine grayscale grain for the page backdrop */
   --grain: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='.33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
