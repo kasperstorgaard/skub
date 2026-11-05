@@ -1,7 +1,7 @@
 import { type Signal } from "@preact/signals";
-import clsx from "clsx/lite";
 import { useMemo, useState } from "preact/hooks";
 
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { Icon, Spinner } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
@@ -89,18 +89,13 @@ export function SolutionDialog(
         />
       </form>
 
-      <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">
-        <div
-          className={clsx(
-            "flex gap-fl-1 items-center text-text-2",
-            "max-md:justify-center",
-          )}
-        >
-          <a href="/puzzles/recommended">
+      <DialogActions
+        dismiss={
+          <a href="/puzzles/recommended" className={DISMISS}>
             One more
           </a>
-        </div>
-
+        }
+      >
         <button
           form="solution"
           className="btn"
@@ -111,7 +106,7 @@ export function SolutionDialog(
             ? <Icon icon={Spinner} className="animate-spin" />
             : "Save"}
         </button>
-      </div>
+      </DialogActions>
     </Dialog>
   );
 }

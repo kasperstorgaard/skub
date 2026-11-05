@@ -1,8 +1,8 @@
 import type { Signal } from "@preact/signals";
-import { clsx } from "clsx/lite";
 import { useMemo, useState } from "preact/hooks";
 
 import { flashExplained } from "#/client/flash-signals.ts";
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { Icon, LightningFill, Spinner } from "#/components/icons.tsx";
 import type { Puzzle } from "#/game/types.ts";
 import { getFlashHref } from "#/game/url.ts";
@@ -66,31 +66,32 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
       <form
         method="post"
         action={getFlashHref(href.value)}
-        className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse"
+        className="w-full"
         onSubmit={() => setIsSubmitting(true)}
       >
         {/* Keeps the game as it was when JS is off. */}
         <input type="hidden" name="search" value={new URL(href.value).search} />
 
-        <button
-          type="submit"
-          name="answer"
-          value="not-now"
-          className={clsx(
-            "link flex items-center bg-transparent p-0 text-text-2 cursor-pointer",
-            "max-md:justify-center",
-          )}
-          onClick={onNotNow}
+        <DialogActions
+          dismiss={
+            <button
+              type="submit"
+              name="answer"
+              value="not-now"
+              className={DISMISS}
+              onClick={onNotNow}
+            >
+              Not now
+            </button>
+          }
         >
-          Not now
-        </button>
-
-        <button type="submit" className="btn" disabled={isSubmitting}>
-          {isSubmitting
-            ? <Icon icon={Spinner} className="animate-spin" />
-            : <Icon icon={LightningFill} />}
-          Try it
-        </button>
+          <button type="submit" className="btn" disabled={isSubmitting}>
+            {isSubmitting
+              ? <Icon icon={Spinner} className="animate-spin" />
+              : <Icon icon={LightningFill} />}
+            Try it
+          </button>
+        </DialogActions>
       </form>
     </Dialog>
   );

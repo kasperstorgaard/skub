@@ -1,6 +1,7 @@
 import type { Signal } from "@preact/signals";
 import { useCallback, useMemo } from "preact/hooks";
 
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { Icon, PaperPlaneTilt } from "#/components/icons.tsx";
 import { formatPuzzle } from "#/game/formatter.ts";
 import type { SolveState } from "#/game/solver.ts";
@@ -53,9 +54,11 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
           </p>
         </div>
 
-        <a href={closeHref} data-router="replace" className="btn self-center">
-          Back to editor
-        </a>
+        <DialogActions>
+          <a href={closeHref} data-router="replace" className="btn">
+            Back to editor
+          </a>
+        </DialogActions>
       </Dialog>
     );
   }
@@ -118,19 +121,17 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
         </label>
       </form>
 
-      <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">
-        <a
-          href={closeHref}
-          data-router="replace"
-          className="flex items-center text-text-2 max-md:justify-center"
-        >
-          Cancel
-        </a>
-
+      <DialogActions
+        dismiss={
+          <a href={closeHref} data-router="replace" className={DISMISS}>
+            Cancel
+          </a>
+        }
+      >
         <button form="submit" type="submit" className="btn">
           <Icon icon={PaperPlaneTilt} /> Send
         </button>
-      </div>
+      </DialogActions>
     </Dialog>
   );
 }

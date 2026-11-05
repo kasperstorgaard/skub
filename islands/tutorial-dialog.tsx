@@ -2,7 +2,8 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useMemo } from "preact/hooks";
 
-import { ArrowLeft, Icon, X } from "#/components/icons.tsx";
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
+import { Icon, X } from "#/components/icons.tsx";
 import type { Solution } from "#/db/types.ts";
 import { getReplaySpeed } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -84,23 +85,22 @@ function TutorialWelcomeStep({ href }: TutorialStepProps) {
         </p>
       </div>
 
-      <div className="flex w-full">
-        <a
-          className="btn mr-auto"
-          href="/"
-        >
-          Home
-        </a>
-
+      <DialogActions
+        dismiss={
+          <a href="/" className={DISMISS}>
+            Home
+          </a>
+        }
+      >
         <a
           href={nextStep}
-          className="btn ml-auto"
+          className="btn"
           data-router="push"
           autoFocus
         >
           How it works
         </a>
-      </div>
+      </DialogActions>
     </>
   );
 }
@@ -137,23 +137,20 @@ function TutorialPiecesStep({ href }: TutorialStepProps) {
         </p>
       </div>
 
-      <div className="flex w-full gap-fl-1 flex-wrap justify-between">
-        <a
-          href={prevStep}
-          className="btn"
-          data-router="push"
-        >
-          <Icon icon={ArrowLeft} />
-          Back
-        </a>
-
+      <DialogActions
+        dismiss={
+          <a href={prevStep} className={DISMISS} data-router="push">
+            Back
+          </a>
+        }
+      >
         <a
           href={tryItHref}
           className="btn"
         >
           Try it!
         </a>
-      </div>
+      </DialogActions>
     </>
   );
 }
@@ -176,25 +173,20 @@ function TutorialReplayStep({ href }: TutorialStepProps) {
         </p>
       </div>
 
-      <form
-        action={href}
-        method="POST"
-        className="flex w-full gap-fl-1 flex-wrap justify-between"
-      >
+      <form action={href} method="POST" className="w-full">
         <input type="hidden" name="source" value="tutorial-dialog" />
 
-        <a
-          href={prevStep}
-          className="btn"
-          data-router="push"
+        <DialogActions
+          dismiss={
+            <a href={prevStep} className={DISMISS} data-router="push">
+              Back
+            </a>
+          }
         >
-          <Icon icon={ArrowLeft} />
-          Back
-        </a>
-
-        <button type="submit" className="btn">
-          I'm ready!
-        </button>
+          <button type="submit" className="btn">
+            I'm ready!
+          </button>
+        </DialogActions>
       </form>
     </>
   );
@@ -217,25 +209,20 @@ function TutorialSolveStep({ href }: TutorialStepProps) {
         </p>
       </div>
 
-      <form
-        action={href}
-        method="POST"
-        className="flex w-full gap-fl-1 flex-wrap justify-between"
-      >
+      <form action={href} method="POST" className="w-full">
         <input type="hidden" name="source" value="tutorial-dialog" />
 
-        <a
-          href={prevStep}
-          className="btn"
-          data-router="push"
+        <DialogActions
+          dismiss={
+            <a href={prevStep} className={DISMISS} data-router="push">
+              Back
+            </a>
+          }
         >
-          <Icon icon={ArrowLeft} />
-          Back
-        </a>
-
-        <button type="submit" className="btn">
-          I'm ready!
-        </button>
+          <button type="submit" className="btn">
+            I'm ready!
+          </button>
+        </DialogActions>
       </form>
     </>
   );

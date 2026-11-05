@@ -1,6 +1,7 @@
 import type { Signal } from "@preact/signals";
 import { useCallback, useMemo } from "preact/hooks";
 
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { Icon, RocketLaunch } from "#/components/icons.tsx";
 import { Dialog } from "#/islands/dialog.tsx";
 import { useRouter } from "#/islands/router.tsx";
@@ -59,19 +60,17 @@ export function PromoteDialog({ href, slug, suggestion }: Props) {
         </label>
       </form>
 
-      <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">
-        <a
-          href={closeHref}
-          data-router="replace"
-          className="flex items-center text-text-2 max-md:justify-center"
-        >
-          Cancel
-        </a>
-
+      <DialogActions
+        dismiss={
+          <a href={closeHref} data-router="replace" className={DISMISS}>
+            Cancel
+          </a>
+        }
+      >
         <button form="promote" type="submit" className="btn">
           <Icon icon={RocketLaunch} /> Promote
         </button>
-      </div>
+      </DialogActions>
     </Dialog>
   );
 }
