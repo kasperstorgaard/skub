@@ -31,7 +31,6 @@ export * from "./play.ts";
 export * from "./plus-square.ts";
 export * from "./ranking.ts";
 export * from "./rocket-launch.ts";
-export * from "./shuffle.ts";
 export * from "./spinner.ts";
 export * from "./star.ts";
 export * from "./star-fill.ts";

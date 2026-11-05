@@ -4,7 +4,7 @@ import { page } from "fresh";
 import { useMemo } from "preact/hooks";
 
 import { Header } from "#/components/header.tsx";
-import { Icon, Play, Shuffle, Trophy } from "#/components/icons.tsx";
+import { Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { PanelCredits } from "#/components/panel-credits.tsx";
 import { Panel } from "#/components/panel.tsx";
@@ -177,21 +177,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
       </Main>
 
       <Panel>
-        <div
-          className={clsx(
-            "max-lg:col-[2/3] flex flex-col gap-fl-2 items-center place-content-end w-full",
-            "lg:row-[3/4] lg:gap-fl-3 lg:grid lg:grid-cols-1 lg:justify-items-start",
-          )}
-        >
-          <a
-            href={`/puzzles/${puzzle.value.slug}/clone`}
-            className="btn"
-          >
-            <Icon icon={Shuffle} /> Remix
-          </a>
-        </div>
-
-        <PanelCredits className="mt-fl-4" />
+        <PanelCredits />
       </Panel>
     </>
   );
