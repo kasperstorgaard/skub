@@ -33,6 +33,8 @@ type ControlsPanelProps = {
   showEdit?: boolean;
   hintCount?: number;
   isPreview?: boolean;
+  /** Flash is on: its solves are off the leaderboard, so no link to it */
+  isFlash?: boolean;
   className?: string;
 };
 
@@ -44,6 +46,7 @@ export function ControlsPanel(
     showEdit,
     hintCount,
     isPreview,
+    isFlash,
     className,
   }: ControlsPanelProps,
 ) {
@@ -220,7 +223,7 @@ export function ControlsPanel(
             <Icon icon={Printer} /> Print
           </button>
 
-          {!isPreview && (
+          {!isPreview && !isFlash && (
             <a
               href={`/puzzles/${puzzle.value.slug}/solutions`}
               className="btn"
