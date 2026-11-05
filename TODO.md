@@ -181,7 +181,12 @@ PR finishes only part of an item, trim the item to what is left.
   the puzzle at all? Puzzle cards show your result where the difficulty tag used
   to sit (bottom right): your best score, and your stars once they exist.
   Earning stars is the celebration's payoff: they animate in as the moment of
-  the solve.
+  the solve. The first celebration a player sees explains what stars are and how
+  to earn them. The solutions page shows the stars earned on the puzzle.
+
+- **Players can see who has the most stars.** A high score page ranks players by
+  all-time stars, linked from home's sidebar, the archive and the solutions
+  page. Builds on the stars item above.
 
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of
