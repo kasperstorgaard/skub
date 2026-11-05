@@ -129,12 +129,17 @@ export function CelebrationDialog(
 
       <div className="flex flex-col gap-fl-1 items-stretch">
         <div className="flex gap-fl-1">
-          <a
-            href={`/puzzles/${puzzle.value.slug}/solutions`}
-            className="btn flex-1 justify-center"
-          >
-            <Icon icon={Ranking} /> See solves
-          </a>
+          {
+            // Flash solves are compared above, not on the leaderboard
+            !isFlash && (
+              <a
+                href={`/puzzles/${puzzle.value.slug}/solutions`}
+                className="btn flex-1 justify-center"
+              >
+                <Icon icon={Ranking} /> See solves
+              </a>
+            )
+          }
 
           <a
             href="/puzzles/recommended"

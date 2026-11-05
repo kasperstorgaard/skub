@@ -29,7 +29,7 @@ import { withSolve } from "#/game/progress.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
-import { decodeState, getPuzzleArchiveHref } from "#/game/url.ts";
+import { decodeState, encodeState, getPuzzleArchiveHref } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
 import {
@@ -210,6 +210,16 @@ export const handler = define.handlers<PageData>({
       return Response.json(data);
     }
 
+    // Flash solves are off the leaderboard, so the solves page would only
+    // show longer, unrelated solves: back to the solved board instead. The
+    // dialog param stops the GET from detecting the solve again.
+    if (isFlash) {
+      const solvedUrl = new URL(`/puzzles/${slug}`, ctx.url);
+      solvedUrl.search = encodeState({ moves: solve.moves });
+      solvedUrl.searchParams.set("dialog", "solved");
+      return Response.redirect(solvedUrl, 303);
+    }
+
     const solutionsUrl = new URL(`/puzzles/${slug}/solutions`, ctx.url);
     return Response.redirect(solutionsUrl, 303);
   },
@@ -298,6 +308,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         hintCount={props.data.hintCount}
         isDev={isDev}
         showEdit={props.data.showEdit}
+        isFlash={isFlashOn}
         className="print:hidden"
       />
 
@@ -323,6 +334,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         savedName={props.data.savedName}
+        isFlash={isFlashOn}
       />
 
       {hasFlash && <FlashDialog puzzle={puzzle} href={href} isOn={isFlashOn} />}

@@ -12,10 +12,12 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName?: string | null;
+  /** A Flash solve is saved, but stays off the leaderboard */
+  isFlash?: boolean;
 };
 
 export function SolutionDialog(
-  { href, puzzle, savedName }: Props,
+  { href, puzzle, savedName, isFlash }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,7 +52,11 @@ export function SolutionDialog(
         </h2>
 
         <p>
-          {savedName
+          {isFlash
+            ? savedName
+              ? "Save your Flash solve."
+              : "Pick a name and save your Flash solve."
+            : savedName
             ? "Get your solve on the board."
             : "Pick a name and get your solve on the board."}
         </p>
