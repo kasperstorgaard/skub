@@ -6,15 +6,15 @@ type Props = {
   puzzle: Pick<Puzzle, "name" | "number">;
   /** lg: page titles, md: cards */
   size?: "lg" | "md";
-  /** lg only: what the page is about the puzzle, after the number */
+  /** lg only: what the page shows of the puzzle, in place of the number */
   lead?: preact.ComponentChildren;
   className?: string;
 };
 
 /**
- * A puzzle's number and name as one title. Page titles (lg) put the number
- * and any lead on their own line above, three sizes down and muted, like a
- * card's lead; cards (md) keep the number on the name's baseline.
+ * A puzzle's number and name as one title. Page titles (lg) put the number, or
+ * the page's lead in its place, on its own line above, three sizes down and
+ * muted, like a card's lead; cards (md) keep the number on the name's baseline.
  */
 export function PuzzleName(
   { puzzle, size = "md", lead, className }: Props,
@@ -22,11 +22,9 @@ export function PuzzleName(
   if (size === "lg") {
     return (
       <span className={clsx("inline-flex flex-col", className)}>
-        {(puzzle.number || lead) && (
+        {(lead || puzzle.number) && (
           <span className="text-3 [font-weight:300] leading-none text-text-2">
-            {puzzle.number && `#${puzzle.number}`}
-            {puzzle.number && lead && " · "}
-            {lead}
+            {lead ?? `#${puzzle.number}`}
           </span>
         )}
         <span className="type-title-lg [font-weight:500] leading-none">

@@ -145,7 +145,7 @@ export default define.page<typeof handler>(function Home(ctx) {
           </ul>
 
           <a href="/puzzles" className="btn place-self-start" data-size="lg">
-            Archives <Icon icon={ArrowRight} />
+            All puzzles <Icon icon={ArrowRight} />
           </a>
         </div>
       </Main>

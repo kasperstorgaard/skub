@@ -37,6 +37,11 @@ max-width with auto margins; the panel sits at a fixed width on the right.
 
 There is no footer, the Panel serves this role.
 
+On mobile, a board as the page's main thing is narrower than Main, leaving a
+wider gutter than other pages. That's deliberate: swipes on the board start
+clear of the screen-edge gestures (iOS back, Android navigation). Don't widen
+the board to the column.
+
 ### Spacing levels
 
 Space says how related two things are: closer means more related. Use three

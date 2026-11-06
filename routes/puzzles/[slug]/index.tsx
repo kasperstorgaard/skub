@@ -238,16 +238,16 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const { hasFlash, isFlashOn } = props.data;
 
   const back = isTodaysPuzzle(props.data.puzzle)
-    ? { href: "/", label: "Back to Home" }
+    ? { href: "/", label: "Back to home" }
     : {
       href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
-      label: "Back to archive",
+      label: "Back to puzzles",
     };
 
   return (
     <>
       <Main>
-        <Header back={{ href: back.href }} />
+        <Header back={back} />
 
         <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
@@ -325,7 +325,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         savedName={props.data.savedName}
-        isFlash={isFlashOn}
+        backHref={back.href}
       />
 
       {hasFlash && <FlashDialog puzzle={puzzle} href={href} isOn={isFlashOn} />}

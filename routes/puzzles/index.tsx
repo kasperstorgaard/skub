@@ -90,7 +90,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
 
         <div className="flex flex-col gap-0">
           <span className="text-3 text-text-2">{selectedDate.year}</span>
-          <h1 className="text-brand text-6 leading-flat">Archive</h1>
+          <h1 className="text-brand text-6 leading-flat">Puzzles</h1>
         </div>
 
         <section

@@ -114,21 +114,14 @@ PR finishes only part of an item, trim the item to what is left.
   tag. Retro themes still style the old pieces (`.move-counter`,
   `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
-- **The solutions page feels like part of the new look.** Revamp it to match the
-  puzzle page: the title with its lead line, the score badge, the type roles and
-  spacing levels, secondary buttons, and the sidebar and mobile footer. The
-  solve list itself gets a visual pass too, so a solve reads at a glance (who,
-  how many moves, when).
-
-- **The editor matches the new design.** The builder and its preview still carry
-  the old look in places: bring them onto the same title, type roles, spacing
-  levels, buttons and sidebar/footer as the puzzle page, so building a puzzle
-  feels like the same app as playing one.
-
-- **The archive reads like a week on mobile.** On phones, the archive works like
-  a calendar app's week view: a strip of days to swipe through, the chosen day's
-  puzzle below. Desktop keeps the month calendar, which still needs a visual
-  pass too.
+- **On mobile, all puzzles are one feed to flick through.** A snap-scrolling
+  feed of puzzle cards, newest first, that reads as one seamless list. The card
+  in view keeps `?date=` current, so going back from a puzzle returns to the
+  same spot. Without JS it's paginated, with a link to earlier puzzles.
+  Tentative: use lazy loading infinite scroll with a transform sentinel (sized
+  from the known total to the cards still to come) as a progressive improvement
+  on the no-JS pagination. Desktop keeps the month calendar, which still needs a
+  visual pass too.
 
 - **Board walls look built, not drawn.** Walls that meet join up into one shape
   instead of separate strokes, and every wall sits exactly on the line between
@@ -150,10 +143,14 @@ PR finishes only part of an item, trim the item to what is left.
 - **A celebration that feels like a win.** Revamp the solve dialog: the wording
   (factual, never grading the play) and the celebration moment itself. The
   payoff is the stars you just earned animating in (see the stars item under
-  Play).
+  Play). A solve longer than the shortest gets a soft line that also teaches
+  the score badge, e.g. "If you're curious, the shortest possible solution is
+  4 moves", so "6/4" reads right from then on.
 
 - **Smoother page changes.** View transitions between pages, opt-in per
-  navigation. Needs the Fresh 2.3 upgrade first.
+  navigation. Needs the Fresh 2.3 upgrade first. Going into a board page
+  zones in, the page settling back around the board, so its narrower mobile
+  width reads as focusing in rather than a jump.
 
 ## Play
 

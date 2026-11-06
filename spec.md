@@ -70,10 +70,15 @@ puzzle: modern and a little refined, friendly rather than editorial.
 
 ### Titles
 
-Every page title's lead sits above it, never below: "#309 · solves",
-"#309 · solved by Kasper", "build a puzzle", "candidate · generated", the archive's year.
-Puzzle titles (editor, tutorial, candidates included) all use the page-title
-type, and badges line up with the name's bottom.
+Every page title's lead sits above it, never below, and it's one thing: the
+puzzle's number on the puzzle page, or what the page shows in its place
+("solves", "solved by Kasper", "build a puzzle", "candidate · generated", the
+year on Puzzles). Puzzle titles (editor, tutorial, candidates included) all use
+the page-title type, and badges line up with the name's bottom.
+
+The archive is "Puzzles": the page title, and "Back to puzzles" on the
+puzzle page's back link (now labelled for screen readers and on hover). Home's
+link to it reads "All puzzles".
 
 ### Sidebar
 

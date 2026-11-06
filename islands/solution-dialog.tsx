@@ -12,12 +12,12 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName?: string | null;
-  /** A Flash solve is saved, but stays off the leaderboard */
-  isFlash?: boolean;
+  /** Where "Not now" goes: the page's back link */
+  backHref: string;
 };
 
 export function SolutionDialog(
-  { href, puzzle, savedName, isFlash }: Props,
+  { href, puzzle, savedName, backHref }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -75,7 +75,7 @@ export function SolutionDialog(
           <input
             name="name"
             autocomplete="username"
-            placeholder="Username, fx. Jungleboi87"
+            placeholder="fx. Jungleboi87"
             value={savedName ?? undefined}
             required
             className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
@@ -91,8 +91,8 @@ export function SolutionDialog(
 
       <DialogActions
         dismiss={
-          <a href="/puzzles/recommended" className={DISMISS}>
-            One more
+          <a href={backHref} className={DISMISS}>
+            Not now
           </a>
         }
       >
