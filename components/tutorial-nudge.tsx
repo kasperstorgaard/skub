@@ -10,7 +10,7 @@ export function TutorialNudge({ className }: Props) {
   return (
     <aside
       className={clsx(
-        "grid grid-cols-[minmax(min(100%,var(--width-action)),max-content)] justify-center gap-fl-1 py-2",
+        "grid grid-cols-action justify-center gap-fl-1 py-2",
         "text-text-2 text-pretty",
         "animate-fade-in",
         className,

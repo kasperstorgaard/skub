@@ -251,7 +251,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
 
         <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
-            <PuzzleName puzzle={props.data.puzzle} size="lg" />
+            <PuzzleName puzzle={props.data.puzzle} />
           </h1>
 
           <ScoreBadge

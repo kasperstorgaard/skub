@@ -4,47 +4,23 @@ import type { Puzzle } from "#/game/types.ts";
 
 type Props = {
   puzzle: Pick<Puzzle, "name" | "number">;
-  /** lg: page titles, md: cards */
-  size?: "lg" | "md";
   className?: string;
 };
 
 /**
- * A puzzle's number and name as one title. Page titles (lg) put the number
- * on its own line above, three sizes down and muted, like a card's lead; cards
- * (md) keep it on the name's baseline.
+ * A page's puzzle title: the number on its own line above, smaller, light
+ * and muted, like a card's lead, then the name. Cards put the number in their
+ * lead instead (`PuzzleCard`).
  */
-export function PuzzleName(
-  { puzzle, size = "md", className }: Props,
-) {
-  if (size === "lg") {
-    return (
-      <span className={clsx("inline-flex flex-col", className)}>
-        {puzzle.number && (
-          <span className="text-3 [font-weight:300] leading-none text-text-2">
-            #{puzzle.number}
-          </span>
-        )}
-        <span className="type-title-lg [font-weight:500] leading-none">
-          {puzzle.name}
-        </span>
-      </span>
-    );
-  }
-
+export function PuzzleName({ puzzle, className }: Props) {
   return (
-    <span
-      className={clsx(
-        "inline-flex flex-wrap items-baseline gap-x-2 type-title",
-        className,
-      )}
-    >
+    <span className={clsx("inline-flex flex-col", className)}>
       {puzzle.number && (
-        <span className="[font-weight:300]">
+        <span className="text-3 font-3 leading-none text-text-2">
           #{puzzle.number}
         </span>
       )}
-      <span>{puzzle.name}</span>
+      <span className="type-title-lg leading-none">{puzzle.name}</span>
     </span>
   );
 }

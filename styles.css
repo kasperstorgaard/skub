@@ -597,24 +597,16 @@
   line-height: var(--font-lineheight-0);
 }
 
-@utility type-body {
-  font-size: var(--font-size-2);
-  font-weight: var(--font-weight-4);
-  line-height: var(--font-lineheight-3);
-}
-
 @utility type-meta {
   font-size: var(--font-size-1);
   font-weight: var(--font-weight-4);
   line-height: var(--font-lineheight-0);
 }
 
-@utility type-tag {
-  font-size: var(--font-size-0);
-  font-weight: var(--font-weight-5);
-  line-height: var(--font-lineheight-00);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+/* A column for a row of page actions (nudges, the mobile footer): at
+   least --width-action, wider if two labels need it, never past the page */
+@utility grid-cols-action {
+  grid-template-columns: minmax(min(100%, var(--width-action)), max-content);
 }
 
 @utility slashed {

@@ -59,3 +59,6 @@ levels, each about twice the one below, and nothing in between:
 - Between stacked lines of text (a lead over a title), the line-height is the
   spacing: no gap, and let the type role's line-height do the work rather than
   forcing leading.
+- A row of page actions outside a dialog (nudges, the mobile footer) is one
+  `grid-cols-action` column: at least `--width-action`, wider if two labels
+  need it. Inside it, buttons share a row like `DialogActions`.

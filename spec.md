@@ -14,12 +14,12 @@ puzzle: modern and a little refined, friendly rather than editorial.
 - **Outfit** replaces Chakra Petch: geometric, round, one variable file
   (weights 100–900, ~32 KB latin, about what the three static Chakra files
   cost). Retro themes keep their own fonts.
-- Type roles (`type-title-lg`, `type-title`, `type-meta`, `type-tag`, …) pair
+- Type roles (`type-title-lg`, `type-title`, `type-meta`) pair
   size, weight and leading. Leads and titles sit tight; the line-height is the
   spacing.
 - Puzzle titles stack the number over the name: on cards the number joins the
-  lead ("Daily puzzle #309", then the name); on pages it's a light, muted line
-  above the name.
+  lead ("Daily puzzle #309", then the name); on pages (`PuzzleName`) it's a
+  light, muted line above the name.
 - The home wordmark ripples once on load: each letter swells 300 → 600 and
   settles at 500, staggered left to right.
 
@@ -53,6 +53,17 @@ gets the builder link on top and the credits (Ricochet Robots, GitHub,
 LinkedIn) at the foot. The puzzle page keeps only "See solves" there, as a
 secondary button. Print and the header's builder icon are gone. The home stats
 keep their original layout.
+
+### Mobile footer
+
+- The puzzle page's footer holds its actions ("See solves", later Rate) as a
+  dialog-style row: one centred grid column, at least `--width-action` wide,
+  that two labels may widen. Nudges under the board use the same column.
+- Below the actions: the credits (`PanelCredits`) and the GitHub/LinkedIn row
+  (`PanelLinks`), the same pieces home uses.
+- Below `lg` the body grid's spare row is the panel's, so on a short page the
+  footer reaches the bottom of the screen; `Panel` no longer needs a minimum
+  height.
 
 ### Smaller
 

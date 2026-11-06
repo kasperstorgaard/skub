@@ -20,7 +20,7 @@ export function ActionsPanel(
   { slug, isDev, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
 ) {
   return (
-    <Panel className={clsx("max-md:min-h-0! max-lg:py-fl-2", className)}>
+    <Panel className={clsx("max-lg:py-fl-2", className)}>
       {
         /* Mobile: one centred column, at least an action row wide; two
           buttons can widen it */
@@ -28,7 +28,7 @@ export function ActionsPanel(
       <div
         className={clsx(
           "max-lg:col-[2/3] grid",
-          "max-lg:grid-cols-[minmax(min(100%,var(--width-action)),max-content)] max-lg:justify-center",
+          "max-lg:grid-cols-action max-lg:justify-center",
           "lg:row-[3/4] lg:content-start lg:justify-items-start lg:gap-fl-1",
         )}
       >

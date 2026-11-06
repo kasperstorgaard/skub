@@ -46,7 +46,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
 
         <div className="flex items-center justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
-            <PuzzleName puzzle={props.data.puzzle} size="lg" />
+            <PuzzleName puzzle={props.data.puzzle} />
           </h1>
 
           <ScoreBadge
