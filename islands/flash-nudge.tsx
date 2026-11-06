@@ -46,7 +46,7 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
   return (
     <aside
       className={clsx(
-        "grid justify-items-center gap-fl-1 py-2 w-full",
+        "grid grid-cols-[minmax(0,var(--width-action))] justify-center gap-fl-1 py-2",
         "text-text-2 text-pretty",
         "animate-fade-in",
         className,
@@ -58,7 +58,7 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
 
       <a
         href={dialogHref}
-        className="btn w-full max-w-(--width-action)"
+        className="btn"
         data-router
       >
         <Icon icon={LightningFill} />

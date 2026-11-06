@@ -10,7 +10,7 @@ export function TutorialNudge({ className }: Props) {
   return (
     <aside
       className={clsx(
-        "grid justify-items-center gap-fl-1 py-2 w-full",
+        "grid grid-cols-[minmax(0,var(--width-action))] justify-center gap-fl-1 py-2",
         "text-text-2 text-pretty",
         "animate-fade-in",
         className,
@@ -21,7 +21,7 @@ export function TutorialNudge({ className }: Props) {
         <IconPuck /> mid-slide
       </p>
 
-      <a href="/puzzles/tutorial" className="btn w-full max-w-(--width-action)">
+      <a href="/puzzles/tutorial" className="btn">
         <Icon icon={ChalkboardTeacher} /> Learn the basics
       </a>
     </aside>

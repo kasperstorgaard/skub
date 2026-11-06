@@ -20,54 +20,55 @@ export function ActionsPanel(
 ) {
   return (
     <Panel className={className}>
+      {/* Mobile: one centred column, up to an action row wide */}
       <div
         className={clsx(
-          "max-lg:col-[2/3] gap-fl-1",
-          // Mobile: a dialog's actions row, one button full width or two
-          // sharing it, centred
-          "max-lg:grid max-lg:grid-flow-col max-lg:auto-cols-fr",
-          "max-lg:w-full max-lg:max-w-(--width-action) max-lg:justify-self-center",
-          "lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start",
+          "max-lg:col-[2/3] grid",
+          "max-lg:grid-cols-[minmax(0,var(--width-action))] max-lg:justify-center",
+          "lg:row-[3/4] lg:content-start lg:justify-items-start lg:gap-fl-1",
         )}
       >
-        {!isPreview && !isFlash && (
-          <a
-            href={`/puzzles/${slug}/solutions`}
-            className="btn"
-          >
-            <Icon icon={Ranking} /> See solves
-          </a>
-        )}
+        {/* A dialog's actions row: one button fills it, two share it */}
+        <div className="grid grid-flow-col auto-cols-fr gap-fl-1 lg:contents">
+          {!isPreview && !isFlash && (
+            <a
+              href={`/puzzles/${slug}/solutions`}
+              className="btn"
+            >
+              <Icon icon={Ranking} /> See solves
+            </a>
+          )}
 
-        {isPreview && (
-          <a href="/api/export" download className="btn">
-            <Icon icon={Download} />
-            Download
-          </a>
-        )}
+          {isPreview && (
+            <a href="/api/export" download className="btn">
+              <Icon icon={Download} />
+              Download
+            </a>
+          )}
 
-        {showEdit && (
-          <form
-            method="post"
-            action={`/puzzles/${slug}/clone`}
-            className="contents"
-          >
-            <button type="submit" className="btn">
-              <Icon icon={Pencil} /> Edit
-            </button>
-          </form>
-        )}
+          {showEdit && (
+            <form
+              method="post"
+              action={`/puzzles/${slug}/clone`}
+              className="contents"
+            >
+              <button type="submit" className="btn">
+                <Icon icon={Pencil} /> Edit
+              </button>
+            </form>
+          )}
 
-        {
-          /* To the candidate it shipped from, not via clone: clone strips
+          {
+            /* To the candidate it shipped from, not via clone: clone strips
             identity for remixing, and a rating filed under "Untitled, 0
             moves" is useless as ground truth. */
-        }
-        {isDev && !isPreview && (
-          <a href={`/puzzles/${slug}/rate`} className="btn">
-            <Icon icon={Star} /> Rate
-          </a>
-        )}
+          }
+          {isDev && !isPreview && (
+            <a href={`/puzzles/${slug}/rate`} className="btn">
+              <Icon icon={Star} /> Rate
+            </a>
+          )}
+        </div>
       </div>
 
       {/* The credits are the panel's own section, a step past a group */}
