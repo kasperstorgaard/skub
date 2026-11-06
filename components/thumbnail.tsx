@@ -1,7 +1,14 @@
 import { HTMLAttributes, SVGAttributes } from "preact";
 
 import { COLS } from "#/game/board.ts";
-import type { Board, Piece, Wall } from "#/game/types.ts";
+import type { Board, Piece } from "#/game/types.ts";
+import {
+  getBendPath,
+  getWallShapes,
+  WALL_BEND_START,
+  WALL_RADIUS,
+  WALL_WIDTH,
+} from "#/game/wall-runs.ts";
 
 export type ThumbnailColors = {
   ui1: string; // destination stroke
@@ -45,6 +52,14 @@ export function Thumbnail({
   const gap = width * 0.02;
   const cellSize = (width - ((COLS - 1) * gap)) / COLS;
   const pieceSize = cellSize * 0.7;
+
+  const pitch = cellSize + gap;
+  const walls = getWallShapes(board.walls);
+  const wallEndOffset = {
+    free: gap / 2,
+    joined: -WALL_WIDTH / 2,
+    bent: WALL_BEND_START - WALL_RADIUS,
+  };
 
   const cellX = (x: number) => x * (cellSize + gap);
   const cellY = (y: number) => y * (cellSize + gap);
@@ -139,39 +154,40 @@ export function Thumbnail({
         </g>
       )}
 
-      {/* Walls — offset by half the gap so they appear between cells */}
-      {board.walls.map((wall: Wall, idx) => {
-        const px = cellX(wall.x);
-        const py = cellY(wall.y);
+      {/* Walls mid-gap, as on the board: runs as rects, bends as arcs */}
+      <g className="svg-wall">
+        {walls.runs.map((run) => {
+          const [lead, trail] = run.ends.map((end) => wallEndOffset[end]);
+          const line = (run.orientation === "vertical" ? run.x : run.y) *
+              pitch - gap / 2 - WALL_WIDTH / 2;
+          const from = (run.orientation === "vertical" ? run.y : run.x) *
+              pitch - gap / 2 + lead;
+          const length = run.span * pitch - lead - trail;
 
-        if (wall.orientation === "vertical") {
           return (
-            <line
-              className="svg-wall"
-              key={`wall-${idx}`}
-              x1={px - gap / 2}
-              y1={py}
-              x2={px - gap / 2}
-              y2={py + cellSize}
-              strokeWidth="3"
-              stroke={colors.ui4}
+            <rect
+              key={`${run.orientation}-${run.x}-${run.y}`}
+              fill={colors.ui4}
+              rx={WALL_RADIUS}
+              {...(run.orientation === "vertical"
+                ? { x: line, y: from, width: WALL_WIDTH, height: length }
+                : { x: from, y: line, width: length, height: WALL_WIDTH })}
             />
           );
-        } else {
-          return (
-            <line
-              className="svg-wall"
-              key={`wall-${idx}`}
-              x1={px}
-              y1={py - gap / 2}
-              x2={px + cellSize}
-              y2={py - gap / 2}
-              strokeWidth="3"
-              stroke={colors.ui4}
-            />
-          );
-        }
-      })}
+        })}
+        {walls.bends.map((bend) => (
+          <path
+            key={`bend-${bend.x}-${bend.y}`}
+            d={getBendPath(bend)}
+            transform={`translate(${bend.x * pitch - gap / 2} ${
+              bend.y * pitch - gap / 2
+            })`}
+            fill="none"
+            stroke={colors.ui4}
+            stroke-width={WALL_WIDTH}
+          />
+        ))}
+      </g>
 
       {/* Pieces */}
       {board.pieces.map((piece: Piece, idx) => {

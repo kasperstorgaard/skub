@@ -41,6 +41,12 @@ import {
   getMovesHref,
   getReplaySpeed,
 } from "#/game/url.ts";
+import {
+  getWallShapes,
+  WALL_BEND_RADIUS,
+  WALL_RADIUS,
+  WALL_WIDTH,
+} from "#/game/wall-runs.ts";
 import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
@@ -257,6 +263,15 @@ export default function Board(
           "--hint-bg": "var(--color-ui-contrast)",
           "--replay-len": moves.length,
           "--gap": "var(--size-1)",
+          // Walls, and their offsets from a tile edge
+          "--wall-w": `${WALL_WIDTH}px`,
+          "--wall-radius": `${WALL_RADIUS}px`,
+          "--wall-bend": `${WALL_BEND_RADIUS}px`,
+          "--wall-in": "calc(var(--gap) / 2 + var(--wall-w) / 2)",
+          "--wall-tuck":
+            "calc(var(--wall-in) - var(--wall-bend) + var(--wall-radius))",
+          "--wall-bend-out":
+            "calc(var(--gap) / 2 - var(--wall-w) / 2 + var(--wall-bend))",
           // 39px at 412px. On mobile the board is deliberately narrower than
           // Main, so swipes start clear of the screen-edge gestures.
           "--space-w": "clamp(40px - var(--gap), 9.4666vw, 56px)",
@@ -299,12 +314,7 @@ export default function Board(
 
         {board.destination && <BoardDestination {...board.destination} />}
 
-        {board.walls.map((wall) => (
-          <BoardWall
-            key={`${wall.x}-${wall.y}-${wall.orientation}`}
-            {...wall}
-          />
-        ))}
+        <BoardWalls walls={board.walls} />
 
         {
           /* Move guides: target destinations + hint (if active).
@@ -402,23 +412,75 @@ export default function Board(
   );
 }
 
-function BoardWall({ x, y, orientation }: Wall) {
+/** Walls as grid items, pulled onto the line mid-gap */
+function BoardWalls({ walls }: { walls: Wall[] }) {
+  const { runs, bends } = useMemo(() => getWallShapes(walls), [walls]);
+
   return (
-    <div
-      className={clsx(
-        "board-wall place-self-start col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full",
-        "border-ui-4 aspect-square pointer-events-none",
-        orientation === "vertical"
-          ? "border-l-[3px] -ml-[3.5px]"
-          : "border-t-[3px] -mt-[3.5px]",
-      )}
-      style={{
-        "--x": x,
-        "--y": y,
-      }}
-    />
+    <>
+      {runs.map((run) => {
+        const isVertical = run.orientation === "vertical";
+
+        return (
+          <div
+            key={`${run.orientation}-${run.x}-${run.y}`}
+            className={clsx(
+              "board-wall rounded-(--wall-radius) bg-ui-4 pointer-events-none",
+              isVertical
+                ? "justify-self-start w-(--wall-w) -ml-(--wall-in)"
+                : "self-start h-(--wall-w) -mt-(--wall-in)",
+              RUN_END_CLASS[run.orientation][0][run.ends[0]],
+              RUN_END_CLASS[run.orientation][1][run.ends[1]],
+            )}
+            style={{
+              gridColumn: isVertical
+                ? `${run.x + 1}`
+                : `${run.x + 1} / span ${run.span}`,
+              gridRow: isVertical
+                ? `${run.y + 1} / span ${run.span}`
+                : `${run.y + 1}`,
+            }}
+          />
+        );
+      })}
+
+      {bends.map((bend) => (
+        <div
+          key={`bend-${bend.x}-${bend.y}`}
+          className={clsx(
+            "board-wall place-self-start size-(--wall-bend) border-ui-4 pointer-events-none",
+            BEND_CLASS[`${bend.horizontal}-${bend.vertical}`],
+          )}
+          style={{ gridColumn: `${bend.x + 1}`, gridRow: `${bend.y + 1}` }}
+        />
+      ))}
+    </>
   );
 }
+
+// Start and end margins per end kind
+const RUN_END_CLASS = {
+  vertical: [
+    { free: "", joined: "-mt-(--wall-in)", bent: "-mt-(--wall-tuck)" },
+    { free: "", joined: "-mb-(--wall-in)", bent: "-mb-(--wall-tuck)" },
+  ],
+  horizontal: [
+    { free: "", joined: "-ml-(--wall-in)", bent: "-ml-(--wall-tuck)" },
+    { free: "", joined: "-mr-(--wall-in)", bent: "-mr-(--wall-tuck)" },
+  ],
+};
+
+// A bend in the cell below-right of its corner, drawing the outside of the turn
+const BEND_CLASS = {
+  "right-down":
+    "-ml-(--wall-in) -mt-(--wall-in) border-l-(length:--wall-w) border-t-(length:--wall-w) rounded-tl-(--wall-bend)",
+  "left-down":
+    "-ml-(--wall-bend-out) -mt-(--wall-in) border-r-(length:--wall-w) border-t-(length:--wall-w) rounded-tr-(--wall-bend)",
+  "right-up":
+    "-ml-(--wall-in) -mt-(--wall-bend-out) border-l-(length:--wall-w) border-b-(length:--wall-w) rounded-bl-(--wall-bend)",
+  "left-up":
+    "-ml-(--wall-bend-out) -mt-(--wall-bend-out) border-r-(length:--wall-w) border-b-(length:--wall-w) rounded-br-(--wall-bend)",
+};
 
 type BoardSpaceProps = Position & {
   href?: string;
