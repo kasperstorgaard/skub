@@ -57,10 +57,7 @@ export function FlashDialog({ puzzle, href, isOn }: FlashDialogProps) {
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h2 className="text-fl-2 font-semibold text-text-1">Flash mode</h2>
 
-        <p>
-          Flash mode gives you a shorter version of this puzzle, but skips the
-          leaderboard.
-        </p>
+        <p>Same board, shorter puzzle, smaller prizes.</p>
       </div>
 
       <form

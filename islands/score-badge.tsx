@@ -109,7 +109,7 @@ function OffSwitch({ as: Element, ...props }: OffSwitchProps) {
       role="switch"
       aria-checked="false"
       aria-label="Flash"
-      title="Flash: start a few moves in, off the leaderboard"
+      title="Flash mode: same board, shorter puzzle, smaller prizes"
       className={clsx(
         // Square: the badge is leading-loose, 2em tall; aspect-ratio can't see
         // a flex item's stretched height. Links get their own font-size from
