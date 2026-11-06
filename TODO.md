@@ -135,11 +135,6 @@ PR finishes only part of an item, trim the item to what is left.
   toolbar's buttons, sized like the editor's, are too small for quick undo/redo,
   and size them up if so.
 
-- **A theme with more edge.** The design is clean but flat. Subtle noise or
-  grain, soft gradients, a few geometric shapes as accents. The main theme stays
-  modern; the others get to diverge on shape and texture once there are tokens
-  for it.
-
 - **A celebration that feels like a win.** Revamp the solve dialog: the wording
   (factual, never grading the play) and the celebration moment itself. The
   payoff is the stars you just earned animating in (see the stars item under
