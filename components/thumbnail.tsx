@@ -158,7 +158,7 @@ export function Thumbnail({
           return (
             <rect
               key={`${run.orientation}-${run.x}-${run.y}`}
-              rx={WALL_WIDTH / 2}
+              rx={WALL_WIDTH / 4}
               {...(run.orientation === "vertical"
                 ? { x: line, y: from, width: WALL_WIDTH, height: length }
                 : { x: from, y: line, width: length, height: WALL_WIDTH })}

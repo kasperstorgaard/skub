@@ -259,6 +259,7 @@ export default function Board(
           "--replay-len": moves.length,
           "--gap": "var(--size-1)",
           "--wall-w": "2px",
+          "--wall-radius": "0.5px",
           // 39px at 412px. On mobile the board is deliberately narrower than
           // Main, so swipes start clear of the screen-edge gestures.
           "--space-w": "clamp(40px - var(--gap), 9.4666vw, 56px)",
@@ -411,7 +412,7 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
         <div
           key={`${run.orientation}-${run.x}-${run.y}`}
           className={clsx(
-            "board-wall absolute rounded-full bg-ui-4",
+            "board-wall absolute rounded-(--wall-radius) bg-ui-4",
             run.orientation === "vertical"
               ? "w-(--wall-w) left-[calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] top-[calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] h-[calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]"
               : "h-(--wall-w) top-[calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] left-[calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] w-[calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]",

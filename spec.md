@@ -13,7 +13,8 @@ separate strokes, not one shape.
   edge on the grid lines between cells; walls in a line merge into one straight
   run, through crossings. Each run end is _free_ (nothing else meets it) or
   _joined_ (it meets another wall at a corner).
-- **Renderers draw each run as a 2px rounded bar, mid-gap:**
+- **Renderers draw each run as a 2px bar with slightly rounded
+  ends (0.5px), mid-gap:**
   - Free ends stop at the tile edge, so they never reach into the next
     gutter.
   - Joined ends run half a stroke past the corner, so corners overlap and read
