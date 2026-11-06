@@ -400,16 +400,20 @@ export default function Board(
   );
 }
 
-/** Every wall in one SVG, its grid line `k` landing mid-gap */
+/**
+ * Every wall in one SVG over the whole grid area, grown by half a gap each side
+ * so grid line `k` lands mid-gap, then clipped back to the tiles at the edge.
+ */
 function BoardWalls({ walls }: { walls: Wall[] }) {
   return (
     <svg
       aria-hidden="true"
       viewBox={`0 0 ${COLS} ${ROWS}`}
+      preserveAspectRatio="none"
       className={clsx(
-        "board-walls absolute pointer-events-none overflow-visible",
-        "top-[calc(var(--gap)/-2)] left-[calc(var(--gap)/-2)]",
-        "size-[calc((var(--space-w)+var(--gap))*8)]",
+        "board-walls col-[1/-1] row-[1/-1] pointer-events-none",
+        "-m-[calc(var(--gap)/2)] size-[calc(100%+var(--gap))]",
+        "[clip-path:inset(calc(var(--gap)/2))]",
         "fill-none stroke-ui-4",
       )}
     >
@@ -418,8 +422,6 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
           key={path}
           d={path}
           stroke-width="3"
-          stroke-linecap="round"
-          stroke-linejoin="round"
           vector-effect="non-scaling-stroke"
         />
       ))}
