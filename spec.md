@@ -14,13 +14,13 @@ separate strokes, not one shape.
   few paths as possible, going straight on through crossings where it can, and
   a run that comes back to its start closes with `Z` so every corner joins. Path
   data is in grid units: line `k` sits at `k`.
-- **One SVG per board draws them**, with square corners and flat ends (round
-  ones read too heavy):
+- **One SVG per board draws them**, with round caps and joins at 2px (3px
+  read too heavy once rounded):
   - On the board the SVG is a grid item spanning every cell, grown by half a
     gap each side so grid line `k` lands mid-gap, and clipped back to the tiles
     so edge walls end flush. Sizing from the grid area, not `--space-w`, keeps
     it on the tiles whatever size they come out. `vector-effect:
-    non-scaling-stroke` keeps the stroke 3px. Server-rendered, so no-JS play
+    non-scaling-stroke` keeps the stroke 2px. Server-rendered, so no-JS play
     is unchanged.
   - The thumbnail (cards, og-image) maps the same path data with a transform
     and a stroke width divided by the scale, so it needs nothing an SVG

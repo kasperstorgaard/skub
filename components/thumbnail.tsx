@@ -148,7 +148,9 @@ export function Thumbnail({
         })`}
         fill="none"
         stroke={colors.ui4}
-        stroke-width={3 / (cellSize + gap)}
+        stroke-width={2 / (cellSize + gap)}
+        stroke-linecap="round"
+        stroke-linejoin="round"
       >
         {getWallPaths(board.walls).map((path) => <path key={path} d={path} />)}
       </g>

@@ -421,7 +421,9 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
         <path
           key={path}
           d={path}
-          stroke-width="3"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
           vector-effect="non-scaling-stroke"
         />
       ))}
