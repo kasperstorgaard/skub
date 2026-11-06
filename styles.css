@@ -412,6 +412,11 @@
     line-height: var(--font-lineheight-2); /* 1.375 */
   }
 
+  /* normalize bolds dt; our dts are quiet stat labels */
+  dt {
+    font-weight: inherit;
+  }
+
   /* Grain over the surface, outside retro (own backdrops) and high contrast.
      Fixed layers on html, so body goes see-through. */
   @media screen {
