@@ -12,6 +12,7 @@ import Board from "#/islands/board.tsx";
 import { EditableName } from "#/islands/editable-name.tsx";
 import { EditorAutosave } from "#/islands/editor-autosave.tsx";
 import { EditorKeyboardShortcuts } from "#/islands/editor-keyboard-shortcuts.tsx";
+import { EditorNudge } from "#/islands/editor-nudge.tsx";
 import { EditorPanel } from "#/islands/editor-panel.tsx";
 import { type EditorSolution, EditorSolver } from "#/islands/editor-solver.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
@@ -36,35 +37,36 @@ export default define.page<typeof handler>(function EditorPage(props) {
   const solveState = useSignal<SolveState | undefined>(undefined);
   const solution = useSignal<EditorSolution | null>(null);
   const showSolution = useSignal(false);
+  // Submissions are emailed, so sending needs somewhere to send them.
+  const submissionsEnabled = canSendEmail && Deno.env.has("SUBMISSIONS_EMAIL");
 
   return (
     <>
       <Main className="lg:relative">
         <Header back={{ href: "/" }} />
 
-        <div className="flex justify-between items-center gap-fl-1">
+        <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <div className="flex flex-col group">
-            <EditableName
-              puzzle={puzzle}
-              defaultValue="Untitled"
-              className="text-5 text-brand pr-1 leading-flat"
-            />
-
             <p
               className={clsx(
-                "text-text-3 leading-tight ml-1",
+                "m-0 text-3 [font-weight:300] leading-none text-text-2",
                 "group-focus-within:opacity-0 transition-opacity",
               )}
             >
-              edit
+              build a puzzle
             </p>
+
+            <EditableName
+              puzzle={puzzle}
+              defaultValue="Untitled"
+              className="type-title-lg [font-weight:500] leading-none text-text-1"
+            />
           </div>
 
           <SolutionBadge
             puzzle={puzzle}
             solveState={solveState}
             showSolution={showSolution}
-            className="lg:mt-1"
           />
         </div>
 
@@ -82,20 +84,24 @@ export default define.page<typeof handler>(function EditorPage(props) {
             puzzle={puzzle}
             href={href}
             className={clsx(
-              "max-lg:mt-fl-1",
+              "max-lg:mt-fl-3",
               "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
             )}
           />
+
+          {/* The puzzle page's nudge spot: empty until the board can be sent */}
+          {submissionsEnabled && (
+            <div className="max-w-2xs mx-auto mt-fl-2 empty:hidden print:hidden">
+              <EditorNudge
+                puzzle={puzzle}
+                href={href}
+                solveState={solveState}
+              />
+            </div>
+          )}
         </div>
       </Main>
-      <EditorPanel
-        puzzle={puzzle}
-        href={href}
-        isDev={isDev}
-        submissionsEnabled={canSendEmail &&
-          Deno.env.has("SUBMISSIONS_EMAIL")}
-        solveState={solveState}
-      />
+      <EditorPanel puzzle={puzzle} href={href} isDev={isDev} />
       <SubmitDialog
         puzzle={puzzle}
         href={href}

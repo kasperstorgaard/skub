@@ -96,9 +96,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
 
             <form method="post" action="/profile">
               <div className="flex flex-col gap-1 place-content-end">
-                <label for="name" className="text-text-2 text-3 font-5">
-                  Username
-                </label>
+                <label for="name" className="sr-only">Username</label>
 
                 <div className="flex items-stretch">
                   <input

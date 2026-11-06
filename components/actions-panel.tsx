@@ -1,8 +1,6 @@
 import { clsx } from "clsx/lite";
 
 import { Download, Icon, Pencil, Ranking, Star } from "#/components/icons.tsx";
-import { PanelCredits } from "#/components/panel-credits.tsx";
-import { PanelLinks } from "#/components/panel-links.tsx";
 import { Panel } from "#/components/panel.tsx";
 
 type ActionsPanelProps = {
@@ -77,10 +75,6 @@ export function ActionsPanel(
           </a>
         )}
       </div>
-
-      {/* The small print: credits and links as one group below the actions */}
-      <PanelCredits className={clsx(isPair && "mt-fl-4")} />
-      <PanelLinks className="col-[2/3] mt-fl-2" />
     </Panel>
   );
 }

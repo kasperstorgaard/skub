@@ -49,7 +49,9 @@ export function SolutionBadge(
       <span
         className={clsx(
           "difficulty-badge flex items-stretch overflow-hidden leading-loose",
-          "border-2 border-link rounded-2 text-2 tracking-wider",
+          "border-2 border-link rounded-2 tracking-wider",
+          // Mobile: the score badge's size
+          "text-3 lg:text-2",
         )}
       >
         <EditorSolutionToggle showSolution={showSolution}>

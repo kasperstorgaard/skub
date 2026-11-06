@@ -44,7 +44,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
       <Main>
         <Header back={{ href: "/" }} />
 
-        <div className="flex items-center justify-between gap-fl-1 flex-wrap">
+        <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
             <PuzzleName
               puzzle={props.data.puzzle}
@@ -52,11 +52,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
             />
           </h1>
 
-          <ScoreBadge
-            puzzle={puzzle}
-            href={href}
-            className="lg:mt-1"
-          />
+          <ScoreBadge puzzle={puzzle} href={href} />
         </div>
 
         <div className="relative">

@@ -65,9 +65,7 @@ export default define.page(function ErrorPage(props) {
         </div>
       </Main>
 
-      <Panel>
-        <span />
-      </Panel>
+      <Panel />
     </>
   );
 });

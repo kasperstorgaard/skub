@@ -24,7 +24,10 @@ export function MoveScore(
     <span className="tabular-nums tracking-widest">
       {count}
       <span className="mx-[0.1em]">/</span>
-      {hideMinMoves ? <span className="opacity-50">?</span> : minMoves || "—"}
+      {/* The player's count leads; the shortest sits back */}
+      <span className="opacity-50">
+        {hideMinMoves ? "?" : minMoves || "—"}
+      </span>
     </span>
   );
 }

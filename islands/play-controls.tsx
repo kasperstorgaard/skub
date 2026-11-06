@@ -36,9 +36,7 @@ type PlayControlsProps = {
 // Tool buttons that can be off fade out
 const TOOL = clsx(
   TOOL_BUTTON,
-  "text-text-1 aria-disabled:opacity-40",
-  // Mobile: the row's 3.5rem columns, as tall as they are wide
-  "max-lg:aspect-square",
+  "aria-disabled:opacity-40",
 );
 
 // Not a control. Desktop only; touch swipes.

@@ -89,8 +89,8 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
         <Header back={{ href: "/" }} />
 
         <div className="flex flex-col gap-0">
-          <h1 className="text-brand text-6 leading-flat">Archive</h1>
           <span className="text-3 text-text-2">{selectedDate.year}</span>
+          <h1 className="text-brand text-6 leading-flat">Archive</h1>
         </div>
 
         <section
@@ -133,7 +133,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
         </section>
       </Main>
 
-      <Panel className="max-lg:gap-y-fl-2">
+      <Panel>
         <div
           className={clsx(
             "col-[2/3] flex flex-col gap-fl-2 items-start",

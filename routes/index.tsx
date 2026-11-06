@@ -4,8 +4,6 @@ import { HttpError, page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { ArrowRight, ChalkboardTeacher, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
-import { PanelCredits } from "#/components/panel-credits.tsx";
-import { PanelLinks } from "#/components/panel-links.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
 import { getOnboardingLabel } from "#/components/puzzle-name.tsx";
@@ -152,21 +150,17 @@ export default define.page<typeof handler>(function Home(ctx) {
         </div>
       </Main>
 
-      <Panel className="max-lg:gap-y-fl-4">
-        <PanelCredits />
-
-        <div
-          className={clsx(
-            "col-[2/3] flex flex-col gap-fl-4 justify-between items-start text-2 text-text-2",
-            "lg:col-auto lg:row-start-3 lg:justify-between lg:self-stretch",
-          )}
-        >
-          {userStats && (
+      <Panel>
+        {userStats && (
+          <div
+            className={clsx(
+              "col-[2/3] flex flex-col items-start text-2 text-text-2",
+              "lg:col-auto lg:row-start-3 lg:self-stretch",
+            )}
+          >
             <StatsSummary stats={userStats} className="lg:w-full" />
-          )}
-
-          <PanelLinks />
-        </div>
+          </div>
+        )}
       </Panel>
     </>
   );

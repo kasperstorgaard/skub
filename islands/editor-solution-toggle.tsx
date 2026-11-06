@@ -24,7 +24,8 @@ export function EditorSolutionToggle(
       title={isOn ? "Hide the solution" : "Show the solution on the board"}
       className={clsx(
         "group grid grid-cols-2 place-items-stretch shrink-0",
-        "h-[2.25rem] w-[4.5rem] cursor-pointer",
+        // Scales with the badge's text
+        "h-[2em] w-[4em] cursor-pointer",
         className,
       )}
     >

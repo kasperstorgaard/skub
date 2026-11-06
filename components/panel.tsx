@@ -1,15 +1,21 @@
 import { clsx } from "clsx/lite";
 
 import { GithubLogo, Icon, LinkedinLogo } from "#/components/icons.tsx";
+import { PanelCredits } from "#/components/panel-credits.tsx";
 
-type PanelProps = preact.HTMLAttributes<HTMLElement>;
+type PanelProps = {
+  children?: preact.ComponentChildren;
+  /** Drop the builder link, e.g. while building */
+  hideBuilder?: boolean;
+  className?: string;
+};
 
 /**
  * Shared panel component for sidebars
  * - Mobile/tablet: Bottom panel spanning full width
  * - Large screens: Fixed right sidebar
  */
-export function Panel({ children, className }: PanelProps) {
+export function Panel({ children, hideBuilder, className }: PanelProps) {
   return (
     <aside
       className={clsx(
@@ -22,18 +28,23 @@ export function Panel({ children, className }: PanelProps) {
     >
       {children}
 
+      {/* Mobile: at the foot, a group step under the panel's content */}
+      <PanelCredits hideBuilder={hideBuilder} className="not-first:mt-fl-4" />
+
       {/* Desktop only, on every page: the builder on top, credits at the foot */}
-      <p className="max-lg:hidden print:hidden row-start-1 m-0 type-meta text-text-2">
-        Feeling creative? <br />
-        <a
-          href="/puzzles/new"
-          // Full navigation: /puzzles/new redirects, which client nav drops
-          f-client-nav={false}
-          className="text-2 text-text-1"
-        >
-          Build a puzzle
-        </a>
-      </p>
+      {!hideBuilder && (
+        <p className="max-lg:hidden print:hidden row-start-1 m-0 type-meta text-text-2">
+          Feeling creative? <br />
+          <a
+            href="/puzzles/new"
+            // Full navigation: /puzzles/new redirects, which client nav drops
+            f-client-nav={false}
+            className="text-2 text-text-1"
+          >
+            Build a puzzle
+          </a>
+        </p>
+      )}
 
       <footer className="max-lg:hidden print:hidden row-start-4 self-end flex flex-col gap-fl-2 type-meta text-text-2">
         <p className="m-0">

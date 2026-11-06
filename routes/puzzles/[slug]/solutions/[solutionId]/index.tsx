@@ -5,7 +5,6 @@ import { HttpError, page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
-import { PanelCredits } from "#/components/panel-credits.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { getPuzzleSolution } from "#/db/solutions.ts";
@@ -59,18 +58,16 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           back={{ href: backHref }}
         />
 
-        <div className="flex items-center justify-between place-self-start w-full flex-wrap">
-          <div className="flex flex-col">
-            <h1 className="text-text-1">
-              <PuzzleName puzzle={props.data.puzzle} />
-            </h1>
-            <p className="text-fl-0 text-text-3 leading-tight italic -mb-[.6lh] -mt-[.4lh]">
-              solved by{" "}
-              <span className="text-text-2">{props.data.solution.name}</span>
-            </p>
-          </div>
+        <div className="flex items-end justify-between gap-fl-1 place-self-start w-full flex-wrap">
+          <h1 className="text-text-1">
+            <PuzzleName
+              puzzle={props.data.puzzle}
+              size="lg"
+              lead={`solved by ${props.data.solution.name}`}
+            />
+          </h1>
 
-          <ScoreBadge puzzle={puzzle} href={href} className="lg:mt-1" />
+          <ScoreBadge puzzle={puzzle} href={href} />
         </div>
 
         <Board puzzle={puzzle} href={href} mode={mode} />
@@ -91,8 +88,6 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             Watch again
           </a>
         </div>
-
-        <PanelCredits className="mt-fl-4" />
       </Panel>
     </>
   );

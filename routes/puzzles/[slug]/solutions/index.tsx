@@ -6,7 +6,6 @@ import { useMemo } from "preact/hooks";
 import { Header } from "#/components/header.tsx";
 import { Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
-import { PanelCredits } from "#/components/panel-credits.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import {
@@ -107,16 +106,10 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           back={{ href: backHref }}
         />
 
-        <div className="flex items-center justify-between flex-wrap gap-fl-1">
-          <div className="flex flex-col">
-            <h1 className="text-text-1">
-              <PuzzleName puzzle={props.data.puzzle} />
-            </h1>
-
-            <p className="text-text-3 ml-1">
-              solves
-            </p>
-          </div>
+        <div className="flex items-end justify-between flex-wrap gap-fl-1">
+          <h1 className="text-text-1">
+            <PuzzleName puzzle={props.data.puzzle} size="lg" lead="solves" />
+          </h1>
 
           <ScoreBadge
             puzzle={puzzle}
@@ -176,9 +169,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
         </div>
       </Main>
 
-      <Panel>
-        <PanelCredits />
-      </Panel>
+      <Panel />
     </>
   );
 });

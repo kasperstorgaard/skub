@@ -69,13 +69,13 @@ export function SolutionDialog(
         method="post"
         onSubmit={() => setIsSubmitting(true)}
       >
-        <label className="flex flex-col gap-1">
-          <span className="text-text-2 text-1">Username</span>
+        <label className="flex flex-col">
+          <span className="sr-only">Username</span>
 
           <input
             name="name"
             autocomplete="username"
-            placeholder="fx. Jungleboi87"
+            placeholder="Username, fx. Jungleboi87"
             value={savedName ?? undefined}
             required
             className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"

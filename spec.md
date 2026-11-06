@@ -47,10 +47,38 @@ puzzle: modern and a little refined, friendly rather than editorial.
 - **Score badge** replaces the difficulty badge and the move counter: moves
   played over the shortest solution ("3/10", or "3/?" until solved), behind the
   Flash switch when the puzzle has a Flash start.
+- The score's shortest half ("/10", "/?") is faded: your count leads.
+
+### Building a puzzle
+
+- The editor's toolbar holds the board actions too: rotate, mirror both ways
+  and clear, then Play, set apart, which opens the preview. It shows one set
+  at a time: the cell tools (with their keys) while a cell is selected, the
+  board actions otherwise.
+- On mobile the toolbar is a full-bleed carousel of two snapping slides,
+  board actions and cell tools, flicked or paged by an arrow at the edge that
+  points to the other slide. Selecting a cell scrolls to the tools, which are
+  disabled until a cell is selected. Desktop swaps in place with a close
+  button; whether it slides too is open.
+- The corner wall button is gone; C still toggles it.
+- Sending a puzzle in moves to the nudge spot under the toolbar: empty until
+  the board can be sent, then "Happy with it?" over a primary "Send it in".
+  The dialog says "sent", not "submitted". The sidebar keeps only the local
+  Review and drops its builder link.
+- Cell glyphs share one size; the solution badge grows to the score badge's
+  size on mobile.
+
+### Titles
+
+Every page title's lead sits above it, never below: "#309 · solves",
+"#309 · solved by Kasper", "build a puzzle", "candidate · generated", the archive's year.
+Puzzle titles (editor, tutorial, candidates included) all use the page-title
+type, and badges line up with the name's bottom.
 
 ### Sidebar
 
-The sidebar is the page's side column, not its controls. On desktop every page
+The sidebar is the page's side column, not its controls. The panel itself
+renders the credits row on mobile, so every page has it. On desktop every page
 gets the builder link on top and the credits (Ricochet Robots, GitHub,
 LinkedIn) at the foot. The puzzle page keeps only "See solves" there, as a
 secondary button. Print and the header's builder icon are gone. The home stats

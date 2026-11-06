@@ -5,7 +5,7 @@ import { HttpError, page } from "fresh";
 import { ActionsPanel } from "#/components/actions-panel.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
-import { getOnboardingLabel, PuzzleName } from "#/components/puzzle-name.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { TutorialWatchButton } from "#/components/tutorial-watch-button.tsx";
 import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
@@ -167,16 +167,12 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
       <Main>
         <Header back={{ href: "/" }} />
 
-        <div className="flex items-center justify-between gap-fl-1 flex-wrap">
+        <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
-            <PuzzleName puzzle={puzzle.value} lead={getOnboardingLabel(1)} />
+            <PuzzleName puzzle={puzzle.value} size="lg" />
           </h1>
 
-          <ScoreBadge
-            puzzle={puzzle}
-            href={href}
-            className="lg:mt-1"
-          />
+          <ScoreBadge puzzle={puzzle} href={href} />
         </div>
 
         <div className="relative pb-fl-7">

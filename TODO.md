@@ -170,6 +170,21 @@ PR finishes only part of an item, trim the item to what is left.
   solution. Let Kasper or helpers pick a more interesting starting point
   instead, for example in the editor or on the candidate page.
 
+- **The spot under the board always offers the next step.** One lead-in line and
+  one action, picked by state in a fixed order, with one wording per state: new
+  players get the tutorial, stuck players get Flash, a replay of a solved puzzle
+  offers Rate, a fresh solve offers See solves. The sidebar becomes footer and
+  navigation only. The editor already works this way ("Happy with it? Send it
+  in").
+
+- **Builders send a puzzle in once they've solved it themselves.** The preview
+  page offers "Send it in" after the builder solves their own puzzle there, so
+  what gets sent is proven playable. The editor's nudge stays as the shortcut.
+
+- **Builders see where Flash starts.** A Flash mode in the editor marks the cell
+  the computed Flash start lands the puck on with a Flash icon, so the builder
+  knows where Flash players begin while shaping the board.
+
 - **Flash solves get a leaderboard of their own.** Flash solves are already
   stored with names, as regular solutions marked `flash`; the leaderboard skips
   them because they never enter the aggregates. Give them a board beside the

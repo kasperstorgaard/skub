@@ -18,10 +18,10 @@ export function Toolbar({ children, size = "md", className }: ToolbarProps) {
       className={clsx(
         "grid h-fit place-content-center lg:gap-1",
         // Columns flow, so the row fits however many tools got drawn.
-        "max-lg:w-full max-lg:grid-flow-col",
+        "max-lg:grid-flow-col",
         size === "lg"
           ? "max-lg:auto-cols-[minmax(0,3.5rem)] max-lg:gap-3"
-          : "max-lg:auto-cols-[minmax(0,2.5rem)] max-lg:gap-1",
+          : "max-lg:auto-cols-[minmax(0,3rem)] max-lg:gap-1",
         "lg:grid-cols-[auto_1.5rem] lg:auto-rows-[2.5rem]",
         className,
       )}
@@ -31,6 +31,6 @@ export function Toolbar({ children, size = "md", className }: ToolbarProps) {
   );
 }
 
-/** A toolbar button; holds a `size-5` glyph. */
+/** A toolbar button; holds a `size-5` glyph. Square in the mobile row. */
 export const TOOL_BUTTON =
-  "flex items-center justify-center p-1.5 bg-transparent border-2 border-link rounded-2";
+  "flex items-center justify-center p-1.5 bg-transparent border-2 border-link rounded-2 text-text-1 max-lg:aspect-square";

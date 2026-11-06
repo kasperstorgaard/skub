@@ -3,35 +3,38 @@ import { clsx } from "clsx/lite";
 import type { Puzzle } from "#/game/types.ts";
 
 type Props = {
-  puzzle: Pick<Puzzle, "name" | "number" | "onboardingLevel">;
-  /** Overrides the line above the name, e.g. "Preview" */
-  lead?: string;
+  puzzle: Pick<Puzzle, "name" | "number">;
+  /** lg: page titles, md: cards */
+  size?: "lg" | "md";
+  /** lg only: what the page is about the puzzle, after the number */
+  lead?: preact.ComponentChildren;
   className?: string;
 };
 
 /**
- * What an unnumbered onboarding puzzle is called above its name: the tutorial
- * (itself named "Tutorial"), then starter and quick puzzles.
+ * A puzzle's number and name as one title. Page titles (lg) put the number
+ * and any lead on their own line above, three sizes down and muted, like a
+ * card's lead; cards (md) keep the number on the name's baseline.
  */
-export function getOnboardingLabel(level: number) {
-  if (level === 1) return "Learn the basics";
-  if (level === 2) return "Starter puzzle";
-  return "Quick puzzle";
-}
-
-/**
- * A page's puzzle title: a line above, smaller, light and muted, like a card's
- * lead, then the name. The line is the puzzle's number, or for an unnumbered
- * onboarding puzzle what it is ("Starter puzzle"). Cards put this
- * in their lead instead (`PuzzleCard`).
- */
-export function PuzzleName({ puzzle, lead, className }: Props) {
-  const line = lead ??
-    (puzzle.number
-      ? `#${puzzle.number}`
-      : puzzle.onboardingLevel
-      ? getOnboardingLabel(puzzle.onboardingLevel)
-      : undefined);
+export function PuzzleName(
+  { puzzle, size = "md", lead, className }: Props,
+) {
+  if (size === "lg") {
+    return (
+      <span className={clsx("inline-flex flex-col", className)}>
+        {(puzzle.number || lead) && (
+          <span className="text-3 [font-weight:300] leading-none text-text-2">
+            {puzzle.number && `#${puzzle.number}`}
+            {puzzle.number && lead && " · "}
+            {lead}
+          </span>
+        )}
+        <span className="type-title-lg [font-weight:500] leading-none">
+          {puzzle.name}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <span className={clsx("inline-flex flex-col", className)}>

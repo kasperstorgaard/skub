@@ -75,10 +75,10 @@ export default define.page<typeof handler>(function CandidatesPage(props) {
 
       <div className="flex items-center justify-between gap-fl-2">
         <div className="flex flex-col gap-0">
-          <h1 className="text-brand text-6 leading-flat">Candidates</h1>
           <span className="text-3 text-text-2">
             {props.data.families.length} boards
           </span>
+          <h1 className="text-brand text-6 leading-flat">Candidates</h1>
         </div>
 
         <form method="get" action="/candidates">
