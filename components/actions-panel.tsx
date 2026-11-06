@@ -1,5 +1,3 @@
-import { clsx } from "clsx/lite";
-
 import { Download, Icon, Pencil, Ranking, Star } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 
@@ -17,36 +15,17 @@ type ActionsPanelProps = {
 export function ActionsPanel(
   { slug, isDev, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
 ) {
-  const showSolves = !isPreview && !isFlash;
-  const showRate = isDev && !isPreview;
-  // Mobile shows a pair of actions or none: a lone button under the board
-  // reads as a leftover. Desktop's sidebar always shows them.
-  const isPair =
-    [showSolves, isPreview, showEdit, showRate].filter(Boolean).length >= 2;
-
   return (
-    <Panel className={clsx("max-lg:py-fl-5", className)}>
-      {/* Mobile: a dialog's actions row, two buttons sharing the width */}
-      <div
-        className={clsx(
-          "max-lg:col-[2/3] grid gap-fl-1",
-          !isPair && "max-lg:hidden",
-          "max-lg:grid-flow-col max-lg:auto-cols-fr",
-          "lg:row-[3/4] lg:content-start lg:justify-items-start",
-        )}
-      >
-        {showSolves && (
-          <a
-            href={`/puzzles/${slug}/solutions`}
-            className="btn"
-            data-secondary
-          >
+    <Panel className={className}>
+      <div className="flex justify-center lg:justify-start gap-fl-1 flex-wrap max-lg:col-[2/3] lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start">
+        {!isPreview && !isFlash && (
+          <a href={`/puzzles/${slug}/solutions`} className="btn">
             <Icon icon={Ranking} /> See solves
           </a>
         )}
 
         {isPreview && (
-          <a href="/api/export" download className="btn" data-secondary>
+          <a href="/api/export" download className="btn">
             <Icon icon={Download} />
             Download
           </a>
@@ -58,7 +37,7 @@ export function ActionsPanel(
             action={`/puzzles/${slug}/clone`}
             className="contents"
           >
-            <button type="submit" className="btn" data-secondary>
+            <button type="submit" className="btn">
               <Icon icon={Pencil} /> Edit
             </button>
           </form>
@@ -69,8 +48,8 @@ export function ActionsPanel(
             identity for remixing, and a rating filed under "Untitled, 0
             moves" is useless as ground truth. */
         }
-        {showRate && (
-          <a href={`/puzzles/${slug}/rate`} className="btn" data-secondary>
+        {isDev && !isPreview && (
+          <a href={`/puzzles/${slug}/rate`} className="btn">
             <Icon icon={Star} /> Rate
           </a>
         )}

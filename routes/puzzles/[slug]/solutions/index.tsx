@@ -108,7 +108,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
 
         <div className="flex items-end justify-between flex-wrap gap-fl-1">
           <h1 className="text-text-1">
-            <PuzzleName puzzle={props.data.puzzle} size="lg" lead="Solves" />
+            <PuzzleName puzzle={props.data.puzzle} lead="Solves" />
           </h1>
 
           <ScoreBadge

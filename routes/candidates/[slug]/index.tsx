@@ -151,7 +151,6 @@ export default define.page<typeof handler>(function CandidatePage(props) {
             {/* State, then origin — candidacy is a state the board leaves. */}
             <PuzzleName
               puzzle={{ name: props.data.label }}
-              size="lg"
               lead={`${
                 props.data.promotedAs ? "Promoted" : "Candidate"
               } · ${props.data.source}`}

@@ -12,6 +12,7 @@ import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getTutorialPuzzle } from "#/game/loader.ts";
+import { getOnboardingLabel } from "#/game/recommendation.ts";
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
@@ -169,7 +170,7 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
 
         <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
-            <PuzzleName puzzle={puzzle.value} size="lg" />
+            <PuzzleName puzzle={puzzle.value} lead={getOnboardingLabel(1)} />
           </h1>
 
           <ScoreBadge puzzle={puzzle} href={href} />

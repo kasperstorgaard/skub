@@ -12,12 +12,14 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName?: string | null;
+  /** A Flash solve is saved, but stays off the leaderboard */
+  isFlash?: boolean;
   /** Where "Not now" goes: the page's back link */
   backHref: string;
 };
 
 export function SolutionDialog(
-  { href, puzzle, savedName, backHref }: Props,
+  { href, puzzle, savedName, isFlash, backHref }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 

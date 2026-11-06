@@ -27,6 +27,7 @@ import {
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
+import { getOnboardingLabel } from "#/game/recommendation.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
@@ -252,7 +253,13 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
 
         <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
-            <PuzzleName puzzle={props.data.puzzle} />
+            <PuzzleName
+              puzzle={props.data.puzzle}
+              lead={!props.data.puzzle.number &&
+                  props.data.puzzle.onboardingLevel
+                ? getOnboardingLabel(props.data.puzzle.onboardingLevel)
+                : undefined}
+            />
           </h1>
 
           <ScoreBadge
@@ -326,6 +333,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         savedName={props.data.savedName}
+        isFlash={isFlashOn}
         backHref={back.href}
       />
 

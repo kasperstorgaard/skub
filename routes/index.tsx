@@ -6,11 +6,13 @@ import { ArrowRight, ChalkboardTeacher, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
-import { getOnboardingLabel } from "#/components/puzzle-name.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getAvailableEntries, getTodaysPuzzle } from "#/game/loader.ts";
-import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
+import {
+  getOnboardingLabel,
+  pickRecommendedPuzzle,
+} from "#/game/recommendation.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -55,7 +57,7 @@ export default define.page<typeof handler>(function Home(ctx) {
 
   return (
     <>
-      <Main className="items-stretch place-content-stretch">
+      <Main className="max-lg:row-span-full items-stretch place-content-stretch">
         <Header />
 
         <div className="title-card flex flex-col">

@@ -1,7 +1,5 @@
 import clsx from "clsx/lite";
 
-import { ChalkboardTeacher, Icon } from "#/components/icons.tsx";
-
 type Props = {
   className?: string;
 };
@@ -22,7 +20,7 @@ export function TutorialNudge({ className }: Props) {
       </p>
 
       <a href="/puzzles/tutorial" className="btn">
-        <Icon icon={ChalkboardTeacher} /> Learn the basics
+        Learn the basics
       </a>
     </aside>
   );

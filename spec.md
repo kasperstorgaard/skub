@@ -14,7 +14,7 @@ puzzle: modern and a little refined, friendly rather than editorial.
 - **Outfit** replaces Chakra Petch: geometric, round, one variable file
   (weights 100–900, ~32 KB latin, about what the three static Chakra files
   cost). Retro themes keep their own fonts.
-- Type roles (`type-title-lg`, `type-title`, `type-meta`) pair
+- Type roles (`type-title-lg`, `type-title`, `type-meta`, `type-tag`, …) pair
   size, weight and leading. Leads and titles sit tight; the line-height is the
   spacing.
 - Puzzle titles stack the number over the name: on cards the number joins the
@@ -47,6 +47,9 @@ puzzle: modern and a little refined, friendly rather than editorial.
 - **Score badge** replaces the difficulty badge and the move counter: moves
   played over the shortest solution ("3/10", or "3/?" until solved), behind the
   Flash switch when the puzzle has a Flash start.
+- A Flash solve stays off the solves list: afterwards the page returns to the
+  solved board, "See solves" is hidden, and it never promotes a player's skill
+  level past beginner.
 - The score's shortest half ("/10", "/?") is faded: your count leads.
 
 ### Building a puzzle
@@ -92,18 +95,6 @@ gets the builder link on top and the credits (Ricochet Robots, GitHub,
 LinkedIn) at the foot. The puzzle page keeps only "See solves" there, as a
 secondary button. Print and the header's builder icon are gone. The home stats
 keep their original layout.
-
-### Mobile footer
-
-- The puzzle page's mobile footer shows its actions as a pair or not at all:
-  two secondary buttons sharing the width, like a dialog's actions. Until Rate
-  ships, most players have only "See solves", so the footer is just the small
-  print; See solves stays in the celebration dialog and the desktop sidebar.
-- Below the actions: the credits (`PanelCredits`) and the GitHub/LinkedIn row
-  (`PanelLinks`), the same pieces home uses.
-- Below `lg` the body grid's spare row is the panel's, so on a short page the
-  footer reaches the bottom of the screen; `Panel` no longer needs a minimum
-  height.
 
 ### Smaller
 

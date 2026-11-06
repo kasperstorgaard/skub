@@ -114,6 +114,12 @@ PR finishes only part of an item, trim the item to what is left.
   tag. Retro themes still style the old pieces (`.move-counter`,
   `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
+- **The solutions page feels like part of the new look.** Revamp it to match the
+  puzzle page: the title with its lead line, the score badge, the type roles and
+  spacing levels, buttons, and the sidebar and mobile footer. The solve list
+  itself gets a visual pass too, so a solve reads at a glance (who, how many
+  moves, when).
+
 - **On mobile, all puzzles are one feed to flick through.** A snap-scrolling
   feed of puzzle cards, newest first, that reads as one seamless list. The card
   in view keeps `?date=` current, so going back from a puzzle returns to the
