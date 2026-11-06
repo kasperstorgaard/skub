@@ -19,14 +19,15 @@ separate strokes, not one shape.
     and are only slightly rounded (`--wall-radius`, 0.5px).
   - Bends are quarter arcs with a 3px outer radius, softer than the ends.
   - Joined ends run half a stroke past the T's crossbar, hidden under it.
-  - On the board it's one SVG with no `viewBox`, so its units are CSS px and
-    rect geometry (`x`, `y`, `width`, `height`, `rx`) and transforms can use
-    the board's `--space-w`/`--gap` vars like the pieces do. Path data can't
-    take vars, so bends are fixed-size arcs moved into place with a transform.
-    Server-rendered, so no-JS play is unchanged.
-  - The thumbnail (cards, og-image) draws the same shapes with plain numeric
-    attributes, since crawlers rasterise the og-image SVG.
-- Themes keep styling walls through `.board-walls` (sash's laser glow).
+  - On the board each run and bend is a grid item, placed by row/column like
+    the cells. A run spans the cells it borders with its edge pulled onto the
+    line mid-gap, so a free end lands on the tile edge with no offset; joined
+    and bent ends reach on with a negative margin. A bend is a 3px box in the
+    cell at its corner with two borders and one rounded corner. No position
+    maths, server-rendered, so no-JS play is unchanged.
+  - The thumbnail (cards, og-image) draws the same shapes as SVG with plain
+    numeric attributes, since crawlers rasterise the og-image SVG.
+- Themes keep styling walls through `.board-wall` (sash's laser glow).
 
 ## Tests
 

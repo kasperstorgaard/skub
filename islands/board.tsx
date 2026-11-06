@@ -42,11 +42,9 @@ import {
   getReplaySpeed,
 } from "#/game/url.ts";
 import {
-  getBendPath,
   getWallShapes,
-  WALL_BEND_START,
+  WALL_BEND_RADIUS,
   WALL_WIDTH,
-  type WallRun,
 } from "#/game/wall-runs.ts";
 import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
@@ -264,12 +262,20 @@ export default function Board(
           "--hint-bg": "var(--color-ui-contrast)",
           "--replay-len": moves.length,
           "--gap": "var(--size-1)",
+          // Walls: stroke, end rounding, corner radius, and the offsets
+          // from a tile edge to the line, to under a bend, and to a bend's
+          // far side
           "--wall-w": `${WALL_WIDTH}px`,
           "--wall-radius": "0.5px",
+          "--wall-bend": `${WALL_BEND_RADIUS}px`,
+          "--wall-in": "calc(var(--gap) / 2 + var(--wall-w) / 2)",
+          "--wall-tuck":
+            "calc(var(--wall-in) - var(--wall-bend) + var(--wall-radius))",
+          "--wall-bend-out":
+            "calc(var(--gap) / 2 - var(--wall-w) / 2 + var(--wall-bend))",
           // 39px at 412px. On mobile the board is deliberately narrower than
           // Main, so swipes start clear of the screen-edge gestures.
           "--space-w": "clamp(40px - var(--gap), 9.4666vw, 56px)",
-          "--pitch": "calc(var(--space-w) + var(--gap))",
           "--replay-speed": `${1 / replaySpeed}s`,
           "--tile-ripple-duration": `${TILE_DURATION_MS}ms`,
         }}
@@ -408,72 +414,81 @@ export default function Board(
 }
 
 /**
- * Walls in one SVG, in CSS px (no viewBox) so geometry can use the board's
- * vars: runs as rects mid-gap, bends as fixed arcs moved onto their grid point.
+ * Walls placed on the grid like any cell: each run spans the cells it borders,
+ * its edge pulled onto the line mid-gap, so a free end lands on the tile edge.
+ * Joined and bent ends reach on with a negative margin; bends are a small
+ * rounded box in the cell at their corner.
  */
 function BoardWalls({ walls }: { walls: Wall[] }) {
   const { runs, bends } = getWallShapes(walls);
 
   return (
-    <svg
-      aria-hidden="true"
-      className="board-walls absolute inset-0 size-full max-w-none overflow-visible pointer-events-none"
-    >
-      {runs.map((run) => (
-        <rect
-          key={`${run.orientation}-${run.x}-${run.y}`}
-          className="board-wall fill-ui-4"
-          style={getRunStyle(run)}
-        />
-      ))}
+    <>
+      {runs.map((run) => {
+        const isVertical = run.orientation === "vertical";
+
+        return (
+          <div
+            key={`${run.orientation}-${run.x}-${run.y}`}
+            className={clsx(
+              "board-wall rounded-(--wall-radius) bg-ui-4 pointer-events-none",
+              isVertical
+                ? "justify-self-start w-(--wall-w) -ml-(--wall-in)"
+                : "self-start h-(--wall-w) -mt-(--wall-in)",
+              RUN_END_CLASS[run.orientation][0][run.ends[0]],
+              RUN_END_CLASS[run.orientation][1][run.ends[1]],
+            )}
+            style={{
+              gridColumn: isVertical
+                ? `${run.x + 1}`
+                : `${run.x + 1} / span ${run.span}`,
+              gridRow: isVertical
+                ? `${run.y + 1} / span ${run.span}`
+                : `${run.y + 1}`,
+            }}
+          />
+        );
+      })}
 
       {bends.map((bend) => (
-        <path
+        <div
           key={`bend-${bend.x}-${bend.y}`}
-          d={getBendPath(bend)}
-          className="board-wall fill-none stroke-ui-4"
-          style={`stroke-width:var(--wall-w);transform:translate(${
-            getGridLine(bend.x)
-          },${getGridLine(bend.y)})`}
+          className={clsx(
+            "board-wall place-self-start size-(--wall-bend) border-ui-4 pointer-events-none",
+            BEND_CLASS[`${bend.horizontal}-${bend.vertical}`],
+          )}
+          style={{ gridColumn: `${bend.x + 1}`, gridRow: `${bend.y + 1}` }}
         />
       ))}
-    </svg>
+    </>
   );
 }
 
-// How far in from its grid point a run's end stops: free at the tile edge,
-// joined half a stroke past it, bent where the arc takes over (tucked under it
-// by the rounding, so the seam stays solid)
-const WALL_END_OFFSET = {
-  free: "var(--gap) / 2",
-  joined: "var(--wall-w) / -2",
-  bent: `${WALL_BEND_START}px - var(--wall-radius)`,
+// Run ends, start then end: a free end stops at the tile edge, a joined one
+// reaches past the line it meets, a bent one tucks just under its bend
+const RUN_END_CLASS = {
+  vertical: [
+    { free: "", joined: "-mt-(--wall-in)", bent: "-mt-(--wall-tuck)" },
+    { free: "", joined: "-mb-(--wall-in)", bent: "-mb-(--wall-tuck)" },
+  ],
+  horizontal: [
+    { free: "", joined: "-ml-(--wall-in)", bent: "-ml-(--wall-tuck)" },
+    { free: "", joined: "-mr-(--wall-in)", bent: "-mr-(--wall-tuck)" },
+  ],
 };
 
-// Grid line `k` on the board, mid-gap
-function getGridLine(k: number) {
-  return `calc(${k} * var(--pitch) - var(--gap) / 2)`;
-}
-
-// A string, not an object: cssText applies SVG geometry properties reliably
-function getRunStyle(run: WallRun) {
-  const [lead, trail] = run.ends.map((end) => WALL_END_OFFSET[end]);
-  const isVertical = run.orientation === "vertical";
-
-  const across = `calc(${
-    getGridLine(isVertical ? run.x : run.y)
-  } - var(--wall-w) / 2)`;
-  const along = `calc(${getGridLine(isVertical ? run.y : run.x)} + (${lead}))`;
-  const length = `calc(${run.span} * var(--pitch) - (${lead}) - (${trail}))`;
-
-  return [
-    `x:${isVertical ? across : along}`,
-    `y:${isVertical ? along : across}`,
-    `width:${isVertical ? "var(--wall-w)" : length}`,
-    `height:${isVertical ? length : "var(--wall-w)"}`,
-    "rx:var(--wall-radius)",
-  ].join(";");
-}
+// A bend sits in the cell below-right of its corner, nudged to the side its
+// walls leave from, drawing the outside of the turn
+const BEND_CLASS = {
+  "right-down":
+    "-ml-(--wall-in) -mt-(--wall-in) border-l-(length:--wall-w) border-t-(length:--wall-w) rounded-tl-(--wall-bend)",
+  "left-down":
+    "-ml-(--wall-bend-out) -mt-(--wall-in) border-r-(length:--wall-w) border-t-(length:--wall-w) rounded-tr-(--wall-bend)",
+  "right-up":
+    "-ml-(--wall-in) -mt-(--wall-bend-out) border-l-(length:--wall-w) border-b-(length:--wall-w) rounded-bl-(--wall-bend)",
+  "left-up":
+    "-ml-(--wall-bend-out) -mt-(--wall-bend-out) border-r-(length:--wall-w) border-b-(length:--wall-w) rounded-br-(--wall-bend)",
+};
 
 type BoardSpaceProps = Position & {
   href?: string;
