@@ -1,3 +1,5 @@
+import { clsx } from "clsx/lite";
+
 import { Download, Icon, Pencil, Ranking, Star } from "#/components/icons.tsx";
 import { PanelCredits } from "#/components/panel-credits.tsx";
 import { Panel } from "#/components/panel.tsx";
@@ -18,11 +20,19 @@ export function ActionsPanel(
 ) {
   return (
     <Panel className={className}>
-      <div className="flex justify-center lg:justify-start gap-fl-1 flex-wrap max-lg:col-[2/3] lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start">
+      <div
+        className={clsx(
+          "max-lg:col-[2/3] gap-fl-1",
+          // Mobile: the dialog's treatment, full width, one or two buttons
+          // side by side in equal columns
+          "max-lg:grid max-lg:grid-flow-col max-lg:auto-cols-fr",
+          "lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start",
+        )}
+      >
         {!isPreview && !isFlash && (
           <a
             href={`/puzzles/${slug}/solutions`}
-            className="btn min-w-(--size-content-1)"
+            className="btn"
           >
             <Icon icon={Ranking} /> See solves
           </a>
@@ -59,7 +69,8 @@ export function ActionsPanel(
         )}
       </div>
 
-      <PanelCredits className="mt-fl-4" />
+      {/* The credits are the panel's own section, a step past a group */}
+      <PanelCredits className="mt-8" />
     </Panel>
   );
 }

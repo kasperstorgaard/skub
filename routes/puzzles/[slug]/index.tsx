@@ -285,7 +285,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           />
 
           {/* New players get the basics; the rest get Flash once stuck. */}
-          <div className="max-w-2xs mx-auto mt-fl-2 empty:hidden print:hidden">
+          <div className="mt-fl-2 empty:hidden print:hidden">
             {props.state.user.skillLevel === null
               ? <TutorialNudge />
               : hasFlash && !isFlashOn && !props.data.isFlashExplained && (
