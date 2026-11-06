@@ -27,7 +27,7 @@ export function ActionsPanel(
     [showSolves, isPreview, showEdit, showRate].filter(Boolean).length >= 2;
 
   return (
-    <Panel className={clsx("max-lg:py-8", className)}>
+    <Panel className={clsx("max-lg:py-fl-5", className)}>
       {/* Mobile: a dialog's actions row, two buttons sharing the width */}
       <div
         className={clsx(
