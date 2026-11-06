@@ -20,11 +20,14 @@ export function ActionsPanel(
 ) {
   return (
     <Panel className={className}>
-      {/* Mobile: one centred column, up to an action row wide */}
+      {
+        /* Mobile: one centred column, at least an action row wide; two
+          buttons can widen it */
+      }
       <div
         className={clsx(
           "max-lg:col-[2/3] grid",
-          "max-lg:grid-cols-[minmax(0,var(--width-action))] max-lg:justify-center",
+          "max-lg:grid-cols-[minmax(min(100%,var(--width-action)),max-content)] max-lg:justify-center",
           "lg:row-[3/4] lg:content-start lg:justify-items-start lg:gap-fl-1",
         )}
       >

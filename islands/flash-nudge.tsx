@@ -46,13 +46,13 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
   return (
     <aside
       className={clsx(
-        "grid grid-cols-[minmax(0,var(--width-action))] justify-center gap-fl-1 py-2",
+        "grid grid-cols-[minmax(min(100%,var(--width-action)),max-content)] justify-center gap-fl-1 py-2",
         "text-text-2 text-pretty",
         "animate-fade-in",
         className,
       )}
     >
-      <p className="min-w-[16ch] text-center text-balance leading-snug">
+      <p className="contain-inline-size text-center text-balance leading-snug">
         In a rush, or stuck?
       </p>
 
