@@ -7,6 +7,7 @@ import { Main } from "#/components/main.tsx";
 import { PanelCredits } from "#/components/panel-credits.tsx";
 import { PanelLinks } from "#/components/panel-links.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { getOnboardingLabel } from "#/components/puzzle-name.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
@@ -129,9 +130,9 @@ export default define.page<typeof handler>(function Home(ctx) {
               {user.skillLevel && recommendedPuzzle.onboardingLevel && (
                 <PuzzleCard
                   puzzle={recommendedPuzzle}
-                  tagline={recommendedPuzzle.onboardingLevel === 2
-                    ? "Starter puzzle"
-                    : "Quick puzzle"}
+                  tagline={getOnboardingLabel(
+                    recommendedPuzzle.onboardingLevel,
+                  )}
                 />
               )}
 

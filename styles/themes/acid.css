@@ -9,7 +9,7 @@
   --btn-active-text: #0d0d0d;
   --color-surface-1: #0d0d0d;
   --color-surface-2: #141414;
-  --color-panel: #050505;
+  --color-panel: color-mix(in srgb, var(--color-surface-1), #000 30%);
   --color-surface-3: #1c1c1c;
   --color-surface-4: #2a2a2a;
   --color-text-1: #e0ffe0;

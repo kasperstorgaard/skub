@@ -68,5 +68,5 @@
 
 /* Skub's own deep sidebar */
 :root[data-theme="skub"] {
-  --color-panel: #111315;
+  --color-panel: color-mix(in srgb, var(--color-surface-1), #000 30%);
 }

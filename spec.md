@@ -19,7 +19,9 @@ puzzle: modern and a little refined, friendly rather than editorial.
   spacing.
 - Puzzle titles stack the number over the name: on cards the number joins the
   lead ("Daily puzzle #309", then the name); on pages (`PuzzleName`) it's a
-  light, muted line above the name.
+  light, muted line above the name. Unnumbered puzzles put what they are
+  there instead: "Learn the basics" on the tutorial, "Starter puzzle",
+  "Quick puzzle", "Preview".
 - The home wordmark ripples once on load: each letter swells 300 → 600 and
   settles at 500, staggered left to right.
 
@@ -33,7 +35,7 @@ puzzle: modern and a little refined, friendly rather than editorial.
   it moves around each theme's surface colour instead of lifting it toward
   grey.
 - **`--color-panel`**: the sidebar's own colour. It defaults to `surface-2`;
-  skub, dracula and acid set a deep shade of their own.
+  skub, dracula and acid darken their surface 30% toward black instead.
 - Retro and high-contrast themes keep their own looks for all of the above.
 
 ### Playing a puzzle

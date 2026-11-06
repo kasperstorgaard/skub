@@ -6,6 +6,7 @@ import { ActionsPanel } from "#/components/actions-panel.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { TutorialWatchButton } from "#/components/tutorial-watch-button.tsx";
+import { getOnboardingLabel, PuzzleName } from "#/components/puzzle-name.tsx";
 import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
@@ -167,7 +168,9 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
         <Header back={{ href: "/" }} />
 
         <div className="flex items-center justify-between gap-fl-1 flex-wrap">
-          <h1 className="text-5 text-brand">{puzzle.value.name}</h1>
+          <h1 className="text-text-1">
+            <PuzzleName puzzle={puzzle.value} lead={getOnboardingLabel(1)} />
+          </h1>
 
           <ScoreBadge
             puzzle={puzzle}
