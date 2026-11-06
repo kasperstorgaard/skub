@@ -44,6 +44,7 @@ import {
 import {
   getWallShapes,
   WALL_BEND_RADIUS,
+  WALL_RADIUS,
   WALL_WIDTH,
 } from "#/game/wall-runs.ts";
 import type { EditorSolution } from "#/islands/editor-solver.tsx";
@@ -262,11 +263,9 @@ export default function Board(
           "--hint-bg": "var(--color-ui-contrast)",
           "--replay-len": moves.length,
           "--gap": "var(--size-1)",
-          // Walls: stroke, end rounding, corner radius, and the offsets
-          // from a tile edge to the line, to under a bend, and to a bend's
-          // far side
+          // Walls, and their offsets from a tile edge
           "--wall-w": `${WALL_WIDTH}px`,
-          "--wall-radius": "0.5px",
+          "--wall-radius": `${WALL_RADIUS}px`,
           "--wall-bend": `${WALL_BEND_RADIUS}px`,
           "--wall-in": "calc(var(--gap) / 2 + var(--wall-w) / 2)",
           "--wall-tuck":
@@ -413,14 +412,9 @@ export default function Board(
   );
 }
 
-/**
- * Walls placed on the grid like any cell: each run spans the cells it borders,
- * its edge pulled onto the line mid-gap, so a free end lands on the tile edge.
- * Joined and bent ends reach on with a negative margin; bends are a small
- * rounded box in the cell at their corner.
- */
+/** Walls as grid items, pulled onto the line mid-gap */
 function BoardWalls({ walls }: { walls: Wall[] }) {
-  const { runs, bends } = getWallShapes(walls);
+  const { runs, bends } = useMemo(() => getWallShapes(walls), [walls]);
 
   return (
     <>
@@ -464,8 +458,7 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
   );
 }
 
-// Run ends, start then end: a free end stops at the tile edge, a joined one
-// reaches past the line it meets, a bent one tucks just under its bend
+// Start and end margins per end kind
 const RUN_END_CLASS = {
   vertical: [
     { free: "", joined: "-mt-(--wall-in)", bent: "-mt-(--wall-tuck)" },
@@ -477,8 +470,7 @@ const RUN_END_CLASS = {
   ],
 };
 
-// A bend sits in the cell below-right of its corner, nudged to the side its
-// walls leave from, drawing the outside of the turn
+// A bend in the cell below-right of its corner, drawing the outside of the turn
 const BEND_CLASS = {
   "right-down":
     "-ml-(--wall-in) -mt-(--wall-in) border-l-(length:--wall-w) border-t-(length:--wall-w) rounded-tl-(--wall-bend)",

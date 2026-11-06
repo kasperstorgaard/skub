@@ -24,8 +24,9 @@ export type WallBend = Position & {
 
 type Direction = "up" | "right" | "down" | "left";
 
-/** Wall stroke and the outer radius of its corners, in px */
+/** Wall stroke, end rounding and the outer radius of its corners, in px */
 export const WALL_WIDTH = 2;
+export const WALL_RADIUS = 0.5;
 export const WALL_BEND_RADIUS = 3;
 
 // The arc's centreline radius: where a bent run's straight part takes over
@@ -61,30 +62,25 @@ export function getWallShapes(
     }
   }
 
+  // An L: exactly two ways out, one per axis
   const bends: WallBend[] = [];
   for (const { point, ways } of exits.values()) {
-    if (ways.size !== 2) continue;
+    const isStraight = (ways.has("left") && ways.has("right")) ||
+      (ways.has("up") && ways.has("down"));
+    if (ways.size !== 2 || isStraight) continue;
 
-    const horizontal = ways.has("left")
-      ? "left"
-      : ways.has("right")
-      ? "right"
-      : undefined;
-    const vertical = ways.has("up")
-      ? "up"
-      : ways.has("down")
-      ? "down"
-      : undefined;
-    if (horizontal && vertical) bends.push({ ...point, horizontal, vertical });
+    bends.push({
+      ...point,
+      horizontal: ways.has("left") ? "left" : "right",
+      vertical: ways.has("up") ? "up" : "down",
+    });
   }
   bends.sort((a, b) => a.y - b.y || a.x - b.x);
 
+  const bendKeys = new Set(bends.map(toKey));
   const getEnd = (point: Position): WallEnd => {
-    const ways = exits.get(toKey(point))?.ways.size;
-    if (ways === 1) return "free";
-    return bends.some((bend) => toKey(bend) === toKey(point))
-      ? "bent"
-      : "joined";
+    if (exits.get(toKey(point))?.ways.size === 1) return "free";
+    return bendKeys.has(toKey(point)) ? "bent" : "joined";
   };
 
   return {

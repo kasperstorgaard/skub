@@ -6,6 +6,7 @@ import {
   getBendPath,
   getWallShapes,
   WALL_BEND_START,
+  WALL_RADIUS,
   WALL_WIDTH,
 } from "#/game/wall-runs.ts";
 
@@ -28,8 +29,6 @@ export const CSS_VAR_COLORS: ThumbnailColors = {
   portal: "var(--color-portal)",
   portalAlt: "var(--color-portal-alt)",
 };
-
-const WALL_RADIUS = 0.5;
 
 export type BoardSvgProps = SVGAttributes<SVGSVGElement> & {
   board: Board;
