@@ -20,7 +20,7 @@ export function ActionsPanel(
   { slug, isDev, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
 ) {
   return (
-    <Panel className={clsx("max-lg:py-fl-2", className)}>
+    <Panel className={className}>
       {
         /* Mobile: one centred column, at least an action row wide; two
           buttons can widen it */
