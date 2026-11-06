@@ -46,7 +46,7 @@ export function ScoreBadge(
     <span
       className={clsx(
         "difficulty-badge relative flex items-stretch overflow-hidden rounded-2",
-        "leading-loose text-3 tracking-wider",
+        "leading-loose text-4 lg:text-3 tracking-wider",
         "bg-surface-2",
         className,
       )}
