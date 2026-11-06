@@ -9,29 +9,29 @@ separate strokes, not one shape.
 
 ## Approach
 
-- **Trace walls into paths** (`game/wall-paths.ts`, pure). Each wall is one
-  unit edge on the grid lines between cells. Connected edges are walked into as
-  few paths as possible, going straight on through crossings where it can, and
-  a run that comes back to its start closes with `Z` so every corner joins. Path
-  data is in grid units: line `k` sits at `k`.
-- **One SVG per board draws them**, with round caps and joins at 2px (3px
-  read too heavy once rounded):
-  - On the board the SVG is a grid item spanning every cell, grown by half a
-    gap each side so grid line `k` lands mid-gap, and clipped back to the tiles
-    so edge walls end flush. Sizing from the grid area, not `--space-w`, keeps
-    it on the tiles whatever size they come out. `vector-effect:
-    non-scaling-stroke` keeps the stroke 2px. Server-rendered, so no-JS play
-    is unchanged.
-  - The thumbnail (cards, og-image) maps the same path data with a transform
-    and a stroke width divided by the scale, so it needs nothing an SVG
-    rasteriser might lack.
+- **Merge walls into runs** (`game/wall-runs.ts`, pure). Each wall is one unit
+  edge on the grid lines between cells; walls in a line merge into one straight
+  run, through crossings. Each run end is _free_ (nothing else meets it) or
+  _joined_ (it meets another wall at a corner).
+- **Renderers draw each run as a 2px rounded bar, mid-gap:**
+  - Free ends stop at the tile edge, so they never reach into the next
+    gutter.
+  - Joined ends run half a stroke past the corner, so corners overlap and read
+    as one shape with a rounded outside.
+  - On the board each run is a positioned element placed with the same
+    `--space-w`/`--gap` calc the pieces use, because the end offsets are in
+    pixels and the cell size only exists in CSS (an SVG in grid units can't
+    express them). Server-rendered, so no-JS play is unchanged.
+  - The thumbnail (cards, og-image) draws the same runs as SVG rects with its
+    own pixel sizes.
 - Themes keep styling walls through `.board-walls` (sash's laser glow).
 
 ## Tests
 
 Realistic shapes from the board: a lone wall, a straight run, an L, a closed
-box, a cross, and a box with a wall running off one side (a "d"), which traces
-as one path through the junction.
+box, a cross, parallel walls on neighbouring lines, and a box with a wall
+running off one side (a "d"), whose stem merges with the box's side into one
+run.
 
 ## Non-goals
 

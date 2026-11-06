@@ -2,7 +2,7 @@ import { HTMLAttributes, SVGAttributes } from "preact";
 
 import { COLS } from "#/game/board.ts";
 import type { Board, Piece } from "#/game/types.ts";
-import { getWallPaths } from "#/game/wall-paths.ts";
+import { getWallRuns } from "#/game/wall-runs.ts";
 
 export type ThumbnailColors = {
   ui1: string; // destination stroke
@@ -23,6 +23,8 @@ export const CSS_VAR_COLORS: ThumbnailColors = {
   portal: "var(--color-portal)",
   portalAlt: "var(--color-portal-alt)",
 };
+
+const WALL_WIDTH = 2;
 
 export type BoardSvgProps = SVGAttributes<SVGSVGElement> & {
   board: Board;
@@ -140,19 +142,29 @@ export function Thumbnail({
         </g>
       )}
 
-      {/* Walls in grid units, scaled so grid line `k` lands mid-gap */}
-      <g
-        className="svg-wall"
-        transform={`translate(${-gap / 2} ${-gap / 2}) scale(${
-          cellSize + gap
-        })`}
-        fill="none"
-        stroke={colors.ui4}
-        stroke-width={2 / (cellSize + gap)}
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        {getWallPaths(board.walls).map((path) => <path key={path} d={path} />)}
+      {/* Walls mid-gap: free ends stop at the tile edge, joined ones overlap */}
+      <g className="svg-wall" fill={colors.ui4}>
+        {getWallRuns(board.walls).map((run) => {
+          const pitch = cellSize + gap;
+          const [lead, trail] = run.ends.map((end) =>
+            end === "free" ? gap / 2 : -WALL_WIDTH / 2
+          );
+          const line = (run.orientation === "vertical" ? run.x : run.y) *
+              pitch - gap / 2 - WALL_WIDTH / 2;
+          const from = (run.orientation === "vertical" ? run.y : run.x) *
+              pitch - gap / 2 + lead;
+          const length = run.span * pitch - lead - trail;
+
+          return (
+            <rect
+              key={`${run.orientation}-${run.x}-${run.y}`}
+              rx={WALL_WIDTH / 2}
+              {...(run.orientation === "vertical"
+                ? { x: line, y: from, width: WALL_WIDTH, height: length }
+                : { x: from, y: line, width: length, height: WALL_WIDTH })}
+            />
+          );
+        })}
       </g>
 
       {/* Pieces */}

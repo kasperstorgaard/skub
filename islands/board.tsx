@@ -18,14 +18,12 @@ import {
   SolutionUnderlay,
 } from "#/components/solution-underlay.tsx";
 import {
-  COLS,
   getGrid,
   getMoveSlide,
   getSlides,
   isPositionSame,
   isValidSolution,
   resolveMoves,
-  ROWS,
 } from "#/game/board.ts";
 import { getGuides, Guide } from "#/game/guides.ts";
 import { getSolutionSteps, getSolutionStops } from "#/game/solution-path.ts";
@@ -43,7 +41,7 @@ import {
   getMovesHref,
   getReplaySpeed,
 } from "#/game/url.ts";
-import { getWallPaths } from "#/game/wall-paths.ts";
+import { getWallRuns } from "#/game/wall-runs.ts";
 import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
@@ -260,9 +258,11 @@ export default function Board(
           "--hint-bg": "var(--color-ui-contrast)",
           "--replay-len": moves.length,
           "--gap": "var(--size-1)",
+          "--wall-w": "2px",
           // 39px at 412px. On mobile the board is deliberately narrower than
           // Main, so swipes start clear of the screen-edge gestures.
           "--space-w": "clamp(40px - var(--gap), 9.4666vw, 56px)",
+          "--pitch": "calc(var(--space-w) + var(--gap))",
           "--replay-speed": `${1 / replaySpeed}s`,
           "--tile-ripple-duration": `${TILE_DURATION_MS}ms`,
         }}
@@ -401,35 +401,40 @@ export default function Board(
 }
 
 /**
- * Every wall in one SVG over the whole grid area, grown by half a gap each side
- * so grid line `k` lands mid-gap, then clipped back to the tiles at the edge.
+ * Walls as straight runs on the lines between cells, mid-gap. Free ends stop at
+ * the tile edge; joined ends run half a stroke past the corner so they overlap.
  */
 function BoardWalls({ walls }: { walls: Wall[] }) {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox={`0 0 ${COLS} ${ROWS}`}
-      preserveAspectRatio="none"
-      className={clsx(
-        "board-walls col-[1/-1] row-[1/-1] pointer-events-none",
-        "-m-[calc(var(--gap)/2)] size-[calc(100%+var(--gap))] max-w-none",
-        "[clip-path:inset(calc(var(--gap)/2))]",
-        "fill-none stroke-ui-4",
-      )}
-    >
-      {getWallPaths(walls).map((path) => (
-        <path
-          key={path}
-          d={path}
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          vector-effect="non-scaling-stroke"
+    <div className="board-walls absolute inset-0 pointer-events-none">
+      {getWallRuns(walls).map((run) => (
+        <div
+          key={`${run.orientation}-${run.x}-${run.y}`}
+          className={clsx(
+            "board-wall absolute rounded-full bg-ui-4",
+            run.orientation === "vertical"
+              ? "w-(--wall-w) left-[calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] top-[calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] h-[calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]"
+              : "h-(--wall-w) top-[calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] left-[calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] w-[calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]",
+          )}
+          style={{
+            "--line": run.orientation === "vertical" ? run.x : run.y,
+            "--from": run.orientation === "vertical" ? run.y : run.x,
+            "--span": run.span,
+            "--lead": WALL_END_OFFSET[run.ends[0]],
+            "--trail": WALL_END_OFFSET[run.ends[1]],
+          }}
         />
       ))}
-    </svg>
+    </div>
   );
 }
+
+// How far in from the grid point a run's end stops: free at the tile edge,
+// joined half a stroke past it
+const WALL_END_OFFSET = {
+  free: "calc(var(--gap) / 2)",
+  joined: "calc(var(--wall-w) / -2)",
+};
 
 type BoardSpaceProps = Position & {
   href?: string;
