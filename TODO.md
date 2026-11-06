@@ -114,6 +114,17 @@ PR finishes only part of an item, trim the item to what is left.
   tag. Retro themes still style the old pieces (`.move-counter`,
   `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
+- **The solutions page feels like part of the new look.** Revamp it to match
+  the puzzle page: the title with its lead line, the score badge, the type
+  roles and spacing levels, secondary buttons, and the sidebar and mobile
+  footer. The solve list itself gets a visual pass too, so a solve reads at a
+  glance (who, how many moves, when).
+
+- **The editor matches the new design.** The builder and its preview still
+  carry the old look in places: bring them onto the same title, type roles,
+  spacing levels, buttons and sidebar/footer as the puzzle page, so building a
+  puzzle feels like the same app as playing one.
+
 - **The archive reads like a week on mobile.** On phones, the archive works like
   a calendar app's week view: a strip of days to swipe through, the chosen day's
   puzzle below. Desktop keeps the month calendar, which still needs a visual
