@@ -1,47 +1,25 @@
 import { type Signal } from "@preact/signals";
 import { useCallback } from "preact/hooks";
 
-import {
-  ArrowClockwise,
-  Eye,
-  FlipHorizontal,
-  FlipVertical,
-  Icon,
-  PaperPlaneTilt,
-  Star,
-  Trash,
-} from "#/components/icons.tsx";
+import { Icon, Star } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { flipBoard, rotateBoard } from "#/game/board.ts";
 import { formatPuzzle } from "#/game/formatter.ts";
-import type { SolveState } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { useRouter } from "#/islands/router.tsx";
-import { canSubmit } from "#/islands/submit-dialog.tsx";
 
 type EditorPanelProps = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   isDev: boolean;
-  // Submissions are emailed, so the button needs somewhere to send them.
-  submissionsEnabled: boolean;
-  solveState: Signal<SolveState | undefined>;
 };
 
 /**
- * Side panel for the puzzle editor. Board transform actions (rotate, flip), a
- * clear action, and the ways out: Preview to play the draft, and — in dev —
- * Review, which files it as a candidate to be analysed and rated. Review is
- * the panel's only write; the corpus write lives behind Promote.
+ * Side panel for the puzzle editor. Locally it holds Review, which files the
+ * board as a candidate to be analysed and rated; the corpus write lives behind
+ * Promote. Sending it in is the nudge under the toolbar.
  */
 export function EditorPanel(
-  {
-    puzzle,
-    href,
-    isDev,
-    submissionsEnabled,
-    solveState,
-  }: EditorPanelProps,
+  { puzzle, href, isDev }: EditorPanelProps,
 ) {
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -66,124 +44,15 @@ export function EditorPanel(
     globalThis.location.href = "/candidates/review";
   }, []);
 
-  const onClear = useCallback(() => {
-    puzzle.value = {
-      ...puzzle.value,
-      board: {
-        destination: { x: 3, y: 3 },
-        pieces: [],
-        walls: [],
-        holes: [],
-        portals: [],
-      },
-      minMoves: 0,
-    };
-  }, [puzzle]);
-
   return (
-    <Panel>
-      <div className="flex flex-col col-[2/3] lg:row-[3/4] gap-fl-4 lg:gap-fl-1 place-content-between">
-        <div className="flex flex-col gap-fl-1 flex-wrap">
-          {/* TODO: add a shake/shuffle button that does something random to the board */}
-          <div className="flex gap-fl-1 flex-wrap lg:justify-center">
-            <button
-              type="button"
-              className="icon-btn"
-              data-size="sm"
-              onClick={() => {
-                puzzle.value = {
-                  ...puzzle.value,
-                  board: rotateBoard(puzzle.value.board, "right"),
-                };
-              }}
-            >
-              <Icon icon={ArrowClockwise} />
-              <span className="sr-only">Rotate 90°</span>
-            </button>
-
-            <button
-              type="button"
-              className="icon-btn"
-              data-size="sm"
-              onClick={() => {
-                puzzle.value = {
-                  ...puzzle.value,
-                  board: flipBoard(puzzle.value.board, "horizontal"),
-                };
-              }}
-            >
-              <Icon icon={FlipHorizontal} />
-              <span className="sr-only">Mirror Horizontally</span>
-            </button>
-
-            <button
-              type="button"
-              className="icon-btn"
-              data-size="sm"
-              onClick={() => {
-                puzzle.value = {
-                  ...puzzle.value,
-                  board: flipBoard(puzzle.value.board, "vertical"),
-                };
-              }}
-            >
-              <Icon icon={FlipVertical} />
-              <span className="sr-only">Mirror Vertically</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            className="btn"
-            onClick={onClear}
-          >
-            <Icon icon={Trash} />
-            Clear
-          </button>
-        </div>
-
-        <div className="flex flex-col flex-wrap gap-fl-1">
-          {submissionsEnabled && (
-            <SubmitButton puzzle={puzzle} href={href} solveState={solveState} />
-          )}
-
-          <a href="/puzzles/preview" className="btn" target="_blank">
-            <Icon icon={Eye} /> Preview
+    <Panel hideBuilder>
+      {isDev && (
+        <div className="flex flex-col col-[2/3] lg:row-[3/4]">
+          <a href="/candidates/review" className="btn" onClick={onReview}>
+            <Icon icon={Star} /> Review
           </a>
-
-          {isDev && (
-            <a href="/candidates/review" className="btn" onClick={onReview}>
-              <Icon icon={Star} /> Review
-            </a>
-          )}
         </div>
-      </div>
+      )}
     </Panel>
-  );
-}
-
-type SubmitButtonProps = {
-  puzzle: Signal<Puzzle>;
-  href: Signal<string>;
-  solveState: Signal<SolveState | undefined>;
-};
-
-/** Opens the submit dialog, once the board can be submitted. */
-function SubmitButton({ puzzle, href, solveState }: SubmitButtonProps) {
-  if (!canSubmit(puzzle.value, solveState.value)) {
-    return (
-      <button type="button" className="btn" disabled>
-        <Icon icon={PaperPlaneTilt} /> Submit
-      </button>
-    );
-  }
-
-  const url = new URL(href.value);
-  url.searchParams.set("submit", "compose");
-
-  return (
-    <a href={url.href} data-router className="btn">
-      <Icon icon={PaperPlaneTilt} /> Submit
-    </a>
   );
 }

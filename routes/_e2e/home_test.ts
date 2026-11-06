@@ -29,7 +29,7 @@ Deno.test("home — daily puzzle link navigates to a puzzle", async () => {
   }
 });
 
-Deno.test("home — archives link navigates to puzzles page", async () => {
+Deno.test("home — all puzzles link navigates to puzzles page", async () => {
   const { page, asUser, teardown } = await setup();
   try {
     await asUser({ name: "e2emma" });

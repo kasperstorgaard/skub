@@ -10,7 +10,7 @@ import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard } from "#/components/puzzle-card.tsx";
 import { define } from "#/core.ts";
 import { getAvailableEntries, getPuzzleByDate } from "#/game/loader.ts";
-import { Difficulty, Puzzle, PuzzleManifestEntry } from "#/game/types.ts";
+import { Puzzle, PuzzleManifestEntry } from "#/game/types.ts";
 import { getArchiveDate } from "#/game/url.ts";
 import { isDev } from "#/lib/env.ts";
 
@@ -19,7 +19,6 @@ type PageData = {
   selectedDate: Temporal.PlainDate;
   selectedPuzzle: Puzzle;
   bestMoves: Record<string, number>;
-  difficultyBreakdown: Record<Difficulty, number>;
   totalPuzzles: number;
   entries: PuzzleManifestEntry[];
 };
@@ -40,17 +39,6 @@ export const handler = define.handlers<PageData>({
     const entries = await getAvailableEntries();
     const bestMoves = ctx.state.progress;
 
-    const difficultyBreakdown: Record<Difficulty, number> = {
-      easy: 0,
-      medium: 0,
-      hard: 0,
-      ultra: 0,
-    };
-
-    for (const entry of entries) {
-      difficultyBreakdown[entry.difficulty]++;
-    }
-
     const totalPuzzles = entries.length;
     const selectedPuzzle = await getPuzzleByDate(selectedDate);
 
@@ -63,7 +51,6 @@ export const handler = define.handlers<PageData>({
       selectedDate,
       selectedPuzzle,
       bestMoves,
-      difficultyBreakdown,
       totalPuzzles,
       entries,
     });
@@ -76,7 +63,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
     selectedDate,
     selectedPuzzle,
     bestMoves,
-    difficultyBreakdown,
     totalPuzzles,
     entries,
   } = props.data;
@@ -103,8 +89,8 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
         <Header back={{ href: "/" }} />
 
         <div className="flex flex-col gap-0">
-          <h1 className="text-brand text-6 leading-flat">Archive</h1>
           <span className="text-3 text-text-2">{selectedDate.year}</span>
+          <h1 className="text-brand text-6 leading-flat">Puzzles</h1>
         </div>
 
         <section
@@ -147,7 +133,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
         </section>
       </Main>
 
-      <Panel className="max-lg:gap-y-fl-2">
+      <Panel>
         <div
           className={clsx(
             "col-[2/3] flex flex-col gap-fl-2 items-start",
@@ -159,29 +145,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
               {totalPuzzles}
             </span>
             <span className="text-3 text-text-2">Puzzles</span>
-          </div>
-
-          <div className="flex lg:flex-col gap-fl-2">
-            <div className="flex flex-col gap-0">
-              <span className="text-4 text-text-1 leading-flat font-medium tracking-wide">
-                {difficultyBreakdown.hard}
-              </span>
-              <span className="text-3 text-text-2">Hard</span>
-            </div>
-
-            <div className="flex flex-col gap-0">
-              <span className="text-4 text-text-1 leading-flat font-medium tracking-wide">
-                {difficultyBreakdown.medium}
-              </span>
-              <span className="text-3 text-text-2">Medium</span>
-            </div>
-
-            <div className="flex flex-col gap-0">
-              <span className="text-4 text-text-1 leading-flat font-medium tracking-wide">
-                {difficultyBreakdown.easy}
-              </span>
-              <span className="text-3 text-text-2">Easy</span>
-            </div>
           </div>
         </div>
       </Panel>

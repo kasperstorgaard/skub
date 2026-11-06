@@ -1,6 +1,6 @@
 /* Solarized Light (ethanschoonover.com/solarized).
    Colour only, on Skub's type and shapes. */
-/* Skub's type: Chakra Petch */
+/* Skub's type: Outfit */
 @import "./skub.css";
 
 :root[data-theme="solarized-light"] {
@@ -20,7 +20,7 @@
   --color-ui-2: #859900;
   --color-ui-3: #d33682;
   --color-ui-4: #073642;
-  --color-ui-contrast: #b58900;
+  --color-ui-contrast: #6c71c4;
   --color-hole: #073642;
   --color-portal: #268bd2;
   --color-portal-alt: #d6e5ef;

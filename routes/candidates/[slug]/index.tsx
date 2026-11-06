@@ -7,6 +7,7 @@ import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { define } from "#/core.ts";
 import {
   currentCandidate,
@@ -145,19 +146,18 @@ export default define.page<typeof handler>(function CandidatePage(props) {
       <Main className="lg:relative">
         <Header back={{ href: "/candidates" }} />
 
-        <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
-          <div className="flex flex-col">
-            <h1 className="text-5 text-brand pr-1 leading-flat font-5">
-              {props.data.label}
-            </h1>
+        <div className="flex items-end justify-between gap-fl-1 flex-wrap">
+          <h1 className="text-text-1">
             {/* State, then origin — candidacy is a state the board leaves. */}
-            <p className="text-text-3 leading-tight ml-1">
-              {props.data.promotedAs ? "promoted" : "candidate"} ·{" "}
-              {props.data.source}
-            </p>
-          </div>
+            <PuzzleName
+              puzzle={{ name: props.data.label }}
+              lead={`${
+                props.data.promotedAs ? "Promoted" : "Candidate"
+              } · ${props.data.source}`}
+            />
+          </h1>
 
-          <DifficultyBadge puzzle={puzzle.value} className="lg:mt-1" />
+          <DifficultyBadge puzzle={puzzle.value} />
         </div>
 
         <div className="relative max-lg:pb-fl-5">

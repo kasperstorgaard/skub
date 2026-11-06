@@ -2,20 +2,17 @@ import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import {
-  ArrowRight,
-  ChalkboardTeacher,
-  GithubLogo,
-  Icon,
-  LinkedinLogo,
-} from "#/components/icons.tsx";
+import { ArrowRight, ChalkboardTeacher, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { PuzzleCard } from "#/components/puzzle-card.tsx";
+import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { getAvailableEntries, getTodaysPuzzle } from "#/game/loader.ts";
-import { pickRecommendedPuzzle } from "#/game/recommendation.ts";
+import {
+  getOnboardingLabel,
+  pickRecommendedPuzzle,
+} from "#/game/recommendation.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -65,8 +62,23 @@ export default define.page<typeof handler>(function Home(ctx) {
 
         <div className="title-card flex flex-col">
           <h1 className="text-8 leading-tight text-brand flex items-baseline gap-fl-1">
-            <span>
-              Skub
+            <span className="wordmark" data-text="Skub">
+              {/* One span per letter, so the load ripple can stagger them */}
+              <span>
+                {[..."Skub"].map((letter, index, letters) => (
+                  <span
+                    key={index}
+                    className="wordmark-letter"
+                    style={{
+                      "--delay": `${
+                        0.5 + (index * 0.5) / (letters.length - 1)
+                      }s`,
+                    }}
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </span>
             </span>
             <span className="text-1 text-text-3">
               [ˈsgɔb]
@@ -78,8 +90,8 @@ export default define.page<typeof handler>(function Home(ctx) {
           </p>
         </div>
 
-        <div className="grid gap-fl-2">
-          <ul className="grid grid-cols-[repeat(2,1fr)] gap-fl-3 gap-y-fl-4 list-none pl-0">
+        <div className="grid content-start gap-fl-2">
+          <ul className="grid grid-cols-[repeat(2,1fr)] gap-fl-4 list-none pl-0">
             <li className="list-none pl-0 min-w-0">
               <PuzzleCard
                 puzzle={dailyPuzzle}
@@ -92,7 +104,7 @@ export default define.page<typeof handler>(function Home(ctx) {
               {user.skillLevel === null && (
                 <a
                   href="/puzzles/tutorial"
-                  className="puzzle-card flex flex-col gap-2 text-text-1 no-underline"
+                  className="puzzle-card group flex flex-col gap-2 text-text-1 no-underline"
                 >
                   <div
                     className={clsx(
@@ -107,23 +119,20 @@ export default define.page<typeof handler>(function Home(ctx) {
                     </span>
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <span className="puzzle-card-tagline text-1 text-text-2 tracking-wide leading-tight">
-                      New here?
-                    </span>
-                    <span className="text-text-1 text-3 font-semibold leading-flat items-center">
+                  <PuzzleCardCaption tagline="New here?">
+                    <span className="type-title">
                       Learn the basics
                     </span>
-                  </div>
+                  </PuzzleCardCaption>
                 </a>
               )}
 
               {user.skillLevel && recommendedPuzzle.onboardingLevel && (
                 <PuzzleCard
                   puzzle={recommendedPuzzle}
-                  tagline={recommendedPuzzle.onboardingLevel === 2
-                    ? "Starter puzzle"
-                    : "Quick puzzle"}
+                  tagline={getOnboardingLabel(
+                    recommendedPuzzle.onboardingLevel,
+                  )}
                 />
               )}
 
@@ -138,61 +147,22 @@ export default define.page<typeof handler>(function Home(ctx) {
           </ul>
 
           <a href="/puzzles" className="btn place-self-start" data-size="lg">
-            Archives <Icon icon={ArrowRight} />
+            All puzzles <Icon icon={ArrowRight} />
           </a>
         </div>
       </Main>
 
-      <Panel className="max-lg:gap-fl-3">
-        <div
-          className={clsx(
-            "col-[2/3] flex justify-between gap-fl-2",
-            "text-text-1 text-fl-1",
-            "lg:col-auto lg:row-start-1 lg:flex-col lg:text-fl-0",
-          )}
-        >
-          <p>
-            Inspired by <br />
-            <a
-              href="https://boardgamegeek.com/boardgame/51/ricochet-robots"
-              className="text-2 text-text-2"
-            >
-              Ricochet Robots
-            </a>
-          </p>
-          <p className="text-right lg:text-left">
-            Feeling creative? <br />
-            <a href="/puzzles/new" className="text-2 text-text-2">
-              Build a puzzle
-            </a>
-          </p>
-        </div>
-
-        <div
-          className={clsx(
-            "col-[2/3] flex flex-col gap-fl-3 justify-between items-start text-2 text-text-2",
-            "lg:col-auto lg:row-start-3 lg:justify-between lg:self-stretch",
-          )}
-        >
-          {userStats && (
+      <Panel>
+        {userStats && (
+          <div
+            className={clsx(
+              "col-[2/3] flex flex-col items-start text-2 text-text-2",
+              "lg:col-auto lg:row-start-3 lg:self-stretch",
+            )}
+          >
             <StatsSummary stats={userStats} className="lg:w-full" />
-          )}
-
-          <div className="flex gap-2 lg:flex-col lg:mt-auto">
-            <a
-              href="https://github.com/kasperstorgaard/ricochet"
-              className="flex gap-1 text-text-2"
-            >
-              <Icon icon={GithubLogo} />GitHub
-            </a>
-            <a
-              href="https://www.linkedin.com/in/kasper-storgaard-t-lead"
-              className="flex gap-1 text-text-2"
-            >
-              <Icon icon={LinkedinLogo} />LinkedIn
-            </a>
           </div>
-        </div>
+        )}
       </Panel>
     </>
   );

@@ -1,6 +1,7 @@
 import { type Signal } from "@preact/signals";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import {
@@ -127,41 +128,37 @@ export function CelebrationDialog(
           )}
       </div>
 
-      <div className="flex flex-col gap-fl-1 items-stretch">
-        <div className="flex gap-fl-1">
-          {
-            // Flash solves are compared above, not on the leaderboard
-            !isFlash && (
-              <a
-                href={`/puzzles/${puzzle.value.slug}/solutions`}
-                className="btn flex-1 justify-center"
-              >
-                <Icon icon={Ranking} /> See solves
-              </a>
-            )
-          }
-
-          <a
-            href="/puzzles/recommended"
-            className="btn flex-1 justify-center"
-            data-primary
-            autoFocus
-          >
-            Play one more <Icon icon={ArrowRight} />
-          </a>
-        </div>
-
-        <div className="flex justify-center gap-fl-2 mt-1">
-          {!isPerfect && (
-            <a href={getResetHref(href.value)} className="text-text-2 text-1">
+      <DialogActions
+        // One way out: another go if it wasn't perfect, otherwise back
+        dismiss={isPerfect
+          ? (
+            <a href={back.href} className={DISMISS}>
+              {back.label}
+            </a>
+          )
+          : (
+            <a href={getResetHref(href.value)} className={DISMISS}>
               Try again
             </a>
           )}
-          <a href={back.href} className="text-text-2 text-1">
-            {back.label}
-          </a>
-        </div>
-      </div>
+      >
+        {
+          // Flash solves are compared above, not on the leaderboard
+          !isFlash && (
+            <a href={`/puzzles/${puzzle.value.slug}/solutions`} className="btn">
+              <Icon icon={Ranking} /> See solves
+            </a>
+          )
+        }
+
+        <a
+          href="/puzzles/recommended"
+          className="btn"
+          autoFocus
+        >
+          Play one more <Icon icon={ArrowRight} />
+        </a>
+      </DialogActions>
     </Dialog>
   );
 }

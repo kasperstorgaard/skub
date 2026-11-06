@@ -5,15 +5,17 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
-import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
+import { ActionsPanel } from "#/components/actions-panel.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { define } from "#/core.ts";
 import { getUserPuzzleDraft } from "#/db/user.ts";
 import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
-import { ControlsPanel } from "#/islands/controls-panel.tsx";
+import { PlayControls } from "#/islands/play-controls.tsx";
+import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { isDev } from "#/lib/env.ts";
 
 type PageData = {
@@ -40,30 +42,37 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
   return (
     <>
       <Main>
-        <Header back={{ href: "/" }} hideBuild />
+        <Header back={{ href: "/" }} />
 
-        <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
-          <h1 className="text-6 text-brand leading-tight">
-            {props.data.puzzle.number
-              ? (
-                <span className="font-4 tracking-wide">
-                  #{props.data.puzzle.number}
-                  {" "}
-                </span>
-              )
-              : null}
-            <span className="font-5">{props.data.puzzle.name}</span>
+        <div className="flex items-end justify-between gap-fl-1 flex-wrap">
+          <h1 className="text-text-1">
+            <PuzzleName
+              puzzle={props.data.puzzle}
+              lead={props.data.puzzle.number ? undefined : "Preview"}
+            />
           </h1>
 
-          <DifficultyBadge puzzle={puzzle.value} className="lg:mt-1" />
+          <ScoreBadge puzzle={puzzle} href={href} />
         </div>
 
-        <Board href={href} puzzle={puzzle} mode={mode} />
+        <div className="relative">
+          <Board href={href} puzzle={puzzle} mode={mode} />
+          <PlayControls
+            puzzle={puzzle}
+            href={href}
+            isDev={isDev}
+            isPreview
+            className={clsx(
+              // Mobile: as far under the board as the old footer's controls sat
+              "max-lg:mt-fl-4",
+              "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+            )}
+          />
+        </div>
       </Main>
 
-      <ControlsPanel
-        puzzle={puzzle}
-        href={href}
+      <ActionsPanel
+        slug={props.data.puzzle.slug}
         isDev={isDev}
         isPreview
         className="print:hidden"

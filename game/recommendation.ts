@@ -119,3 +119,13 @@ export function pickRecommendedSlug(
   if (!slug) throw new Error("Unable to get random puzzle");
   return slug;
 }
+
+/**
+ * What an unnumbered onboarding puzzle is called in a title's lead or a card's
+ * tagline: the tutorial (itself named "Tutorial"), then starter and quick ones.
+ */
+export function getOnboardingLabel(level: number) {
+  if (level === 1) return "Learn the basics";
+  if (level === 2) return "Starter puzzle";
+  return "Quick puzzle";
+}

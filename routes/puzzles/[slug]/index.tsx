@@ -4,10 +4,11 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
-import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
+import { ActionsPanel } from "#/components/actions-panel.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
 import {
@@ -26,6 +27,7 @@ import {
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
+import { getOnboardingLabel } from "#/game/recommendation.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
@@ -36,11 +38,11 @@ import {
   type CelebrationData,
   CelebrationDialog,
 } from "#/islands/celebration-dialog.tsx";
-import { ControlsPanel } from "#/islands/controls-panel.tsx";
-import { FlashBadge } from "#/islands/flash-badge.tsx";
 import { FlashDialog } from "#/islands/flash-dialog.tsx";
 import { FlashNudge } from "#/islands/flash-nudge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
+import { PlayControls } from "#/islands/play-controls.tsx";
+import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { SolutionDialog } from "#/islands/solution-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { withSpan } from "#/lib/tracing.ts";
@@ -236,47 +238,38 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const printUrl = props.url.hostname + props.url.pathname;
   const { hasFlash, isFlashOn } = props.data;
 
-  const back = isTodaysPuzzle(props.data.puzzle)
-    ? { href: "/", label: "Back to Home" }
-    : {
-      href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
-      label: "Back to archive",
-    };
+  // No archive date (no number): home, and say so
+  const archiveHref = isTodaysPuzzle(props.data.puzzle)
+    ? null
+    : getPuzzleArchiveHref(props.data.puzzle);
+  const back = archiveHref
+    ? { href: archiveHref, label: "Back to puzzles" }
+    : { href: "/", label: "Back to home" };
 
   return (
     <>
       <Main>
-        <Header back={{ href: back.href }} />
+        <Header back={back} />
 
-        <div className="flex items-center justify-between gap-fl-1 mt-2 flex-wrap">
-          <h1 className="text-6 text-brand leading-tight">
-            {props.data.puzzle.number && (
-              <span className="font-4 tracking-wide">
-                #{props.data.puzzle.number}
-                {" "}
-              </span>
-            )}
-            <span className="font-5">{props.data.puzzle.name}</span>
+        <div className="flex items-end justify-between gap-fl-1 flex-wrap">
+          <h1 className="text-text-1">
+            <PuzzleName
+              puzzle={props.data.puzzle}
+              lead={!props.data.puzzle.number &&
+                  props.data.puzzle.onboardingLevel
+                ? getOnboardingLabel(props.data.puzzle.onboardingLevel)
+                : undefined}
+            />
           </h1>
 
-          {hasFlash
-            ? (
-              <FlashBadge
-                puzzle={puzzle}
-                href={href}
-                isOn={isFlashOn}
-                isExplained={props.data.isFlashExplained}
-                hideMinMoves={!props.data.hasSolved}
-                className="lg:mt-1"
-              />
-            )
-            : (
-              <DifficultyBadge
-                puzzle={puzzle.value}
-                hideMinMoves={!props.data.hasSolved}
-                className="lg:mt-1"
-              />
-            )}
+          <ScoreBadge
+            puzzle={puzzle}
+            href={href}
+            flash={hasFlash
+              ? { isOn: isFlashOn, isExplained: props.data.isFlashExplained }
+              : undefined}
+            hideMinMoves={!props.data.hasSolved}
+          />
         </div>
 
         <div className="relative">
@@ -287,14 +280,20 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             isNew={props.state.user.skillLevel === null}
           />
 
-          {/* New players get the basics; the rest get Flash once stuck. */}
-          <div
+          <PlayControls
+            puzzle={puzzle}
+            href={href}
+            hintCount={props.data.hintCount}
+            isDev={isDev}
             className={clsx(
-              "max-lg:max-w-2xs max-lg:place-self-center max-lg:mt-fl-2",
-              "lg:absolute lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
-              "empty:hidden print:hidden",
+              // Mobile: as far under the board as the old footer's controls sat
+              "max-lg:mt-fl-4",
+              "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
             )}
-          >
+          />
+
+          {/* New players get the basics; the rest get Flash once stuck. */}
+          <div className="max-w-2xs mx-auto mt-fl-2 empty:hidden print:hidden">
             {props.state.user.skillLevel === null
               ? <TutorialNudge />
               : hasFlash && !isFlashOn && !props.data.isFlashExplained && (
@@ -304,10 +303,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         </div>
       </Main>
 
-      <ControlsPanel
-        puzzle={puzzle}
-        href={href}
-        hintCount={props.data.hintCount}
+      <ActionsPanel
+        slug={props.data.puzzle.slug}
         isDev={isDev}
         showEdit={props.data.showEdit}
         isFlash={isFlashOn}
@@ -337,6 +334,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         puzzle={puzzle}
         savedName={props.data.savedName}
         isFlash={isFlashOn}
+        backHref={back.href}
       />
 
       {hasFlash && <FlashDialog puzzle={puzzle} href={href} isOn={isFlashOn} />}

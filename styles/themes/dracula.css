@@ -1,6 +1,6 @@
 /* Dracula — the editor palette.
    Colour only, on Skub's type and shapes. */
-/* Skub's type: Chakra Petch */
+/* Skub's type: Outfit */
 @import "./skub.css";
 
 :root[data-theme="dracula"] {
@@ -9,6 +9,7 @@
   --btn-active-text: #282a36;
   --color-surface-1: #282a36;
   --color-surface-2: #21222c;
+  --color-panel: color-mix(in srgb, var(--color-surface-1), #000 30%);
   --color-surface-3: #343746;
   --color-surface-4: #44475a;
   --color-text-1: #f8f8f2;

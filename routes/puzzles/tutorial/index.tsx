@@ -2,21 +2,25 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
+import { ActionsPanel } from "#/components/actions-panel.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { TutorialWatchButton } from "#/components/tutorial-watch-button.tsx";
 import { define } from "#/core.ts";
 import { Solution } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getTutorialPuzzle } from "#/game/loader.ts";
+import { getOnboardingLabel } from "#/game/recommendation.ts";
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
 import Board from "#/islands/board.tsx";
-import { ControlsPanel } from "#/islands/controls-panel.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
+import { PlayControls } from "#/islands/play-controls.tsx";
+import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { TutorialDialog } from "#/islands/tutorial-dialog.tsx";
 import { isDev } from "#/lib/env.ts";
 import { trackTutorialCompleted } from "#/lib/tracking.ts";
@@ -164,9 +168,15 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
       <Main>
         <Header back={{ href: "/" }} />
 
-        <h1 className="text-5 text-brand mt-2">{puzzle.value.name}</h1>
+        <div className="flex items-end justify-between gap-fl-1 flex-wrap">
+          <h1 className="text-text-1">
+            <PuzzleName puzzle={puzzle.value} lead={getOnboardingLabel(1)} />
+          </h1>
 
-        <div className="relative max-lg:pb-fl-7">
+          <ScoreBadge puzzle={puzzle} href={href} />
+        </div>
+
+        <div className="relative pb-fl-7">
           <Board
             href={href}
             puzzle={puzzle}
@@ -174,20 +184,27 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
             isNew
           />
 
+          <PlayControls
+            puzzle={puzzle}
+            href={href}
+            isDev={isDev}
+            className={clsx(
+              // Mobile: as far under the board as the old footer's controls sat
+              "max-lg:mt-fl-4",
+              "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
+            )}
+          />
+
           {urlMode === "solve" && (
             <TutorialWatchButton
               showMeHref={props.data.showMeHref}
-              className={clsx(
-                "absolute",
-                "max-lg:bottom-0 max-lg:left-1/2 max-lg:-translate-x-1/2",
-                "lg:ml-fl-3 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
-              )}
+              className="absolute bottom-0 left-1/2 -translate-x-1/2"
             />
           )}
         </div>
       </Main>
 
-      <ControlsPanel puzzle={puzzle} href={href} isDev={isDev} />
+      <ActionsPanel slug={puzzle.value.slug} isDev={isDev} />
 
       <AutoPostSolution
         href={href}

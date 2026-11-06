@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { Dialog } from "./dialog.tsx";
 import { hintUsed } from "#/client/hint-signals.ts";
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { ArrowCounterClockwise, Icon } from "#/components/icons.tsx";
 import { decodeMove, encodeMove } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
@@ -190,16 +191,19 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               </span>
             </span>
 
-            <div class="flex items-center gap-fl-2 mt-fl-1">
-              <button
-                type="button"
-                className="link p-0 bg-transparent"
-                disabled={!open}
-                onClick={closeModal}
-              >
-                Cancel
-              </button>
-            </div>
+            <DialogActions
+              className="mt-fl-1"
+              dismiss={
+                <button
+                  type="button"
+                  className={DISMISS}
+                  disabled={!open}
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+              }
+            />
           </>
         )}
 
@@ -219,23 +223,26 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               The next move is highlighted on the board
             </p>
 
-            <div class="flex items-center gap-fl-2 mt-fl-1">
+            <DialogActions
+              className="mt-fl-1"
+              dismiss={
+                <a
+                  href={closeHref}
+                  className={DISMISS}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    closeModal();
+                  }}
+                >
+                  Keep going
+                </a>
+              }
+            >
               <a href={resetHref} class="btn">
                 <Icon icon={ArrowCounterClockwise} />
                 Start over
               </a>
-
-              <a
-                href={closeHref}
-                className="link p-0 bg-transparent"
-                onClick={(event) => {
-                  event.preventDefault();
-                  closeModal();
-                }}
-              >
-                Keep going
-              </a>
-            </div>
+            </DialogActions>
           </>
         )}
 
@@ -253,7 +260,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               The first move is highlighted, the rest is on you
             </p>
 
-            <div class="flex items-center gap-fl-2 mt-fl-1">
+            <DialogActions className="mt-fl-1">
               <a
                 href={closeHref}
                 className="btn"
@@ -264,7 +271,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               >
                 Got it
               </a>
-            </div>
+            </DialogActions>
           </>
         )}
 
@@ -278,7 +285,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               Couldn't get a hint right now.
             </p>
 
-            <div class="flex items-center gap-fl-2 mt-fl-1">
+            <DialogActions className="mt-fl-1">
               <button
                 type="button"
                 className="btn"
@@ -287,7 +294,7 @@ export function HintDialog({ puzzle, href, hideMinMoves }: Props) {
               >
                 Close
               </button>
-            </div>
+            </DialogActions>
           </>
         )}
       </div>

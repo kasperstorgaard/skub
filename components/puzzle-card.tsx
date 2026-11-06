@@ -41,7 +41,7 @@ export function PuzzleCard({
     <a
       href={`/puzzles/${puzzle.slug}`}
       class={clsx(
-        "puzzle-card group flex flex-col gap-1 text-text-1 no-underline",
+        "puzzle-card group flex flex-col gap-2 text-text-1 no-underline",
         className,
       )}
       {...rest}
@@ -65,16 +65,6 @@ export function PuzzleCard({
             />
           </div>
         )}
-
-        <div
-          class={clsx(
-            "puzzle-card-difficulty absolute bottom-0 right-0 px-3 bg-surface-2",
-            "text-current leading-relaxed text-1 uppercase tracking-wider",
-            "[clip-path:polygon(10%_0,100%_0,100%_100%,0_100%)]",
-          )}
-        >
-          {puzzle.difficulty}
-        </div>
 
         {isSolved && (
           <div
@@ -107,23 +97,40 @@ export function PuzzleCard({
         )}
       </div>
 
-      <div className="flex flex-col gap-1">
-        {tagline && (
-          <span
-            className={clsx(
-              "puzzle-card-tagline text-1 text-text-2 tracking-wide leading-tight",
-              "group-hover:text-current",
-            )}
-          >
-            {tagline}
-          </span>
-        )}
-        <span className="text-4 font-semibold leading-flat">
-          {puzzle.number && (
-            <span className="tracking-wide font-normal">#{puzzle.number}</span>
-          )} <span>{puzzle.name}</span>
-        </span>
-      </div>
+      {/* The number joins the lead, so the name stands alone */}
+      <PuzzleCardCaption
+        tagline={[tagline, puzzle.number && `#${puzzle.number}`]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <span className="type-title">{puzzle.name}</span>
+      </PuzzleCardCaption>
     </a>
+  );
+}
+
+type PuzzleCardCaptionProps = {
+  tagline?: string;
+  children: preact.ComponentChildren;
+};
+
+/** The lead and title under a card's thumbnail. */
+export function PuzzleCardCaption(
+  { tagline, children }: PuzzleCardCaptionProps,
+) {
+  return (
+    <div className="flex flex-col">
+      {tagline && (
+        <span
+          className={clsx(
+            "puzzle-card-tagline type-meta [font-weight:300] leading-tight text-text-2",
+            "group-hover:text-current",
+          )}
+        >
+          {tagline}
+        </span>
+      )}
+      {children}
+    </div>
   );
 }

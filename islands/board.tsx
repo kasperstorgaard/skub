@@ -257,7 +257,8 @@ export default function Board(
           "--hint-bg": "var(--color-ui-contrast)",
           "--replay-len": moves.length,
           "--gap": "var(--size-1)",
-          // 39px
+          // 39px at 412px. On mobile the board is deliberately narrower than
+          // Main, so swipes start clear of the screen-edge gestures.
           "--space-w": "clamp(40px - var(--gap), 9.4666vw, 56px)",
           "--replay-speed": `${1 / replaySpeed}s`,
           "--tile-ripple-duration": `${TILE_DURATION_MS}ms`,

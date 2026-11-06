@@ -82,9 +82,7 @@ export default define.page(function CookiePolicyPage() {
         </article>
       </Main>
 
-      <Panel>
-        <span />
-      </Panel>
+      <Panel />
     </>
   );
 });

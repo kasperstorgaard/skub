@@ -3,11 +3,11 @@ import clsx from "clsx/lite";
 import { page } from "fresh";
 import { useMemo } from "preact/hooks";
 
-import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
-import { Icon, Play, Shuffle, Trophy } from "#/components/icons.tsx";
+import { Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import {
   getCanonicalGroup,
   listCanonicalGroups,
@@ -16,6 +16,7 @@ import {
 import { CanonicalGroup } from "#/db/types.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { Puzzle } from "#/game/types.ts";
+import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
@@ -23,6 +24,8 @@ type Data = {
   groups: CanonicalGroup[];
   extraGroup: CanonicalGroup | null;
   userCanonicalKeys: string[];
+  /** The player's best regular solve, for the score badge */
+  bestMoves: number | null;
   userId: string;
 };
 
@@ -62,7 +65,18 @@ export const handler = define.handlers<Data>({
       }
     }
 
-    return page({ puzzle, groups, extraGroup, userCanonicalKeys, userId });
+    const bestMoves = userSolutions.length
+      ? Math.min(...userSolutions.map((solution) => solution.moves.length))
+      : null;
+
+    return page({
+      puzzle,
+      groups,
+      extraGroup,
+      userCanonicalKeys,
+      bestMoves,
+      userId,
+    });
   },
 });
 
@@ -75,6 +89,7 @@ type SolutionRowProps = {
 
 export default define.page<typeof handler>(function SolutionsListPage(props) {
   const puzzle = useSignal(props.data.puzzle);
+  const href = useSignal(props.url.href);
   const { groups, extraGroup, userCanonicalKeys } = props.data;
   const minMoves = props.data.puzzle.minMoves;
   const solutionsHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
@@ -91,19 +106,16 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           back={{ href: backHref }}
         />
 
-        <div className="flex items-center justify-between mt-2 flex-wrap gap-fl-1">
-          <div className="flex flex-col">
-            <h1 className="text-5 text-brand leading-flat">
-              {props.data.puzzle.number && `#${props.data.puzzle.number} `}
-              {props.data.puzzle.name}
-            </h1>
+        <div className="flex items-end justify-between flex-wrap gap-fl-1">
+          <h1 className="text-text-1">
+            <PuzzleName puzzle={props.data.puzzle} lead="Solves" />
+          </h1>
 
-            <p className="text-text-3 ml-1">
-              solves
-            </p>
-          </div>
-
-          <DifficultyBadge puzzle={puzzle.value} />
+          <ScoreBadge
+            puzzle={puzzle}
+            href={href}
+            moves={props.data.bestMoves}
+          />
         </div>
 
         {
@@ -137,7 +149,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
                     ? (
                       <li
                         key="delimiter"
-                        className="p-0 text-text-3 text-fl-0 px-fl-1 pr-fl-2"
+                        className="p-0 text-text-3 text-0 px-2 pr-3"
                       >
                         …
                       </li>
@@ -157,21 +169,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
         </div>
       </Main>
 
-      <Panel>
-        <div
-          className={clsx(
-            "max-lg:col-[2/3] flex flex-col gap-fl-2 items-start place-content-end w-full",
-            "lg:row-[3/4] lg:gap-fl-3 lg:grid lg:grid-cols-1",
-          )}
-        >
-          <a
-            href={`/puzzles/${puzzle.value.slug}/clone`}
-            className="btn"
-          >
-            <Icon icon={Shuffle} /> Remix
-          </a>
-        </div>
-      </Panel>
+      <Panel />
     </>
   );
 });
@@ -204,7 +202,7 @@ function SolutionRow(
         href={`${solutionsHref}/${group.firstSolution.id}`}
         className={clsx(
           "group grid grid-cols-[3rem_1fr_auto] items-center gap-x-fl-1",
-          "px-fl-1 pr-fl-2 py-2 rounded-2 no-underline",
+          "px-2 pr-3 py-2 rounded-2 no-underline",
           "bg-surface-3/20 border-text-3/20 border-1 border-l-3 border-l-text-3",
           "hover:brightness-(--hover-brightness)",
           "data-found:border-l-brand",

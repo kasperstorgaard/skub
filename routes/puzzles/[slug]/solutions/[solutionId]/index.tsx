@@ -2,16 +2,17 @@ import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
-import { DifficultyBadge } from "#/components/difficulty-badge.tsx";
 import { Header } from "#/components/header.tsx";
 import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { getPuzzleSolution } from "#/db/solutions.ts";
 import { Solution } from "#/db/types.ts";
 import { Puzzle } from "#/game/types.ts";
 import { encodeState } from "#/game/url.ts";
 import Board from "#/islands/board.tsx";
+import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Data = {
@@ -57,19 +58,15 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           back={{ href: backHref }}
         />
 
-        <div className="flex items-center justify-between place-self-start mt-2 w-full flex-wrap">
-          <div className="flex flex-col">
-            <h1 className="text-5 text-brand leading-tight">
-              {props.data.puzzle.number && `#${props.data.puzzle.number} `}
-              {props.data.puzzle.name}
-            </h1>
-            <p className="text-fl-0 text-text-3 leading-tight italic -mb-[.6lh] -mt-[.4lh]">
-              solved by{" "}
-              <span className="text-text-2">{props.data.solution.name}</span>
-            </p>
-          </div>
+        <div className="flex items-end justify-between gap-fl-1 place-self-start w-full flex-wrap">
+          <h1 className="text-text-1">
+            <PuzzleName
+              puzzle={props.data.puzzle}
+              lead={`Solved by ${props.data.solution.name}`}
+            />
+          </h1>
 
-          <DifficultyBadge puzzle={puzzle.value} className="lg:mt-1" />
+          <ScoreBadge puzzle={puzzle} href={href} />
         </div>
 
         <Board puzzle={puzzle} href={href} mode={mode} />
@@ -78,8 +75,8 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
       <Panel>
         <div
           className={clsx(
-            "col-[2/3] flex items-start gap-fl-1 flex-wrap",
-            "lg:col-auto lg:row-start-3 lg:flex-col lg:self-end",
+            "col-[2/3] flex items-start justify-center gap-fl-1 flex-wrap",
+            "lg:col-auto lg:row-start-3 lg:flex-col lg:self-end lg:justify-start",
           )}
         >
           <a

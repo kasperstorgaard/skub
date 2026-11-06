@@ -57,7 +57,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
       <Main className="max-lg:row-span-full">
         <Header back={{ href: "/" }} hideProfile />
 
-        <div className="flex flex-col gap-fl-4 mt-fl-2">
+        <div className="flex flex-col gap-fl-4">
           <h1 className="text-6">
             Profile
           </h1>
@@ -96,9 +96,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
 
             <form method="post" action="/profile">
               <div className="flex flex-col gap-1 place-content-end">
-                <label for="name" className="text-text-2 text-3 font-5">
-                  Username
-                </label>
+                <label for="name" className="sr-only">Username</label>
 
                 <div className="flex items-stretch">
                   <input
@@ -107,7 +105,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
                     value={savedName ?? undefined}
                     placeholder="Set a username"
                     className={clsx(
-                      "min-w-0 px-fl-1 py-1",
+                      "min-w-0 px-2 py-1",
                       "border border-r-0 border-surface-4 bg-surface-2 rounded-r-none",
                     )}
                   />

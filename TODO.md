@@ -108,36 +108,84 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## UI
 
-- **Buttons with more punch.** One pass over buttons:
-  - The pearl gradient from the Flash badge (brand → link with a white sheen,
-    `--pearl` in `islands/flash-badge.tsx`) becomes the background of primary
-    buttons, including the game's main controls (undo, redo), and the border of
-    secondary buttons. Means promoting it to a design token in `styles.css`. Not
-    for the retro themes, which keep their own button styles.
-  - The arrows in the main controls read thin; bump their weight, or adjust the
-    controls more generally.
-  - The secondary button background is a bit drab in places and needs an update.
+- **Retro themes follow the new layout.** The main look moved on: play controls
+  are a toolbar beside the board, the score badge replaced the difficulty badge
+  and move counter, the sidebar has a footer, and cards lost their difficulty
+  tag. Retro themes still style the old pieces (`.move-counter`,
+  `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
-- **Calendar touch-up.** The archives calendar and month strip need a visual
-  pass.
+- **The solutions page feels like part of the new look.** Revamp it to match the
+  puzzle page: the title with its lead line, the score badge, the type roles and
+  spacing levels, buttons, and the sidebar and mobile footer. The solve list
+  itself gets a visual pass too, so a solve reads at a glance (who, how many
+  moves, when).
 
-- **A theme with more edge.** The design is clean but flat. Subtle noise or
-  grain, soft gradients, a few geometric shapes as accents. The main theme stays
-  modern; the others get to diverge on shape and texture once there are tokens
-  for it.
+- **On mobile, all puzzles are one feed to flick through.** A snap-scrolling
+  feed of puzzle cards, newest first, that reads as one seamless list. The card
+  in view keeps `?date=` current, so going back from a puzzle returns to the
+  same spot. Without JS it's paginated, with a link to earlier puzzles.
+  Tentative: use lazy loading infinite scroll with a transform sentinel (sized
+  from the known total to the cards still to come) as a progressive improvement
+  on the no-JS pagination. Desktop keeps the month calendar, which still needs a
+  visual pass too.
+
+- **Board walls look built, not drawn.** Walls that meet join up into one shape
+  instead of separate strokes, and every wall sits exactly on the line between
+  cells (today they're slightly off). Idea: a small SVG renderer util that
+  traces connected walls into shapes, one path per run, so the board controls
+  their joins and ends (rounded caps and corners) instead of per-cell borders.
+  Today each wall is a 3px border nudged onto one cell (`BoardWall`), so it hugs
+  that cell, stops short at the crossings and ends square.
+
+- **Flash on feels alive.** While Flash is on, the bolt in the score badge gives
+  off a slow trickle of particles. Subtle, never distracting, and off under
+  reduced motion.
+
+- **Undo and redo are easy to hit with a mouse.** Check whether the desktop
+  toolbar's buttons, sized like the editor's, are too small for quick undo/redo,
+  and size them up if so.
 
 - **A celebration that feels like a win.** Revamp the solve dialog: the wording
-  (factual, never grading the play) and the celebration moment itself.
+  (factual, never grading the play) and the celebration moment itself. The
+  payoff is the stars you just earned animating in (see the stars item under
+  Play). A solve longer than the shortest gets a soft line that also teaches the
+  score badge, e.g. "If you're curious, the shortest possible solution is 4
+  moves", so "6/4" reads right from then on.
 
 - **Smoother page changes.** View transitions between pages, opt-in per
-  navigation. Needs the Fresh 2.3 upgrade first.
+  navigation. Needs the Fresh 2.3 upgrade first. Going into a board page zones
+  in, the page settling back around the board, so its narrower mobile width
+  reads as focusing in rather than a jump.
 
 ## Play
+
+- **Every player can rate a puzzle.** A Rate action opens a dialog for
+  difficulty, fun and a line of feedback, so ratings come from players, not only
+  from Kasper's local rating flow. It's offered where a player has just played
+  or looked back: the puzzle page's sidebar (the footer on mobile), the
+  celebration after a solve, and the solutions page. The celebration already has
+  two calls to action, its limit, so Rate takes one of those slots or its one
+  link. The local flow stays as it is, for calibration.
 
 - **Flash starts can be chosen by hand.** Today each puzzle's Flash start is
   generated on promotion: the opening moves of the solver's first optimal
   solution. Let Kasper or helpers pick a more interesting starting point
   instead, for example in the editor or on the candidate page.
+
+- **The spot under the board always offers the next step.** One lead-in line and
+  one action, picked by state in a fixed order, with one wording per state: new
+  players get the tutorial, stuck players get Flash, a replay of a solved puzzle
+  offers Rate, a fresh solve offers See solves. The sidebar becomes footer and
+  navigation only. The editor already works this way ("Happy with it? Send it
+  in").
+
+- **Builders send a puzzle in once they've solved it themselves.** The preview
+  page offers "Send it in" after the builder solves their own puzzle there, so
+  what gets sent is proven playable. The editor's nudge stays as the shortcut.
+
+- **Builders see where Flash starts.** A Flash mode in the editor marks the cell
+  the computed Flash start lands the puck on with a Flash icon, so the builder
+  knows where Flash players begin while shaping the board.
 
 - **Flash solves get a leaderboard of their own.** Flash solves are already
   stored with names, as regular solutions marked `flash`; the leaderboard skips
@@ -148,15 +196,41 @@ PR finishes only part of an item, trim the item to what is left.
 - **Players earn stars each day for what they achieve.** 1 star for a solve, 2
   for a perfect, 1 for being first to find a solution, capped at 3 per puzzle
   per day: a perfect, never-seen solution is 3 stars on its own, and three
-  separate solves are 1 each. Stars add up into all-time leaderboards, and
-  puzzle thumbnails show each puzzle's stars so players can see what's left to
-  earn. Open: should a solve only count within 2 moves of perfect? Leaning
-  towards a tiered solutions page: suboptimal solutions stay open to everyone,
-  and the optimal ones unlock once you've earned stars on the puzzle yourself.
-  New players learn from the solutions within reach; the best play is the
-  reward. This fits the badge, which already hides the shortest count until
-  you've solved the puzzle. Separate solves earn stars too, so players without a
-  perfect have a route to the unlock. Open: how many stars unlock it, 1 or 3?
+  separate solves are 1 each. Open: a Flash solve could earn a lower-tier star;
+  the Flash explainer already promises "smaller prizes", not none. Stars add up
+  into all-time leaderboards, and puzzle thumbnails show each puzzle's stars so
+  players can see what's left to earn. Open: should a solve only count within 2
+  moves of perfect? Leaning towards a tiered solutions page: suboptimal
+  solutions stay open to everyone, and the optimal ones unlock once you've
+  earned stars on the puzzle yourself. New players learn from the solutions
+  within reach; the best play is the reward. This fits the badge, which already
+  hides the shortest count until you've solved the puzzle. Separate solves earn
+  stars too, so players without a perfect have a route to the unlock. Open: how
+  many stars unlock it, 1 or 3? Simpler cousin, also open: should See solves
+  stay closed until you've solved the puzzle at all? Puzzle cards show your
+  result where the difficulty tag used to sit (bottom right): your best score,
+  and your stars once they exist. Earning stars is the celebration's payoff:
+  they animate in as the moment of the solve. The first celebration a player
+  sees explains what stars are and how to earn them. The solutions page shows
+  the stars earned on the puzzle.
+
+- **Players play without being asked for a name.** Today a new player's first
+  solve asks for a name before anything else. Instead, every solve is saved and
+  counts from the start, anonymous or not, and the name prompt comes as the
+  natural next step after the first star: you just earned a star, pick a name to
+  put it on the board. Opening a puzzle's solutions or the high score page
+  offers the same prompt to players who skipped it.
+
+  Solves are keyed by user id; the name is a copy saved on each one, which
+  renaming in the profile doesn't touch today. So: solves start anonymous, and
+  picking or changing a name writes it back to that user's solves (listed by
+  `solutions_by_user`: all four keys per solve, plus a leaderboard group's
+  `firstSolution` where it's theirs), soon enough that their next look at a
+  board shows it. Keeps leaderboard reads free of user lookups.
+
+- **Players can see who has the most stars.** A high score page ranks players by
+  all-time stars, linked from home's sidebar, the archive and the solutions
+  page. Builds on the stars item above.
 
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of

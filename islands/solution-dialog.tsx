@@ -1,7 +1,7 @@
 import { type Signal } from "@preact/signals";
-import clsx from "clsx/lite";
 import { useMemo, useState } from "preact/hooks";
 
+import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { Icon, Spinner } from "#/components/icons.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
@@ -14,10 +14,12 @@ type Props = {
   savedName?: string | null;
   /** A Flash solve is saved, but stays off the leaderboard */
   isFlash?: boolean;
+  /** Where "Not now" goes: the page's back link */
+  backHref: string;
 };
 
 export function SolutionDialog(
-  { href, puzzle, savedName, isFlash }: Props,
+  { href, puzzle, savedName, isFlash, backHref }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -69,8 +71,8 @@ export function SolutionDialog(
         method="post"
         onSubmit={() => setIsSubmitting(true)}
       >
-        <label className="flex flex-col gap-1">
-          <span className="text-text-2 text-1">Username</span>
+        <label className="flex flex-col">
+          <span className="sr-only">Username</span>
 
           <input
             name="name"
@@ -89,18 +91,13 @@ export function SolutionDialog(
         />
       </form>
 
-      <div className="flex gap-fl-2 justify-between flex-wrap w-full max-md:flex-col-reverse">
-        <div
-          className={clsx(
-            "flex gap-fl-1 items-center text-text-2",
-            "max-md:justify-center",
-          )}
-        >
-          <a href="/puzzles/recommended">
-            One more
+      <DialogActions
+        dismiss={
+          <a href={backHref} className={DISMISS}>
+            Not now
           </a>
-        </div>
-
+        }
+      >
         <button
           form="solution"
           className="btn"
@@ -111,7 +108,7 @@ export function SolutionDialog(
             ? <Icon icon={Spinner} className="animate-spin" />
             : "Save"}
         </button>
-      </div>
+      </DialogActions>
     </Dialog>
   );
 }
