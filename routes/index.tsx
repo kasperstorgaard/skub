@@ -61,7 +61,7 @@ export default define.page<typeof handler>(function Home(ctx) {
 
   return (
     <>
-      <Main className="max-lg:row-span-full items-stretch place-content-stretch">
+      <Main className="items-stretch place-content-stretch">
         <Header />
 
         <div className="title-card flex flex-col">
