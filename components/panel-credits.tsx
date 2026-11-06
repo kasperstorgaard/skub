@@ -23,7 +23,7 @@ export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
       )}
     >
       {/* print:hidden on each part too: on desktop the row is display: contents */}
-      <footer className="print:hidden flex flex-col gap-fl-2 lg:row-start-4 lg:self-end">
+      <footer className="print:hidden flex flex-col gap-fl-3 lg:gap-fl-2 lg:row-start-4 lg:self-end">
         <p className="m-0">
           Inspired by <br />
           <a
