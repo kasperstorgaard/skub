@@ -46,6 +46,7 @@ import {
   getWallShapes,
   WALL_BEND_START,
   WALL_WIDTH,
+  type WallRun,
 } from "#/game/wall-runs.ts";
 import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
@@ -421,19 +422,8 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
       {runs.map((run) => (
         <rect
           key={`${run.orientation}-${run.x}-${run.y}`}
-          className={clsx(
-            "board-wall fill-ui-4 [rx:var(--wall-radius)]",
-            run.orientation === "vertical"
-              ? "[x:calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] [y:calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] [width:var(--wall-w)] [height:calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]"
-              : "[y:calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] [x:calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] [height:var(--wall-w)] [width:calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]",
-          )}
-          style={{
-            "--line": run.orientation === "vertical" ? run.x : run.y,
-            "--from": run.orientation === "vertical" ? run.y : run.x,
-            "--span": run.span,
-            "--lead": WALL_END_OFFSET[run.ends[0]],
-            "--trail": WALL_END_OFFSET[run.ends[1]],
-          }}
+          className="board-wall fill-ui-4"
+          style={getRunStyle(run)}
         />
       ))}
 
@@ -441,8 +431,10 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
         <path
           key={`bend-${bend.x}-${bend.y}`}
           d={getBendPath(bend)}
-          className="board-wall fill-none stroke-ui-4 [stroke-width:var(--wall-w)] [transform:translate(calc(var(--x)*var(--pitch)-var(--gap)/2),calc(var(--y)*var(--pitch)-var(--gap)/2))]"
-          style={{ "--x": bend.x, "--y": bend.y }}
+          className="board-wall fill-none stroke-ui-4"
+          style={`stroke-width:var(--wall-w);transform:translate(${
+            getGridLine(bend.x)
+          },${getGridLine(bend.y)})`}
         />
       ))}
     </svg>
@@ -453,10 +445,35 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
 // joined half a stroke past it, bent where the arc takes over (tucked under it
 // by the rounding, so the seam stays solid)
 const WALL_END_OFFSET = {
-  free: "calc(var(--gap) / 2)",
-  joined: "calc(var(--wall-w) / -2)",
-  bent: `calc(${WALL_BEND_START}px - var(--wall-radius))`,
+  free: "var(--gap) / 2",
+  joined: "var(--wall-w) / -2",
+  bent: `${WALL_BEND_START}px - var(--wall-radius)`,
 };
+
+// Grid line `k` on the board, mid-gap
+function getGridLine(k: number) {
+  return `calc(${k} * var(--pitch) - var(--gap) / 2)`;
+}
+
+// A string, not an object: cssText applies SVG geometry properties reliably
+function getRunStyle(run: WallRun) {
+  const [lead, trail] = run.ends.map((end) => WALL_END_OFFSET[end]);
+  const isVertical = run.orientation === "vertical";
+
+  const across = `calc(${
+    getGridLine(isVertical ? run.x : run.y)
+  } - var(--wall-w) / 2)`;
+  const along = `calc(${getGridLine(isVertical ? run.y : run.x)} + (${lead}))`;
+  const length = `calc(${run.span} * var(--pitch) - (${lead}) - (${trail}))`;
+
+  return [
+    `x:${isVertical ? across : along}`,
+    `y:${isVertical ? along : across}`,
+    `width:${isVertical ? "var(--wall-w)" : length}`,
+    `height:${isVertical ? length : "var(--wall-w)"}`,
+    "rx:var(--wall-radius)",
+  ].join(";");
+}
 
 type BoardSpaceProps = Position & {
   href?: string;
