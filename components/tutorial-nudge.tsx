@@ -21,7 +21,7 @@ export function TutorialNudge({ className }: Props) {
         <IconPuck /> mid-slide
       </p>
 
-      <a href="/puzzles/tutorial" className="btn min-w-action">
+      <a href="/puzzles/tutorial" className="btn w-full max-w-(--width-action)">
         <Icon icon={ChalkboardTeacher} /> Learn the basics
       </a>
     </aside>

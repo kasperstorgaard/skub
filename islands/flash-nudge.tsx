@@ -56,7 +56,11 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
         In a rush, or stuck?
       </p>
 
-      <a href={dialogHref} className="btn min-w-action" data-router>
+      <a
+        href={dialogHref}
+        className="btn w-full max-w-(--width-action)"
+        data-router
+      >
         <Icon icon={LightningFill} />
         Try Flash mode
       </a>

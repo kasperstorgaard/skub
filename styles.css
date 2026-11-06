@@ -242,9 +242,9 @@
   --width-header-1: var(--size-header-1);
   --width-header-2: var(--size-header-2);
   --width-header-3: var(--size-header-3);
-  /* One action button outside a dialog: a dialog's two-up column on a
-     425px phone, so page and dialog buttons match */
-  --width-action: 11rem;
+  /* Width of a row of actions outside a dialog: a dialog's full-width
+     button on a 425px phone, so page and dialog actions line up */
+  --width-action: 22.4rem;
 
   /* Z-Index */
   --z-index-1: var(--layer-1);

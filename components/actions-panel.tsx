@@ -23,9 +23,10 @@ export function ActionsPanel(
       <div
         className={clsx(
           "max-lg:col-[2/3] gap-fl-1",
-          // Mobile: centred columns one action wide, so one button or two
-          // match a dialog's buttons
-          "max-lg:grid max-lg:grid-cols-[repeat(auto-fit,minmax(var(--width-action),auto))] max-lg:justify-center",
+          // Mobile: a dialog's actions row, one button full width or two
+          // sharing it, centred
+          "max-lg:grid max-lg:grid-flow-col max-lg:auto-cols-fr",
+          "max-lg:w-full max-lg:max-w-(--width-action) max-lg:justify-self-center",
           "lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start",
         )}
       >
