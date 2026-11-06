@@ -56,9 +56,8 @@ keep their original layout.
 
 ### Mobile footer
 
-- The puzzle page's footer holds its actions ("See solves", later Rate) as a
-  dialog-style row: one centred grid column, at least `--width-action` wide,
-  that two labels may widen. Nudges under the board use the same column.
+- The puzzle page's footer holds its actions as a dialog-style row: two
+  buttons sharing the width, secondary style.
 - Below the actions: the credits (`PanelCredits`) and the GitHub/LinkedIn row
   (`PanelLinks`), the same pieces home uses.
 - Below `lg` the body grid's spare row is the panel's, so on a short page the

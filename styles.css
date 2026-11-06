@@ -242,9 +242,6 @@
   --width-header-1: var(--size-header-1);
   --width-header-2: var(--size-header-2);
   --width-header-3: var(--size-header-3);
-  /* Minimum width of a row of actions outside a dialog (nudges, the
-     mobile footer): the old nudge's button. Two actions may widen it. */
-  --width-action: 16.5rem;
 
   /* Z-Index */
   --z-index-1: var(--layer-1);
@@ -601,12 +598,6 @@
   font-size: var(--font-size-1);
   font-weight: var(--font-weight-4);
   line-height: var(--font-lineheight-0);
-}
-
-/* A column for a row of page actions (nudges, the mobile footer): at
-   least --width-action, wider if two labels need it, never past the page */
-@utility grid-cols-action {
-  grid-template-columns: minmax(min(100%, var(--width-action)), max-content);
 }
 
 @utility slashed {

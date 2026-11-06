@@ -10,13 +10,13 @@ export function TutorialNudge({ className }: Props) {
   return (
     <aside
       className={clsx(
-        "grid grid-cols-action justify-center gap-fl-1 py-2",
+        "flex flex-col place-content-center gap-fl-1 p-2 px-3",
         "text-text-2 text-pretty",
         "animate-fade-in",
         className,
       )}
     >
-      <p className="contain-inline-size gap-1 text-center text-balance leading-snug">
+      <p className="gap-1 min-w-[16ch] text-center leading-snug">
         Tip: click and move blockers <IconBlocker /> to stop the puck{" "}
         <IconPuck /> mid-slide
       </p>
