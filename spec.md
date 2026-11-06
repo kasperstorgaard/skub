@@ -9,22 +9,23 @@ separate strokes, not one shape.
 
 ## Approach
 
-- **Merge walls into runs** (`game/wall-runs.ts`, pure). Each wall is one unit
-  edge on the grid lines between cells; walls in a line merge into one straight
-  run, through crossings. Each run end is _free_ (nothing else meets it) or
-  _joined_ (it meets another wall at a corner).
-- **Renderers draw each run as a 2px bar with slightly rounded
-  ends (0.5px), mid-gap:**
-  - Free ends stop at the tile edge, so they never reach into the next
-    gutter.
-  - Joined ends run half a stroke past the corner, so corners overlap and read
-    as one shape with a rounded outside.
-  - On the board each run is a positioned element placed with the same
-    `--space-w`/`--gap` calc the pieces use, because the end offsets are in
-    pixels and the cell size only exists in CSS (an SVG in grid units can't
-    express them). Server-rendered, so no-JS play is unchanged.
-  - The thumbnail (cards, og-image) draws the same runs as SVG rects with its
-    own pixel sizes.
+- **Shape the walls** (`game/wall-runs.ts`, pure). Each wall is one unit edge
+  on the grid lines between cells. Walls in a line merge into one straight run,
+  through crossings; a grid point where exactly two walls turn a corner is a
+  _bend_. Each run end is _free_ (nothing meets it), _bent_ (it turns into a
+  bend) or _joined_ (it meets a wall that carries on, a T).
+- **Draw them 2px, mid-gap:**
+  - Free ends stop at the tile edge, so they never reach into the next gutter,
+    and are only slightly rounded (`--wall-radius`, 0.5px).
+  - Bends are quarter arcs with a 3px outer radius, softer than the ends.
+  - Joined ends run half a stroke past the T's crossbar, hidden under it.
+  - On the board it's one SVG with no `viewBox`, so its units are CSS px and
+    rect geometry (`x`, `y`, `width`, `height`, `rx`) and transforms can use
+    the board's `--space-w`/`--gap` vars like the pieces do. Path data can't
+    take vars, so bends are fixed-size arcs moved into place with a transform.
+    Server-rendered, so no-JS play is unchanged.
+  - The thumbnail (cards, og-image) draws the same shapes with plain numeric
+    attributes, since crawlers rasterise the og-image SVG.
 - Themes keep styling walls through `.board-walls` (sash's laser glow).
 
 ## Tests
@@ -32,7 +33,7 @@ separate strokes, not one shape.
 Realistic shapes from the board: a lone wall, a straight run, an L, a closed
 box, a cross, parallel walls on neighbouring lines, and a box with a wall
 running off one side (a "d"), whose stem merges with the box's side into one
-run.
+run and meets the top in a T; plus the arc for a bend each way round.
 
 ## Non-goals
 

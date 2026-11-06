@@ -41,7 +41,12 @@ import {
   getMovesHref,
   getReplaySpeed,
 } from "#/game/url.ts";
-import { getWallRuns } from "#/game/wall-runs.ts";
+import {
+  getBendPath,
+  getWallShapes,
+  WALL_BEND_START,
+  WALL_WIDTH,
+} from "#/game/wall-runs.ts";
 import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
@@ -258,7 +263,7 @@ export default function Board(
           "--hint-bg": "var(--color-ui-contrast)",
           "--replay-len": moves.length,
           "--gap": "var(--size-1)",
-          "--wall-w": "2px",
+          "--wall-w": `${WALL_WIDTH}px`,
           "--wall-radius": "0.5px",
           // 39px at 412px. On mobile the board is deliberately narrower than
           // Main, so swipes start clear of the screen-edge gestures.
@@ -402,20 +407,25 @@ export default function Board(
 }
 
 /**
- * Walls as straight runs on the lines between cells, mid-gap. Free ends stop at
- * the tile edge; joined ends run half a stroke past the corner so they overlap.
+ * Walls in one SVG, in CSS px (no viewBox) so geometry can use the board's
+ * vars: runs as rects mid-gap, bends as fixed arcs moved onto their grid point.
  */
 function BoardWalls({ walls }: { walls: Wall[] }) {
+  const { runs, bends } = getWallShapes(walls);
+
   return (
-    <div className="board-walls absolute inset-0 pointer-events-none">
-      {getWallRuns(walls).map((run) => (
-        <div
+    <svg
+      aria-hidden="true"
+      className="board-walls absolute inset-0 size-full max-w-none overflow-visible pointer-events-none"
+    >
+      {runs.map((run) => (
+        <rect
           key={`${run.orientation}-${run.x}-${run.y}`}
           className={clsx(
-            "board-wall absolute rounded-(--wall-radius) bg-ui-4",
+            "board-wall fill-ui-4 [rx:var(--wall-radius)]",
             run.orientation === "vertical"
-              ? "w-(--wall-w) left-[calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] top-[calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] h-[calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]"
-              : "h-(--wall-w) top-[calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] left-[calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] w-[calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]",
+              ? "[x:calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] [y:calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] [width:var(--wall-w)] [height:calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]"
+              : "[y:calc(var(--line)*var(--pitch)-var(--gap)/2-var(--wall-w)/2)] [x:calc(var(--from)*var(--pitch)-var(--gap)/2+var(--lead))] [height:var(--wall-w)] [width:calc(var(--span)*var(--pitch)-var(--lead)-var(--trail))]",
           )}
           style={{
             "--line": run.orientation === "vertical" ? run.x : run.y,
@@ -426,15 +436,26 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
           }}
         />
       ))}
-    </div>
+
+      {bends.map((bend) => (
+        <path
+          key={`bend-${bend.x}-${bend.y}`}
+          d={getBendPath(bend)}
+          className="board-wall fill-none stroke-ui-4 [stroke-width:var(--wall-w)] [transform:translate(calc(var(--x)*var(--pitch)-var(--gap)/2),calc(var(--y)*var(--pitch)-var(--gap)/2))]"
+          style={{ "--x": bend.x, "--y": bend.y }}
+        />
+      ))}
+    </svg>
   );
 }
 
-// How far in from the grid point a run's end stops: free at the tile edge,
-// joined half a stroke past it
+// How far in from its grid point a run's end stops: free at the tile edge,
+// joined half a stroke past it, bent where the arc takes over (tucked under it
+// by the rounding, so the seam stays solid)
 const WALL_END_OFFSET = {
   free: "calc(var(--gap) / 2)",
   joined: "calc(var(--wall-w) / -2)",
+  bent: `calc(${WALL_BEND_START}px - var(--wall-radius))`,
 };
 
 type BoardSpaceProps = Position & {
