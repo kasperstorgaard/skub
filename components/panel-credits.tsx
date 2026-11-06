@@ -9,19 +9,21 @@ type PanelCreditsProps = {
 };
 
 /**
- * Mobile only: the credit, GitHub and LinkedIn, and the builder link at the foot
- * of a `Panel`. Desktop shows them in the sidebar itself.
+ * The credit, GitHub and LinkedIn, and the builder link, on every `Panel`.
+ * Mobile: one row at the foot. Desktop: the row dissolves into the panel's
+ * grid, the builder on top and the credits at the foot.
  */
 export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
   return (
     <div
       className={clsx(
-        "lg:hidden print:hidden col-[2/3] flex justify-between gap-fl-2",
+        "print:hidden col-[2/3] flex justify-between gap-fl-2 lg:contents",
         "type-meta text-text-2",
         className,
       )}
     >
-      <div className="flex flex-col gap-fl-2">
+      {/* print:hidden on each part too: on desktop the row is display: contents */}
+      <footer className="print:hidden flex flex-col gap-fl-2 lg:row-start-4 lg:self-end">
         <p className="m-0">
           Inspired by <br />
           <a
@@ -32,7 +34,7 @@ export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
           </a>
         </p>
 
-        <div className="flex gap-2 text-2">
+        <div className="flex gap-2 lg:flex-col text-2">
           <a
             href="https://github.com/kasperstorgaard/ricochet"
             className="flex gap-1 text-text-2"
@@ -46,9 +48,10 @@ export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
             <Icon icon={LinkedinLogo} />LinkedIn
           </a>
         </div>
-      </div>
+      </footer>
+
       {!hideBuilder && (
-        <p className="m-0 text-right">
+        <p className="print:hidden m-0 text-right lg:text-left lg:row-start-1">
           Feeling creative? <br />
           <a
             href="/puzzles/new"

@@ -22,6 +22,8 @@
 @source not "./**/_e2e";
 @source not "./.claude";
 @source not "./*.md";
+/* Words in code that look like utilities: the "blur" event isn't a class */
+@source not inline("blur");
 
 @custom-variant js (&:where([data-js] *));
 

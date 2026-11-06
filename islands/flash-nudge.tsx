@@ -46,7 +46,7 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
   return (
     <aside
       className={clsx(
-        "flex flex-col place-content-center gap-fl-1 p-2 px-3",
+        "flex flex-col place-content-center gap-2 p-2 px-3",
         "text-text-2 text-pretty",
         "animate-fade-in",
         className,

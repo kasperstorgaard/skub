@@ -154,7 +154,6 @@ export function CelebrationDialog(
         <a
           href="/puzzles/recommended"
           className="btn"
-          data-primary
           autoFocus
         >
           Play one more <Icon icon={ArrowRight} />

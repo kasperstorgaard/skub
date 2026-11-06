@@ -143,14 +143,14 @@ PR finishes only part of an item, trim the item to what is left.
 - **A celebration that feels like a win.** Revamp the solve dialog: the wording
   (factual, never grading the play) and the celebration moment itself. The
   payoff is the stars you just earned animating in (see the stars item under
-  Play). A solve longer than the shortest gets a soft line that also teaches
-  the score badge, e.g. "If you're curious, the shortest possible solution is
-  4 moves", so "6/4" reads right from then on.
+  Play). A solve longer than the shortest gets a soft line that also teaches the
+  score badge, e.g. "If you're curious, the shortest possible solution is 4
+  moves", so "6/4" reads right from then on.
 
 - **Smoother page changes.** View transitions between pages, opt-in per
-  navigation. Needs the Fresh 2.3 upgrade first. Going into a board page
-  zones in, the page settling back around the board, so its narrower mobile
-  width reads as focusing in rather than a jump.
+  navigation. Needs the Fresh 2.3 upgrade first. Going into a board page zones
+  in, the page settling back around the board, so its narrower mobile width
+  reads as focusing in rather than a jump.
 
 ## Play
 
@@ -186,7 +186,9 @@ PR finishes only part of an item, trim the item to what is left.
   stored with names, as regular solutions marked `flash`; the leaderboard skips
   them because they never enter the aggregates. Give them a board beside the
   normal one (a tab or filter on the solutions page) and stats of their own, so
-  the celebration can compare a Flash solve against other Flash solves.
+  the celebration can compare a Flash solve against other Flash solves. Then the
+  Flash explainer and the badge's hover text say where Flash solves show up,
+  instead of "skips the leaderboard", a word the site uses nowhere else.
 
 - **Players earn stars each day for what they achieve.** 1 star for a solve, 2
   for a perfect, 1 for being first to find a solution, capped at 3 per puzzle

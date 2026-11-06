@@ -74,10 +74,13 @@ export function EditorToolbar(
     });
   };
 
-  // Selecting a cell brings the tools; straight there on load.
+  // Selecting a cell brings the tools, deselecting the board actions;
+  // straight there on load.
   const hasMounted = useRef(false);
   useEffect(() => {
-    if (isSelected) scrollTo(1, hasMounted.current ? "smooth" : "instant");
+    const behavior = hasMounted.current ? "smooth" : "instant";
+    if (isSelected) scrollTo(1, behavior);
+    else if (hasMounted.current) scrollTo(0, behavior);
     hasMounted.current = true;
   }, [active?.x, active?.y]);
 
@@ -185,10 +188,31 @@ export function EditorToolbar(
           <div
             className={clsx(
               "flex items-center justify-center max-lg:px-7 max-lg:snap-start",
-              "lg:flex-col lg:gap-4",
+              "lg:flex-col lg:gap-3",
               !isSelected && "lg:hidden",
             )}
           >
+            {
+              /* Desktop: the way back to the board actions. The toolbar's own
+                columns, so it centres over the buttons, not the key hints */
+            }
+            <div className="max-lg:hidden lg:grid lg:grid-cols-[auto_1.5rem] lg:gap-1">
+              <a
+                href={deselectHref}
+                data-router="replace"
+                // Not a tool: a muted circle above them
+                className={clsx(
+                  "grid place-items-center size-7",
+                  "rounded-round bg-text-1/10 text-text-2 no-underline",
+                  "hover:text-text-1",
+                )}
+                aria-label="Close the cell tools"
+                title="Close the cell tools"
+              >
+                <Icon icon={X} className="text-[1.25rem]" />
+              </a>
+            </div>
+
             <Toolbar className="max-lg:w-full">
               <button
                 type="button"
@@ -271,22 +295,6 @@ export function EditorToolbar(
 
               <KeyHint>D</KeyHint>
             </Toolbar>
-
-            {/* Desktop: the way back to the board actions */}
-            <a
-              href={deselectHref}
-              data-router="replace"
-              // Not a tool: a muted circle after them
-              className={clsx(
-                "max-lg:hidden grid place-items-center size-7",
-                "rounded-round bg-text-1/10 text-text-2 no-underline",
-                "hover:text-text-1",
-              )}
-              aria-label="Close the cell tools"
-              title="Close the cell tools"
-            >
-              <Icon icon={X} className="text-[1.25rem]" />
-            </a>
           </div>
         </div>
 
@@ -305,11 +313,11 @@ export function EditorToolbar(
           aria-label={slide ? "Board actions" : "Cell tools"}
           title={slide ? "Board actions" : "Cell tools"}
         >
-          {/* Off the centre, into the half that shows */}
           <Icon
             icon={slide ? CaretLeft : CaretRight}
             className={clsx(
               "text-[1.25rem]",
+              // Into the half that shows
               slide ? "translate-x-[0.9rem]" : "-translate-x-[0.9rem]",
             )}
           />

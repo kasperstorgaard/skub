@@ -22,12 +22,15 @@ export function PuzzleName(
   if (size === "lg") {
     return (
       <span className={clsx("inline-flex flex-col", className)}>
-        {(lead || puzzle.number) && (
-          <span className="text-3 [font-weight:300] leading-none text-text-2">
-            {lead ?? `#${puzzle.number}`}
-          </span>
-        )}
-        <span className="type-title-lg [font-weight:500] leading-none">
+        {/* A ternary, not &&: the preview's number is 0, which would print */}
+        {lead || puzzle.number
+          ? (
+            <span className="text-3 [font-weight:300] leading-none text-text-2">
+              {lead ?? `#${puzzle.number}`}
+            </span>
+          )
+          : null}
+        <span className="type-title-lg font-5 leading-none">
           {puzzle.name}
         </span>
       </span>

@@ -53,13 +53,13 @@ export default define.page<typeof handler>(function EditorPage(props) {
                 "group-focus-within:opacity-0 transition-opacity",
               )}
             >
-              build a puzzle
+              Build a puzzle
             </p>
 
             <EditableName
               puzzle={puzzle}
               defaultValue="Untitled"
-              className="type-title-lg [font-weight:500] leading-none text-text-1"
+              className="type-title-lg font-5 leading-none text-text-1"
             />
           </div>
 

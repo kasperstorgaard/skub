@@ -28,8 +28,8 @@ puzzle: modern and a little refined, friendly rather than editorial.
 ### Surface
 
 - **Pearl** (brand → link with a soft sheen) is a design token. Buttons wear it
-  as a ring: full on primary, faint on secondary, full again on hover; hover
-  fills at half strength. Disabled buttons get a flat ring, not a faded pearl.
+  as a ring: faint at rest, full on hover; hover fills at half strength. Every
+  button is the same, no primary variant. Disabled buttons get a flat ring, not a faded pearl.
   The Flash bolt fills with it when Flash is on.
 - **Grain**: a fine noise texture over the page backdrop, blended (overlay) so
   it moves around each theme's surface colour instead of lifting it toward
@@ -62,7 +62,7 @@ puzzle: modern and a little refined, friendly rather than editorial.
   button; whether it slides too is open.
 - The corner wall button is gone; C still toggles it.
 - Sending a puzzle in moves to the nudge spot under the toolbar: empty until
-  the board can be sent, then "Happy with it?" over a primary "Send it in".
+  the board can be sent, then "Happy with it?" over "Send it in".
   The dialog says "sent", not "submitted". The sidebar keeps only the local
   Review and drops its builder link.
 - Cell glyphs share one size; the solution badge grows to the score badge's
@@ -72,13 +72,17 @@ puzzle: modern and a little refined, friendly rather than editorial.
 
 Every page title's lead sits above it, never below, and it's one thing: the
 puzzle's number on the puzzle page, or what the page shows in its place
-("solves", "solved by Kasper", "build a puzzle", "candidate · generated", the
-year on Puzzles). Puzzle titles (editor, tutorial, candidates included) all use
+("Solves", "Solved by Kasper", "Build a puzzle", "Candidate · generated", the
+year on Puzzles), in sentence case like the cards' leads. Puzzle titles (editor, tutorial, candidates included) all use
 the page-title type, and badges line up with the name's bottom.
 
 The archive is "Puzzles": the page title, and "Back to puzzles" on the
 puzzle page's back link (now labelled for screen readers and on hover). Home's
 link to it reads "All puzzles".
+
+The name dialog after a first solve offers "Not now", which goes where the
+page's back link does (home for today's puzzle); its placeholder is just
+"fx. Jungleboi87", the label kept for screen readers.
 
 ### Sidebar
 

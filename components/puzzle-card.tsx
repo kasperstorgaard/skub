@@ -123,7 +123,7 @@ export function PuzzleCardCaption(
       {tagline && (
         <span
           className={clsx(
-            "puzzle-card-tagline type-meta font-3 leading-tight text-text-2",
+            "puzzle-card-tagline type-meta [font-weight:300] leading-tight text-text-2",
             "group-hover:text-current",
           )}
         >

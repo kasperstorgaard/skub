@@ -153,7 +153,7 @@ export default define.page<typeof handler>(function CandidatePage(props) {
               puzzle={{ name: props.data.label }}
               size="lg"
               lead={`${
-                props.data.promotedAs ? "promoted" : "candidate"
+                props.data.promotedAs ? "Promoted" : "Candidate"
               } · ${props.data.source}`}
             />
           </h1>

@@ -237,12 +237,13 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const printUrl = props.url.hostname + props.url.pathname;
   const { hasFlash, isFlashOn } = props.data;
 
-  const back = isTodaysPuzzle(props.data.puzzle)
-    ? { href: "/", label: "Back to home" }
-    : {
-      href: getPuzzleArchiveHref(props.data.puzzle) ?? "/",
-      label: "Back to puzzles",
-    };
+  // No archive date (no number): home, and say so
+  const archiveHref = isTodaysPuzzle(props.data.puzzle)
+    ? null
+    : getPuzzleArchiveHref(props.data.puzzle);
+  const back = archiveHref
+    ? { href: archiveHref, label: "Back to puzzles" }
+    : { href: "/", label: "Back to home" };
 
   return (
     <>
