@@ -1,7 +1,8 @@
 import { HTMLAttributes, SVGAttributes } from "preact";
 
 import { COLS } from "#/game/board.ts";
-import type { Board, Piece, Wall } from "#/game/types.ts";
+import type { Board, Piece } from "#/game/types.ts";
+import { getWallPaths } from "#/game/wall-paths.ts";
 
 export type ThumbnailColors = {
   ui1: string; // destination stroke
@@ -139,39 +140,20 @@ export function Thumbnail({
         </g>
       )}
 
-      {/* Walls — offset by half the gap so they appear between cells */}
-      {board.walls.map((wall: Wall, idx) => {
-        const px = cellX(wall.x);
-        const py = cellY(wall.y);
-
-        if (wall.orientation === "vertical") {
-          return (
-            <line
-              className="svg-wall"
-              key={`wall-${idx}`}
-              x1={px - gap / 2}
-              y1={py}
-              x2={px - gap / 2}
-              y2={py + cellSize}
-              strokeWidth="3"
-              stroke={colors.ui4}
-            />
-          );
-        } else {
-          return (
-            <line
-              className="svg-wall"
-              key={`wall-${idx}`}
-              x1={px}
-              y1={py - gap / 2}
-              x2={px + cellSize}
-              y2={py - gap / 2}
-              strokeWidth="3"
-              stroke={colors.ui4}
-            />
-          );
-        }
-      })}
+      {/* Walls in grid units, scaled so grid line `k` lands mid-gap */}
+      <g
+        className="svg-wall"
+        transform={`translate(${-gap / 2} ${-gap / 2}) scale(${
+          cellSize + gap
+        })`}
+        fill="none"
+        stroke={colors.ui4}
+        stroke-width={3 / (cellSize + gap)}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        {getWallPaths(board.walls).map((path) => <path key={path} d={path} />)}
+      </g>
 
       {/* Pieces */}
       {board.pieces.map((piece: Piece, idx) => {

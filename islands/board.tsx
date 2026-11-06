@@ -18,12 +18,14 @@ import {
   SolutionUnderlay,
 } from "#/components/solution-underlay.tsx";
 import {
+  COLS,
   getGrid,
   getMoveSlide,
   getSlides,
   isPositionSame,
   isValidSolution,
   resolveMoves,
+  ROWS,
 } from "#/game/board.ts";
 import { getGuides, Guide } from "#/game/guides.ts";
 import { getSolutionSteps, getSolutionStops } from "#/game/solution-path.ts";
@@ -41,6 +43,7 @@ import {
   getMovesHref,
   getReplaySpeed,
 } from "#/game/url.ts";
+import { getWallPaths } from "#/game/wall-paths.ts";
 import type { EditorSolution } from "#/islands/editor-solver.tsx";
 import { getRippleDelay, TILE_DURATION_MS } from "#/lib/board-ripple.ts";
 import {
@@ -299,12 +302,7 @@ export default function Board(
 
         {board.destination && <BoardDestination {...board.destination} />}
 
-        {board.walls.map((wall) => (
-          <BoardWall
-            key={`${wall.x}-${wall.y}-${wall.orientation}`}
-            {...wall}
-          />
-        ))}
+        <BoardWalls walls={board.walls} />
 
         {
           /* Move guides: target destinations + hint (if active).
@@ -402,21 +400,30 @@ export default function Board(
   );
 }
 
-function BoardWall({ x, y, orientation }: Wall) {
+/** Every wall in one SVG, its grid line `k` landing mid-gap */
+function BoardWalls({ walls }: { walls: Wall[] }) {
   return (
-    <div
+    <svg
+      aria-hidden="true"
+      viewBox={`0 0 ${COLS} ${ROWS}`}
       className={clsx(
-        "board-wall place-self-start col-[calc(var(--x)+1)] row-[calc(var(--y)+1)] w-full",
-        "border-ui-4 aspect-square pointer-events-none",
-        orientation === "vertical"
-          ? "border-l-[3px] -ml-[3.5px]"
-          : "border-t-[3px] -mt-[3.5px]",
+        "board-walls absolute pointer-events-none overflow-visible",
+        "top-[calc(var(--gap)/-2)] left-[calc(var(--gap)/-2)]",
+        "size-[calc((var(--space-w)+var(--gap))*8)]",
+        "fill-none stroke-ui-4",
       )}
-      style={{
-        "--x": x,
-        "--y": y,
-      }}
-    />
+    >
+      {getWallPaths(walls).map((path) => (
+        <path
+          key={path}
+          d={path}
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          vector-effect="non-scaling-stroke"
+        />
+      ))}
+    </svg>
   );
 }
 

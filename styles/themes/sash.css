@@ -231,7 +231,7 @@
     border-width: var(--border-size-1);
     border-color: color-mix(in srgb, var(--color-text-3) 30%, transparent);
   }
-  .board-wall {
+  .board-walls {
     filter: drop-shadow(0 0 2px var(--color-ui-4)) drop-shadow(
       0 0 5px rgb(255 43 214 / 0.5)
     );
@@ -266,7 +266,7 @@
       color: var(--color-text-1);
       filter: none;
     }
-    .board-wall,
+    .board-walls,
     .panel,
     .board-destination {
       filter: none;
