@@ -412,7 +412,7 @@ function BoardWalls({ walls }: { walls: Wall[] }) {
       preserveAspectRatio="none"
       className={clsx(
         "board-walls col-[1/-1] row-[1/-1] pointer-events-none",
-        "-m-[calc(var(--gap)/2)] size-[calc(100%+var(--gap))]",
+        "-m-[calc(var(--gap)/2)] size-[calc(100%+var(--gap))] max-w-none",
         "[clip-path:inset(calc(var(--gap)/2))]",
         "fill-none stroke-ui-4",
       )}
