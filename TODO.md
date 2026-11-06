@@ -131,7 +131,11 @@ PR finishes only part of an item, trim the item to what is left.
 
 - **Board walls look built, not drawn.** Walls that meet join up into one shape
   instead of separate strokes, and every wall sits exactly on the line between
-  cells (today they're slightly off).
+  cells (today they're slightly off). Idea: a small SVG renderer util that
+  traces connected walls into shapes, one path per run, so the board controls
+  their joins and ends (rounded caps and corners) instead of per-cell borders.
+  Today each wall is a 3px border nudged onto one cell (`BoardWall`), so it hugs
+  that cell, stops short at the crossings and ends square.
 
 - **Flash on feels alive.** While Flash is on, the bolt in the score badge gives
   off a slow trickle of particles. Subtle, never distracting, and off under

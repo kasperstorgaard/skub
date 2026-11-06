@@ -47,7 +47,7 @@ export function ScoreBadge(
       className={clsx(
         "difficulty-badge relative flex items-stretch overflow-hidden rounded-2",
         "leading-loose text-4 lg:text-3 tracking-wider",
-        "bg-surface-2",
+        "bg-raised-1",
         className,
       )}
     >
@@ -80,7 +80,7 @@ export function ScoreBadge(
         className={clsx(
           // 71px at the badge's 20px text, scaling with it
           "grid place-items-center px-2 min-w-[3.55em] text-center cursor-help",
-          "bg-surface-3",
+          "bg-raised-2",
         )}
         title={hideMinMoves
           ? "moves played / solve the puzzle to reveal the shortest"

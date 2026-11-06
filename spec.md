@@ -36,6 +36,9 @@ puzzle: modern and a little refined, friendly rather than editorial.
   grey.
 - **`--color-panel`**: the sidebar's own colour. It defaults to `surface-2`;
   skub, dracula and acid darken their surface 30% toward black instead.
+- **`--color-raised-1` / `-2`**: fills that sit on the page, like the score
+  badge. Derived from the page, mixed 8% and 14% toward its text, so they rise
+  off it in every theme; `surface-2` sank into the page on Dracula.
 - Retro and high-contrast themes keep their own looks for all of the above.
 
 ### Playing a puzzle

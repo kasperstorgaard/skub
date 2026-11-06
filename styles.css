@@ -87,6 +87,8 @@
   --color-surface-3: var(--color-surface-3);
   --color-surface-4: var(--color-surface-4);
   --color-panel: var(--color-panel);
+  --color-raised-1: var(--color-raised-1);
+  --color-raised-2: var(--color-raised-2);
   --color-text-1: var(--color-text-1);
   --color-text-2: var(--color-text-2);
   --color-text-3: var(--color-text-3);
@@ -280,6 +282,19 @@
   --color-text-1: var(--gray-1);
   --color-text-2: var(--gray-4);
   --color-text-3: var(--gray-5);
+
+  /* Fills that sit on the page, like the score badge: the page mixed toward
+     its text, so they rise off it in every theme, dark or light */
+  --color-raised-1: color-mix(
+    in srgb,
+    var(--color-surface-1),
+    var(--color-text-1) 8%
+  );
+  --color-raised-2: color-mix(
+    in srgb,
+    var(--color-surface-1),
+    var(--color-text-1) 14%
+  );
 
   --color-ui-1: var(--teal-4);
   --color-ui-2: var(--yellow-3);
