@@ -19,7 +19,7 @@ export function ActionsPanel(
   { slug, isDev, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
 ) {
   return (
-    <Panel className={className}>
+    <Panel className={clsx("max-md:min-h-0!", className)}>
       {
         /* Mobile: one centred column, at least an action row wide; two
           buttons can widen it */
