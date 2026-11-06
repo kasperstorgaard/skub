@@ -2,15 +2,10 @@ import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import {
-  ArrowRight,
-  ChalkboardTeacher,
-  GithubLogo,
-  Icon,
-  LinkedinLogo,
-} from "#/components/icons.tsx";
+import { ArrowRight, ChalkboardTeacher, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { PanelCredits } from "#/components/panel-credits.tsx";
+import { PanelLinks } from "#/components/panel-links.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
@@ -169,20 +164,7 @@ export default define.page<typeof handler>(function Home(ctx) {
             <StatsSummary stats={userStats} className="lg:w-full" />
           )}
 
-          <div className="flex gap-2 lg:hidden">
-            <a
-              href="https://github.com/kasperstorgaard/ricochet"
-              className="flex gap-1 text-text-2"
-            >
-              <Icon icon={GithubLogo} />GitHub
-            </a>
-            <a
-              href="https://www.linkedin.com/in/kasper-storgaard-t-lead"
-              className="flex gap-1 text-text-2"
-            >
-              <Icon icon={LinkedinLogo} />LinkedIn
-            </a>
-          </div>
+          <PanelLinks />
         </div>
       </Panel>
     </>

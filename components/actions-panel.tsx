@@ -2,6 +2,7 @@ import { clsx } from "clsx/lite";
 
 import { Download, Icon, Pencil, Ranking, Star } from "#/components/icons.tsx";
 import { PanelCredits } from "#/components/panel-credits.tsx";
+import { PanelLinks } from "#/components/panel-links.tsx";
 import { Panel } from "#/components/panel.tsx";
 
 type ActionsPanelProps = {
@@ -21,13 +22,13 @@ export function ActionsPanel(
   return (
     <Panel className={clsx("max-md:min-h-0! max-lg:py-fl-2", className)}>
       {
-        /* Mobile: one column, left-aligned like home, at least an action row
-          wide; two buttons can widen it */
+        /* Mobile: one centred column, at least an action row wide; two
+          buttons can widen it */
       }
       <div
         className={clsx(
           "max-lg:col-[2/3] grid",
-          "max-lg:grid-cols-[minmax(min(100%,var(--width-action)),max-content)] max-lg:justify-start",
+          "max-lg:grid-cols-[minmax(min(100%,var(--width-action)),max-content)] max-lg:justify-center",
           "lg:row-[3/4] lg:content-start lg:justify-items-start lg:gap-fl-1",
         )}
       >
@@ -76,6 +77,7 @@ export function ActionsPanel(
 
       {/* The credits are the panel's own section, a step past a group */}
       <PanelCredits className="mt-8" />
+      <PanelLinks className="col-[2/3] mt-fl-4" />
     </Panel>
   );
 }
