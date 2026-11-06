@@ -73,6 +73,20 @@
     border-color: var(--color-link);
   }
 
+  /* Secondary: a quiet action that sits below the page's main ones, e.g. in
+     the mobile footer. No fill, muted text; hover tints rather than fills. */
+  .btn[data-secondary] {
+    color: var(--color-text-2);
+    border-color: var(--color-surface-4);
+    background-color: transparent;
+  }
+
+  .btn[data-secondary]:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    color: var(--color-text-1);
+    border-color: var(--color-link);
+    background-color: color-mix(in srgb, var(--color-link) 12%, transparent);
+  }
+
   .btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]),
   .icon-btn[data-primary]:is(:hover, :focus):not([disabled], [aria-disabled]) {
     filter: brightness(1.3);
@@ -102,10 +116,7 @@
 
   /* Pearl ring, outside retro and high contrast. A masked ::before, so the
      button stays see-through. */
-  :root:not(
-    [data-theme-section="retro"],
-    [data-theme-section="accessibility"]
-  ) {
+  :root:not([data-theme-section="retro"], [data-theme-section="accessibility"]) {
     :is(.btn, .icon-btn) {
       position: relative;
       border: 3px solid transparent;
@@ -140,6 +151,11 @@
           var(--color-link) 10%,
           var(--color-surface-1)
         );
+      }
+
+      /* data-secondary: no fill, the faint ring only */
+      &.btn[data-secondary] {
+        background-color: transparent;
       }
 
       /* Secondary: a faint ring, full on hover */

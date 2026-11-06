@@ -20,7 +20,7 @@ export function ActionsPanel(
   { slug, isDev, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
 ) {
   return (
-    <Panel className={className}>
+    <Panel className={clsx("max-lg:py-8", className)}>
       {
         /* Mobile: one centred column, at least an action row wide; two
           buttons can widen it */
@@ -38,13 +38,14 @@ export function ActionsPanel(
             <a
               href={`/puzzles/${slug}/solutions`}
               className="btn"
+              data-secondary
             >
               <Icon icon={Ranking} /> See solves
             </a>
           )}
 
           {isPreview && (
-            <a href="/api/export" download className="btn">
+            <a href="/api/export" download className="btn" data-secondary>
               <Icon icon={Download} />
               Download
             </a>
@@ -56,7 +57,7 @@ export function ActionsPanel(
               action={`/puzzles/${slug}/clone`}
               className="contents"
             >
-              <button type="submit" className="btn">
+              <button type="submit" className="btn" data-secondary>
                 <Icon icon={Pencil} /> Edit
               </button>
             </form>
@@ -68,16 +69,16 @@ export function ActionsPanel(
             moves" is useless as ground truth. */
           }
           {isDev && !isPreview && (
-            <a href={`/puzzles/${slug}/rate`} className="btn">
+            <a href={`/puzzles/${slug}/rate`} className="btn" data-secondary>
               <Icon icon={Star} /> Rate
             </a>
           )}
         </div>
       </div>
 
-      {/* The credits are the panel's own section, a step past a group */}
-      <PanelCredits className="mt-8" />
-      <PanelLinks className="col-[2/3] mt-fl-4" />
+      {/* The small print: credits and links as one group below the actions */}
+      <PanelCredits className="mt-fl-4" />
+      <PanelLinks className="col-[2/3] mt-fl-2 justify-center" />
     </Panel>
   );
 }
