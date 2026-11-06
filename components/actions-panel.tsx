@@ -19,17 +19,25 @@ type ActionsPanelProps = {
 export function ActionsPanel(
   { slug, isDev, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
 ) {
+  const showSolves = !isPreview && !isFlash;
+  const showRate = isDev && !isPreview;
+  // Mobile shows a pair of actions or none: a lone button under the board
+  // reads as a leftover. Desktop's sidebar always shows them.
+  const isPair =
+    [showSolves, isPreview, showEdit, showRate].filter(Boolean).length >= 2;
+
   return (
     <Panel className={clsx("max-lg:py-8", className)}>
       {/* Mobile: a dialog's actions row, two buttons sharing the width */}
       <div
         className={clsx(
           "max-lg:col-[2/3] grid gap-fl-1",
+          !isPair && "max-lg:hidden",
           "max-lg:grid-flow-col max-lg:auto-cols-fr",
           "lg:row-[3/4] lg:content-start lg:justify-items-start",
         )}
       >
-        {!isPreview && !isFlash && (
+        {showSolves && (
           <a
             href={`/puzzles/${slug}/solutions`}
             className="btn"
@@ -63,7 +71,7 @@ export function ActionsPanel(
             identity for remixing, and a rating filed under "Untitled, 0
             moves" is useless as ground truth. */
         }
-        {isDev && !isPreview && (
+        {showRate && (
           <a href={`/puzzles/${slug}/rate`} className="btn" data-secondary>
             <Icon icon={Star} /> Rate
           </a>
@@ -71,7 +79,7 @@ export function ActionsPanel(
       </div>
 
       {/* The small print: credits and links as one group below the actions */}
-      <PanelCredits className="mt-fl-4" />
+      <PanelCredits className={clsx(isPair && "mt-fl-4")} />
       <PanelLinks className="col-[2/3] mt-fl-2" />
     </Panel>
   );

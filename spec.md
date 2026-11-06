@@ -56,8 +56,10 @@ keep their original layout.
 
 ### Mobile footer
 
-- The puzzle page's footer holds its actions as a dialog-style row: two
-  buttons sharing the width, secondary style.
+- The puzzle page's mobile footer shows its actions as a pair or not at all:
+  two secondary buttons sharing the width, like a dialog's actions. Until Rate
+  ships, most players have only "See solves", so the footer is just the small
+  print; See solves stays in the celebration dialog and the desktop sidebar.
 - Below the actions: the credits (`PanelCredits`) and the GitHub/LinkedIn row
   (`PanelLinks`), the same pieces home uses.
 - Below `lg` the body grid's spare row is the panel's, so on a short page the
