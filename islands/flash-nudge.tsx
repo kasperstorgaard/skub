@@ -46,7 +46,7 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
   return (
     <aside
       className={clsx(
-        "flex flex-col place-content-center gap-fl-1 py-2 w-full",
+        "grid justify-items-center gap-fl-1 py-2 w-full",
         "text-text-2 text-pretty",
         "animate-fade-in",
         className,
@@ -56,7 +56,7 @@ export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
         In a rush, or stuck?
       </p>
 
-      <a href={dialogHref} className="btn" data-router>
+      <a href={dialogHref} className="btn min-w-action" data-router>
         <Icon icon={LightningFill} />
         Try Flash mode
       </a>

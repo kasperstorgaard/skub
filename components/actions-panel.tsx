@@ -23,9 +23,9 @@ export function ActionsPanel(
       <div
         className={clsx(
           "max-lg:col-[2/3] gap-fl-1",
-          // Mobile: the dialog's treatment, full width, one or two buttons
-          // side by side in equal columns
-          "max-lg:grid max-lg:grid-flow-col max-lg:auto-cols-fr",
+          // Mobile: centred columns one action wide, so one button or two
+          // match a dialog's buttons
+          "max-lg:grid max-lg:grid-cols-[repeat(auto-fit,minmax(var(--width-action),auto))] max-lg:justify-center",
           "lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start",
         )}
       >
