@@ -333,7 +333,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
         href={href}
         puzzle={puzzle}
         savedName={props.data.savedName}
-        isFlash={isFlashOn}
         backHref={back.href}
       />
 
