@@ -58,11 +58,11 @@ export function SolutionDialog(
         <p>
           {isFlash
             ? savedName
-              ? "Save your Flash solve."
-              : "Pick a name and save your Flash solve."
+              ? "Save your Flash solution."
+              : "Pick your name and save your Flash solution."
             : savedName
-            ? "Save your solve so other players can see the path you found."
-            : "Pick a name to save your solve. Other players will see it next to the path you found. No account, just a name."}
+            ? "Other players see your name next to your solutions."
+            : "Pick your name. Other players see it next to your solutions."}
         </p>
       </div>
 

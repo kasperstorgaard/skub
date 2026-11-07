@@ -33,7 +33,7 @@ export function SolutionBadge(
         "flex items-center justify-center size-full",
         busy && "tabular-nums animate-blink",
       )}
-      title={getSolveTitle(state) ?? "shortest possible solution"}
+      title={getSolveTitle(state) ?? "shortest possible path"}
     >
       {error && <Icon icon={Warning} />}
       {unsolved && "∅"}

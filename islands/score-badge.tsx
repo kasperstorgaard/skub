@@ -84,7 +84,7 @@ export function ScoreBadge(
         )}
         title={hideMinMoves
           ? "moves played / solve the puzzle to reveal the shortest"
-          : "moves played / shortest possible solution"}
+          : "moves played / shortest possible path"}
       >
         <MoveScore
           href={href}
