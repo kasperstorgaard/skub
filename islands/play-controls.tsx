@@ -22,6 +22,7 @@ import {
   getResetHref,
   getUndoHref,
 } from "#/game/url.ts";
+import { FlashSwitch } from "#/islands/flash-switch.tsx";
 import { useRouter } from "#/islands/router.tsx";
 
 type PlayControlsProps = {
@@ -29,6 +30,12 @@ type PlayControlsProps = {
   href: Signal<string>;
   isDev: boolean;
   hintCount?: number;
+  /** The Flash switch, for puzzles that have a Flash start. */
+  flash?: {
+    isOn: boolean;
+    /** The Flash dialog was answered before, so the switch skips it. */
+    isExplained: boolean;
+  };
   isPreview?: boolean;
   className?: string;
 };
@@ -53,9 +60,10 @@ function ArrowKeysHint() {
   );
 }
 
-/** Beside the board: undo, redo, hint, start over, and how to move. */
+/** Beside the board: undo, redo, hint, Flash, start over, and how to move. */
 export function PlayControls(
-  { puzzle, href, isDev, hintCount, isPreview, className }: PlayControlsProps,
+  { puzzle, href, isDev, hintCount, flash, isPreview, className }:
+    PlayControlsProps,
 ) {
   // A board caught in a portal loop has one way on, and the hint route refuses
   // it too — offering one here would only 400.
@@ -201,6 +209,20 @@ export function PlayControls(
             </button>
           </form>
           <KeyHint>H</KeyHint>
+        </>
+      )}
+
+      {flash && (
+        <>
+          <FlashSwitch
+            href={href}
+            isOn={flash.isOn}
+            isExplained={flash.isExplained}
+            className={clsx(TOOL, "text-text-2")}
+            iconClassName="text-[1.25rem] max-lg:text-[2rem]"
+          />
+          {/* No key for Flash: keeps the next tool in the first column */}
+          <span aria-hidden="true" className="not-lg:hidden col-2" />
         </>
       )}
 
