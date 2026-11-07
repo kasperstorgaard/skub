@@ -47,13 +47,11 @@ const TOOL = clsx(
 );
 
 // Not a control. Desktop only; touch swipes.
-function ArrowKeysHint({ isBelowFlash }: { isBelowFlash: boolean }) {
+function ArrowKeysHint() {
   return (
     <p
       className={clsx(
-        "not-lg:hidden col-span-2 row-span-2 self-start w-[150%]",
-        // Clears Flash's gap
-        isBelowFlash ? "mt-4" : "mt-1",
+        "not-lg:hidden col-span-2 row-span-2 self-start mt-1 w-[150%]",
         "font-mono text-0 leading-tight text-text-1",
       )}
     >
@@ -133,7 +131,17 @@ export function PlayControls(
   }, [href.value]);
 
   return (
-    <Toolbar size="lg" className={clsx("print:hidden", className)}>
+    <Toolbar
+      size="lg"
+      className={clsx(
+        "print:hidden",
+        // Four tools, the gap, then Flash. Flash only comes with the hint.
+        flash &&
+          "max-lg:grid-cols-[repeat(4,minmax(0,3.5rem))_0_minmax(0,3.5rem)]",
+        flash && "lg:grid-rows-[repeat(4,2.5rem)_0.5rem_2.5rem]",
+        className,
+      )}
+    >
       <a
         href={getUndoHref(href.value, state)}
         className={TOOL}
@@ -230,21 +238,19 @@ export function PlayControls(
 
       {flash && (
         <>
+          {/* The gap before Flash: its own track, so the toolbar stays centred */}
+          <span aria-hidden="true" className="lg:col-span-2" />
           <FlashSwitch
             href={href}
             isOn={flash.isOn}
             isExplained={flash.isExplained}
-            // Set apart from the other tools
-            className={clsx(
-              TOOL,
-              "text-text-2 max-lg:translate-x-3 lg:translate-y-3",
-            )}
+            className={clsx(TOOL, "text-text-2")}
             iconClassName="text-[1.25rem] max-lg:text-[2rem]"
           />
         </>
       )}
 
-      <ArrowKeysHint isBelowFlash={!!flash} />
+      <ArrowKeysHint />
     </Toolbar>
   );
 }
