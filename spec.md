@@ -123,10 +123,11 @@ Decided so far (with Kasper, in chat):
   on the headline's row, at the headline's size, popping in one by one
   (motion-safe only). Only new stars: a replay that earns nothing shows none.
   On the headline's row so nothing shifts when the data lands after the
-  loading state. The headline is just "Solved!" or "Perfect!": no move
-  count, no "Great" tier. The stars replace the percentile lines ("Top x%",
-  "Better than x%"): the body keeps first-to-solve, new path and "Joined n
-  others". No-JS solves get no dialog for full solves (they go to
+  loading state. The headline is just "Solved!" or "Perfect!", over one
+  warm line, "Well played.", the same for every solve: the stars carry the
+  news, so the stats lines (first to solve, new path, percentiles, counts) and
+  the loading state are gone, and the POST returns only the earned stars.
+  No-JS solves get no dialog for full solves (they go to
   the solutions page), so they don't show the payoff; the page's own badge
   stars update on the next load.
 - Layer 4 next (`stars/highscore`, based on `stars/celebration`).

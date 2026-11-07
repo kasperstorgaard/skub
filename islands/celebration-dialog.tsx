@@ -5,22 +5,13 @@ import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import {
-  type CelebrationType,
-  getCelebrationType,
-} from "#/game/celebration.ts";
 import type { ScoreKind } from "#/game/score.ts";
-import { defaultPuzzleStats } from "#/game/stats.ts";
-import { Puzzle, PuzzleStats } from "#/game/types.ts";
+import { Puzzle } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 
 export type CelebrationData = {
-  isNewPath: boolean;
-  puzzleStats: PuzzleStats;
-  /** Flash solves of this puzzle, this one included, for a Flash solve. */
-  flashSolves?: number;
   /** Stars this solve earned on the puzzle: only the new ones. */
   earned: ScoreKind[];
 };
@@ -31,7 +22,7 @@ type Props = {
   back: { href: string; label: string };
   celebrationData: Signal<CelebrationData | null>;
   celebrationError: Signal<boolean>;
-  /** A Flash solve: compared with other Flash solves, not the leaderboard. */
+  /** A Flash solve: off the leaderboard, so no link to it. */
   isFlash?: boolean;
 };
 
@@ -86,26 +77,8 @@ export function CelebrationDialog(
   }, [hasSolution, rippleDuration]);
 
   const data = celebrationData.value;
-  const isError = celebrationError.value;
-  const isLoading = isOpen && !data && !isError;
-
-  const puzzleStats = data?.puzzleStats ?? defaultPuzzleStats;
-  const isNewPath = data?.isNewPath ?? false;
-
   const isPerfect = moves.length === puzzle.value.minMoves;
   const headline = isPerfect ? "Perfect!" : "Solved!";
-
-  const body = useMemo(
-    () => {
-      if (isFlash) return getFlashMessage(data?.flashSolves ?? 1);
-      const type = getCelebrationType(moves.length, puzzle.value, {
-        puzzleStats,
-        isNewPath,
-      });
-      return getMessage(type, puzzleStats);
-    },
-    [moves.length, puzzle.value, puzzleStats, isNewPath, isFlash, data],
-  );
 
   return (
     <Dialog open={isOpen} className="w-full">
@@ -124,21 +97,11 @@ export function CelebrationDialog(
           )}
         </div>
 
-        {isLoading
-          ? (
-            <p className="text-3 text-text-2">
-              Calculating stats<span className="loading-dots ml-[0.2ch]">
-                <span>.</span>
-                <span>.</span>
-                <span>.</span>
-              </span>
-            </p>
-          )
-          : (
-            <p className="text-3 text-text-2">
-              {isError ? "Couldn't load stats." : body}
-            </p>
-          )}
+        <p className="text-3 text-text-2">
+          {celebrationError.value
+            ? "Couldn't save your solve."
+            : "Well played."}
+        </p>
       </div>
 
       <DialogActions
@@ -156,7 +119,7 @@ export function CelebrationDialog(
           )}
       >
         {
-          // Flash solves are compared above, not on the leaderboard
+          // Flash solves are off the leaderboard
           !isFlash && (
             <a href={`/puzzles/${puzzle.value.slug}/solutions`} className="btn">
               <Icon icon={Ranking} /> See solutions
@@ -174,70 +137,4 @@ export function CelebrationDialog(
       </DialogActions>
     </Dialog>
   );
-}
-
-/** The stats line for a Flash solve, against the other Flash solves. */
-function getFlashMessage(flashSolves: number): string {
-  const count = flashSolves - 1;
-
-  if (count === 0) {
-    return pickRandom([
-      "First to solve it with Flash",
-      "First Flash solve so far",
-      "No one else has solved it with Flash yet",
-    ]);
-  }
-
-  return pickRandom([
-    `Joined ${count} ${count === 1 ? "other" : "others"}`,
-    `${count} other Flash ${count === 1 ? "solve" : "solves"} so far`,
-    `${count} ${
-      count === 1 ? "other has" : "others have"
-    } solved it with Flash`,
-  ]);
-}
-
-function pickRandom<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-/**
- * Maps a celebration type to a randomly-picked body string. Each case has
- * 3 wording variants. The headline carries closeness (Perfect / Solved);
- * bodies are factual fragments, no praise word stacking.
- */
-function getMessage(
-  type: CelebrationType,
-  puzzleStats: PuzzleStats,
-): string {
-  const { totalSolutions } = puzzleStats;
-
-  switch (type) {
-    case "champion":
-      return pickRandom([
-        "First to nail it",
-        "First perfect solve so far",
-        "No one else has hit it yet",
-      ]);
-    case "pioneer":
-      return pickRandom([
-        "First solve in the books",
-        "First to crack this puzzle",
-        "Only solver so far",
-      ]);
-    case "creative":
-      return pickRandom([
-        "First to get this solution",
-        "No one has solved it this way before",
-        "A creative path",
-      ]);
-    case "fallback": {
-      const count = totalSolutions - 1;
-      return pickRandom([
-        `Joined ${count} ${count === 1 ? "other" : "others"}`,
-        `${count} other ${count === 1 ? "solve" : "solves"} so far`,
-        `${count} ${count === 1 ? "other has" : "others have"} solved this`,
-      ]);
-    }
-  }
 }
