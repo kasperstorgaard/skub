@@ -11,6 +11,8 @@ import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 
+const MESSAGES = ["Nice solution", "Well done", "Well played"] as const;
+
 export type CelebrationData = {
   /** Stars this solve earned on the puzzle: only the new ones. */
   earned: ScoreKind[];
@@ -79,6 +81,8 @@ export function CelebrationDialog(
   const data = celebrationData.value;
   const isPerfect = moves.length === puzzle.value.minMoves;
   const headline = isPerfect ? "Perfect!" : "Solved!";
+  // Picked once, so it holds still when the stars land.
+  const message = useMemo(() => pickRandom(MESSAGES), []);
 
   return (
     <Dialog open={isOpen} className="w-full">
@@ -98,9 +102,7 @@ export function CelebrationDialog(
         </div>
 
         <p className="text-3 text-text-2">
-          {celebrationError.value
-            ? "Couldn't save your solve."
-            : "Nice solution"}
+          {celebrationError.value ? "Couldn't save your solve." : message}
         </p>
       </div>
 
@@ -137,4 +139,8 @@ export function CelebrationDialog(
       </DialogActions>
     </Dialog>
   );
+}
+
+function pickRandom<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
 }
