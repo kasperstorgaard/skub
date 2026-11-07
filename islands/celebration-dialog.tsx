@@ -96,7 +96,7 @@ export function CelebrationDialog(
           {data && data.earned.length > 0 && (
             <Stars
               kinds={data.earned}
-              className="shrink-0 text-fl-2 [&>svg]:motion-safe:animate-star-pop [&>svg:nth-child(2)]:[animation-delay:150ms] [&>svg:nth-child(3)]:[animation-delay:300ms]"
+              className="shrink-0 text-fl-2 [&>svg]:motion-safe:animate-star-fly [&>svg:nth-child(2)]:[animation-delay:150ms] [&>svg:nth-child(3)]:[animation-delay:300ms]"
             />
           )}
         </div>
