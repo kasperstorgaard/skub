@@ -167,7 +167,12 @@ Deno.test("withFirstSolves() moves a mark wrongly given to a later solve", () =>
 Deno.test("withFirstSolves() finds no new path in a Flash solve", () => {
   // Flash went down and right first; the later full solve still finds it.
   assertEquals(
-    withFirstSolves([
+    withFirstSolves<{
+      userId: string;
+      moves: Move[];
+      flash?: boolean;
+      first?: boolean;
+    }>([
       { userId: "ane", moves: downRight, flash: true },
       { userId: "bo", moves: downRight },
     ]),
