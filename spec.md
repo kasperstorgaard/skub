@@ -40,6 +40,12 @@ perfect (🌟), sparkles for first, a dashed border for Flash. Unearned would th
 the dimmed variant, since an outline is already solve; and a perfect might show
 the filled star alone while still counting two.
 
+Open: stack the stars with an overlap, like an avatar stack, to save space.
+Separate them with a mask cut-out rather than a ring, since the card and page
+backgrounds differ. Overlap hides the edges, where rays, sparkles and dashes
+live, so earned stars sit in front and the overlap stays small enough to keep
+each variant readable. A perfect over its solve star then reads as two.
+
 ## High score
 
 Players rank by star count, ties broken by the rarer kinds: first, then
