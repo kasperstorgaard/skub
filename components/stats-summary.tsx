@@ -2,8 +2,15 @@ import clsx from "clsx/lite";
 import { HTMLAttributes } from "preact";
 
 import { STAR_ORDER, Stars } from "#/components/stars.tsx";
-import { getTotalScore, type UserScore } from "#/game/score.ts";
+import { getTotalScore, type ScoreKind, type UserScore } from "#/game/score.ts";
 import type { UserStats } from "#/game/streak.ts";
+
+const STAR_LABELS: Record<ScoreKind, string> = {
+  solve: "Solved",
+  flash: "Flash",
+  perfect: "Perfect",
+  first: "Unique",
+};
 
 type Props = {
   stats: UserStats;
@@ -17,8 +24,8 @@ export function StatsSummary({ stats, userScore, className }: Props) {
     <dl
       className={clsx(
         // Labels on one line, under numbers of different sizes
-        "flex gap-fl-4 m-0 max-lg:items-end",
-        "lg:flex-col lg:gap-fl-2",
+        "flex flex-wrap gap-x-fl-4 gap-y-fl-2 m-0 max-lg:items-end",
+        "lg:flex-col lg:gap-y-fl-2",
         className,
       )}
     >
@@ -45,24 +52,23 @@ export function StatsSummary({ stats, userScore, className }: Props) {
         <dt className="text-2 text-text-2">Points</dt>
       </div>
 
-      {points > 0 && (
-        <div className="flex flex-col">
+      {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
+        <div
+          key={kind}
+          className="flex flex-col lg:flex-row lg:items-baseline lg:gap-2"
+        >
           <dd
             className={clsx(
-              "m-0 flex items-center gap-2 text-text-1",
+              "m-0 flex items-center gap-1 text-text-1",
               "max-lg:text-4 max-lg:font-semibold max-lg:tracking-wide max-lg:leading-flat",
-              "lg:flex-col lg:items-start lg:gap-0 lg:text-2",
+              "lg:text-2",
             )}
           >
-            {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
-              <span key={kind} className="flex items-center gap-1">
-                <Stars kinds={[kind]} /> {userScore[kind]}
-              </span>
-            ))}
+            <Stars kinds={[kind]} /> {userScore[kind]}
           </dd>
-          <dt className="text-2 text-text-2">Stars</dt>
+          <dt className="text-2 text-text-2">{STAR_LABELS[kind]}</dt>
         </div>
-      )}
+      ))}
     </dl>
   );
 }
