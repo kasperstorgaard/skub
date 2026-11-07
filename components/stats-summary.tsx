@@ -1,16 +1,17 @@
 import clsx from "clsx/lite";
 import { HTMLAttributes } from "preact";
 
-import { STAR_ORDER, Stars } from "#/components/stars.tsx";
-import { getTotalScore, type ScoreKind, type UserScore } from "#/game/score.ts";
+import { Stars } from "#/components/stars.tsx";
+import { getTotalScore, type UserScore } from "#/game/score.ts";
 import type { UserStats } from "#/game/streak.ts";
 
-const STAR_LABELS: Record<ScoreKind, string> = {
+// A Flash solve counts as solved here, no star of its own.
+const STAR_LABELS = {
   solve: "Solved",
-  flash: "Flash",
   perfect: "Perfect",
   first: "Unique",
-};
+} as const;
+const STAT_KINDS = ["solve", "perfect", "first"] as const;
 
 type Props = {
   stats: UserStats;
@@ -19,6 +20,7 @@ type Props = {
 
 export function StatsSummary({ stats, userScore, className }: Props) {
   const points = getTotalScore(userScore);
+  const counts = { ...userScore, solve: userScore.solve + userScore.flash };
 
   return (
     <dl
@@ -52,7 +54,7 @@ export function StatsSummary({ stats, userScore, className }: Props) {
         <dt className="text-2 text-text-2">Points</dt>
       </div>
 
-      {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
+      {STAT_KINDS.filter((kind) => counts[kind] > 0).map((kind) => (
         <div
           key={kind}
           className="flex flex-col lg:flex-row lg:items-baseline lg:gap-2"
@@ -64,7 +66,7 @@ export function StatsSummary({ stats, userScore, className }: Props) {
               "lg:text-2",
             )}
           >
-            <Stars kinds={[kind]} /> {userScore[kind]}
+            <Stars kinds={[kind]} /> {counts[kind]}
           </dd>
           <dt className="text-2 text-text-2">{STAR_LABELS[kind]}</dt>
         </div>
