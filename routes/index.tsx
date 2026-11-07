@@ -2,7 +2,12 @@ import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import { ArrowRight, ChalkboardTeacher, Icon } from "#/components/icons.tsx";
+import {
+  ArrowRight,
+  ChalkboardTeacher,
+  Icon,
+  Trophy,
+} from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
@@ -13,7 +18,7 @@ import {
   getOnboardingLabel,
   pickRecommendedPuzzle,
 } from "#/game/recommendation.ts";
-import { getProgressScore } from "#/game/score.ts";
+import { getProgressScore, getTotalScore } from "#/game/score.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -52,6 +57,7 @@ export default define.page<typeof handler>(function Home(ctx) {
     userStats,
   } = ctx.data;
   const { user, score } = ctx.state;
+  const userScore = getProgressScore(score);
 
   return (
     <>
@@ -144,9 +150,17 @@ export default define.page<typeof handler>(function Home(ctx) {
             </li>
           </ul>
 
-          <a href="/puzzles" className="btn place-self-start" data-size="lg">
-            All puzzles <Icon icon={ArrowRight} />
-          </a>
+          <div className="flex flex-wrap gap-fl-1">
+            <a href="/puzzles" className="btn" data-size="lg">
+              All puzzles <Icon icon={ArrowRight} />
+            </a>
+
+            {getTotalScore(userScore) > 0 && (
+              <a href="/highscore" className="btn" data-size="lg">
+                <Icon icon={Trophy} /> High score
+              </a>
+            )}
+          </div>
         </div>
       </Main>
 
@@ -160,7 +174,7 @@ export default define.page<typeof handler>(function Home(ctx) {
           >
             <StatsSummary
               stats={userStats}
-              userScore={getProgressScore(score)}
+              userScore={userScore}
               className="lg:w-full"
             />
           </div>
