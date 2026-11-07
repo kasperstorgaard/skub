@@ -162,7 +162,7 @@ export function CelebrationDialog(
           className="btn"
           autoFocus
         >
-          One more <Icon icon={ArrowRight} />
+          Keep playing <Icon icon={ArrowRight} />
         </a>
       </DialogActions>
     </Dialog>
