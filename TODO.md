@@ -225,6 +225,10 @@ PR finishes only part of an item, trim the item to what is left.
   next to solutions, so a name changing under them would break that. Today the
   profile's name field renames freely (past solves keep the old name).
 
+  The open part is collisions: nothing stops two players picking the same name
+  today, and a permanent name makes a clash permanent too. Claim names
+  atomically when picked, so one name is one player.
+
 - **Players can see who has the most stars.** A high score page ranks players by
   all-time stars, linked from home's sidebar, the archive and the solutions
   page. Builds on the stars item above.
