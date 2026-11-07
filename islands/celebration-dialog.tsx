@@ -155,14 +155,15 @@ export function CelebrationDialog(
             </a>
           )}
       >
-        {
-          // Flash solves are off the leaderboard
-          !isFlash && (
-            <a href={`/puzzles/${puzzle.value.slug}/solutions`} className="btn">
-              <Icon icon={Ranking} /> See solutions
-            </a>
-          )
-        }
+        {/* Flash solutions are their own tab */}
+        <a
+          href={`/puzzles/${puzzle.value.slug}/solutions${
+            isFlash ? "?tab=flash" : ""
+          }`}
+          className="btn"
+        >
+          <Icon icon={Ranking} /> See solutions
+        </a>
 
         <a
           href="/puzzles/recommended"
