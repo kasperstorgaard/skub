@@ -74,7 +74,9 @@ points). The stats' numbers aren't links.
 ## Solutions page
 
 Two tabs, Solutions and Flash, the high score's pill switch, in the URL
-(`?tab=flash`) so they work without JS and survive a share or reload. Flash
+(`?tab=flash`) so they work without JS and survive a share or reload. The
+switch sits beside the title, where the score badge and stars were: the page
+is about the paths, not your score. Flash
 solves start part way in, so they're shorter and get a list of their own.
 
 Each tab lists paths, shortest first. A path shows, podium style, the player
