@@ -104,7 +104,7 @@ Decided so far (with Kasper, in chat):
   moves, then the solution score as bits), so each device rebuilds it from KV
   once; `ctx.state.score` carries it, updated on award. `components/stars.tsx`
   draws one rounded star four ways (outline, fill, duotone, dashed) on
-  Phosphor's 256 grid, stacked at a 0.35em overlap, each after the first cutting a gap in
+  Phosphor's 256 grid, stacked at a 0.25em overlap, each after the first cutting a gap in
   `--star-knockout`, one colour. On the puzzle page, solutions page and replays: the
   viewer's own stars beside the badge. On cards they replace the check/trophy
   chip and the move count; the archive calendar's cells show them too.

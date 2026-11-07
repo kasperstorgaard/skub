@@ -19,7 +19,7 @@ const LABELS: Record<ScoreKind, string> = {
 
 // A touch heavier than Phosphor's regular, and the gap the knock-out cuts.
 const STROKE = 20;
-const KNOCKOUT = 40;
+const KNOCKOUT = 64;
 
 type StarsProps = {
   /** Earned kinds, in display order. Nothing earned renders nothing. */
@@ -52,7 +52,7 @@ export function Stars({ kinds, className }: StarsProps) {
           height="1em"
           viewBox="0 0 256 256"
           aria-hidden="true"
-          className="overflow-visible not-first:-ml-[0.35em]"
+          className="overflow-visible not-first:-ml-[0.25em]"
           stroke-linejoin="round"
         >
           {/* The first star has nothing behind it to cut into. */}
