@@ -123,7 +123,7 @@ Decided so far (with Kasper, in chat):
   on the headline's row, at the headline's size, popping in one by one
   (motion-safe only). Only new stars: a replay that earns nothing shows none.
   On the headline's row so nothing shifts when the data lands after the
-  loading state; at that size three stars and "Perfect — 10 moves!" fit one
+  loading state; at that size three stars and "Perfect in 10 moves!" fit one
   line at phone width. No-JS solves get no dialog for full solves (they go to
   the solutions page), so they don't show the payoff; the page's own badge
   stars update on the next load.
