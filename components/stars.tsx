@@ -3,52 +3,12 @@ import type { ComponentChildren } from "preact";
 
 import type { ScoreKind } from "#/game/score.ts";
 
-// Each kind's star on Phosphor's 256 grid: the solve star's outline, a
-// filled star with rays between its arms for perfect, a filled one with
-// sparkles for first, and the outline dashed for Flash.
-const GLYPHS = {
-  solve: [
-    {
-      d: "M128.0,36.0 L152.7,102.0 L223.1,105.1 L167.9,149.0 L186.8,216.9 L128.0,178.0 L69.2,216.9 L88.1,149.0 L32.9,105.1 L103.3,102.0 Z",
-      style: "outline",
-    },
-  ],
-  perfect: [
-    {
-      d: "M128.0,50.0 L148.7,105.5 L207.9,108.0 L161.6,144.9 L177.4,202.0 L128.0,169.3 L78.6,202.0 L94.4,144.9 L48.1,108.0 L107.3,105.5 Z",
-      style: "fill",
-    },
-    {
-      d: "M179.7,62.8 L195.0,41.8 M211.7,161.2 L236.4,169.2 M128.0,222.0 L128.0,248.0 M44.3,161.2 L19.6,169.2 M76.3,62.8 L61.0,41.8",
-      style: "line",
-    },
-  ],
-  first: [
-    {
-      d: "M116.0,56.0 L137.7,114.1 L199.7,116.8 L151.2,155.4 L167.7,215.2 L116.0,181.0 L64.3,215.2 L80.8,155.4 L32.3,116.8 L94.3,114.1 Z",
-      style: "fill",
-    },
-    {
-      d: "M204.0,20.0 Q204.0,56.0 240.0,56.0 Q204.0,56.0 204.0,92.0 Q204.0,56.0 168.0,56.0 Q204.0,56.0 204.0,20.0 Z",
-      style: "fill",
-    },
-    {
-      d: "M220.0,114.0 Q220.0,132.0 238.0,132.0 Q220.0,132.0 220.0,150.0 Q220.0,132.0 202.0,132.0 Q220.0,132.0 220.0,114.0 Z",
-      style: "fill",
-    },
-  ],
-  flash: [
-    {
-      d: "M128.0,36.0 L152.7,102.0 L223.1,105.1 L167.9,149.0 L186.8,216.9 L128.0,178.0 L69.2,216.9 L88.1,149.0 L32.9,105.1 L103.3,102.0 Z",
-      style: "dashed",
-    },
-  ],
-} as const;
-
-// A dash centred on each point and inner corner of the Flash star.
-const FLASH_DASH = { array: "42.3 28.2", offset: 21.1 };
-
-type Part = { d: string; style: "outline" | "fill" | "line" | "dashed" };
+// One rounded star on Phosphor's 256 grid. The kinds differ only in how it's
+// drawn: outline for solve, filled for perfect, a faded fill for first, and the
+// outline dashed, gaps at the corners, for Flash.
+const STAR =
+  "M121.3,45.6 Q128.0,32.0 134.7,45.6 L154.9,86.5 Q158.6,93.9 166.8,95.1 L211.9,101.7 Q226.9,103.9 216.0,114.5 L183.4,146.3 Q177.5,152.1 178.9,160.2 L186.6,205.2 Q189.1,220.1 175.7,213.1 L135.3,191.9 Q128.0,188.0 120.7,191.9 L80.3,213.1 Q66.9,220.1 69.4,205.2 L77.1,160.2 Q78.5,152.1 72.6,146.3 L40.0,114.5 Q29.1,103.9 44.1,101.7 L89.2,95.1 Q97.4,93.9 101.1,86.5 Z";
+const FLASH_DASH = { array: "27.2 36.0", offset: -28.0 };
 
 const LABELS: Record<ScoreKind, string> = {
   solve: "Solved",
@@ -57,8 +17,8 @@ const LABELS: Record<ScoreKind, string> = {
   flash: "Flash solved",
 };
 
-// Phosphor's regular weight, and the gap the knock-out cuts around a star.
-const STROKE = 16;
+// A touch heavier than Phosphor's regular, and the gap the knock-out cuts.
+const STROKE = 20;
 const KNOCKOUT = 40;
 
 type StarsProps = {
@@ -69,8 +29,8 @@ type StarsProps = {
 
 /**
  * Earned stars, stacked with an overlap, each over the one before it. A star
- * after the first cuts a gap out of the one behind in `--star-knockout`, which the container
- * sets to its own background; the page surface otherwise.
+ * after the first cuts a gap out of the one behind in `--star-knockout`, which
+ * the container sets to its own background; the page surface otherwise.
  */
 export function Stars({ kinds, className }: StarsProps) {
   if (kinds.length === 0) return null;
@@ -96,58 +56,44 @@ export function Stars({ kinds, className }: StarsProps) {
         >
           {/* The first star has nothing behind it to cut into. */}
           {i > 0 && (
-            <g
+            <path
+              d={STAR}
               fill="var(--star-knockout, var(--color-surface-1))"
               stroke="var(--star-knockout, var(--color-surface-1))"
-            >
-              {GLYPHS[kind].map((part) => (
-                <StarPart part={part} width={STROKE + KNOCKOUT} />
-              ))}
-            </g>
+              stroke-width={STROKE + KNOCKOUT}
+            />
           )}
-          <g fill="currentColor" stroke="currentColor">
-            {GLYPHS[kind].map((part) => (
-              <StarPart
-                part={part}
-                width={STROKE}
-              />
-            ))}
-          </g>
+          <StarPath kind={kind} />
         </svg>
       ))}
     </span>
   );
 }
 
-function StarPart({ part, width }: { part: Part; width: number }) {
-  switch (part.style) {
-    case "fill":
-      return <path d={part.d} stroke-width={width} />;
-    case "outline":
-      return <path d={part.d} fill="none" stroke-width={width} />;
-    case "line":
+function StarPath({ kind }: { kind: ScoreKind }) {
+  const props = {
+    d: STAR,
+    stroke: "currentColor",
+    "stroke-width": STROKE,
+    "stroke-linecap": "round" as const,
+  };
+
+  switch (kind) {
+    case "solve":
+      return <path {...props} fill="none" />;
+    case "perfect":
+      return <path {...props} fill="currentColor" />;
+    case "first":
+      return <path {...props} fill="currentColor" fill-opacity="0.35" />;
+    case "flash":
       return (
         <path
-          d={part.d}
+          {...props}
           fill="none"
-          stroke-width={width}
-          stroke-linecap="round"
+          stroke-dasharray={FLASH_DASH.array}
+          stroke-dashoffset={FLASH_DASH.offset}
         />
       );
-    case "dashed":
-      // The knock-out follows the whole outline, so the gaps stay cut too.
-      return width > STROKE
-        ? <path d={part.d} fill="none" stroke-width={width} />
-        : (
-          <path
-            d={part.d}
-            fill="none"
-            stroke-width={width}
-            stroke-linecap="round"
-            stroke-dasharray={FLASH_DASH.array}
-            stroke-dashoffset={FLASH_DASH.offset}
-          />
-        );
   }
 }
 
@@ -160,10 +106,7 @@ type BadgeStarsProps = {
 export function BadgeStars({ kinds = [], children }: BadgeStarsProps) {
   return (
     <span className="flex items-center gap-2">
-      <Stars
-        kinds={kinds}
-        className="text-5 lg:text-4 text-text-1"
-      />
+      <Stars kinds={kinds} className="text-5 lg:text-4 text-text-1" />
       {children}
     </span>
   );

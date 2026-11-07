@@ -39,11 +39,8 @@ from the context. A perfect over its solve star then reads as two.
 Open: the badge's Flash switch already shows a bolt; whether the earned Flash
 star merges with it or sits with the others.
 
-Open: variants of one star icon instead of four icons, so the shape says star
-and the variant says the kind: outline for solve, rays between the arms for
-perfect (🌟), sparkles for first, a dashed border for Flash. The overlap hides
-edges, where rays, sparkles and dashes live, so it stays small enough to keep
-each variant readable.
+Stars are one rounded star drawn four ways: outline for solve, filled for
+perfect, a faded fill (duotone) for first, the outline dashed for Flash.
 
 ## High score
 
@@ -105,8 +102,8 @@ Decided so far (with Kasper, in chat):
 - Layer 2 built: the progress cookie is v2, two bytes per puzzle (best
   moves, then the solution score as bits), so each device rebuilds it from KV
   once; `ctx.state.score` carries it, updated on award. `components/stars.tsx`
-  draws the four variants (outline, rays, sparkles, dashed) on Phosphor's 256
-  grid, stacked at a 0.35em overlap, each after the first cutting a gap in
+  draws one rounded star four ways (outline, fill, duotone, dashed) on
+  Phosphor's 256 grid, stacked at a 0.35em overlap, each after the first cutting a gap in
   `--star-knockout`, one colour. On the puzzle page, solutions page and replays: the
   viewer's own stars beside the badge. On cards they replace the check/trophy
   chip, beside the move count; the archive calendar's cells show them too.
