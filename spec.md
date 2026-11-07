@@ -34,6 +34,12 @@ perfect). A perfect shows check and trophy both, for now.
 Open: the badge's Flash switch already shows a bolt; whether the earned Flash
 icon merges with it or sits with the others.
 
+Open: variants of one star icon instead of four icons, so the shape says star
+and the variant says the kind: outline for solve, filled (or duotone) for
+perfect, sparkles for first, a dashed border for Flash. Unearned would then be
+the dimmed variant, since an outline is already solve; and a perfect might show
+the filled star alone while still counting two.
+
 ## High score
 
 Players rank by star count, ties broken by the rarer kinds: first, then
@@ -66,15 +72,13 @@ Decided so far (with Kasper, in chat):
   `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
   the one before and opened against it. Rebase the next onto main as each
   merges.
-- Layer 1 next: a pure rule (`game/stars.ts`: which kinds a solve earns, given
-  the puzzle, the move count, `isNewPath` and `flash`, plus what the player
-  already has) with unit tests; KV per user: earned kinds per puzzle, totals
-  per kind, and a ranking index keyed so a list reads in rank order, all
-  updated in one atomic commit; awarding in the solve POST in
-  `routes/puzzles/[slug]/index.tsx`, beside `saveSolution` /
-  `updateSolutionAggregates` (`isNewPath` comes from `saveSolution`); a
-  one-off backfill script over `solutions_by_puzzle`, first from solve order
-  (ULID ids sort by time).
+- Layer 1 built: pure rules in `game/stars.ts` (`getSolveStars` for what a
+  solve qualifies for, `getNewStars` against what's earned, totals and rank,
+  and `getPastStars` for the backfill, first by solve order); KV in
+  `db/stars.ts`: earned kinds per user and puzzle, totals per user, and a
+  `star_ranking` index of `[count, first, perfect, userId]` read reversed,
+  all in one atomic commit with retries; awarded best effort in the solve
+  POST for new solves; `scripts/backfill-stars.ts` is safe to re-run.
 - Cards are server-rendered from the progress cookie (one byte of best moves
   per puzzle, `game/progress.ts`). Solve and perfect follow from it; first and
   Flash need extra bits, a layer 2 concern.
