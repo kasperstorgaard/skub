@@ -53,11 +53,10 @@ export function SolutionDialog(
           Solved!
         </h2>
 
-        <p>
-          {savedName
-            ? "Other players see your name next to your solutions."
-            : "Pick your name. Other players see it next to your solutions."}
-        </p>
+        {/* Filled in already: the name speaks for itself */}
+        {!savedName && (
+          <p>Pick a good name. Other players see it next to your solutions.</p>
+        )}
       </div>
 
       <form
