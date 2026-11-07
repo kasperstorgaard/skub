@@ -1,12 +1,11 @@
 import clsx from "clsx/lite";
 import { HTMLAttributes } from "preact";
 
-import { Stars } from "#/components/stars.tsx";
 import { getTotalScore, type UserScore } from "#/game/score.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { formatNumber } from "#/lib/format.ts";
 
-// A Flash solve counts as solved here, no star of its own.
+// A Flash solve counts as solved here, no kind of its own.
 const STAR_LABELS = {
   solve: "Solved",
   perfect: "Perfect",
@@ -25,8 +24,9 @@ export function StatsSummary({ stats, userScore, className }: Props) {
 
   const stars = STAT_KINDS.filter((kind) => counts[kind] > 0);
 
-  // Streak, points and the stars as three groups, the stars close together
-  // within theirs. A dl each: a div can only wrap a single term in one.
+  // Streak, points and what they're made of as three groups, each a number
+  // over its label; the kinds close together within theirs. A dl each: a div
+  // can only wrap a single term in one.
   return (
     <div
       className={clsx(
@@ -60,20 +60,11 @@ export function StatsSummary({ stats, userScore, className }: Props) {
       </dl>
 
       {stars.length > 0 && (
-        <dl className="flex gap-fl-2 m-0 max-lg:items-end lg:flex-col lg:gap-0">
+        <dl className="flex gap-fl-2 m-0 max-lg:items-end lg:flex-col lg:gap-2">
           {stars.map((kind) => (
-            <div
-              key={kind}
-              className="flex flex-col lg:flex-row lg:items-baseline lg:gap-2"
-            >
-              <dd
-                className={clsx(
-                  "m-0 flex items-center gap-1 text-text-1",
-                  "max-lg:text-4 max-lg:font-semibold max-lg:tracking-wide max-lg:leading-flat",
-                  "lg:text-2",
-                )}
-              >
-                <Stars kinds={[kind]} /> {counts[kind]}
+            <div key={kind} className="flex flex-col">
+              <dd className="m-0 text-4 lg:text-5 font-semibold tracking-wide leading-flat text-text-1">
+                {formatNumber(counts[kind])}
               </dd>
               <dt className="text-2 text-text-2">{STAR_LABELS[kind]}</dt>
             </div>
