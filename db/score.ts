@@ -22,13 +22,14 @@ const solutionScoreKey = (userId: string, puzzleSlug: string) => [
   puzzleSlug,
 ];
 const userScoreKey = (userId: string) => ["user_score", userId];
-const highscoreKey = (userId: string, userScore: UserScore) => [
+/** Where a user sits on the highscore, given their user score. */
+export const getHighscoreKey = (userId: string, userScore: UserScore) => [
   "highscore",
   ...getHighscoreRank(userScore),
   userId,
 ];
 
-/** The kinds a player has earned on a puzzle, in the order earned. */
+/** The kinds a player has earned on a puzzle: each award in display order. */
 export async function getSolutionScore(
   userId: string,
   puzzleSlug: string,
@@ -39,7 +40,7 @@ export async function getSolutionScore(
 
 export async function getUserScore(userId: string): Promise<UserScore> {
   const res = await kv.get<UserScore>(userScoreKey(userId));
-  return res.value ?? emptyUserScore;
+  return { ...emptyUserScore, ...res.value };
 }
 
 /**
@@ -60,7 +61,8 @@ export async function awardScore(
     const added = getNewScore(earned, kinds);
     if (added.length === 0) return [];
 
-    const current = userScoreEntry.value ?? emptyUserScore;
+    // Spread over the empty score, so a kind added later starts at 0.
+    const current = { ...emptyUserScore, ...userScoreEntry.value };
     const updated = withScore(current, added);
 
     const atomic = kv.atomic()
@@ -68,8 +70,8 @@ export async function awardScore(
       .check(userScoreEntry)
       .set(solutionScoreKey(userId, puzzleSlug), [...earned, ...added])
       .set(userScoreKey(userId), updated)
-      .set(highscoreKey(userId, updated), updated);
-    if (userScoreEntry.value) atomic.delete(highscoreKey(userId, current));
+      .set(getHighscoreKey(userId, updated), updated);
+    if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
 
     const result = await atomic.commit();
     if (result.ok) return added;

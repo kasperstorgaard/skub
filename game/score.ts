@@ -14,7 +14,7 @@ export type UserScore = Record<ScoreKind, number>;
 
 export type ScoreSolve = {
   moves: number;
-  /** No one had found this path before. Never true for a Flash solve. */
+  /** This solve claimed the path: no one had found it before. Never Flash. */
   isNewPath: boolean;
   flash: boolean;
 };

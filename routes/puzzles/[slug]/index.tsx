@@ -187,7 +187,7 @@ export const handler = define.handlers<PageData>({
       }
     }
 
-    // Best effort, like the aggregates: a lost award is put right by
+    // Best effort, like the aggregates: a missed award is put right by
     // re-running the backfill.
     const awardSolveScore = () =>
       withSpan("puzzle.award_score", async (span) => {
@@ -196,12 +196,10 @@ export const handler = define.handlers<PageData>({
           isNewPath,
           flash: isFlash,
         });
-        try {
-          const added = await awardScore(ctx.state.userId, slug, kinds);
-          span.setAttribute("score.earned", added.length);
-        } catch (err) {
-          console.error("Failed to award score:", (err as Error).message);
-        }
+        const added = await awardScore(ctx.state.userId, slug, kinds);
+        span.setAttribute("score.earned", added.length);
+      }).catch((err) => {
+        console.error("Failed to award score:", (err as Error).message);
       });
 
     // One user write, alongside the aggregates. A Flash solve only counts
