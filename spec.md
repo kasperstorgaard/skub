@@ -28,8 +28,8 @@ puzzle.
 
 Only earned stars show: no placeholder for unearned ones, and no hint of
 what's left to earn anywhere. The stars are a vocabulary players learn. They float left of
-the score badge, no background; on cards, left of the best-moves chip in the
-top right. One colour, the text colour: shape and count tell the kinds apart.
+the score badge, no background; on cards, alone in the top right (no move
+count). One colour, the text colour: shape and count tell the kinds apart.
 
 Stars stack with an overlap, like an avatar stack, to save space. Each has a
 double outline in the background colour of where it sits, which blocks out
@@ -106,7 +106,7 @@ Decided so far (with Kasper, in chat):
   Phosphor's 256 grid, stacked at a 0.35em overlap, each after the first cutting a gap in
   `--star-knockout`, one colour. On the puzzle page, solutions page and replays: the
   viewer's own stars beside the badge. On cards they replace the check/trophy
-  chip, beside the move count; the archive calendar's cells show them too.
+  chip and the move count; the archive calendar's cells show them too.
   Kinds always come from the stored score per puzzle, never worked out from
   best moves against minimum moves.
 - All-time per user is an updated aggregate, not computed: each puzzle
