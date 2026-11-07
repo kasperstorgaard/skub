@@ -9,6 +9,7 @@ import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { BadgeStars } from "#/components/stars.tsx";
+import { TOOL_BUTTON } from "#/components/toolbar.tsx";
 import {
   getCanonicalGroup,
   listCanonicalGroups,
@@ -197,7 +198,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           {!!flashStart?.length && (
             <PillSwitch
               label="Solutions"
-              className="place-self-start"
+              className="justify-self-end"
               items={[
                 {
                   label: "Solutions",
@@ -222,7 +223,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
               </p>
             )
             : (
-              <ol className="grid gap-fl-3 m-0 p-0 list-none">
+              // A faint line between paths, half the sibling step either side
+              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
                 {paths.map((path) => (
                   <PathItem
                     key={path.canonicalKey}
@@ -233,7 +235,9 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
 
                 {extraPath && (
                   <>
-                    <li className="p-0 text-text-3" aria-hidden="true">…</li>
+                    <li className="p-0 py-fl-1 text-text-3" aria-hidden="true">
+                      …
+                    </li>
                     <PathItem path={extraPath} {...pathProps} />
                   </>
                 )}
@@ -278,18 +282,16 @@ function PathItem(
   const more = showsYou ? Math.max(path.more - 1, 0) : path.more;
 
   return (
-    <li className="grid grid-cols-[3rem_1fr_auto] items-center gap-x-fl-1 p-0">
-      <span className="flex flex-col items-center leading-flat">
-        {/* At the shortest, the puck's colour, like the badge */}
-        <span
-          className={clsx(
-            "text-4 tabular-nums",
-            isPerfect ? "text-ui-2" : "text-text-1",
-          )}
-        >
-          {path.moves}
-        </span>
-        <span className="text-0 text-text-3">moves</span>
+    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-1 first:pt-0 last:pb-0">
+      {/* The path's moves; at the shortest, the puck's colour, like the badge */}
+      <span
+        className={clsx(
+          "text-4 tabular-nums",
+          isPerfect ? "text-ui-2" : "text-text-3",
+        )}
+        title={`${path.moves} moves`}
+      >
+        {path.moves}
       </span>
 
       <span className="grid min-w-0">
@@ -322,8 +324,14 @@ function PathItem(
         )}
       </span>
 
-      <a href={`${solutionsHref}/${path.claimer.id}`} className="btn min-w-0">
-        Watch <Icon icon={Play} />
+      {/* The toolbar's play button: one per path, so no label to repeat */}
+      <a
+        href={`${solutionsHref}/${path.claimer.id}`}
+        className={clsx(TOOL_BUTTON, "self-center aspect-square")}
+        aria-label={`Watch ${path.claimer.name}'s ${path.moves} moves`}
+        title="Watch"
+      >
+        <Icon icon={Play} className="text-[1.25rem]" />
       </a>
     </li>
   );
