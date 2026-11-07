@@ -67,7 +67,8 @@ Three tabs: Solves, Flash and Users.
 - **Flash**: the same for Flash solves, compared by the moves played from the
   Flash start. A Flash solve lands here (today it goes back to the solved
   board).
-- **Users**: the puzzle's high score per user, one row each.
+- **Users**: the daily high score, one row per user: a points score for the
+  solve, roughly 50–300. How it's worked out is still open.
 
 Each tab is deep linkable: it lives in the URL, so it works without JS and
 survives a share or reload.
