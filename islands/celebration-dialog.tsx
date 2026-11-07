@@ -94,13 +94,7 @@ export function CelebrationDialog(
   const isNewPath = data?.isNewPath ?? false;
 
   const isPerfect = moves.length === puzzle.value.minMoves;
-  const isGreat = moves.length <= puzzle.value.minMoves + 2;
-
-  const headline = isPerfect
-    ? `Perfect in ${moves.length} moves!`
-    : isGreat
-    ? `Great in ${moves.length} moves!`
-    : `Solved in ${moves.length} moves`;
+  const headline = isPerfect ? "Perfect!" : "Solved!";
 
   const body = useMemo(
     () => {
@@ -210,8 +204,8 @@ function pickRandom<T>(items: readonly T[]): T {
 
 /**
  * Maps a celebration type to a randomly-picked body string. Each case has
- * 3 wording variants. The headline carries closeness (Perfect / Great /
- * Solved); bodies are factual fragments, no praise word stacking.
+ * 3 wording variants. The headline carries closeness (Perfect / Solved);
+ * bodies are factual fragments, no praise word stacking.
  */
 function getMessage(
   type: CelebrationType,
