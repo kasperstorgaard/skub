@@ -1,9 +1,11 @@
 /**
  * Rebuilds the highscore index from the user scores, for when how a score
  * ranks changes (e.g. points per kind): an award only moves the key it would
- * write today, so keys from an older rank stay behind. Run against production
- * with:
- * deno run --tunnel -A ./scripts/reindex-highscore.ts
+ * write today, so keys from an older rank stay behind.
+ *
+ * Locally: deno run -A ./scripts/reindex-highscore.ts
+ * Against a hosted database, set SKUB_KV_URL and DENO_KV_ACCESS_TOKEN as for
+ * ./scripts/backfill-score.ts (`--tunnel` reaches the development database).
  *
  * Safe to run again. A star awarded mid-run can leave its player's old key,
  * so run it while it's quiet, or twice.
