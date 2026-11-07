@@ -163,7 +163,8 @@ Decided so far (with Kasper, in chat):
   footer's Stars stat (total and split, after the streak) links there, as do
   "High score" buttons in the puzzle page's panel (its sidebar on desktop,
   its footer on mobile), the solutions page's panel and the archive's.
-- High score since: the top three as a podium (bigger, with their stars), the
+- High score since: the top three as a podium (bigger, with what their points
+  are made of in words: solved, perfect, first), faint lines between, the
   rest a plain numbered list; a pill switch on the right picks this week
   (`/highscore`) or all time (`?period=all`). This week is worked out per
   request from the week's dailies (`getWeekHighscore`, `getHighscore`), so the
