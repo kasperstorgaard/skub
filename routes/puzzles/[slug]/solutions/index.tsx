@@ -1,118 +1,190 @@
 import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { page } from "fresh";
-import { useMemo } from "preact/hooks";
 
 import { Header } from "#/components/header.tsx";
 import { Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { PillSwitch } from "#/components/pill-switch.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { BadgeStars } from "#/components/stars.tsx";
 import {
   getCanonicalGroup,
   listCanonicalGroups,
+  listPathSolutions,
+  listPuzzleSolutions,
   listUserPuzzleSolutions,
 } from "#/db/solutions.ts";
-import { CanonicalGroup } from "#/db/types.ts";
+import type { CanonicalGroup, Solution } from "#/db/types.ts";
+import { getPathGroups } from "#/game/paths.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
-import { Puzzle } from "#/game/types.ts";
+import type { Puzzle } from "#/game/types.ts";
 import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
+type Tab = "solutions" | "flash";
+
+// Paths shown, and players under each path's claimer.
+const PATHS = 6;
+const PLAYERS = 5;
+
+/** A path as the page lists it: who claimed it, and who found it after. */
+type Path = {
+  canonicalKey: string;
+  moves: number;
+  claimer: Solution;
+  others: Solution[];
+  /** Players on the path past the ones shown */
+  more: number;
+};
+
 type Data = {
   puzzle: Puzzle;
-  groups: CanonicalGroup[];
-  extraGroup: CanonicalGroup | null;
+  tab: Tab;
+  paths: Path[];
+  /** The viewer's latest path, when it isn't among the shown ones */
+  extraPath: Path | null;
   userCanonicalKeys: string[];
   /** The player's best regular solve, for the score badge */
   bestMoves: number | null;
-  userId: string;
 };
+
+function toPath(
+  canonicalKey: string,
+  solutions: Solution[],
+  options: { moves: number; count: number },
+): Path {
+  const [claimer, ...rest] = solutions;
+  const others = rest.slice(0, PLAYERS);
+  return {
+    canonicalKey,
+    moves: options.moves,
+    claimer,
+    others,
+    more: Math.max(options.count - 1 - others.length, 0),
+  };
+}
+
+/** A path from the stored aggregate, with its players read from the path. */
+async function getGroupPath(slug: string, group: CanonicalGroup) {
+  const solutions = await listPathSolutions(slug, group.canonicalKey, {
+    // Room for Flash solves of the same moves, which are left out
+    limit: PLAYERS * 2 + 2,
+  });
+  return toPath(
+    group.canonicalKey,
+    solutions.length ? solutions : [group.firstSolution],
+    { moves: group.firstSolution.moves.length, count: group.count },
+  );
+}
 
 export const handler = define.handlers<Data>({
   async GET(ctx) {
     const { slug } = ctx.params;
     const { puzzle, userId } = ctx.state;
-    const userCanonicalKeys: string[] = [];
+    const hasFlash = !!puzzle.flashStart?.length;
+    const tab: Tab = hasFlash && ctx.url.searchParams.get("tab") === "flash"
+      ? "flash"
+      : "solutions";
+    // Flash paths are told apart, and counted, from the Flash start.
+    const skip = tab === "flash" ? puzzle.flashStart?.length ?? 0 : 0;
 
-    const [groups, allUserSolutions] = await Promise.all([
-      listCanonicalGroups(slug, { limit: 6 }),
-      listUserPuzzleSolutions(userId, slug, { limit: 100 }),
-    ]);
-    // Flash solves stay off the leaderboard, so none of its rows are theirs.
+    const allUserSolutions = await listUserPuzzleSolutions(userId, slug, {
+      limit: 100,
+    });
     const userSolutions = allUserSolutions.filter((solution) =>
+      tab === "flash" ? solution.flash : !solution.flash
+    );
+    const userCanonicalKeys = [
+      ...new Set(
+        userSolutions.map((solution) =>
+          getCanonicalMoveKey(solution.moves.slice(skip))
+        ),
+      ),
+    ];
+    const latestKey = userCanonicalKeys.at(-1);
+
+    let paths: Path[];
+    let extraPath: Path | null = null;
+
+    if (tab === "solutions") {
+      const groups = await listCanonicalGroups(slug, { limit: PATHS });
+      paths = await Promise.all(
+        groups.map((group) => getGroupPath(slug, group)),
+      );
+
+      const latest = userSolutions.at(-1);
+      if (latest && !paths.some((path) => path.canonicalKey === latestKey)) {
+        const group = await getCanonicalGroup(latest);
+        if (group) extraPath = await getGroupPath(slug, group);
+      }
+    } else {
+      // Flash solves aren't in the aggregates: grouped from the solves.
+      const solutions = await listPuzzleSolutions(slug, { limit: 1000 });
+      const groups = getPathGroups(
+        solutions.filter((solution) => solution.flash),
+        { skip },
+      ).map((group) =>
+        toPath(group.canonicalKey, group.solutions, {
+          moves: group.moves,
+          count: group.solutions.length,
+        })
+      );
+
+      paths = groups.slice(0, PATHS);
+      if (latestKey && !paths.some((path) => path.canonicalKey === latestKey)) {
+        extraPath = groups.find((path) => path.canonicalKey === latestKey) ??
+          null;
+      }
+    }
+
+    const regularSolutions = allUserSolutions.filter((solution) =>
       !solution.flash
     );
-
-    const groupKeySet = new Set(groups.map((g) => g.canonicalKey));
-
-    for (const solution of userSolutions) {
-      const moveKey = getCanonicalMoveKey(solution.moves);
-      if (!userCanonicalKeys.includes(moveKey)) {
-        userCanonicalKeys.push(moveKey);
-      }
-    }
-
-    // Show the latest user solution's group after … if it didn't make the top 6
-    let extraGroup: CanonicalGroup | null = null;
-    const latestSolution = userSolutions[userSolutions.length - 1];
-
-    if (latestSolution) {
-      const moveKey = getCanonicalMoveKey(latestSolution.moves);
-
-      if (!groupKeySet.has(moveKey)) {
-        extraGroup = await getCanonicalGroup(latestSolution);
-      }
-    }
-
-    const bestMoves = userSolutions.length
-      ? Math.min(...userSolutions.map((solution) => solution.moves.length))
+    const bestMoves = regularSolutions.length
+      ? Math.min(...regularSolutions.map((solution) => solution.moves.length))
       : null;
 
     return page({
       puzzle,
-      groups,
-      extraGroup,
+      tab,
+      paths,
+      extraPath,
       userCanonicalKeys,
       bestMoves,
-      userId,
     });
   },
 });
 
-type SolutionRowProps = {
-  group: CanonicalGroup;
-  solutionsHref: string;
-  userCanonicalKeys: string[];
-  minMoves: number | undefined;
-};
-
 export default define.page<typeof handler>(function SolutionsListPage(props) {
   const puzzle = useSignal(props.data.puzzle);
   const href = useSignal(props.url.href);
-  const { groups, extraGroup, userCanonicalKeys } = props.data;
-  const minMoves = props.data.puzzle.minMoves;
-  const solutionsHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
-  const backHref = `/puzzles/${props.data.puzzle.slug}`;
+  const { tab, paths, extraPath, userCanonicalKeys } = props.data;
+  const { slug, flashStart } = props.data.puzzle;
+  const solutionsHref = `/puzzles/${slug}/solutions`;
+  // The shortest a path can be on this tab: Flash counts from its start.
+  const minMoves = props.data.puzzle.minMoves -
+    (tab === "flash" ? flashStart?.length ?? 0 : 0);
 
-  const visibleGroups: (CanonicalGroup | null)[] = extraGroup
-    ? [...groups.slice(0, 5), null, extraGroup]
-    : groups;
+  const pathProps = {
+    solutionsHref,
+    minMoves,
+    userId: props.state.userId,
+    userCanonicalKeys,
+  };
 
   return (
     <>
-      <Main className="justify-stretch min-h-96">
-        <Header
-          back={{ href: backHref }}
-        />
+      <Main className="justify-stretch content-start min-h-96">
+        <Header back={{ href: `/puzzles/${slug}` }} />
 
         <div className="flex items-end justify-between flex-wrap gap-fl-1">
           <h1 className="text-text-1">
             <PuzzleName puzzle={props.data.puzzle} lead="Solutions" />
           </h1>
 
-          <BadgeStars kinds={props.state.score[props.data.puzzle.slug]}>
+          <BadgeStars kinds={props.state.score[slug]}>
             <ScoreBadge
               puzzle={puzzle}
               href={href}
@@ -121,51 +193,49 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           </BadgeStars>
         </div>
 
-        {
-          /*
-          TODO: 3-tab layout with separate pages:
-          - /solutions           → scoreboard (this page)
-          - /solutions/mine      → my-solutions (all canonical groups the user has found)
-          - /solutions/stats     → stats (move distribution histogram, needs PuzzleStats in page data)
-          Tabs rendered as nav links at the top of Main, active tab highlighted.
-        */
-        }
-        {
-          /*
-          TODO: solutions page rewrite — currently hard to find your own solve
-          in the list. Should highlight the user's row, scroll to it, or surface
-          it separately. Consider as a follow-up to the celebration flow.
-        */
-        }
-        <div className="mt-fl-2">
-          {visibleGroups.length === 0
+        <div className="grid content-start gap-fl-4">
+          {!!flashStart?.length && (
+            <PillSwitch
+              label="Solutions"
+              className="place-self-start"
+              items={[
+                {
+                  label: "Solutions",
+                  href: solutionsHref,
+                  isActive: tab === "solutions",
+                },
+                {
+                  label: "Flash",
+                  href: `${solutionsHref}?tab=flash`,
+                  isActive: tab === "flash",
+                },
+              ]}
+            />
+          )}
+
+          {paths.length === 0
             ? (
-              // TODO: improve empty state — currently too sparse with Remix isolated in corner
               <p className="text-3 text-text-2">
-                No solves posted yet.
+                {tab === "flash"
+                  ? "No Flash solutions yet."
+                  : "No solutions yet."}
               </p>
             )
             : (
-              <ol className="m-0 p-0 list-none flex flex-col gap-y-2 w-full">
-                {visibleGroups.map((group) =>
-                  group === null
-                    ? (
-                      <li
-                        key="delimiter"
-                        className="p-0 text-text-3 text-0 px-2 pr-3"
-                      >
-                        …
-                      </li>
-                    )
-                    : (
-                      <SolutionRow
-                        key={group.canonicalKey}
-                        group={group}
-                        solutionsHref={solutionsHref}
-                        userCanonicalKeys={userCanonicalKeys}
-                        minMoves={minMoves}
-                      />
-                    )
+              <ol className="grid gap-fl-3 m-0 p-0 list-none">
+                {paths.map((path) => (
+                  <PathItem
+                    key={path.canonicalKey}
+                    path={path}
+                    {...pathProps}
+                  />
+                ))}
+
+                {extraPath && (
+                  <>
+                    <li className="p-0 text-text-3" aria-hidden="true">…</li>
+                    <PathItem path={extraPath} {...pathProps} />
+                  </>
                 )}
               </ol>
             )}
@@ -183,73 +253,95 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
   );
 });
 
-function SolutionRow(
-  { group, solutionsHref, userCanonicalKeys, minMoves }: SolutionRowProps,
+type PathItemProps = {
+  path: Path;
+  solutionsHref: string;
+  minMoves: number;
+  userId: string;
+  userCanonicalKeys: string[];
+};
+
+/**
+ * One path: its moves, the player who claimed it, podium style, and the ones
+ * who found it after, then Watch.
+ */
+function PathItem(
+  { path, solutionsHref, minMoves, userId, userCanonicalKeys }: PathItemProps,
 ) {
-  const isFound = userCanonicalKeys.includes(group.canonicalKey);
-  const isOptimal = minMoves != null &&
-    group.firstSolution.moves.length === minMoves;
-  const others = Math.max(group.count - 1, 0);
-
-  const metaLine = useMemo(() => {
-    // You are the other one
-    if (isFound && others === 1) return "+ you";
-
-    if (isFound && others > 1) {
-      // offset others by 1 more, as "you" counts for 1
-      return `+ you and ${others - 1} ${others - 1 === 1 ? "other" : "others"}`;
-    }
-
-    if (others === 0) return "unique solve";
-
-    return `+ ${others} ${others === 1 ? "other" : "others"}`;
-  }, [isFound, others]);
+  const isPerfect = path.moves <= minMoves;
+  const isFound = userCanonicalKeys.includes(path.canonicalKey);
+  const isShown = [path.claimer, ...path.others].some((solution) =>
+    solution.userId === userId
+  );
+  // The viewer found it but isn't among the names: say so, out of the rest.
+  const showsYou = isFound && !isShown;
+  const more = showsYou ? Math.max(path.more - 1, 0) : path.more;
 
   return (
-    <li className="p-0">
-      <a
-        href={`${solutionsHref}/${group.firstSolution.id}`}
-        className={clsx(
-          "group grid grid-cols-[3rem_1fr_auto] items-center gap-x-fl-1",
-          "px-2 pr-3 py-2 rounded-2 no-underline",
-          "bg-surface-3/20 border-text-3/20 border-1 border-l-3 border-l-text-3",
-          "hover:brightness-(--hover-brightness)",
-          "data-found:border-l-brand",
-        )}
-        data-found={isFound ? true : undefined}
-      >
-        <div className="flex flex-col items-center">
-          <span className="font-5 text-4 text-text-1 leading-flat">
-            {group.firstSolution.moves.length}
-          </span>
-          <span className="text-0 text-text-3 mt-0.5">moves</span>
-        </div>
-
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-3 text-text-2 overflow-hidden text-ellipsis whitespace-nowrap">
-              {group.firstSolution.name}
-            </span>
-
-            {isOptimal && (
-              <span
-                className={clsx(
-                  "flex items-center shrink-0 gap-0.5 text-0 px-1 py-px",
-                  "rounded-1 bg-ui-2/10 border border-ui-2/20 text-ui-2 whitespace-nowrap leading-tight",
-                )}
-              >
-                <Icon icon={Trophy} /> perfect
-              </span>
-            )}
-          </div>
-          <p className="text-text-3 text-1 leading-snug">{metaLine}</p>
-        </div>
-
-        <span className="flex gap-1 items-center text-link">
-          <span className="max-md:hidden">Watch</span>
-          <Icon icon={Play} />
+    <li className="grid grid-cols-[3rem_1fr_auto] items-center gap-x-fl-1 p-0">
+      <span className="flex flex-col items-center leading-flat">
+        {/* At the shortest, the puck's colour, like the badge */}
+        <span
+          className={clsx(
+            "text-4 tabular-nums",
+            isPerfect ? "text-ui-2" : "text-text-1",
+          )}
+        >
+          {path.moves}
         </span>
+        <span className="text-0 text-text-3">moves</span>
+      </span>
+
+      <span className="grid min-w-0">
+        <Name
+          name={path.claimer.name}
+          isViewer={path.claimer.userId === userId}
+          className="text-4 font-medium"
+        />
+
+        {(path.others.length > 0 || showsYou || more > 0) && (
+          <span className="text-1 text-text-3 overflow-hidden text-ellipsis whitespace-nowrap">
+            {path.others.map((solution, index) => (
+              <span key={solution.id}>
+                {index > 0 && ", "}
+                <span
+                  className={clsx(solution.userId === userId && "text-brand")}
+                >
+                  {solution.name}
+                </span>
+              </span>
+            ))}
+            {showsYou && (
+              <>
+                {path.others.length > 0 && ", "}
+                <span className="text-brand">you</span>
+              </>
+            )}
+            {more > 0 && ` and ${more} more`}
+          </span>
+        )}
+      </span>
+
+      <a href={`${solutionsHref}/${path.claimer.id}`} className="btn min-w-0">
+        Watch <Icon icon={Play} />
       </a>
     </li>
+  );
+}
+
+type NameProps = { name: string; isViewer: boolean; className?: string };
+
+/** A player's name, in the brand colour for the viewer's own. */
+function Name({ name, isViewer, className }: NameProps) {
+  return (
+    <span
+      className={clsx(
+        "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap",
+        isViewer ? "text-brand" : "text-text-1",
+        className,
+      )}
+    >
+      {name}
+    </span>
   );
 }
