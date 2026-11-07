@@ -71,7 +71,7 @@ the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
-Two tabs, Solutions and Flash, the high score's pill switch, in the URL
+Two tabs, Regular and Flash, the high score's pill switch, in the URL
 (`?tab=flash`) so they work without JS and survive a share or reload. The
 switch sits beside the title, where the score badge and stars were: the page
 is about the paths, not your score. Flash
