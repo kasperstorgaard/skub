@@ -143,7 +143,15 @@ Decided so far (with Kasper, in chat):
   No-JS solves get no dialog for full solves (they go to
   the solutions page), so they don't show the payoff; the page's own badge
   stars update on the next load.
-- Layer 4 next (`stars/highscore`, based on `stars/celebration`).
+- Layer 4 built (`stars/highscore`): `/highscore` lists the top 50 from the
+  `highscore` index, names from the user records (`getUserNames`, "Anonymous"
+  without one), each row its rank, its stars per kind and the total; the
+  viewer's row is marked, and when they're outside the top 50 it follows a
+  "…" without a rank, from their cookie score (`getProgressScore`). The home
+  footer's Stars stat (total and split, after the streak) links there, as do
+  "High score" buttons in the puzzle page's panel (its sidebar on desktop,
+  its footer on mobile), the solutions page's panel and the archive's.
+- Layer 5 next (`solutions/revamp`, based on `stars/highscore`).
 - Still open: how many stars unlock the best solutions (ask before layer 5); highscore ties
   past total, first and perfect are by user id (earliest-to-reach would need
   a timestamp in the key); the daily high score's points calculation.

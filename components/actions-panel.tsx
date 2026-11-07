@@ -1,4 +1,11 @@
-import { Download, Icon, Pencil, Ranking, Star } from "#/components/icons.tsx";
+import {
+  Download,
+  Icon,
+  Pencil,
+  Ranking,
+  Star,
+  Trophy,
+} from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 
 type ActionsPanelProps = {
@@ -21,6 +28,12 @@ export function ActionsPanel(
         {!isPreview && !isFlash && (
           <a href={`/puzzles/${slug}/solutions`} className="btn">
             <Icon icon={Ranking} /> See solutions
+          </a>
+        )}
+
+        {!isPreview && (
+          <a href="/highscore" className="btn">
+            <Icon icon={Trophy} /> High score
           </a>
         )}
 

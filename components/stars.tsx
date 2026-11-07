@@ -2,7 +2,7 @@ import { clsx } from "clsx/lite";
 import type { ComponentChildren } from "preact";
 import { useId } from "preact/hooks";
 
-import type { ScoreKind } from "#/game/score.ts";
+import type { ScoreKind, UserScore } from "#/game/score.ts";
 
 // One rounded star on Phosphor's 256 grid, a slim outline for every kind: the
 // count tells a solution's stars apart, not the shape. A Flash solve's star is
@@ -127,6 +127,25 @@ function StarPath({ kind, id }: { kind: ScoreKind; id: string }) {
       <path {...props} fill="none" stroke={`url(#${id}-pearl)`} />
       <path {...props} fill="none" stroke={`url(#${id}-sheen)`} />
     </>
+  );
+}
+
+type StarCountsProps = {
+  userScore: UserScore;
+  className?: string;
+};
+
+/** A player's stars per kind, one star of each kind they've earned with its count. */
+export function StarCounts({ userScore, className }: StarCountsProps) {
+  return (
+    <span className={clsx("inline-flex items-center gap-2", className)}>
+      {DISPLAY_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
+        <span key={kind} className="inline-flex items-center gap-0.5">
+          <Stars kinds={[kind]} />
+          {userScore[kind]}
+        </span>
+      ))}
+    </span>
   );
 }
 

@@ -62,6 +62,26 @@ export async function getUserScore(userId: string): Promise<UserScore> {
   return { ...emptyUserScore, ...res.value };
 }
 
+export type HighscoreEntry = { userId: string; userScore: UserScore };
+
+/** The top of the highscore, in rank order. */
+export async function listHighscore(
+  { limit = 50 }: { limit?: number } = {},
+): Promise<HighscoreEntry[]> {
+  const entries: HighscoreEntry[] = [];
+  const iter = kv.list<UserScore>({ prefix: ["highscore"] }, {
+    reverse: true,
+    limit,
+  });
+  for await (const { key, value } of iter) {
+    entries.push({
+      userId: key[4] as string,
+      userScore: { ...emptyUserScore, ...value },
+    });
+  }
+  return entries;
+}
+
 /**
  * Awards a solve that beats the player's best solution on the puzzle, and
  * returns the kinds it adds; nothing when it's no better.

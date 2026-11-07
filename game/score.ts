@@ -158,6 +158,15 @@ export function getPastScore(
 /** A player's solution score per puzzle, by slug, each in display order. */
 export type ScoreProgress = Record<string, ScoreKind[]>;
 
+/** A player's points per kind, from their solution score on each puzzle. */
+export function getProgressScore(score: ScoreProgress): UserScore {
+  const userScore = { ...emptyUserScore };
+  for (const kinds of Object.values(score)) {
+    for (const kind of kinds) userScore[kind]++;
+  }
+  return userScore;
+}
+
 /** Kinds as bits, one per kind in {@link SCORE_KINDS} order, for the cookie. */
 export function encodeScoreKinds(kinds: ScoreKind[]): number {
   return SCORE_KINDS.reduce(
