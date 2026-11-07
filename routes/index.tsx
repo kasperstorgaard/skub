@@ -53,7 +53,7 @@ export default define.page<typeof handler>(function Home(ctx) {
     bestMoves,
     userStats,
   } = ctx.data;
-  const { user } = ctx.state;
+  const { user, score } = ctx.state;
 
   return (
     <>
@@ -97,6 +97,7 @@ export default define.page<typeof handler>(function Home(ctx) {
                 puzzle={dailyPuzzle}
                 tagline="Daily puzzle"
                 bestMoves={bestMoves[dailyPuzzle.slug]}
+                score={score[dailyPuzzle.slug]}
               />
             </li>
 
@@ -141,6 +142,7 @@ export default define.page<typeof handler>(function Home(ctx) {
                   puzzle={recommendedPuzzle}
                   tagline="Random puzzle"
                   bestMoves={bestMoves[recommendedPuzzle.slug]}
+                  score={score[recommendedPuzzle.slug]}
                 />
               )}
             </li>
