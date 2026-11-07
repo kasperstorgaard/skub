@@ -11,8 +11,6 @@ import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 
-const MESSAGES = ["Nice solution", "Well done", "Well played"] as const;
-
 // Where a star starts its fly-in, in em from where it lands: five spots evenly
 // spaced on a 1em circle around 4 left, 2 up.
 const FLY_BASE = [-4, -2];
@@ -96,8 +94,6 @@ export function CelebrationDialog(
   const data = celebrationData.value;
   const isPerfect = moves.length === puzzle.value.minMoves;
   const headline = isPerfect ? "Perfect!" : "Solved!";
-  // Picked once, so it holds still when the stars land.
-  const message = useMemo(() => pickRandom(MESSAGES), []);
   const flyStarts = useMemo(() => pickFlyStarts(), []);
   // Shown as they stand until the solve lands; only the new ones fly in.
   const shown = data?.stars ?? stars;
@@ -132,7 +128,9 @@ export function CelebrationDialog(
         </div>
 
         <p className="text-3 text-text-2">
-          {celebrationError.value ? "Couldn't save your solve." : message}
+          {celebrationError.value
+            ? "Couldn't save your solve."
+            : "Thanks for playing. What's next?"}
         </p>
       </div>
 
@@ -169,10 +167,6 @@ export function CelebrationDialog(
       </DialogActions>
     </Dialog>
   );
-}
-
-function pickRandom<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
 }
 
 /** Three of the five starts, no two the same. */

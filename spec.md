@@ -127,8 +127,8 @@ Decided so far (with Kasper, in chat):
   and 2em up of where it lands, drawn at random with no two the same
   (motion-safe only). The existing stars show from the start, so nothing
   shifts when the data lands. The headline is just "Solved!" or "Perfect!",
-  over one warm line picked at random from "Nice solution", "Well done" and
-  "Well played", for every solve: the stars carry the news, so the stats
+  over one fixed line, "Thanks for playing. What's next?", leading into the
+  actions, for every solve: the stars carry the news, so the stats
   lines (first to solve, new path, percentiles, counts) and the loading state
   are gone. The main action is "One more".
   No-JS solves get no dialog for full solves (they go to
