@@ -126,26 +126,26 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                 /* The top three, bigger and with what their points are made
                   of, a faint line between, a sibling step either side */
               }
-              <ol className="grid grid-cols-[2rem_minmax(0,max-content)_repeat(3,auto)_1fr_auto] gap-x-fl-1 m-0 p-0 list-none divide-y divide-text-3/10">
+              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
                 {rows.slice(0, 3).map((row, index) => (
                   <li
                     key={row.userId}
-                    // Columns shared with the other podium rows, so the stats
-                    // line up just after the longest name; points on the right
-                    className="col-span-full grid grid-cols-subgrid items-baseline p-0 py-fl-2 first:pt-0"
+                    className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0"
                   >
                     <span className="text-4 text-text-3 tabular-nums">
                       {index + 1}
                     </span>
-                    <Name
-                      name={row.name}
-                      isViewer={row.userId === userId}
-                      className="text-4 font-medium"
-                    />
-                    <Breakdown userScore={row.userScore} />
+                    <div className="grid min-w-0">
+                      <Name
+                        name={row.name}
+                        isViewer={row.userId === userId}
+                        className="text-4 font-medium"
+                      />
+                      <Breakdown userScore={row.userScore} />
+                    </div>
                     <Points
                       userScore={row.userScore}
-                      className="col-[-2/-1] text-4 font-semibold"
+                      className="text-4 font-semibold"
                     />
                   </li>
                 ))}
@@ -265,24 +265,23 @@ const BREAKDOWN = [
   { kind: "first", label: "First" },
 ] as const;
 
-/**
- * What a player's points are made of, one cell each, a number over its label
- * like the home page's stats. All three, zeros too, so the columns line up.
- */
+/** What a player's points are made of, on one line: "10 Solved 4 Perfect". */
 function Breakdown({ userScore }: { userScore: UserScore }) {
   const counts = { ...userScore, solve: userScore.solve + userScore.flash };
 
   return (
-    <>
-      {BREAKDOWN.map(({ kind, label }) => (
-        <dl key={kind} className="flex flex-col m-0">
-          <dd className="m-0 text-3 font-semibold leading-flat tabular-nums text-text-2">
+    <dl className="flex flex-wrap gap-x-3 m-0 text-2">
+      {BREAKDOWN.filter(({ kind }) => counts[kind] > 0).map((
+        { kind, label },
+      ) => (
+        <div key={kind} className="flex gap-1">
+          <dd className="m-0 font-semibold tabular-nums text-text-2">
             {formatNumber(counts[kind])}
           </dd>
-          <dt className="text-1 text-text-3">{label}</dt>
-        </dl>
+          <dt className="text-text-3">{label}</dt>
+        </div>
       ))}
-    </>
+    </dl>
   );
 }
 
