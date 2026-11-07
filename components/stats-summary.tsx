@@ -1,7 +1,7 @@
 import clsx from "clsx/lite";
 import { HTMLAttributes } from "preact";
 
-import { StarCounts } from "#/components/stars.tsx";
+import { STAR_ORDER, Stars } from "#/components/stars.tsx";
 import { getTotalScore, type UserScore } from "#/game/score.ts";
 import type { UserStats } from "#/game/streak.ts";
 
@@ -46,8 +46,12 @@ export function StatsSummary({ stats, userScore, className }: Props) {
 
       {points > 0 && (
         <div className="flex flex-col">
-          <dd className="m-0 text-5 font-semibold tracking-wide leading-flat text-text-1">
-            <StarCounts userScore={userScore} />
+          <dd className="m-0 flex flex-col text-2 text-text-1">
+            {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
+              <span key={kind} className="flex items-center gap-1">
+                <Stars kinds={[kind]} /> {userScore[kind]}
+              </span>
+            ))}
           </dd>
           <dt className="text-2 text-text-2">Stars</dt>
         </div>

@@ -10,7 +10,8 @@ import type { ScoreKind, UserScore } from "#/game/score.ts";
 const STAR =
   "M121.3,45.6 Q128.0,32.0 134.7,45.6 L154.9,86.5 Q158.6,93.9 166.8,95.1 L211.9,101.7 Q226.9,103.9 216.0,114.5 L183.4,146.3 Q177.5,152.1 178.9,160.2 L186.6,205.2 Q189.1,220.1 175.7,213.1 L135.3,191.9 Q128.0,188.0 120.7,191.9 L80.3,213.1 Q66.9,220.1 69.4,205.2 L77.1,160.2 Q78.5,152.1 72.6,146.3 L40.0,114.5 Q29.1,103.9 44.1,101.7 L89.2,95.1 Q97.4,93.9 101.1,86.5 Z";
 
-const DISPLAY_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
+/** The order stars show in: Flash takes the solve star's place. */
+export const STAR_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
 
 const LABELS: Record<ScoreKind, string> = {
   solve: "Solved",
@@ -54,7 +55,7 @@ export function Stars({ kinds, className, getStarProps }: StarsProps) {
   if (kinds.length === 0) return null;
   // Flash stands in for solve, so it takes the solve star's place.
   const stars = [...kinds].sort((a, b) =>
-    DISPLAY_ORDER.indexOf(a) - DISPLAY_ORDER.indexOf(b)
+    STAR_ORDER.indexOf(a) - STAR_ORDER.indexOf(b)
   );
   const label = stars.map((kind) => LABELS[kind]).join(", ");
   // Right to left in the DOM, laid out reversed, so the left star is on top.
@@ -139,7 +140,7 @@ type StarCountsProps = {
 export function StarCounts({ userScore, className }: StarCountsProps) {
   return (
     <span className={clsx("inline-flex items-center gap-2", className)}>
-      {DISPLAY_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
+      {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
         <span key={kind} className="inline-flex items-center gap-0.5">
           <Stars kinds={[kind]} />
           {userScore[kind]}
