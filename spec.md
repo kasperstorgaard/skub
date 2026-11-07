@@ -82,10 +82,10 @@ who claimed it (found it first) with its move count, and under them the next
 five players who found it, then how many more. Flash paths are counted from
 the Flash start. A Flash solve lands on the Flash tab.
 
-Every path has a Watch button. It's on once you've solved the puzzle, any
-solve, Flash included, and crossed out until then; the replay route sends you
-back to the solutions instead of showing one. The puzzle page's See solutions
-shows once you have a star on the puzzle.
+Every path has a Watch button. The way in is the gate: the puzzle page links
+to its solutions once you've solved it, any solve, Flash included (to the
+Flash tab while Flash is on), and nothing inside the page or the replays
+checks again. Copying a better path is open, for now.
 
 ## Non-goals
 
@@ -178,8 +178,9 @@ Decided so far (with Kasper, in chat):
   cleaned up and tested the stack.
 - Layer 5 plan (`solutions/revamp`, on `badge/your-best`), with Kasper:
   one solutions page, no Users tab (the high score page covers ranking), Flash
-  as its own tab. Replays open after any solve: stricter rules (only as good
-  as your best) were weighed and dropped as too harsh. Defaults picked:
+  as its own tab. Replays open after any solve, and only the links in check
+  it: stricter rules (only as good as your best) were weighed and dropped as
+  too harsh. Defaults picked:
   - The pill switch moves out of the high score into a shared component.
   - Players per path from `solutions_by_puzzle_canonical` (the claimer plus
     five); Flash paths from the puzzle's Flash solves, by the canonical key of
