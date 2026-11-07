@@ -66,8 +66,8 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             />
           </h1>
 
-          {/* This solve's moves as it plays, nothing else */}
-          <ScoreBadge puzzle={puzzle} href={href} hideTarget />
+          {/* This solve's moves as it plays, against the shortest; no stars */}
+          <ScoreBadge puzzle={puzzle} href={href} />
         </div>
 
         <Board puzzle={puzzle} href={href} mode={mode} />
