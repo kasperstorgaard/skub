@@ -43,8 +43,10 @@ export function SolutionDialog(
   );
 
   // Opens on the JS path (anonymous user solves in browser) or the no-JS path
-  // (server detects solve and redirects here with dialog=solution).
-  const isOpen = dialog === "solution" || (hasSolution && !savedName);
+  // (server detects solve and redirects here with dialog=solution). Gives way
+  // to any other dialog named in the URL.
+  const isOpen = dialog === "solution" ||
+    (!dialog && hasSolution && !savedName);
 
   return (
     <Dialog open={isOpen}>
