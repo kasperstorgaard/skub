@@ -77,10 +77,13 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           <Board puzzle={puzzle} href={href} mode={mode} />
 
           {/* The page's main action, under the board, not in the footer */}
-          <a href={props.url.href} className="btn place-self-center">
-            <Icon icon={Play} />
-            Watch again
-          </a>
+          <div className="flex flex-col items-center gap-2 place-self-center">
+            <p className="m-0 text-2 text-text-2">Didn't catch it?</p>
+            <a href={props.url.href} className="btn">
+              <Icon icon={Play} />
+              Watch again
+            </a>
+          </div>
         </div>
       </Main>
 
