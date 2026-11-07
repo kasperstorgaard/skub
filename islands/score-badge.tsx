@@ -13,22 +13,12 @@ type ScoreBadgeProps = {
   hideMinMoves?: boolean;
   /** The player's best on the puzzle, in place of the shortest. */
   bestMoves?: number;
-  /** Just the moves, e.g. a replay's count as it plays */
-  hideTarget?: boolean;
   className?: string;
 };
 
 /** While playing: moves played over your best, or the shortest. */
 export function ScoreBadge(
-  {
-    puzzle,
-    href,
-    moves,
-    hideMinMoves,
-    bestMoves,
-    hideTarget,
-    className,
-  }: ScoreBadgeProps,
+  { puzzle, href, moves, hideMinMoves, bestMoves, className }: ScoreBadgeProps,
 ) {
   return (
     <span
@@ -45,9 +35,7 @@ export function ScoreBadge(
           "grid place-items-center px-2 min-w-[3.55em] text-center cursor-help",
           "bg-raised-2",
         )}
-        title={hideTarget
-          ? "moves played"
-          : bestMoves !== undefined
+        title={bestMoves !== undefined
           ? "moves played / your best"
           : hideMinMoves
           ? "moves played / no solves yet"
@@ -59,7 +47,6 @@ export function ScoreBadge(
           minMoves={puzzle.value.minMoves}
           hideMinMoves={hideMinMoves}
           best={bestMoves}
-          hideTarget={hideTarget}
         />
       </span>
     </span>

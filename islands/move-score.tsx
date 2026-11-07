@@ -11,22 +11,16 @@ type MoveScoreProps = {
   hideMinMoves?: boolean;
   /** The player's best, in place of the shortest. */
   best?: number;
-  /** Just the count, with nothing to measure it against */
-  hideTarget?: boolean;
 };
 
 /** Moves played over the player's best or the shortest, e.g. "3/10" or "3/–". */
 export function MoveScore(
-  { href, moves, minMoves, hideMinMoves, best, hideTarget }: MoveScoreProps,
+  { href, moves, minMoves, hideMinMoves, best }: MoveScoreProps,
 ) {
   const state = decodeState(href.value);
   const played = Math.min(state.moves.length, state.cursor ?? 0);
   // No moves yet reads as a dash, not a zero.
   const count = moves === undefined ? played || "–" : moves ?? "–";
-
-  if (hideTarget) {
-    return <span className="tabular-nums tracking-widest">{count}</span>;
-  }
 
   return (
     <span className="tabular-nums tracking-widest">
