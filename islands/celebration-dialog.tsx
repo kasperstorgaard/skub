@@ -97,7 +97,11 @@ export function CelebrationDialog(
   const flyStarts = useMemo(() => pickFlyStarts(), []);
   // Shown as they stand until the solve lands; only the new ones fly in.
   const shown = data?.stars ?? stars;
-  const added = shown.filter((kind) => !stars.includes(kind));
+  // A solve after a Flash solve turns the Flash star, rather than adding one.
+  const isUpgrade = stars.includes("flash") && shown.includes("solve");
+  const added = shown.filter((kind) =>
+    !stars.includes(kind) && !(isUpgrade && kind === "solve")
+  );
 
   return (
     <Dialog open={isOpen} className="w-full">
@@ -112,6 +116,9 @@ export function CelebrationDialog(
             kinds={shown}
             className="shrink-0 text-fl-2"
             getStarProps={(kind) => {
+              if (isUpgrade && kind === "solve") {
+                return { className: "star-upgrade", fromFlash: true };
+              }
               const i = added.indexOf(kind);
               if (i === -1) return;
               const [x, y] = flyStarts[i];

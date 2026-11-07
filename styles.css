@@ -684,6 +684,45 @@
     }
   }
 
+  /* A Flash star turning into the solve star: the pearl copy over it holds,
+     then fades. Without motion it's the solve star from the start. */
+  .star-upgrade .star-unflash {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .star-upgrade .star-unflash {
+      animation: star-unflash 900ms ease-in-out both;
+    }
+
+    .star-upgrade {
+      animation: star-upgrade 900ms ease-in-out both;
+    }
+  }
+
+  @keyframes star-unflash {
+    0%,
+    35% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes star-upgrade {
+    0%,
+    35% {
+      transform: scale(1);
+    }
+    60% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
   @keyframes star-fly {
     0% {
       opacity: 0;
