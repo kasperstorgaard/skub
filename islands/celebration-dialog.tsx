@@ -144,7 +144,7 @@ export function CelebrationDialog(
           )
           : (
             <a href={getResetHref(href.value)} className={DISMISS}>
-              Try again
+              Go again
             </a>
           )}
       >
