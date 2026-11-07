@@ -195,8 +195,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             ? (
               <p className="text-3 text-text-2">
                 {tab === "flash"
-                  ? "No Flash solutions yet."
-                  : "No solutions yet."}
+                  ? "– No Flash solutions yet –"
+                  : "– No solutions yet –"}
               </p>
             )
             : (
