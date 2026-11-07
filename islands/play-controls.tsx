@@ -135,10 +135,11 @@ export function PlayControls(
       size="lg"
       className={clsx(
         "print:hidden",
-        // Four tools, the gap, then Flash. Flash only comes with the hint.
+        // Four tools, the gap, then Flash; on desktop Flash and the gap go
+        // first. Flash only comes with the hint.
         flash &&
           "max-lg:grid-cols-[repeat(4,minmax(0,3.5rem))_0_minmax(0,3.5rem)]",
-        flash && "lg:grid-rows-[repeat(4,2.5rem)_0.5rem_2.5rem]",
+        flash && "lg:grid-rows-[2.5rem_0.5rem_repeat(4,2.5rem)]",
         className,
       )}
     >
@@ -239,12 +240,12 @@ export function PlayControls(
       {flash && (
         <>
           {/* The gap before Flash: its own track, so the toolbar stays centred */}
-          <span aria-hidden="true" className="lg:col-span-2" />
+          <span aria-hidden="true" className="lg:col-span-2 lg:-order-1" />
           <FlashSwitch
             href={href}
             isOn={flash.isOn}
             isExplained={flash.isExplained}
-            className={clsx(TOOL, "text-text-2")}
+            className={clsx(TOOL, "text-text-2 lg:-order-2")}
             iconClassName="text-[1.25rem] max-lg:text-[2rem]"
           />
         </>
