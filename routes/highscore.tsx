@@ -4,7 +4,7 @@ import { page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { StarCounts } from "#/components/stars.tsx";
+import { StarTotal } from "#/components/stars.tsx";
 import { define } from "#/core.ts";
 import { listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
@@ -139,7 +139,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                         isViewer={row.userId === userId}
                         className="text-4 font-medium"
                       />
-                      <StarCounts
+                      <StarTotal
                         userScore={row.userScore}
                         className="text-1 text-text-3"
                       />

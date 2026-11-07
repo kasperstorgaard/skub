@@ -101,10 +101,13 @@ export function withScore(
   return result;
 }
 
-/** Points per kind: 200 at most per puzzle. Flash stands in for solve. */
+/**
+ * Points per star: 150 at most per puzzle. Stars alone would make a week's
+ * best 21; 1,050 reads like the high score it is.
+ */
 export const SCORE_POINTS: UserScore = {
   solve: 50,
-  perfect: 100,
+  perfect: 50,
   first: 50,
   flash: 50,
 };
