@@ -6,12 +6,13 @@ A stack of PRs, each based on the one before:
    dialogs
 2. `copy/solutions-wording`: solutions for what players saved, paths for the
    routes, and the name dialog's copy
-3. `stars/rules`: score rules, storage and backfill
-4. `stars/display`: stars on the puzzle page, cards, replays and the solutions
+3. `flash/toolbar`: the Flash switch moves from the score badge to the toolbar
+4. `stars/rules`: score rules, storage and backfill
+5. `stars/display`: stars on the puzzle page, cards, replays and the solutions
    page
-5. `stars/celebration`: earning stars is the celebration's payoff
-6. `stars/highscore`: the high score page, its links, stars in the home footer
-7. `solutions/revamp`: the solutions page on the new design, with Flash
+6. `stars/celebration`: earning stars is the celebration's payoff
+7. `stars/highscore`: the high score page, its links, stars in the home footer
+8. `solutions/revamp`: the solutions page on the new design, with Flash
 
 ## Stars
 
@@ -43,8 +44,8 @@ after the first cuts a gap out of the one behind in the background colour of
 where it sits; cards and the page differ, so that colour comes from the
 context (`--star-knockout`).
 
-Open: the badge's Flash switch already shows a bolt; whether that matters next
-to a Flash-coloured solve star.
+The Flash switch lives in the toolbar, not the badge, so the stars don't sit
+against its bolt.
 
 ## High score
 
@@ -88,7 +89,7 @@ The best (optimal) solutions unlock once you've earned stars on the puzzle.
 Decided so far (with Kasper, in chat):
 
 - Stack branches: `fix/one-dialog` (base main), then
-  `copy/solutions-wording`, `stars/rules`, `stars/display`,
+  `copy/solutions-wording`, `flash/toolbar`, `stars/rules`, `stars/display`,
   `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
   the one before and opened against it. Rebase the next onto main as each
   merges. Generic side changes go at the bottom, so the layers above build on
@@ -143,8 +144,7 @@ Decided so far (with Kasper, in chat):
   the solutions page), so they don't show the payoff; the page's own badge
   stars update on the next load.
 - Layer 4 next (`stars/highscore`, based on `stars/celebration`).
-- Still open: the badge's Flash bolt next to a Flash-coloured solve star; how
-  many stars unlock the best solutions (ask before layer 5); highscore ties
+- Still open: how many stars unlock the best solutions (ask before layer 5); highscore ties
   past total, first and perfect are by user id (earliest-to-reach would need
   a timestamp in the key); the daily high score's points calculation.
 
