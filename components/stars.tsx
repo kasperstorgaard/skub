@@ -32,6 +32,7 @@ type StarsProps = {
   /** Earned kinds. Nothing earned renders nothing. */
   kinds: ScoreKind[];
   className?: string;
+  style?: Record<string, string>;
 };
 
 /**
@@ -40,7 +41,7 @@ type StarsProps = {
  * `--star-knockout`, which the container sets to its own background; the page
  * surface otherwise.
  */
-export function Stars({ kinds, className }: StarsProps) {
+export function Stars({ kinds, className, style }: StarsProps) {
   const id = useId();
   if (kinds.length === 0) return null;
   // Flash stands in for solve, so it takes the solve star's place.
@@ -55,6 +56,7 @@ export function Stars({ kinds, className }: StarsProps) {
       aria-label={label}
       title={label}
       className={clsx("inline-flex items-center text-ui-2", className)}
+      style={style}
     >
       {stars.map((kind, i) => (
         <svg

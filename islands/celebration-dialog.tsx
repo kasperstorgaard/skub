@@ -13,6 +13,14 @@ import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 
 const MESSAGES = ["Nice solution", "Well done", "Well played"] as const;
 
+// Where a star starts its fly-in: five spots evenly spaced on a circle around
+// where it lands, across the top left (190° to 250°, 15° apart), 2em out.
+const FLY_RADIUS = 2;
+const FLY_STARTS = [190, 205, 220, 235, 250].map((degrees) => {
+  const radians = (degrees * Math.PI) / 180;
+  return [FLY_RADIUS * Math.cos(radians), FLY_RADIUS * Math.sin(radians)];
+});
+
 export type CelebrationData = {
   /** Stars this solve earned on the puzzle: only the new ones. */
   earned: ScoreKind[];
@@ -83,6 +91,7 @@ export function CelebrationDialog(
   const headline = isPerfect ? "Perfect!" : "Solved!";
   // Picked once, so it holds still when the stars land.
   const message = useMemo(() => pickRandom(MESSAGES), []);
+  const flyStyle = useMemo(() => getFlyStyle(), []);
 
   return (
     <Dialog open={isOpen} className="w-full">
@@ -96,7 +105,8 @@ export function CelebrationDialog(
           {data && data.earned.length > 0 && (
             <Stars
               kinds={data.earned}
-              className="shrink-0 text-fl-2 [&>svg]:motion-safe:animate-star-fly [&>svg:nth-child(2)]:[animation-delay:150ms] [&>svg:nth-child(3)]:[animation-delay:300ms]"
+              className="stars-fly shrink-0 text-fl-2"
+              style={flyStyle}
             />
           )}
         </div>
@@ -143,4 +153,20 @@ export function CelebrationDialog(
 
 function pickRandom<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)];
+}
+
+/** A start for each star, three of the five spots, no two the same. */
+function getFlyStyle(): Record<string, string> {
+  const [a, b, c] = [...FLY_STARTS]
+    .sort(() => Math.random() - 0.5)
+    .map(([x, y]) => ({ x: `${x.toFixed(2)}em`, y: `${y.toFixed(2)}em` }));
+  // Literal keys, so the CSS check sees them set.
+  return {
+    "--fly-1-x": a.x,
+    "--fly-1-y": a.y,
+    "--fly-2-x": b.x,
+    "--fly-2-y": b.y,
+    "--fly-3-x": c.x,
+    "--fly-3-y": c.y,
+  };
 }
