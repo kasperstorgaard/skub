@@ -5,9 +5,11 @@ import { Header } from "#/components/header.tsx";
 import { EnvelopeSimple, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { setUser } from "#/db/user.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
+import { getProgressScore } from "#/game/score.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import { resolveTheme, type Theme, THEMES } from "#/lib/themes.ts";
 
@@ -135,43 +137,10 @@ export default define.page<typeof handler>(function ProfilePage(props) {
               <section className="flex flex-col gap-fl-2">
                 <h2 className="text-5">Stats</h2>
 
-                <dl className="grid grid-cols-2 gap-x-fl-3 gap-y-fl-2">
-                  <div className="flex flex-col gap-0.5">
-                    <dt className="text-2 text-text-2">Current streak</dt>
-                    <dd className="text-5 font-semibold text-text-1 m-0">
-                      {userStats.currentStreak}
-                    </dd>
-                  </div>
-
-                  <div className="flex flex-col gap-0.5">
-                    <dt className="text-2 text-text-2">Best streak</dt>
-                    <dd className="text-5 font-semibold text-text-1 m-0">
-                      {userStats.bestStreak}
-                    </dd>
-                  </div>
-
-                  <div className="flex flex-col gap-0.5">
-                    <dt className="text-2 text-text-2">Total solves</dt>
-                    <dd className="text-5 font-semibold text-text-1 m-0">
-                      {userStats.totalSolves}
-                    </dd>
-                  </div>
-
-                  <div className="flex flex-col gap-0.5">
-                    <dt className="text-2 text-text-2">Perfect solves</dt>
-                    <dd className="text-5 font-semibold text-text-1 m-0">
-                      {userStats.optimalSolves}
-                      <span className="text-2 text-text-2 font-normal ml-1">
-                        ({userStats.totalSolves > 0
-                          ? Math.round(
-                            (userStats.optimalSolves / userStats.totalSolves) *
-                              100,
-                          )
-                          : 0}%)
-                      </span>
-                    </dd>
-                  </div>
-                </dl>
+                <StatsSummary
+                  stats={userStats}
+                  userScore={getProgressScore(props.state.score)}
+                />
               </section>
             </>
           )}
