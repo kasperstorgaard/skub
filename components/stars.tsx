@@ -2,7 +2,7 @@ import { clsx } from "clsx/lite";
 import type { ComponentChildren } from "preact";
 import { useId } from "preact/hooks";
 
-import type { ScoreKind } from "#/game/score.ts";
+import type { ScoreKind, UserScore } from "#/game/score.ts";
 
 // One rounded star on Phosphor's 256 grid, drawn three ways: an outline for
 // solve, filled with tiny rays between its arms for perfect, and dashed for
@@ -15,7 +15,7 @@ const RAYS =
 // fall rather than lining up with the tips.
 const FIRST_DASH = { array: "20.7 28.0", offset: 14 };
 
-const DISPLAY_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
+const STAR_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
 
 const LABELS: Record<ScoreKind, string> = {
   solve: "Solved",
@@ -59,7 +59,7 @@ export function Stars({ kinds, className, getStarProps }: StarsProps) {
   if (kinds.length === 0) return null;
   // Flash stands in for solve, so it takes the solve star's place.
   const stars = [...kinds].sort((a, b) =>
-    DISPLAY_ORDER.indexOf(a) - DISPLAY_ORDER.indexOf(b)
+    STAR_ORDER.indexOf(a) - STAR_ORDER.indexOf(b)
   );
   const label = stars.map((kind) => LABELS[kind]).join(", ");
 
@@ -145,6 +145,31 @@ function StarPath({ kind, id }: { kind: ScoreKind; id: string }) {
         />
       );
   }
+}
+
+type StarCountsProps = {
+  userScore: UserScore;
+  className?: string;
+};
+
+/**
+ * A player's stars per kind, one star of each kind they've earned with its
+ * count. A Flash solve counts as solved: no star of its own here.
+ */
+export function StarCounts({ userScore, className }: StarCountsProps) {
+  const counts = { ...userScore, solve: userScore.solve + userScore.flash };
+  const kinds: ScoreKind[] = ["solve", "perfect", "first"];
+
+  return (
+    <span className={clsx("inline-flex items-center gap-2", className)}>
+      {kinds.filter((kind) => counts[kind] > 0).map((kind) => (
+        <span key={kind} className="inline-flex items-center gap-0.5">
+          <Stars kinds={[kind]} />
+          {counts[kind]}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 type BadgeStarsProps = {

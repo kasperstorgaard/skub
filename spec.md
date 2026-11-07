@@ -22,7 +22,8 @@ three ways:
 - **Solve**: any solve of the puzzle. An outline.
 - **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
   star. Filled, with tiny rays between the arms.
-- **First**: being first to find a solution path no one had found before. The
+- **First**: being first to find a solution path no one had found before, in
+  at most two moves more than the minimum, or any detour would find one. The
   outline in thirteen even dashes that don't line up with the tips.
 
 A Flash solve earns the solve star in the pearl (`--pearl`, Flash mode's own
@@ -49,12 +50,20 @@ against its bolt.
 
 ## High score
 
-Players rank by star count, ties broken by the rarer kinds: first, then
-perfect. Totals per kind live in KV per user, with a ranking index kept in step
+Players rank by points: 50 for a solve (or a Flash solve), 50 for first and
+100 for perfect, so 200 at most per puzzle. Ties are broken by the rarer kinds:
+first, then perfect. Totals per kind live in KV per user, with a ranking index kept in step
 on every star earned.
 
 Past solves earn their stars too: a one-off backfill over stored solutions,
 with first worked out from solve order, so the board isn't empty on day one.
+
+Two boards, switched in the URL: this week and all time. This week counts
+only the stars on the week's dailies (Monday to Sunday), so everyone races on
+the same boards; archive play moves only all time. It is worked out from those
+puzzles' stored solutions when shown, not stored.
+
+The puzzle page links to its solutions once the player has a star on it.
 
 Links to the high score page: the home footer's star split (next to the streak),
 the puzzle page's sidebar and footer, the solutions page and the archive.
@@ -143,10 +152,34 @@ Decided so far (with Kasper, in chat):
   No-JS solves get no dialog for full solves (they go to
   the solutions page), so they don't show the payoff; the page's own badge
   stars update on the next load.
-- Layer 4 next (`stars/highscore`, based on `stars/celebration`).
-- Still open: how many stars unlock the best solutions (ask before layer 5); highscore ties
-  past total, first and perfect are by user id (earliest-to-reach would need
-  a timestamp in the key); the daily high score's points calculation.
+- Layer 4 built (`stars/highscore`): `/highscore` lists the top 50 from the
+  `highscore` index, names from the user records (`getUserNames`, "Anonymous"
+  without one), each row its rank, its stars per kind and the total; the
+  viewer's row is marked, and when they're outside the top 50 it follows a
+  "…" without a rank, from their cookie score (`getProgressScore`). The home
+  footer's Stars stat (total and split, after the streak) links there, as do
+  "High score" buttons in the puzzle page's panel (its sidebar on desktop,
+  its footer on mobile), the solutions page's panel and the archive's.
+- High score since: the top three as a podium (bigger, with their stars), the
+  rest a plain numbered list; a pill switch on the right picks this week
+  (`/highscore`) or all time (`?period=all`). This week is worked out per
+  request from the week's dailies (`getWeekHighscore`, `getHighscore`), so the
+  viewer's rank is known there even past the top 50; all time reads the
+  stored index.
+- Layer 5 next (`solutions/revamp`, based on `stars/highscore`).
+- Decided in layer 4: ties past points, first and perfect go by user id, and
+  that's fine. A Flash solve is worth a solve's 50: missing perfect and first
+  is penalty enough. The star is called First in the UI. Home and profile show
+  streak, points and the stars (Solved, Perfect, First; Flash counts as
+  solved), and a High score button in home's panel once you have points.
+  Rate is gone from the puzzle page (it's the candidates flow).
+- Nothing runs against production (backfill, reindex) until Kasper has
+  cleaned up and tested the stack.
+- For layer 5: the puzzle page's See solutions shows once you have a star on
+  the puzzle, with the unlock of the best solutions. Pulled out of layer 4 so
+  who can reach the solutions page is decided in one place.
+- Still open: how many stars unlock the best solutions (ask before layer 5);
+  the daily high score's points calculation.
 
 Environment (cloud sandbox):
 

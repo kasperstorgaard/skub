@@ -4,6 +4,7 @@ import { HttpError, page } from "fresh";
 
 import { CalendarGrid } from "#/components/calendar-grid.tsx";
 import { Header } from "#/components/header.tsx";
+import { Icon, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { MonthStrip } from "#/components/month-strip.tsx";
 import { Panel } from "#/components/panel.tsx";
@@ -147,6 +148,10 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             </span>
             <span className="text-3 text-text-2">Puzzles</span>
           </div>
+
+          <a href="/highscore" className="btn">
+            <Icon icon={Trophy} /> High score
+          </a>
         </div>
       </Panel>
     </>

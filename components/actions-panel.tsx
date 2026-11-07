@@ -1,9 +1,14 @@
-import { Download, Icon, Pencil, Ranking, Star } from "#/components/icons.tsx";
+import {
+  Download,
+  Icon,
+  Pencil,
+  Ranking,
+  Trophy,
+} from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 
 type ActionsPanelProps = {
   slug: string;
-  isDev: boolean;
   showEdit?: boolean;
   isPreview?: boolean;
   /** Flash is on: its solves are off the leaderboard, so no link to it */
@@ -13,7 +18,7 @@ type ActionsPanelProps = {
 
 /** The puzzle page's sidebar: the actions beside play. */
 export function ActionsPanel(
-  { slug, isDev, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
+  { slug, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
 ) {
   return (
     <Panel className={className}>
@@ -21,6 +26,12 @@ export function ActionsPanel(
         {!isPreview && !isFlash && (
           <a href={`/puzzles/${slug}/solutions`} className="btn">
             <Icon icon={Ranking} /> See solutions
+          </a>
+        )}
+
+        {!isPreview && (
+          <a href="/highscore" className="btn">
+            <Icon icon={Trophy} /> High score
           </a>
         )}
 
@@ -41,17 +52,6 @@ export function ActionsPanel(
               <Icon icon={Pencil} /> Edit
             </button>
           </form>
-        )}
-
-        {
-          /* To the candidate it shipped from, not via clone: clone strips
-            identity for remixing, and a rating filed under "Untitled, 0
-            moves" is useless as ground truth. */
-        }
-        {isDev && !isPreview && (
-          <a href={`/puzzles/${slug}/rate`} className="btn">
-            <Icon icon={Star} /> Rate
-          </a>
         )}
       </div>
     </Panel>

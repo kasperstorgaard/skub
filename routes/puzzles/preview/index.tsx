@@ -73,7 +73,6 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
 
       <ActionsPanel
         slug={props.data.puzzle.slug}
-        isDev={isDev}
         isPreview
         className="print:hidden"
       />
