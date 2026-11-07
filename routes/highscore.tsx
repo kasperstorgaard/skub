@@ -222,7 +222,7 @@ function PeriodTabs({ period }: { period: Period }) {
               "py-1 rounded-round",
               "text-1 no-underline whitespace-nowrap",
               isActive
-                ? "btn px-2 min-h-0 min-w-0 font-normal tracking-normal"
+                ? "btn px-3 min-h-0 min-w-0 font-normal tracking-normal"
                 : clsx(
                   "first:pl-2 first:pr-1 last:pl-1 last:pr-2",
                   "border-[3px] border-transparent",
