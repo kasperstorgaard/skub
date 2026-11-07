@@ -189,7 +189,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           )}
         </div>
 
-        <div className="grid content-start gap-fl-4">
+        {/* A step further from the title: the tabs sit on its line */}
+        <div className="grid content-start gap-fl-4 mt-fl-2">
           {paths.length === 0
             ? (
               <p className="text-3 text-text-2">
