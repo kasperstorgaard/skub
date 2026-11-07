@@ -12,11 +12,6 @@ import { getUserIdCookie, setUserIdCookie } from "#/lib/user-cookie.ts";
  * Priority: authenticated session > existing anonymous cookie > new visitor.
  */
 export const auth = define.middleware(async (ctx) => {
-  const url = new URL(ctx.req.url);
-
-  // /api/migrate is added temporarily for migrations; keep this skip.
-  if (url.pathname.startsWith("/api/migrate")) return ctx.next();
-
   const sessionId = getAuthSessionId(ctx.req.headers);
   const sessionUserId = await getSessionUserId(ctx.req, sessionId);
   if (sessionUserId) ctx.state.sessionId = sessionId;
