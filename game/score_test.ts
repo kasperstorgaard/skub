@@ -93,36 +93,58 @@ Deno.test("getHighscoreRank() puts a tie on count behind the player with more fi
   assertEquals(ranks, [[10, 0, 3], [10, 1, 0]]);
 });
 
-// Two paths on the board, of 7 and 9 slides.
-const slide = (x: number, y: number): Move => [{ x, y }, { x, y: y + 1 }];
-const perfectPath = Array.from({ length: 7 }, (_, i) => slide(0, i));
-const longPath = Array.from({ length: 9 }, (_, i) => slide(i % 2, i % 7));
+// An open board with the puck top left and the destination bottom right: two
+// slides either way round, or four by going up the right edge and back.
+const corner = { minMoves: 2 };
+const downRight: Move[] = [
+  [{ x: 0, y: 0 }, { x: 0, y: 7 }],
+  [{ x: 0, y: 7 }, { x: 7, y: 7 }],
+];
+const rightDown: Move[] = [
+  [{ x: 0, y: 0 }, { x: 7, y: 0 }],
+  [{ x: 7, y: 0 }, { x: 7, y: 7 }],
+];
+const theLongWay: Move[] = [
+  ...downRight,
+  [{ x: 7, y: 7 }, { x: 7, y: 0 }],
+  [{ x: 7, y: 0 }, { x: 7, y: 7 }],
+];
 
 Deno.test("getPastScore() gives first to whoever found each path earliest", () => {
-  const score = getPastScore(puzzle, [
-    { userId: "ane", moves: longPath },
-    { userId: "bo", moves: longPath },
-    { userId: "bo", moves: perfectPath },
-    { userId: "ane", moves: perfectPath },
-    { userId: "cai", moves: perfectPath, flash: true },
+  const score = getPastScore(corner, [
+    { userId: "ane", moves: theLongWay },
+    { userId: "bo", moves: theLongWay },
+    { userId: "bo", moves: downRight },
+    { userId: "ane", moves: downRight },
+    { userId: "ane", moves: rightDown },
   ]);
 
   assertEquals(Object.fromEntries(score), {
     ane: ["solve", "first", "perfect"],
     bo: ["solve", "perfect", "first"],
-    cai: ["flash"],
   });
 });
 
 Deno.test("getPastScore() finds no new path in a Flash solve", () => {
-  // Flash went the perfect way first; the later full solve still finds it.
-  const score = getPastScore(puzzle, [
-    { userId: "ane", moves: perfectPath, flash: true },
-    { userId: "bo", moves: perfectPath },
+  // Flash went down and right first; the later full solve still finds it.
+  const score = getPastScore(corner, [
+    { userId: "ane", moves: downRight, flash: true },
+    { userId: "bo", moves: downRight },
   ]);
 
   assertEquals(Object.fromEntries(score), {
     ane: ["flash"],
     bo: ["solve", "perfect", "first"],
+  });
+});
+
+Deno.test("getPastScore() gives a Flash solver the rest on a full solve", () => {
+  const score = getPastScore(corner, [
+    { userId: "ane", moves: downRight, flash: true },
+    { userId: "ane", moves: downRight },
+  ]);
+
+  assertEquals(Object.fromEntries(score), {
+    ane: ["flash", "solve", "perfect", "first"],
   });
 });
