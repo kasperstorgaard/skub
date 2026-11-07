@@ -7,7 +7,6 @@ import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import {
   type CelebrationType,
-  countSolvesAbove,
   getCelebrationType,
 } from "#/game/celebration.ts";
 import type { ScoreKind } from "#/game/score.ts";
@@ -103,7 +102,7 @@ export function CelebrationDialog(
         puzzleStats,
         isNewPath,
       });
-      return getMessage(type, moves.length, puzzleStats);
+      return getMessage(type, puzzleStats);
     },
     [moves.length, puzzle.value, puzzleStats, isNewPath, isFlash, data],
   );
@@ -209,10 +208,9 @@ function pickRandom<T>(items: readonly T[]): T {
  */
 function getMessage(
   type: CelebrationType,
-  moveCount: number,
   puzzleStats: PuzzleStats,
 ): string {
-  const { totalSolutions, solutionsHistogram } = puzzleStats;
+  const { totalSolutions } = puzzleStats;
 
   switch (type) {
     case "champion":
@@ -221,18 +219,6 @@ function getMessage(
         "First perfect solve so far",
         "No one else has hit it yet",
       ]);
-    case "perfectionist": {
-      const perfectsCount = solutionsHistogram[moveCount] ?? 0;
-      const pct = Math.max(
-        1,
-        Math.round((perfectsCount / totalSolutions) * 100),
-      );
-      return pickRandom([
-        `Top ${pct}% of solves`,
-        `In the top ${pct}% of solves`,
-        `${pct}% of solves match this`,
-      ]);
-    }
     case "pioneer":
       return pickRandom([
         "First solve in the books",
@@ -245,17 +231,6 @@ function getMessage(
         "No one has solved it this way before",
         "A creative path",
       ]);
-    case "adept": {
-      const pct = Math.round(
-        (countSolvesAbove(solutionsHistogram, moveCount) / totalSolutions) *
-          100,
-      );
-      return pickRandom([
-        `Better than ${pct}% of solves`,
-        `${pct}% of solves were slower`,
-        `Beat ${pct}% of solves`,
-      ]);
-    }
     case "fallback": {
       const count = totalSolutions - 1;
       return pickRandom([
