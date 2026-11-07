@@ -79,14 +79,21 @@ Three tabs: Solutions, Flash and Users.
 - **Flash**: the same for Flash solves, compared by the moves played from the
   Flash start. A Flash solve lands here (today it goes back to the solved
   board).
-- **Users**: the daily high score, one row per user: points for the solve,
-  roughly 50–300, worked out from the stored solutions when shown, not stored.
-  How it's worked out is still open.
+- **Users**: the puzzle's high score, one row per player: their points on this
+  puzzle (50 solve, 100 perfect, 50 first, so 50–200), worked out from its
+  stored solutions with the award rules, not stored. Laid out like the high
+  score list.
 
 Each tab is deep linkable: it lives in the URL, so it works without JS and
-survives a share or reload.
+survives a share or reload. The tabs are the high score's pill switch.
 
-The best (optimal) solutions unlock once you've earned stars on the puzzle.
+You can replay solutions as good as yours, never better: any solution as long
+as or longer than your best on the puzzle. Shorter ones open as you improve; a
+perfect opens them all; no solve, nothing to replay. On Flash it's your best
+Flash solve, counted from the Flash start. Rows you can't replay still show
+their move count and players, without a Watch link, and the replay route
+sends you back to the solutions instead of showing one. The puzzle page's See
+solutions shows once you have a star on the puzzle.
 
 ## Non-goals
 
@@ -176,11 +183,19 @@ Decided so far (with Kasper, in chat):
   Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (backfill, reindex) until Kasper has
   cleaned up and tested the stack.
-- For layer 5: the puzzle page's See solutions shows once you have a star on
-  the puzzle, with the unlock of the best solutions. Pulled out of layer 4 so
-  who can reach the solutions page is decided in one place.
-- Still open: how many stars unlock the best solutions (ask before layer 5);
-  the daily high score's points calculation.
+- Layer 5 plan (`solutions/revamp`, on `badge/your-best`), decided with
+  Kasper: replay unlocks by your own best (above), and Users ranks this
+  puzzle's star points. Defaults picked, open to change:
+  - Tab param `?tab=flash|users`, Solutions without one; a Flash solve's
+    POST lands on `?tab=flash`.
+  - The pill switch moves out of the high score into a shared component.
+  - Players per group come from `solutions_by_puzzle_canonical` (ten per
+    group); Flash groups from the puzzle's Flash solves, by the canonical key
+    of the moves after the Flash start, worked out per request like the
+    weekly high score.
+  - Rows take the high score's plain list look: no cards.
+  - Locked rows stay visible, so you see there's a shorter path without
+    seeing it; the copy states facts, it doesn't grade.
 
 Environment (cloud sandbox):
 
