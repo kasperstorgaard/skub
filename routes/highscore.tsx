@@ -4,7 +4,6 @@ import { page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { StarTotal } from "#/components/stars.tsx";
 import { define } from "#/core.ts";
 import { listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
@@ -122,13 +121,16 @@ export default define.page<typeof handler>(function HighscorePage(props) {
             </p>
           )
           : (
-            <div className="grid content-start gap-fl-4">
-              {/* The top three, bigger and with their stars */}
-              <ol className="grid gap-fl-2 m-0 p-0 list-none">
+            <div className="grid content-start">
+              {
+                /* The top three, bigger and with what their points are made
+                  of, a faint line between, a sibling step either side */
+              }
+              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
                 {rows.slice(0, 3).map((row, index) => (
                   <li
                     key={row.userId}
-                    className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0"
+                    className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0"
                   >
                     <span className="text-4 text-text-3 tabular-nums">
                       {index + 1}
@@ -139,10 +141,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                         isViewer={row.userId === userId}
                         className="text-4 font-medium"
                       />
-                      <StarTotal
-                        userScore={row.userScore}
-                        className="text-1 text-text-3"
-                      />
+                      <Breakdown userScore={row.userScore} />
                     </span>
                     <Points
                       userScore={row.userScore}
@@ -153,7 +152,10 @@ export default define.page<typeof handler>(function HighscorePage(props) {
               </ol>
 
               {(rows.length > 3 || viewerRow) && (
-                <ol start={4} className="grid gap-1 m-0 p-0 list-none">
+                <ol
+                  start={4}
+                  className="grid gap-1 m-0 p-0 pt-fl-2 list-none border-t border-text-3/10"
+                >
                   {rows.slice(3).map((row, index) => (
                     <li
                       key={row.userId}
@@ -254,6 +256,22 @@ function Name({ name, isViewer, className }: NameProps) {
       {name}
     </span>
   );
+}
+
+// Flash counts as solved here, no kind of its own.
+const BREAKDOWN = [
+  { kind: "solve", label: "solved" },
+  { kind: "perfect", label: "perfect" },
+  { kind: "first", label: "first" },
+] as const;
+
+/** What a player's points are made of, in words: "10 solved · 4 perfect". */
+function Breakdown({ userScore }: { userScore: UserScore }) {
+  const counts = { ...userScore, solve: userScore.solve + userScore.flash };
+  const parts = BREAKDOWN.filter(({ kind }) => counts[kind] > 0)
+    .map(({ kind, label }) => `${counts[kind]} ${label}`);
+
+  return <span className="text-1 text-text-3">{parts.join(" · ")}</span>;
 }
 
 type PointsProps = { userScore: UserScore; className?: string };
