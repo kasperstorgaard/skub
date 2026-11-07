@@ -199,7 +199,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
           {!!flashStart?.length && (
             <PillSwitch
               label="Solutions"
-              className="justify-self-start"
+              className="justify-self-end"
               items={[
                 {
                   label: "Regular",
