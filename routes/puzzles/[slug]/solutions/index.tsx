@@ -1,4 +1,3 @@
-import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { page } from "fresh";
 
@@ -8,7 +7,6 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
-import { BadgeStars } from "#/components/stars.tsx";
 import { TOOL_BUTTON } from "#/components/toolbar.tsx";
 import {
   getCanonicalGroup,
@@ -21,7 +19,6 @@ import type { CanonicalGroup, Solution } from "#/db/types.ts";
 import { getPathGroups } from "#/game/paths.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import type { Puzzle } from "#/game/types.ts";
-import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Tab = "solutions" | "flash";
@@ -47,8 +44,6 @@ type Data = {
   /** The viewer's latest path, when it isn't among the shown ones */
   extraPath: Path | null;
   userCanonicalKeys: string[];
-  /** The player's best regular solve, for the score badge */
-  bestMoves: number | null;
 };
 
 function toPath(
@@ -140,27 +135,17 @@ export const handler = define.handlers<Data>({
       }
     }
 
-    const regularSolutions = allUserSolutions.filter((solution) =>
-      !solution.flash
-    );
-    const bestMoves = regularSolutions.length
-      ? Math.min(...regularSolutions.map((solution) => solution.moves.length))
-      : null;
-
     return page({
       puzzle,
       tab,
       paths,
       extraPath,
       userCanonicalKeys,
-      bestMoves,
     });
   },
 });
 
 export default define.page<typeof handler>(function SolutionsListPage(props) {
-  const puzzle = useSignal(props.data.puzzle);
-  const href = useSignal(props.url.href);
   const { tab, paths, extraPath, userCanonicalKeys } = props.data;
   const { slug, flashStart } = props.data.puzzle;
   const solutionsHref = `/puzzles/${slug}/solutions`;
@@ -180,25 +165,14 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
       <Main className="justify-stretch content-start min-h-96">
         <Header back={{ href: `/puzzles/${slug}` }} />
 
-        <div className="flex items-end justify-between flex-wrap gap-fl-1">
+        <div className="flex items-center justify-between flex-wrap gap-fl-2">
           <h1 className="text-text-1">
             <PuzzleName puzzle={props.data.puzzle} lead="Solutions" />
           </h1>
 
-          <BadgeStars kinds={props.state.score[slug]}>
-            <ScoreBadge
-              puzzle={puzzle}
-              href={href}
-              moves={props.data.bestMoves}
-            />
-          </BadgeStars>
-        </div>
-
-        <div className="grid content-start gap-fl-4">
           {!!flashStart?.length && (
             <PillSwitch
               label="Solutions"
-              className="justify-self-end"
               items={[
                 {
                   label: "Solutions",
@@ -213,7 +187,9 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
               ]}
             />
           )}
+        </div>
 
+        <div className="grid content-start gap-fl-4">
           {paths.length === 0
             ? (
               <p className="text-3 text-text-2">
