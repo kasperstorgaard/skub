@@ -1,66 +1,66 @@
 import { kv } from "#/db/kv.ts";
 import {
-  emptyStarTotals,
-  getNewStars,
-  getStarRank,
-  type StarKind,
-  type StarTotals,
-  withStars,
-} from "#/game/stars.ts";
+  emptyScoreTotals,
+  getNewScore,
+  getScoreRank,
+  type ScoreKind,
+  type ScoreTotals,
+  withScore,
+} from "#/game/score.ts";
 
 /**
- * Stars live in three places, written together:
+ * Score lives in three places, written together:
  * - earned kinds per user and puzzle
  * - totals per kind per user
  * - a ranking index, `[count, first, perfect, userId]`, so a reversed list
  *   reads in rank order. Its value is the totals, so a list needs no lookups.
  */
 const earnedKey = (userId: string, puzzleSlug: string) => [
-  "stars_by_user_puzzle",
+  "score_by_user_puzzle",
   userId,
   puzzleSlug,
 ];
-const totalsKey = (userId: string) => ["star_totals_by_user", userId];
-const rankingKey = (userId: string, totals: StarTotals) => [
-  "star_ranking",
-  ...getStarRank(totals),
+const totalsKey = (userId: string) => ["score_totals_by_user", userId];
+const rankingKey = (userId: string, totals: ScoreTotals) => [
+  "score_ranking",
+  ...getScoreRank(totals),
   userId,
 ];
 
 /** The kinds a player has earned on a puzzle, in the order earned. */
-export async function getEarnedStars(
+export async function getPuzzleScore(
   userId: string,
   puzzleSlug: string,
-): Promise<StarKind[]> {
-  const res = await kv.get<StarKind[]>(earnedKey(userId, puzzleSlug));
+): Promise<ScoreKind[]> {
+  const res = await kv.get<ScoreKind[]>(earnedKey(userId, puzzleSlug));
   return res.value ?? [];
 }
 
-export async function getStarTotals(userId: string): Promise<StarTotals> {
-  const res = await kv.get<StarTotals>(totalsKey(userId));
-  return res.value ?? emptyStarTotals;
+export async function getScoreTotals(userId: string): Promise<ScoreTotals> {
+  const res = await kv.get<ScoreTotals>(totalsKey(userId));
+  return res.value ?? emptyScoreTotals;
 }
 
 /**
  * Awards the kinds a player hasn't earned on the puzzle yet, and returns them.
  * Earned kinds, totals and ranking move in one commit, retried on conflict.
  */
-export async function awardStars(
+export async function awardScore(
   userId: string,
   puzzleSlug: string,
-  kinds: StarKind[],
-): Promise<StarKind[]> {
+  kinds: ScoreKind[],
+): Promise<ScoreKind[]> {
   for (let attempt = 1; attempt <= 5; attempt++) {
     const [earnedEntry, totalsEntry] = await kv.getMany<
-      [StarKind[], StarTotals]
+      [ScoreKind[], ScoreTotals]
     >([earnedKey(userId, puzzleSlug), totalsKey(userId)]);
 
     const earned = earnedEntry.value ?? [];
-    const added = getNewStars(earned, kinds);
+    const added = getNewScore(earned, kinds);
     if (added.length === 0) return [];
 
-    const totals = totalsEntry.value ?? emptyStarTotals;
-    const updated = withStars(totals, added);
+    const totals = totalsEntry.value ?? emptyScoreTotals;
+    const updated = withScore(totals, added);
 
     const atomic = kv.atomic()
       .check(earnedEntry)
@@ -74,5 +74,5 @@ export async function awardStars(
     if (result.ok) return added;
   }
 
-  throw new Error("Failed to award stars after 5 attempts");
+  throw new Error("Failed to award score after 5 attempts");
 }
