@@ -17,7 +17,7 @@ export class SolutionsPage {
   }
 
   solveByName(name: string) {
-    return this.page.getByRole("link", { name, exact: false });
+    return this.page.getByRole("main").getByText(name, { exact: true });
   }
 
   async clickWatchFirst() {

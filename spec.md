@@ -71,22 +71,22 @@ the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
-Three tabs: Solutions, Flash and Users.
+Two tabs, Regular and Flash, the high score's pill switch, in the URL
+(`?tab=flash`) so they work without JS and survive a share or reload. The
+switch sits beside the title, on its bottom line, where the score badge and
+stars were: the page is about the paths, not your score. A replay's badge
+shows its moves as it plays against the shortest, and no stars. Flash
+solves start part way in, so they're shorter and get a list of their own.
 
-- **Solutions**: as today, a table of rows grouped by solution (canonical path),
-  shortest first, but each group lists its players, up to 10, instead of
-  "+ x other users".
-- **Flash**: the same for Flash solves, compared by the moves played from the
-  Flash start. A Flash solve lands here (today it goes back to the solved
-  board).
-- **Users**: the daily high score, one row per user: points for the solve,
-  roughly 50–300, worked out from the stored solutions when shown, not stored.
-  How it's worked out is still open.
+Each tab lists paths, shortest first. A path shows, podium style, the player
+who claimed it (found it first) with its move count, and under them the next
+five players who found it, then how many more. Flash paths are counted from
+the Flash start. A Flash solve lands on the Flash tab.
 
-Each tab is deep linkable: it lives in the URL, so it works without JS and
-survives a share or reload.
-
-The best (optimal) solutions unlock once you've earned stars on the puzzle.
+Every path has a Watch button. The way in is the gate: the puzzle page links
+to its solutions once you've solved it, any solve, Flash included (to the
+Flash tab while Flash is on), and nothing inside the page or the replays
+checks again. Copying a better path is open, for now.
 
 ## Non-goals
 
@@ -176,11 +176,16 @@ Decided so far (with Kasper, in chat):
   Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (backfill, reindex) until Kasper has
   cleaned up and tested the stack.
-- For layer 5: the puzzle page's See solutions shows once you have a star on
-  the puzzle, with the unlock of the best solutions. Pulled out of layer 4 so
-  who can reach the solutions page is decided in one place.
-- Still open: how many stars unlock the best solutions (ask before layer 5);
-  the daily high score's points calculation.
+- Layer 5 plan (`solutions/revamp`, on `badge/your-best`), with Kasper:
+  one solutions page, no Users tab (the high score page covers ranking), Flash
+  as its own tab. Replays open after any solve, and only the links in check
+  it: stricter rules (only as good as your best) were weighed and dropped as
+  too harsh. Defaults picked:
+  - The pill switch moves out of the high score into a shared component.
+  - Players per path from `solutions_by_puzzle_canonical` (the claimer plus
+    five); Flash paths from the puzzle's Flash solves, by the canonical key of
+    the moves after the Flash start, worked out per request.
+  - Rows take the high score's plain list look: no cards.
 
 Environment (cloud sandbox):
 

@@ -11,20 +11,26 @@ type ActionsPanelProps = {
   slug: string;
   showEdit?: boolean;
   isPreview?: boolean;
-  /** Flash is on: its solves are off the leaderboard, so no link to it */
+  /** The player has solved the puzzle: the only way in to its solutions */
+  hasSolved?: boolean;
+  /** Flash is on: its solutions are their own tab */
   isFlash?: boolean;
   className?: string;
 };
 
 /** The puzzle page's sidebar: the actions beside play. */
 export function ActionsPanel(
-  { slug, showEdit, isPreview, isFlash, className }: ActionsPanelProps,
+  { slug, hasSolved, showEdit, isPreview, isFlash, className }:
+    ActionsPanelProps,
 ) {
   return (
     <Panel className={className}>
       <div className="flex justify-center lg:justify-start gap-fl-1 flex-wrap max-lg:col-[2/3] lg:grid lg:row-[3/4] lg:content-start lg:justify-items-start">
-        {!isPreview && !isFlash && (
-          <a href={`/puzzles/${slug}/solutions`} className="btn">
+        {hasSolved && !isPreview && (
+          <a
+            href={`/puzzles/${slug}/solutions${isFlash ? "?tab=flash" : ""}`}
+            className="btn"
+          >
             <Icon icon={Ranking} /> See solutions
           </a>
         )}
