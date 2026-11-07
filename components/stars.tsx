@@ -156,19 +156,13 @@ type BadgeStarsProps = {
   children: ComponentChildren;
 };
 
-/**
- * The player's stars floating left of a score badge, no background: teal, or
- * yellow once perfect, as on the cards.
- */
+/** The player's stars floating left of a score badge, no background. */
 export function BadgeStars({ kinds = [], children }: BadgeStarsProps) {
   return (
     <span className="flex items-center gap-2">
       <Stars
         kinds={kinds}
-        className={clsx(
-          "text-5 lg:text-4",
-          kinds.includes("perfect") ? "text-ui-2" : "text-ui-1",
-        )}
+        className="text-5 lg:text-4 text-text-1"
       />
       {children}
     </span>

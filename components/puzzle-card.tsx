@@ -22,8 +22,7 @@ export type PuzzleCardProps =
  * Canonical clickable puzzle card,
  * showing an svg of the puzzle, and letting the consumer pass the
  *
- * Once solved: the earned stars beside the move count, teal, or yellow when
- * optimal (bestMoves === minMoves).
+ * Once solved: the earned stars beside the move count.
  *
  * Pass `children` for a rich tagline or `tagline` for a plain string.
  */
@@ -36,9 +35,6 @@ export function PuzzleCard({
   className,
   ...rest
 }: PuzzleCardProps) {
-  const isOptimal = bestMoves !== undefined &&
-    puzzle.minMoves !== undefined &&
-    bestMoves === puzzle.minMoves;
   const isSolved = bestMoves !== undefined;
 
   return (
@@ -79,7 +75,7 @@ export function PuzzleCard({
           >
             <Stars
               kinds={score}
-              className={clsx("text-4", isOptimal ? "text-ui-2" : "text-ui-1")}
+              className="text-4 text-text-1"
             />
             <span
               class={clsx(
