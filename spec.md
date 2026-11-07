@@ -86,8 +86,9 @@ Decided so far (with Kasper, in chat):
   `score_by_user_puzzle`, `score_totals_by_user`, and a `score_ranking` index
   of `[total, first, perfect, userId]` read reversed, all in one atomic
   commit with retries; awarded best effort in the solve POST for new
-  solves; `scripts/backfill-score.ts` is safe to re-run. Not to be confused
-  with `game/scoring.ts`, which rates puzzles.
+  solves; `scripts/backfill-score.ts` is safe to re-run. This is solution
+  score, what solves earn; `game/scoring.ts` is puzzle score, how good a
+  board is.
 - Cards are server-rendered from the progress cookie (one byte of best moves
   per puzzle, `game/progress.ts`). Solve and perfect follow from it; first and
   Flash need extra bits, a layer 2 concern.
