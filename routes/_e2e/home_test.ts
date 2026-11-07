@@ -134,7 +134,7 @@ Deno.test("home — stats show the streak after solving the first daily", async 
 
     const homePage = await new HomePage(page).goto();
 
-    await expect(homePage.stat("Streak")).toContainText("1 / 1");
+    await expect(homePage.stat("Streak")).toHaveText("1");
   } finally {
     await teardown();
   }
@@ -161,7 +161,7 @@ Deno.test("home — stats show the streak after solving several dailies", async 
 
     const homePage = await new HomePage(page).goto();
 
-    await expect(homePage.stat("Streak")).toContainText("3 / 3");
+    await expect(homePage.stat("Streak")).toHaveText("3");
   } finally {
     await teardown();
   }
