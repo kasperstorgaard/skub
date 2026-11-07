@@ -11,16 +11,12 @@ type Props = {
 } & HTMLAttributes<HTMLElement>;
 
 export function StatsSummary({ stats, userScore, className }: Props) {
-  const totalStars = getTotalScore(userScore);
-
-  const optimalRate = stats.totalSolves > 0
-    ? Math.round((stats.optimalSolves / stats.totalSolves) * 100)
-    : 0;
+  const points = getTotalScore(userScore);
 
   return (
     <dl
       className={clsx(
-        "flex flex-wrap gap-fl-4 m-0",
+        "flex gap-fl-4 m-0",
         "lg:flex-col lg:gap-fl-2",
         className,
       )}
@@ -36,41 +32,26 @@ export function StatsSummary({ stats, userScore, className }: Props) {
         <dt className="text-2 text-text-2">Streak</dt>
       </div>
 
-      {totalStars > 0 && (
+      <div className="flex flex-col">
+        <dd className="m-0 text-5 font-semibold tracking-wide leading-flat">
+          <a
+            href="/highscore"
+            className="no-underline text-text-1 hover:text-link"
+          >
+            {points}
+          </a>
+        </dd>
+        <dt className="text-2 text-text-2">Points</dt>
+      </div>
+
+      {points > 0 && (
         <div className="flex flex-col">
-          <dd className="m-0 text-5 font-semibold tracking-wide leading-flat">
-            <a
-              href="/highscore"
-              className="inline-flex items-baseline gap-2 no-underline text-text-1 hover:text-link"
-            >
-              {totalStars}
-              <StarCounts
-                userScore={userScore}
-                className="text-2 font-normal text-text-3"
-              />
-            </a>
+          <dd className="m-0 text-5 font-semibold tracking-wide leading-flat text-text-1">
+            <StarCounts userScore={userScore} />
           </dd>
-          <dt className="text-2 text-text-2">Points</dt>
+          <dt className="text-2 text-text-2">Stars</dt>
         </div>
       )}
-
-      <div className="flex flex-col">
-        <dd className="m-0 text-5 font-semibold tracking-wide leading-flat text-text-1">
-          {stats.totalSolves}
-        </dd>
-        <dt className="text-2 text-text-2">Solutions</dt>
-      </div>
-
-      <div className="flex flex-col">
-        <dd className="m-0 text-5 font-semibold tracking-wide leading-flat text-text-1">
-          {stats.optimalSolves}
-          <span className="text-2 font-normal text-text-3">
-            {" / "}
-            {optimalRate}%
-          </span>
-        </dd>
-        <dt className="text-2 text-text-2">Perfect</dt>
-      </div>
     </dl>
   );
 }
