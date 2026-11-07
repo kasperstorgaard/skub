@@ -38,19 +38,16 @@ export function StatsSummary({ stats, userScore, className }: Props) {
       <dl className="flex flex-col m-0">
         <dd className="m-0 text-5 font-semibold leading-flat tracking-wide text-brand">
           {stats.currentStreak}
-          <span className="text-2 font-normal text-text-3">
-            {" / "}
-            {stats.bestStreak} <span className="max-sm:hidden">best</span>
-          </span>
         </dd>
         <dt className="text-2 text-text-2">Streak</dt>
       </dl>
 
       <dl className="flex flex-col m-0">
-        <dd className="m-0 text-5 font-semibold tracking-wide leading-flat">
+        <dd className="m-0">
+          {/* Sized on the link: links default to body size */}
           <a
             href="/highscore"
-            className="no-underline text-text-1 hover:text-link"
+            className="text-5 font-semibold tracking-wide leading-flat no-underline text-text-1 hover:text-link"
           >
             {points}
           </a>
