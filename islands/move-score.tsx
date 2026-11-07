@@ -19,9 +19,9 @@ export function MoveScore(
   { href, moves, minMoves, hideMinMoves, best }: MoveScoreProps,
 ) {
   const state = decodeState(href.value);
-  const count = moves === undefined
-    ? Math.min(state.moves.length, state.cursor ?? 0)
-    : moves ?? "–";
+  const played = Math.min(state.moves.length, state.cursor ?? 0);
+  // No moves yet reads as a dash, not a zero.
+  const count = moves === undefined ? played || "–" : moves ?? "–";
   // A best at the shortest is the puck's colour, like the stars.
   const isPerfect = best !== undefined && minMoves !== undefined &&
     best <= minMoves;
