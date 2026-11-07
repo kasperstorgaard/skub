@@ -4,6 +4,7 @@ import { HTMLAttributes } from "preact";
 import { Stars } from "#/components/stars.tsx";
 import { getTotalScore, type UserScore } from "#/game/score.ts";
 import type { UserStats } from "#/game/streak.ts";
+import { formatNumber } from "#/lib/format.ts";
 
 // A Flash solve counts as solved here, no star of its own.
 const STAR_LABELS = {
@@ -36,7 +37,7 @@ export function StatsSummary({ stats, userScore, className }: Props) {
       )}
     >
       <dl className="flex flex-col m-0">
-        <dd className="m-0 text-5 font-semibold leading-flat tracking-wide text-brand">
+        <dd className="m-0 text-4 lg:text-5 font-semibold leading-flat tracking-wide text-brand">
           {stats.currentStreak}
         </dd>
         <dt className="text-2 text-text-2">Streak</dt>
@@ -47,9 +48,9 @@ export function StatsSummary({ stats, userScore, className }: Props) {
           {/* Sized on the link: links default to body size */}
           <a
             href="/highscore"
-            className="text-5 font-semibold tracking-wide leading-flat no-underline text-text-1 hover:text-link"
+            className="text-4 lg:text-5 font-semibold tracking-wide leading-flat no-underline text-text-1 hover:text-link"
           >
-            {points}
+            {formatNumber(points)}
           </a>
         </dd>
         <dt className="text-2 text-text-2">Points</dt>
