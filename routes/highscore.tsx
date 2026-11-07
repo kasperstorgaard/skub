@@ -126,11 +126,11 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                 /* The top three, bigger and with what their points are made
                   of, a faint line between, a sibling step either side */
               }
-              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
+              <ol className="grid m-0 p-0 list-none border-t border-text-3/10 divide-y divide-text-3/10">
                 {rows.slice(0, 3).map((row, index) => (
                   <li
                     key={row.userId}
-                    className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0"
+                    className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2"
                   >
                     {/* The spot centred on the row, the points on its bottom line */}
                     <span className="self-center text-4 text-text-3 tabular-nums">
@@ -147,6 +147,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                     <Points
                       userScore={row.userScore}
                       className="self-end text-4 font-semibold leading-flat"
+                      showUnit
                     />
                   </li>
                 ))}
@@ -261,7 +262,7 @@ function Name({ name, isViewer, className }: NameProps) {
 
 // Flash counts as solved here, no kind of its own.
 const BREAKDOWN = [
-  { kind: "solve", label: "Solved" },
+  { kind: "solve", label: "Solutions" },
   { kind: "perfect", label: "Perfect" },
   { kind: "first", label: "First" },
 ] as const;
@@ -286,14 +287,21 @@ function Breakdown({ userScore }: { userScore: UserScore }) {
   );
 }
 
-type PointsProps = { userScore: UserScore; className?: string };
+type PointsProps = {
+  userScore: UserScore;
+  /** "pts" after the number: on the podium; the list below follows it */
+  showUnit?: boolean;
+  className?: string;
+};
 
-function Points({ userScore, className }: PointsProps) {
+function Points({ userScore, showUnit, className }: PointsProps) {
   return (
     <span className={clsx("text-text-1 tabular-nums text-right", className)}>
       {formatNumber(getTotalScore(userScore))}
       {/* The unit, quiet: the stats beside it are numbers too */}
-      <span className="ml-1 text-1 font-normal text-text-3">pts</span>
+      {showUnit && (
+        <span className="ml-1 text-1 font-normal text-text-3">pts</span>
+      )}
     </span>
   );
 }
