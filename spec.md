@@ -22,7 +22,8 @@ three ways:
 - **Solve**: any solve of the puzzle. An outline.
 - **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
   star. Filled, with tiny rays between the arms.
-- **First**: being first to find a solution path no one had found before. The
+- **First**: being first to find a solution path no one had found before, in
+  at most two moves more than the minimum, or any detour would find one. The
   outline in thirteen even dashes that don't line up with the tips.
 
 A Flash solve earns the solve star in the pearl (`--pearl`, Flash mode's own
