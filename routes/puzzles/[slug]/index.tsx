@@ -217,7 +217,7 @@ export const handler = define.handlers<PageData>({
     }
 
     if (isJson) {
-      const data: CelebrationData = { earned: awarded ?? [] };
+      const data: CelebrationData = { stars: ctx.state.score[slug] ?? [] };
       return Response.json(data);
     }
 
@@ -353,6 +353,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           <CelebrationDialog
             href={href}
             puzzle={puzzle}
+            stars={props.state.score[props.data.puzzle.slug] ?? []}
             back={back}
             celebrationData={celebrationData}
             celebrationError={celebrationError}

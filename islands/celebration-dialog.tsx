@@ -26,13 +26,15 @@ const FLY_STARTS = [0, 1, 2, 3, 4].map((i) => {
 });
 
 export type CelebrationData = {
-  /** Stars this solve earned on the puzzle: only the new ones. */
-  earned: ScoreKind[];
+  /** The player's stars on the puzzle after this solve. */
+  stars: ScoreKind[];
 };
 
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
+  /** The player's stars on the puzzle before this solve. */
+  stars: ScoreKind[];
   back: { href: string; label: string };
   celebrationData: Signal<CelebrationData | null>;
   celebrationError: Signal<boolean>;
@@ -44,6 +46,7 @@ export function CelebrationDialog(
   {
     href,
     puzzle,
+    stars,
     back,
     celebrationData,
     celebrationError,
@@ -95,7 +98,10 @@ export function CelebrationDialog(
   const headline = isPerfect ? "Perfect!" : "Solved!";
   // Picked once, so it holds still when the stars land.
   const message = useMemo(() => pickRandom(MESSAGES), []);
-  const flyStyle = useMemo(() => getFlyStyle(), []);
+  const flyStarts = useMemo(() => pickFlyStarts(), []);
+  // Shown as they stand until the solve lands; only the new ones fly in.
+  const shown = data?.stars ?? stars;
+  const added = shown.filter((kind) => !stars.includes(kind));
 
   return (
     <Dialog open={isOpen} className="w-full">
@@ -106,13 +112,23 @@ export function CelebrationDialog(
             {headline}
           </h2>
 
-          {data && data.earned.length > 0 && (
-            <Stars
-              kinds={data.earned}
-              className="stars-fly shrink-0 text-fl-2"
-              style={flyStyle}
-            />
-          )}
+          <Stars
+            kinds={shown}
+            className="shrink-0 text-fl-2"
+            getStarProps={(kind) => {
+              const i = added.indexOf(kind);
+              if (i === -1) return;
+              const [x, y] = flyStarts[i];
+              return {
+                className: "star-fly",
+                style: {
+                  "--fly-x": `${x.toFixed(2)}em`,
+                  "--fly-y": `${y.toFixed(2)}em`,
+                  "--fly-delay": `${i * 150}ms`,
+                },
+              };
+            }}
+          />
         </div>
 
         <p className="text-3 text-text-2">
@@ -148,7 +164,7 @@ export function CelebrationDialog(
           className="btn"
           autoFocus
         >
-          Play one more <Icon icon={ArrowRight} />
+          One more <Icon icon={ArrowRight} />
         </a>
       </DialogActions>
     </Dialog>
@@ -159,18 +175,7 @@ function pickRandom<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-/** A start for each star, three of the five spots, no two the same. */
-function getFlyStyle(): Record<string, string> {
-  const [a, b, c] = [...FLY_STARTS]
-    .sort(() => Math.random() - 0.5)
-    .map(([x, y]) => ({ x: `${x.toFixed(2)}em`, y: `${y.toFixed(2)}em` }));
-  // Literal keys, so the CSS check sees them set.
-  return {
-    "--fly-1-x": a.x,
-    "--fly-1-y": a.y,
-    "--fly-2-x": b.x,
-    "--fly-2-y": b.y,
-    "--fly-3-x": c.x,
-    "--fly-3-y": c.y,
-  };
+/** Three of the five starts, no two the same. */
+function pickFlyStarts() {
+  return [...FLY_STARTS].sort(() => Math.random() - 0.5).slice(0, 3);
 }

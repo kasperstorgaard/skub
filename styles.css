@@ -676,26 +676,11 @@
 }
 
 @layer components {
-  /* Stars flying in one by one, from the top left on a curve: down first,
-     then across, fading in. Each star's start comes from the container as
-     --fly-n-x / --fly-n-y. */
+  /* A star flying in from the top left on a curve: down first, then across,
+     fading in. Its start and delay come as --fly-x / --fly-y / --fly-delay. */
   @media (prefers-reduced-motion: no-preference) {
-    .stars-fly > svg {
-      animation: star-fly 600ms ease-out both;
-    }
-    .stars-fly > svg:nth-child(1) {
-      --fly-x: var(--fly-1-x);
-      --fly-y: var(--fly-1-y);
-    }
-    .stars-fly > svg:nth-child(2) {
-      --fly-x: var(--fly-2-x);
-      --fly-y: var(--fly-2-y);
-      animation-delay: 150ms;
-    }
-    .stars-fly > svg:nth-child(3) {
-      --fly-x: var(--fly-3-x);
-      --fly-y: var(--fly-3-y);
-      animation-delay: 300ms;
+    .star-fly {
+      animation: star-fly 600ms ease-out var(--fly-delay, 0ms) both;
     }
   }
 

@@ -118,18 +118,19 @@ Decided so far (with Kasper, in chat):
 - The first solve of a path is marked `first: true` on the solution, claimed
   atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
   marks old ones by solve order.
-- Layer 3 built (`stars/celebration`): the solve POST returns the newly
-  awarded kinds as `earned` in `CelebrationData`, and the dialog shows them
-  on the headline's row, at the headline's size, flying in one by one on a curve, fading in, each from one of five
-  starts evenly spaced on a 1em circle around 4em left and 2em up of where
-  it lands, drawn at random with no two the same
-  (motion-safe only). Only new stars: a replay that earns nothing shows none.
-  On the headline's row so nothing shifts when the data lands after the
-  loading state. The headline is just "Solved!" or "Perfect!", over one
-  warm line picked at random from "Nice solution", "Well done" and "Well
-  played", for every solve: the stars carry the
-  news, so the stats lines (first to solve, new path, percentiles, counts) and
-  the loading state are gone, and the POST returns only the earned stars.
+- Layer 3 built (`stars/celebration`): the solve POST returns the player's
+  stars on the puzzle after the solve as `stars` in `CelebrationData`, and
+  the dialog diffs them against the stars the page loaded with. All of them
+  show on the headline's row, at the headline's size; only the ones gained
+  (new, or solve replacing Flash) fly in one by one on a curve, fading in,
+  each from one of five starts evenly spaced on a 1em circle around 4em left
+  and 2em up of where it lands, drawn at random with no two the same
+  (motion-safe only). The existing stars show from the start, so nothing
+  shifts when the data lands. The headline is just "Solved!" or "Perfect!",
+  over one warm line picked at random from "Nice solution", "Well done" and
+  "Well played", for every solve: the stars carry the news, so the stats
+  lines (first to solve, new path, percentiles, counts) and the loading state
+  are gone. The main action is "One more".
   No-JS solves get no dialog for full solves (they go to
   the solutions page), so they don't show the payoff; the page's own badge
   stars update on the next load.
