@@ -150,17 +150,9 @@ export default define.page<typeof handler>(function Home(ctx) {
             </li>
           </ul>
 
-          <div className="flex flex-wrap gap-fl-1">
-            <a href="/puzzles" className="btn" data-size="lg">
-              All puzzles <Icon icon={ArrowRight} />
-            </a>
-
-            {getTotalScore(userScore) > 0 && (
-              <a href="/highscore" className="btn" data-size="lg">
-                <Icon icon={Trophy} /> High score
-              </a>
-            )}
-          </div>
+          <a href="/puzzles" className="btn place-self-start" data-size="lg">
+            All puzzles <Icon icon={ArrowRight} />
+          </a>
         </div>
       </Main>
 
@@ -168,7 +160,7 @@ export default define.page<typeof handler>(function Home(ctx) {
         {userStats && (
           <div
             className={clsx(
-              "col-[2/3] flex flex-col items-start text-2 text-text-2",
+              "col-[2/3] flex flex-col items-start gap-fl-2 text-2 text-text-2",
               "lg:col-auto lg:row-start-3 lg:self-stretch",
             )}
           >
@@ -177,6 +169,12 @@ export default define.page<typeof handler>(function Home(ctx) {
               userScore={userScore}
               className="lg:w-full"
             />
+
+            {getTotalScore(userScore) > 0 && (
+              <a href="/highscore" className="btn">
+                <Icon icon={Trophy} /> High score
+              </a>
+            )}
           </div>
         )}
       </Panel>
