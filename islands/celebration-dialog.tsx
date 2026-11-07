@@ -3,32 +3,40 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
+import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import {
-  type CelebrationType,
-  countSolvesAbove,
-  getCelebrationType,
-} from "#/game/celebration.ts";
-import { defaultPuzzleStats } from "#/game/stats.ts";
-import { Puzzle, PuzzleStats } from "#/game/types.ts";
+import type { ScoreKind } from "#/game/score.ts";
+import { Puzzle } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
 import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 
+// Where a star starts its fly-in, in em from where it lands: five spots evenly
+// spaced on a 1em circle around 4 left, 2 up.
+const FLY_BASE = [-4, -2];
+const FLY_RADIUS = 1;
+const FLY_STARTS = [0, 1, 2, 3, 4].map((i) => {
+  const radians = (i * 2 * Math.PI) / 5;
+  return [
+    FLY_BASE[0] + FLY_RADIUS * Math.cos(radians),
+    FLY_BASE[1] + FLY_RADIUS * Math.sin(radians),
+  ];
+});
+
 export type CelebrationData = {
-  isNewPath: boolean;
-  puzzleStats: PuzzleStats;
-  /** Flash solves of this puzzle, this one included, for a Flash solve. */
-  flashSolves?: number;
+  /** The player's stars on the puzzle after this solve. */
+  stars: ScoreKind[];
 };
 
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
+  /** The player's stars on the puzzle before this solve. */
+  stars: ScoreKind[];
   back: { href: string; label: string };
   celebrationData: Signal<CelebrationData | null>;
   celebrationError: Signal<boolean>;
-  /** A Flash solve: compared with other Flash solves, not the leaderboard. */
+  /** A Flash solve: off the leaderboard, so no link to it. */
   isFlash?: boolean;
 };
 
@@ -36,6 +44,7 @@ export function CelebrationDialog(
   {
     href,
     puzzle,
+    stars,
     back,
     celebrationData,
     celebrationError,
@@ -83,55 +92,53 @@ export function CelebrationDialog(
   }, [hasSolution, rippleDuration]);
 
   const data = celebrationData.value;
-  const isError = celebrationError.value;
-  const isLoading = isOpen && !data && !isError;
-
-  const puzzleStats = data?.puzzleStats ?? defaultPuzzleStats;
-  const isNewPath = data?.isNewPath ?? false;
-
   const isPerfect = moves.length === puzzle.value.minMoves;
-  const isGreat = moves.length <= puzzle.value.minMoves + 2;
-
-  const headline = isPerfect
-    ? `Perfect — ${moves.length} moves!`
-    : isGreat
-    ? `Great — ${moves.length} moves!`
-    : `Solved — ${moves.length} moves`;
-
-  const body = useMemo(
-    () => {
-      if (isFlash) return getFlashMessage(data?.flashSolves ?? 1);
-      const type = getCelebrationType(moves.length, puzzle.value, {
-        puzzleStats,
-        isNewPath,
-      });
-      return getMessage(type, moves.length, puzzleStats);
-    },
-    [moves.length, puzzle.value, puzzleStats, isNewPath, isFlash, data],
+  const headline = isPerfect ? "Perfect!" : "Solved!";
+  const flyStarts = useMemo(() => pickFlyStarts(), []);
+  // Shown as they stand until the solve lands; only the new ones fly in.
+  const shown = data?.stars ?? stars;
+  // A solve after a Flash solve turns the Flash star, rather than adding one.
+  const isUpgrade = stars.includes("flash") && shown.includes("solve");
+  const added = shown.filter((kind) =>
+    !stars.includes(kind) && !(isUpgrade && kind === "solve")
   );
 
   return (
     <Dialog open={isOpen} className="w-full">
       <div className="flex flex-col gap-fl-2">
-        <h2 className="text-fl-2 font-semibold text-text-1">
-          {headline}
-        </h2>
+        {/* The payoff, beside the headline so nothing shifts when it lands */}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-fl-2 font-semibold text-text-1">
+            {headline}
+          </h2>
 
-        {isLoading
-          ? (
-            <p className="text-3 text-text-2">
-              Calculating stats<span className="loading-dots ml-[0.2ch]">
-                <span>.</span>
-                <span>.</span>
-                <span>.</span>
-              </span>
-            </p>
-          )
-          : (
-            <p className="text-3 text-text-2">
-              {isError ? "Couldn't load stats." : body}
-            </p>
-          )}
+          <Stars
+            kinds={shown}
+            className="shrink-0 text-fl-2"
+            getStarProps={(kind) => {
+              if (isUpgrade && kind === "solve") {
+                return { className: "star-upgrade", fromFlash: true };
+              }
+              const i = added.indexOf(kind);
+              if (i === -1) return;
+              const [x, y] = flyStarts[i];
+              return {
+                className: "star-fly",
+                style: {
+                  "--fly-x": `${x.toFixed(2)}em`,
+                  "--fly-y": `${y.toFixed(2)}em`,
+                  "--fly-delay": `${i * 150}ms`,
+                },
+              };
+            }}
+          />
+        </div>
+
+        <p className="text-3 text-text-2">
+          {celebrationError.value
+            ? "Couldn't save your solution."
+            : "Thanks for playing. What's next?"}
+        </p>
       </div>
 
       <DialogActions
@@ -144,12 +151,12 @@ export function CelebrationDialog(
           )
           : (
             <a href={getResetHref(href.value)} className={DISMISS}>
-              Try again
+              Go again
             </a>
           )}
       >
         {
-          // Flash solves are compared above, not on the leaderboard
+          // Flash solves are off the leaderboard
           !isFlash && (
             <a href={`/puzzles/${puzzle.value.slug}/solutions`} className="btn">
               <Icon icon={Ranking} /> See solutions
@@ -162,99 +169,14 @@ export function CelebrationDialog(
           className="btn"
           autoFocus
         >
-          Play one more <Icon icon={ArrowRight} />
+          Keep playing <Icon icon={ArrowRight} />
         </a>
       </DialogActions>
     </Dialog>
   );
 }
 
-/** The stats line for a Flash solve, against the other Flash solves. */
-function getFlashMessage(flashSolves: number): string {
-  const count = flashSolves - 1;
-
-  if (count === 0) {
-    return pickRandom([
-      "First to solve it with Flash",
-      "First Flash solve so far",
-      "No one else has solved it with Flash yet",
-    ]);
-  }
-
-  return pickRandom([
-    `Joined ${count} ${count === 1 ? "other" : "others"}`,
-    `${count} other Flash ${count === 1 ? "solve" : "solves"} so far`,
-    `${count} ${
-      count === 1 ? "other has" : "others have"
-    } solved it with Flash`,
-  ]);
-}
-
-function pickRandom<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-/**
- * Maps a celebration type to a randomly-picked body string. Each case has
- * 3 wording variants. The headline carries closeness (Perfect / Great /
- * Solved) — bodies are factual fragments, no praise word stacking.
- */
-function getMessage(
-  type: CelebrationType,
-  moveCount: number,
-  puzzleStats: PuzzleStats,
-): string {
-  const { totalSolutions, solutionsHistogram } = puzzleStats;
-
-  switch (type) {
-    case "champion":
-      return pickRandom([
-        "First to nail it",
-        "First perfect solve so far",
-        "No one else has hit it yet",
-      ]);
-    case "perfectionist": {
-      const perfectsCount = solutionsHistogram[moveCount] ?? 0;
-      const pct = Math.max(
-        1,
-        Math.round((perfectsCount / totalSolutions) * 100),
-      );
-      return pickRandom([
-        `Top ${pct}% of solves`,
-        `In the top ${pct}% of solves`,
-        `${pct}% of solves match this`,
-      ]);
-    }
-    case "pioneer":
-      return pickRandom([
-        "First solve in the books",
-        "First to crack this puzzle",
-        "Only solver so far",
-      ]);
-    case "creative":
-      return pickRandom([
-        "First to get this solution",
-        "No one has solved it this way before",
-        "A creative path",
-      ]);
-    case "adept": {
-      const pct = Math.round(
-        (countSolvesAbove(solutionsHistogram, moveCount) / totalSolutions) *
-          100,
-      );
-      return pickRandom([
-        `Better than ${pct}% of solves`,
-        `${pct}% of solves were slower`,
-        `Beat ${pct}% of solves`,
-      ]);
-    }
-    case "fallback": {
-      const count = totalSolutions - 1;
-      return pickRandom([
-        `Joined ${count} ${count === 1 ? "other" : "others"}`,
-        `${count} other ${count === 1 ? "solve" : "solves"} so far`,
-        `${count} ${count === 1 ? "other has" : "others have"} solved this`,
-      ]);
-    }
-  }
+/** Three of the five starts, no two the same. */
+function pickFlyStarts() {
+  return [...FLY_STARTS].sort(() => Math.random() - 0.5).slice(0, 3);
 }
