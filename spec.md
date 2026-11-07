@@ -102,9 +102,14 @@ Decided so far (with Kasper, in chat):
   solves; `scripts/backfill-score.ts` is safe to re-run. This is solution
   score, what solves earn; `game/scoring.ts` is puzzle score, how good a
   board is.
-- Cards are server-rendered from the progress cookie (one byte of best moves
-  per puzzle, `game/progress.ts`). Solve and perfect follow from it; first and
-  Flash need extra bits, a layer 2 concern.
+- Layer 2 built: the progress cookie is v2, two bytes per puzzle (best
+  moves, then the solution score as bits), so each device rebuilds it from KV
+  once; `ctx.state.score` carries it, updated on award. `components/stars.tsx`
+  draws the four variants (outline, rays, sparkles, dashed) on Phosphor's 256
+  grid, stacked at a 0.35em overlap, each after the first cutting a gap in
+  `--star-knockout`. On the puzzle page, solutions page and replays: the
+  viewer's own stars beside the badge. On cards they replace the check/trophy
+  chip, beside the move count. The archive calendar keeps its check/trophy.
 - Still open: Flash bolt (merge with the badge's switch or not), how many
   stars unlock the best solutions (ask before layer 5).
 
