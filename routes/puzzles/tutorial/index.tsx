@@ -206,7 +206,6 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
 
       <ActionsPanel
         slug={puzzle.value.slug}
-        hasStars={!!props.state.score[puzzle.value.slug]?.length}
       />
 
       <AutoPostSolution

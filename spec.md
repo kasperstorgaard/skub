@@ -172,10 +172,12 @@ Decided so far (with Kasper, in chat):
   is penalty enough. The star is called First in the UI. Home and profile show
   streak, points and the stars (Solved, Perfect, First; Flash counts as
   solved), and a High score button in home's panel once you have points.
-  Rate is gone from the puzzle page (it's the candidates flow), and See
-  solutions shows once you have a star on the puzzle.
+  Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (backfill, reindex) until Kasper has
   cleaned up and tested the stack.
+- For layer 5: the puzzle page's See solutions shows once you have a star on
+  the puzzle, with the unlock of the best solutions. Pulled out of layer 4 so
+  who can reach the solutions page is decided in one place.
 - Still open: how many stars unlock the best solutions (ask before layer 5);
   the daily high score's points calculation.
 
