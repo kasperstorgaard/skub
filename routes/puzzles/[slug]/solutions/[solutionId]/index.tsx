@@ -63,7 +63,7 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           <h1 className="text-text-1">
             <PuzzleName
               puzzle={props.data.puzzle}
-              lead={`Solved by ${props.data.solution.name}`}
+              lead={`Solution by ${props.data.solution.name}`}
             />
           </h1>
 
