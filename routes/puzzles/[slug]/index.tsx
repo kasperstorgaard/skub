@@ -270,6 +270,9 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
               puzzle={puzzle}
               href={href}
               hideMinMoves={!props.data.hasSolved}
+              bestMoves={isFlashOn
+                ? undefined
+                : props.state.progress[props.data.puzzle.slug]}
             />
           </BadgeStars>
         </div>
