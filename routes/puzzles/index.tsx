@@ -108,6 +108,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             <CalendarGrid
               href={href}
               bestMoves={bestMoves}
+              score={props.state.score}
               selectedDate={selectedDate}
               entries={entries}
               today={today}
@@ -119,7 +120,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
               ? (
                 <PuzzleCard
                   puzzle={selectedPuzzle}
-                  bestMoves={bestMoves[selectedPuzzle.slug]}
+                  score={props.state.score[selectedPuzzle.slug]}
                   tagline={dateLabel}
                   showPlay
                 />

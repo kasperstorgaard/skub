@@ -1,7 +1,9 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertStrictEquals } from "@std/assert";
 
 import {
+  decodeScoreKinds,
   emptyUserScore,
+  encodeScoreKinds,
   getHighscoreRank,
   getNewScore,
   getPastScore,
@@ -10,6 +12,7 @@ import {
   withEarned,
   withFirstSolves,
   withScore,
+  withSolutionScore,
 } from "#/game/score.ts";
 import type { Move } from "#/game/types.ts";
 
@@ -213,4 +216,26 @@ Deno.test("getPastScore() turns a Flash solver's star into a solve on a full sol
   assertEquals(Object.fromEntries(score), {
     ane: ["solve", "perfect", "first"],
   });
+});
+
+Deno.test("decodeScoreKinds() reads back every kind but first, in display order", () => {
+  assertEquals(
+    decodeScoreKinds(encodeScoreKinds(["flash", "perfect", "solve"])),
+    ["solve", "perfect", "flash"],
+  );
+});
+
+Deno.test("withSolutionScore() swaps Flash for a full solve's kinds", () => {
+  assertEquals(
+    withSolutionScore({ "daily-1": ["flash"] }, "daily-1", ["solve", "first"]),
+    { "daily-1": ["solve", "first"] },
+  );
+});
+
+Deno.test("withSolutionScore() leaves the score as it was for a repeat solve", () => {
+  const score = { "daily-1": ["solve" as const, "perfect" as const] };
+  assertStrictEquals(
+    withSolutionScore(score, "daily-1", ["solve", "perfect"]),
+    score,
+  );
 });

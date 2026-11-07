@@ -7,6 +7,7 @@ import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
+import { BadgeStars } from "#/components/stars.tsx";
 import { getPuzzleSolution } from "#/db/solutions.ts";
 import { Solution } from "#/db/types.ts";
 import { Puzzle } from "#/game/types.ts";
@@ -66,7 +67,9 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             />
           </h1>
 
-          <ScoreBadge puzzle={puzzle} href={href} />
+          <BadgeStars kinds={props.state.score[props.data.puzzle.slug]}>
+            <ScoreBadge puzzle={puzzle} href={href} />
+          </BadgeStars>
         </div>
 
         <Board puzzle={puzzle} href={href} mode={mode} />

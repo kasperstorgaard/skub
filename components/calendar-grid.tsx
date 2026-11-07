@@ -1,13 +1,15 @@
 import { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 
-import { Check, Icon, Trophy } from "#/components/icons.tsx";
+import { Stars } from "#/components/stars.tsx";
+import type { ScoreProgress } from "#/game/score.ts";
 import { PuzzleManifestEntry } from "#/game/types.ts";
 
 type CalendarGridProps = {
   href: Signal<string>;
   selectedDate: Temporal.PlainDate;
   bestMoves: Record<string, number>;
+  score: ScoreProgress;
   today: Temporal.PlainDate;
   entries: PuzzleManifestEntry[];
 };
@@ -16,6 +18,7 @@ export function CalendarGrid({
   href,
   selectedDate,
   bestMoves,
+  score,
   today,
   entries,
 }: CalendarGridProps) {
@@ -58,8 +61,9 @@ export function CalendarGrid({
         const isActive = selectedDate.day === day;
         const bestForDay = entry ? bestMoves[entry.slug] : undefined;
         const isSolved = bestForDay !== undefined;
-        const isOptimal = isSolved && entry?.minMoves !== undefined &&
-          bestForDay === entry.minMoves;
+        // Kinds come stored per puzzle, not worked out from the moves.
+        const kinds = score[entry.slug] ?? [];
+        const isOptimal = kinds.includes("perfect");
 
         return (
           <a
@@ -76,7 +80,8 @@ export function CalendarGrid({
               "flex flex-col items-center justify-center py-2",
               "no-underline text-3 leading-none text-text-1 border-1 border-surface-2 transition-colors",
               "lg:rounded-1",
-              "hover:bg-surface-2 hover:border-link",
+              // The stars cut their gaps in the cell's own background.
+              "hover:bg-surface-2 hover:border-link hover:[--star-knockout:var(--color-surface-2)]",
               isActive &&
                 "outline-link outline-2 -outline-offset-2",
             )}
@@ -90,14 +95,10 @@ export function CalendarGrid({
             >
               {day}
             </span>
-            <Icon
-              icon={isOptimal ? Trophy : Check}
-              className={clsx(
-                "text-2",
-                isOptimal ? "text-ui-2" : isSolved ? "text-ui-1" : "invisible",
-              )}
-              aria-hidden="true"
-            />
+            {/* A row of stars' height either way, so the grid doesn't jump */}
+            <span className="flex h-[1em] text-2" aria-hidden="true">
+              <Stars kinds={kinds} />
+            </span>
           </a>
         );
       })}
