@@ -175,7 +175,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
               label="Solutions"
               items={[
                 {
-                  label: "Solutions",
+                  label: "Regular",
                   href: solutionsHref,
                   isActive: tab === "solutions",
                 },
