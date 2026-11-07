@@ -30,10 +30,17 @@ Deno.test("getSolveScore() gives a minimum-moves solve perfect on top of solve",
   );
 });
 
-Deno.test("getSolveScore() gives a long solve on a path no one found first", () => {
+Deno.test("getSolveScore() gives a new path two moves past minimum first", () => {
   assertEquals(
     getSolveScore(puzzle, { moves: 9, isNewPath: true, flash: false }),
     ["solve", "first"],
+  );
+});
+
+Deno.test("getSolveScore() gives a new path three moves past minimum just solve", () => {
+  assertEquals(
+    getSolveScore(puzzle, { moves: 10, isNewPath: true, flash: false }),
+    ["solve"],
   );
 });
 

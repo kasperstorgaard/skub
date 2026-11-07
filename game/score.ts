@@ -27,9 +27,13 @@ export const emptyUserScore: UserScore = {
   flash: 0,
 };
 
+/** How far past minimum moves a new path still earns first. */
+export const FIRST_MAX_EXTRA_MOVES = 2;
+
 /**
  * The kinds a solve scores, earned or not. A Flash solve earns Flash in
  * place of solve, and nothing else: perfect and first need a full solve.
+ * First needs a near-optimal path, or any detour would find one.
  */
 export function getSolveScore(
   puzzle: Pick<Puzzle, "minMoves">,
@@ -39,7 +43,10 @@ export function getSolveScore(
 
   const kinds: ScoreKind[] = ["solve"];
   if (solve.moves <= puzzle.minMoves) kinds.push("perfect");
-  if (solve.isNewPath) kinds.push("first");
+  if (
+    solve.isNewPath &&
+    solve.moves <= puzzle.minMoves + FIRST_MAX_EXTRA_MOVES
+  ) kinds.push("first");
   return kinds;
 }
 
