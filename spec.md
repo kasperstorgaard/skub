@@ -66,7 +66,8 @@ the same boards; archive play moves only all time. It is worked out from those
 puzzles' stored solutions when shown, not stored.
 
 Links to the high score page: the home footer's star split (next to the streak),
-the puzzle page's sidebar and footer, the solutions page and the archive.
+a solution's replay page, the solutions page and the archive. Not the puzzle
+page: while playing, the board is the point.
 
 ## Solutions page
 

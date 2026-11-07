@@ -1,10 +1,4 @@
-import {
-  Download,
-  Icon,
-  Pencil,
-  Ranking,
-  Trophy,
-} from "#/components/icons.tsx";
+import { Download, Icon, Pencil, Ranking } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 
 type ActionsPanelProps = {
@@ -32,12 +26,6 @@ export function ActionsPanel(
             className="btn"
           >
             <Icon icon={Ranking} /> See solutions
-          </a>
-        )}
-
-        {!isPreview && (
-          <a href="/highscore" className="btn">
-            <Icon icon={Trophy} /> High score
           </a>
         )}
 

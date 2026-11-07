@@ -2,7 +2,7 @@ import { useSignal } from "@preact/signals";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import { Icon, Play } from "#/components/icons.tsx";
+import { Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
@@ -97,7 +97,13 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
         </div>
       </Main>
 
-      <Panel />
+      <Panel>
+        <div className="col-[2/3] flex items-start lg:col-auto lg:row-start-3">
+          <a href="/highscore" className="btn">
+            <Icon icon={Trophy} /> High score
+          </a>
+        </div>
+      </Panel>
     </>
   );
 });
