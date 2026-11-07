@@ -11,7 +11,6 @@ export type PuzzleCardProps =
   & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "children">
   & {
     puzzle: Puzzle;
-    bestMoves?: number;
     /** The player's solution score on the puzzle, in display order. */
     score?: ScoreKind[];
     tagline?: string;
@@ -22,21 +21,18 @@ export type PuzzleCardProps =
  * Canonical clickable puzzle card,
  * showing an svg of the puzzle, and letting the consumer pass the
  *
- * Once solved: the earned stars beside the move count.
+ * Once solved: the earned stars in the top right.
  *
  * Pass `children` for a rich tagline or `tagline` for a plain string.
  */
 export function PuzzleCard({
   puzzle,
-  bestMoves,
   score = [],
   tagline,
   showPlay,
   className,
   ...rest
 }: PuzzleCardProps) {
-  const isSolved = bestMoves !== undefined;
-
   return (
     <a
       href={`/puzzles/${puzzle.slug}`}
@@ -66,27 +62,10 @@ export function PuzzleCard({
           </div>
         )}
 
-        {isSolved && (
-          <div
-            class={clsx(
-              "absolute top-0 right-0 p-2 py-2.5",
-              "grid grid-flow-col gap-1 place-content-center items-center",
-            )}
-          >
-            <Stars
-              kinds={score}
-              className="text-4 text-text-1"
-            />
-            <span
-              class={clsx(
-                "flex items-center justify-center gap-1 p-0.5 border-text-1 border-1 rounded-2 aspect-square",
-                "tracking-wide leading-tight text-3 font-medium bg-text-1 text-surface-1",
-              )}
-            >
-              {bestMoves}
-            </span>
-          </div>
-        )}
+        <Stars
+          kinds={score}
+          className="absolute top-0 right-0 p-2 py-2.5 text-4 text-text-1"
+        />
       </div>
 
       {/* The number joins the lead, so the name stands alone */}

@@ -120,7 +120,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
               ? (
                 <PuzzleCard
                   puzzle={selectedPuzzle}
-                  bestMoves={bestMoves[selectedPuzzle.slug]}
                   score={props.state.score[selectedPuzzle.slug]}
                   tagline={dateLabel}
                   showPlay
