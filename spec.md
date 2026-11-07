@@ -107,9 +107,11 @@ Decided so far (with Kasper, in chat):
   once; `ctx.state.score` carries it, updated on award. `components/stars.tsx`
   draws the four variants (outline, rays, sparkles, dashed) on Phosphor's 256
   grid, stacked at a 0.35em overlap, each after the first cutting a gap in
-  `--star-knockout`. On the puzzle page, solutions page and replays: the
+  `--star-knockout`, one colour. On the puzzle page, solutions page and replays: the
   viewer's own stars beside the badge. On cards they replace the check/trophy
-  chip, beside the move count. The archive calendar keeps its check/trophy.
+  chip, beside the move count; the archive calendar's cells show them too.
+  Kinds always come from the stored score per puzzle, never worked out from
+  best moves against minimum moves.
 - All-time per user is an updated aggregate, not computed: each puzzle
   counts up to a max, so the total is a sum of per-puzzle bests, and a
   better solve only adds its gain over the old best. Stored per user beside
