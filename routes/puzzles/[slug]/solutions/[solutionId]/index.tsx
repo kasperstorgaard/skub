@@ -1,5 +1,4 @@
 import { useSignal } from "@preact/signals";
-import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
@@ -74,25 +73,18 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           />
         </div>
 
-        <Board puzzle={puzzle} href={href} mode={mode} />
-      </Main>
+        <div className="grid gap-fl-2">
+          <Board puzzle={puzzle} href={href} mode={mode} />
 
-      <Panel>
-        <div
-          className={clsx(
-            "col-[2/3] flex items-start justify-center gap-fl-1 flex-wrap",
-            "lg:col-auto lg:row-start-3 lg:flex-col lg:self-end lg:justify-start",
-          )}
-        >
-          <a
-            href={props.url.href}
-            className="btn"
-          >
+          {/* The page's main action, under the board, not in the footer */}
+          <a href={props.url.href} className="btn place-self-center">
             <Icon icon={Play} />
             Watch again
           </a>
         </div>
-      </Panel>
+      </Main>
+
+      <Panel />
     </>
   );
 });
