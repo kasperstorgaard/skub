@@ -108,21 +108,21 @@ Deno.test("withEarned() swaps Flash for solve, keeping three kinds at most", () 
   );
 });
 
-Deno.test("getTotalScore() counts every kind alike", () => {
+Deno.test("getTotalScore() gives 50 for solve, first and Flash, 100 for perfect", () => {
   assertEquals(
     getTotalScore({ solve: 12, perfect: 4, first: 1, flash: 2 }),
-    19,
+    1150,
   );
 });
 
-Deno.test("getHighscoreRank() puts a tie on count behind the player with more firsts", () => {
-  // Both on 10 points: one first beats three perfects.
+Deno.test("getHighscoreRank() puts a tie on points behind the player with more firsts", () => {
+  // Both on 400 points: two firsts beat one perfect.
   const ranks = [
-    getHighscoreRank({ ...emptyUserScore, solve: 7, perfect: 3 }),
-    getHighscoreRank({ ...emptyUserScore, solve: 9, first: 1 }),
+    getHighscoreRank({ ...emptyUserScore, solve: 6, perfect: 1 }),
+    getHighscoreRank({ ...emptyUserScore, solve: 6, first: 2 }),
   ].sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
 
-  assertEquals(ranks, [[10, 0, 3], [10, 1, 0]]);
+  assertEquals(ranks, [[400, 0, 1], [400, 2, 0]]);
 });
 
 // An open board with the puck top left and the destination bottom right: two
