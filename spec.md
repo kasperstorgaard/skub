@@ -180,6 +180,22 @@ Decided so far (with Kasper, in chat):
   Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (backfill, reindex) until Kasper has
   cleaned up and tested the stack.
+- Production migration, over KV Connect (`SKUB_KV_URL` = the database's
+  `.../connect` URL, `DENO_KV_ACCESS_TOKEN` = an org or personal token; the
+  database ID is in the console's Databases table, by timeline). `--tunnel`
+  reaches the development database, never production.
+  0. Rehearse on the preview database: snapshot it, import a local export
+     without the score keys (`--exclude solution_score_by_user_puzzle
+     --exclude user_score --exclude highscore --exclude
+     solution_paths_by_puzzle`), run the steps below against it, check the
+     pages on the stack's preview deployment.
+  1. Snapshot production at a quiet moment: `scripts/export-kv.ts <file>`.
+  2. `scripts/backfill-score.ts --dry-run`, then for real, from merged code.
+     The old code ignores the new keys.
+  3. Deploy. Cookies then build from KV that already has the stars.
+  4. Backfill again: catches solves between 2 and 3; a no-op otherwise.
+  Undo: `scripts/import-kv.ts <file> --confirm` restores what was there, and
+  deleting the score prefixes removes what the backfill added.
 - Layer 5 plan (`solutions/revamp`, on `badge/your-best`), with Kasper:
   one solutions page, no Users tab (the high score page covers ranking), Flash
   as its own tab. Replays open after any solve, and only the links in check
