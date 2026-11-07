@@ -83,7 +83,7 @@ The best (optimal) solutions unlock once you've earned stars on the puzzle.
 
 Decided so far (with Kasper, in chat):
 
-- Stack branches: `stars/rules` (this one, base main), then `stars/display`,
+- Stack branches: `stars/rules` (base main), then `stars/display`,
   `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
   the one before and opened against it. Rebase the next onto main as each
   merges.
@@ -112,8 +112,20 @@ Decided so far (with Kasper, in chat):
   better solve only adds its gain over the old best. Stored per user beside
   the per-puzzle best, in the award's commit. Built with the points
   calculation (layers 4/5).
-- Still open: Flash bolt (merge with the badge's switch or not), how many
-  stars unlock the best solutions (ask before layer 5).
+- Flash is not a star of its own: a Flash solve scores `flash`, which shows as
+  the solve star in `--color-ui-1`; a full solve swaps it for `solve`
+  (`withEarned`), moving the point, so three stars at most per puzzle.
+- The first solve of a path is marked `first: true` on the solution, claimed
+  atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
+  marks old ones by solve order.
+- Layer 3 next (`stars/celebration`, based on `stars/display`): earning stars
+  is the celebration's payoff. The solve POST already gets the newly awarded
+  kinds back from `awardScore`; return them in `CelebrationData` and show
+  them in the dialog, with no explainer of stars (non-goal).
+- Still open: the badge's Flash bolt next to a Flash-coloured solve star; how
+  many stars unlock the best solutions (ask before layer 5); highscore ties
+  past total, first and perfect are by user id (earliest-to-reach would need
+  a timestamp in the key); the daily high score's points calculation.
 
 Environment (cloud sandbox):
 
@@ -125,5 +137,12 @@ Environment (cloud sandbox):
   points `@std/assert` at a local stand-in and `#/` at the repo.
 - See pages with the render harness (Kasper's artifact "Skub render harness":
   three scripts plus steps). Renders components and islands, not routes.
+  `deno install` with Deno 2.7.11 fetches the npm side (Tailwind) despite the
+  JSR errors. Run `shot.mjs` with `NODE_PATH=$(npm root -g)`. `css.mjs` only
+  adds the skub theme; append another theme's CSS (fonts rewritten to
+  `file://`) to compare themes.
+- `deno check` on single components works with the repo config (no JSR in
+  their graph); routes and middleware can't be checked here.
+- Force pushes need asking first; a rebased stack branch needs one.
 - Commit as Kasper with the Claude co-author trailer; e2e tests aren't wanted
   for every change, and negative assertions aren't wanted at all.
