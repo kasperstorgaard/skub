@@ -15,8 +15,7 @@ const RAYS =
 // fall rather than lining up with the tips.
 const FIRST_DASH = { array: "20.7 28.0", offset: 14 };
 
-/** The order stars show in: Flash takes the solve star's place. */
-export const STAR_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
+const STAR_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
 
 const LABELS: Record<ScoreKind, string> = {
   solve: "Solved",
