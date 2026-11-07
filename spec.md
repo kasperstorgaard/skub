@@ -164,7 +164,8 @@ Decided so far (with Kasper, in chat):
   "High score" buttons in the puzzle page's panel (its sidebar on desktop,
   its footer on mobile), the solutions page's panel and the archive's.
 - High score since: the top three as a podium (bigger, with what their points
-  are made of: solved, perfect, first, each a number over its label), faint lines between, the
+  are made of: solved, perfect, first, each a number over its label,
+  after the name in columns shared by the three rows), faint lines between, the
   rest a plain numbered list; a pill switch on the right picks this week
   (`/highscore`) or all time (`?period=all`). This week is worked out per
   request from the week's dailies (`getWeekHighscore`, `getHighscore`), so the
