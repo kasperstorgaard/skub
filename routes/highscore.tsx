@@ -260,9 +260,10 @@ function Name({ name, isViewer, className }: NameProps) {
   );
 }
 
-// Flash counts as solved here, no kind of its own.
+// Per puzzle, not per solution: each puzzle adds its best solution's kinds
+// once. Flash counts as solved here, no kind of its own.
 const BREAKDOWN = [
-  { kind: "solve", label: "Solutions" },
+  { kind: "solve", label: "Solved" },
   { kind: "perfect", label: "Perfect" },
   { kind: "first", label: "First" },
 ] as const;
