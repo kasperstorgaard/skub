@@ -16,7 +16,8 @@ export function StatsSummary({ stats, userScore, className }: Props) {
   return (
     <dl
       className={clsx(
-        "flex gap-fl-4 m-0",
+        // Labels on one line, under numbers of different sizes
+        "flex gap-fl-4 m-0 max-lg:items-end",
         "lg:flex-col lg:gap-fl-2",
         className,
       )}
@@ -46,7 +47,13 @@ export function StatsSummary({ stats, userScore, className }: Props) {
 
       {points > 0 && (
         <div className="flex flex-col">
-          <dd className="m-0 flex flex-col text-2 text-text-1">
+          <dd
+            className={clsx(
+              "m-0 flex items-center gap-2 text-text-1",
+              "max-lg:text-4 max-lg:font-semibold max-lg:tracking-wide max-lg:leading-flat",
+              "lg:flex-col lg:items-start lg:gap-0 lg:text-2",
+            )}
+          >
             {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
               <span key={kind} className="flex items-center gap-1">
                 <Stars kinds={[kind]} /> {userScore[kind]}
