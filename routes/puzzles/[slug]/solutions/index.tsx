@@ -1,4 +1,3 @@
-import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { page } from "fresh";
 
@@ -8,7 +7,6 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
-import { BadgeStars } from "#/components/stars.tsx";
 import { TOOL_BUTTON } from "#/components/toolbar.tsx";
 import {
   getCanonicalGroup,
@@ -21,7 +19,6 @@ import type { CanonicalGroup, Solution } from "#/db/types.ts";
 import { getPathGroups } from "#/game/paths.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import type { Puzzle } from "#/game/types.ts";
-import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Tab = "solutions" | "flash";
@@ -47,8 +44,6 @@ type Data = {
   /** The viewer's latest path, when it isn't among the shown ones */
   extraPath: Path | null;
   userCanonicalKeys: string[];
-  /** The player's best regular solve, for the score badge */
-  bestMoves: number | null;
 };
 
 function toPath(
@@ -140,15 +135,7 @@ export const handler = define.handlers<Data>({
       }
     }
 
-    const regularSolutions = allUserSolutions.filter((solution) =>
-      !solution.flash
-    );
-    const bestMoves = regularSolutions.length
-      ? Math.min(...regularSolutions.map((solution) => solution.moves.length))
-      : null;
-
     return page({
-      bestMoves,
       puzzle,
       tab,
       paths,
@@ -159,8 +146,6 @@ export const handler = define.handlers<Data>({
 });
 
 export default define.page<typeof handler>(function SolutionsListPage(props) {
-  const puzzle = useSignal(props.data.puzzle);
-  const href = useSignal(props.url.href);
   const { tab, paths, extraPath, userCanonicalKeys } = props.data;
   const { slug, flashStart } = props.data.puzzle;
   const solutionsHref = `/puzzles/${slug}/solutions`;
@@ -185,21 +170,9 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             <PuzzleName puzzle={props.data.puzzle} lead="Solutions" />
           </h1>
 
-          <BadgeStars kinds={props.state.score[slug]}>
-            <ScoreBadge
-              puzzle={puzzle}
-              href={href}
-              moves={props.data.bestMoves}
-            />
-          </BadgeStars>
-        </div>
-
-        {/* The tabs belong to the list: a sibling step above it */}
-        <div className="grid content-start gap-fl-2">
           {!!flashStart?.length && (
             <PillSwitch
               label="Solutions"
-              className="justify-self-end"
               items={[
                 {
                   label: "Regular",
@@ -214,7 +187,10 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
               ]}
             />
           )}
+        </div>
 
+        {/* A step further from the title: the tabs sit on its line */}
+        <div className="grid content-start gap-fl-4 mt-fl-2">
           {paths.length === 0
             ? (
               <p className="text-3 text-text-2">
@@ -224,8 +200,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
               </p>
             )
             : (
-              // A faint line above and between paths, a sibling step either side
-              <ol className="grid m-0 p-0 list-none border-t border-text-3/10 divide-y divide-text-3/10">
+              // A faint line between paths, a sibling step either side
+              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
                 {paths.map((path) => (
                   <PathItem
                     key={path.canonicalKey}
@@ -283,7 +259,7 @@ function PathItem(
   const more = showsYou ? Math.max(path.more - 1, 0) : path.more;
 
   return (
-    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 last:pb-0">
+    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0 last:pb-0">
       {/* The path's moves; at the shortest, the puck's colour, like the badge */}
       <span
         className={clsx(
