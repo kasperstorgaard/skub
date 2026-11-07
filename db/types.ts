@@ -19,6 +19,8 @@ export type Solution = {
   userId: string;
   /** Solved from the Flash start, which `moves` include: kept off the leaderboard. */
   flash?: true;
+  /** The first solve of its path: no one had found it before. */
+  first?: true;
 };
 
 // One entry per canonical move group for a puzzle, maintained as best-effort aggregate

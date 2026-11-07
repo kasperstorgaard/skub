@@ -63,7 +63,6 @@ export async function saveSolution(
   }
 
   const id = ulid().toLowerCase();
-  const solution = { ...payload, id };
   // A Flash solve isn't on the leaderboard, so it finds no new path on it.
   const claimsPath = !payload.flash && existingGroup.value === null &&
     existingPath.value === null;
@@ -79,7 +78,7 @@ export async function saveSolution(
     id,
   ];
 
-  const commit = (claim: boolean) => {
+  const commit = (solution: Solution, claim: boolean) => {
     // publicly available keys
     const atomic = kv.atomic()
       .check({ key: primaryKey, versionstamp: null })
@@ -107,12 +106,17 @@ export async function saveSolution(
   };
 
   // Someone else claimed the path in the meantime: save without the claim.
-  let isNewPath = claimsPath;
-  let result = await commit(claimsPath);
+  let solution: Solution = {
+    ...payload,
+    id,
+    ...(claimsPath && { first: true }),
+  };
+  const result = await commit(solution, claimsPath);
   if (!result.ok && claimsPath) {
-    isNewPath = false;
-    result = await commit(false);
+    solution = { ...payload, id };
+    await commit(solution, false);
   }
+  const isNewPath = !!solution.first;
 
   return {
     isNew: true,
@@ -313,4 +317,23 @@ async function getCanonicalUserSolution(
       s.flash === flash && getCanonicalMoveKey(s.moves) === canonicalKey
     ) ?? null
   );
+}
+
+/**
+ * Rewrites a stored solution under all four of its keys, as one commit. For
+ * the backfill, which marks the first solve of each path after the fact.
+ */
+export async function updateSolution(solution: Solution): Promise<void> {
+  const { puzzleSlug, userId, id } = solution;
+  const canonicalKey = getCanonicalMoveKey(solution.moves);
+
+  await kv.atomic()
+    .set(["solutions_by_puzzle", puzzleSlug, id], solution)
+    .set(
+      ["solutions_by_puzzle_canonical", puzzleSlug, canonicalKey, id],
+      solution,
+    )
+    .set(["solutions_by_user", userId, id], solution)
+    .set(["solutions_by_user_puzzle", userId, puzzleSlug, id], solution)
+    .commit();
 }
