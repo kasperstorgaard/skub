@@ -179,8 +179,5 @@ export function withSolutionScore(
 ): ScoreProgress {
   const earned = score[slug] ?? [];
   if (getNewScore(earned, kinds).length === 0) return score;
-  const updated = SCORE_KINDS.filter((kind) =>
-    earned.includes(kind) || kinds.includes(kind)
-  );
-  return { ...score, [slug]: updated };
+  return { ...score, [slug]: withEarned(earned, kinds) };
 }

@@ -122,7 +122,7 @@ Deno.test("decodeProgress() round trips solution score beside best moves", () =>
   // Flash only on daily-3: a solution score with no full solve's moves.
   const score = {
     "daily-1": ["solve" as const, "perfect" as const],
-    "daily-2": ["solve" as const, "first" as const, "flash" as const],
+    "daily-2": ["solve" as const, "first" as const],
     "daily-3": ["flash" as const],
     tutorial: ["solve" as const],
   };
