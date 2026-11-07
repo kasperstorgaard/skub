@@ -6,8 +6,10 @@ import { Icon, Play } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
+import { BadgeStars } from "#/components/stars.tsx";
 import { getPuzzleSolution } from "#/db/solutions.ts";
 import { Solution } from "#/db/types.ts";
+import { getSolveScore } from "#/game/score.ts";
 import { Puzzle } from "#/game/types.ts";
 import { encodeState } from "#/game/url.ts";
 import Board from "#/islands/board.tsx";
@@ -65,12 +67,20 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             />
           </h1>
 
-          {/* This solve's moves against the shortest; no stars */}
-          <ScoreBadge
-            puzzle={puzzle}
-            href={href}
-            moves={props.data.solution.moves.length}
-          />
+          {/* This solution's moves against the shortest, and its stars */}
+          <BadgeStars
+            kinds={getSolveScore(props.data.puzzle, {
+              moves: props.data.solution.moves.length,
+              isNewPath: !!props.data.solution.first,
+              flash: !!props.data.solution.flash,
+            })}
+          >
+            <ScoreBadge
+              puzzle={puzzle}
+              href={href}
+              moves={props.data.solution.moves.length}
+            />
+          </BadgeStars>
         </div>
 
         <div className="grid gap-fl-2">

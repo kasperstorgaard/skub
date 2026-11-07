@@ -74,7 +74,8 @@ Two tabs, Regular and Flash, the high score's pill switch, in the URL
 (`?tab=flash`) so they work without JS and survive a share or reload. The
 switch sits beside the title, on its bottom line, where the score badge and
 stars were: the page is about the paths, not your score. A replay's badge
-shows the solve's moves against the shortest, and no stars. Flash
+shows the solution's moves against the shortest, with the stars that
+solution earned beside it. Flash
 solves start part way in, so they're shorter and get a list of their own.
 
 Each tab lists paths, shortest first. A path shows, podium style, the player
