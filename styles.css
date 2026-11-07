@@ -111,17 +111,20 @@
   --animate-pulse: var(--animation-pulse);
   --animate-sneak-in-bottom: sneak-in-bottom 1.4s ease 500ms both;
   --animate-sneak-in-left: sneak-in-left 1.4s ease 500ms both;
-  --animate-star-pop: star-pop 500ms var(--ease-3) both;
+  --animate-star-fly: star-fly 600ms ease-out both;
 
-  @keyframes star-pop {
+  /* From the top left on a curve: down first, then across, fading in */
+  @keyframes star-fly {
     0% {
-      transform: scale(0);
+      opacity: 0;
+      transform: translate(-1.6em, -1.4em) scale(0.6);
     }
-    60% {
-      transform: scale(1.2);
+    40% {
+      opacity: 1;
+      transform: translate(-0.8em, -0.2em) scale(0.9);
     }
     100% {
-      transform: scale(1);
+      transform: translate(0, 0) scale(1);
     }
   }
 
