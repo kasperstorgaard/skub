@@ -121,8 +121,8 @@ Decided so far (with Kasper, in chat):
 - Layer 3 built (`stars/celebration`): the solve POST returns the newly
   awarded kinds as `earned` in `CelebrationData`, and the dialog shows them
   on the headline's row, at the headline's size, flying in one by one on a curve, fading in, each from one of five
-  starts evenly spaced on a circle 2em out across the top left, drawn at
-  random with no two the same
+  starts evenly spaced on a 0.5em circle around 2em left and 1em up of where
+  it lands, drawn at random with no two the same
   (motion-safe only). Only new stars: a replay that earns nothing shows none.
   On the headline's row so nothing shifts when the data lands after the
   loading state. The headline is just "Solved!" or "Perfect!", over one
