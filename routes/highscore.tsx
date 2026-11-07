@@ -292,6 +292,8 @@ function Points({ userScore, className }: PointsProps) {
   return (
     <span className={clsx("text-text-1 tabular-nums text-right", className)}>
       {formatNumber(getTotalScore(userScore))}
+      {/* The unit, quiet: the stats beside it are numbers too */}
+      <span className="ml-1 text-1 font-normal text-text-3">pts</span>
     </span>
   );
 }
