@@ -152,14 +152,20 @@ type StarCountsProps = {
   className?: string;
 };
 
-/** A player's stars per kind, one star of each kind they've earned with its count. */
+/**
+ * A player's stars per kind, one star of each kind they've earned with its
+ * count. A Flash solve counts as solved: no star of its own here.
+ */
 export function StarCounts({ userScore, className }: StarCountsProps) {
+  const counts = { ...userScore, solve: userScore.solve + userScore.flash };
+  const kinds: ScoreKind[] = ["solve", "perfect", "first"];
+
   return (
     <span className={clsx("inline-flex items-center gap-2", className)}>
-      {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
+      {kinds.filter((kind) => counts[kind] > 0).map((kind) => (
         <span key={kind} className="inline-flex items-center gap-0.5">
           <Stars kinds={[kind]} />
-          {userScore[kind]}
+          {counts[kind]}
         </span>
       ))}
     </span>
