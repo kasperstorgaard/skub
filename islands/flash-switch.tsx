@@ -56,7 +56,7 @@ export function FlashSwitch(
     role: "switch",
     "aria-checked": "false",
     "aria-label": "Flash",
-    title: "Flash mode: same board, shorter puzzle, smaller prizes",
+    title: "Flash mode: same board, shorter puzzle, fewer stars",
     className: clsx(className, "cursor-pointer"),
   } as const;
   const icon = <Icon icon={LightningFill} className={iconClassName} />;
