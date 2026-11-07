@@ -49,7 +49,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
 
   return (
     <>
-      <Main className="max-lg:row-span-full content-start">
+      <Main className="max-lg:row-span-full justify-stretch content-start">
         <Header back={{ href: "/", label: "Back to home" }} />
 
         <h1 className="text-brand text-6 leading-flat">High score</h1>
