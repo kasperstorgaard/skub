@@ -35,8 +35,8 @@ Open: the badge's Flash switch already shows a bolt; whether the earned Flash
 icon merges with it or sits with the others.
 
 Open: variants of one star icon instead of four icons, so the shape says star
-and the variant says the kind: outline for solve, filled (or duotone) for
-perfect, sparkles for first, a dashed border for Flash. Unearned would then be
+and the variant says the kind: outline for solve, rays between the arms for
+perfect (🌟), sparkles for first, a dashed border for Flash. Unearned would then be
 the dimmed variant, since an outline is already solve; and a perfect might show
 the filled star alone while still counting two.
 
