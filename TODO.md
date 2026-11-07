@@ -124,11 +124,8 @@ PR finishes only part of an item, trim the item to what is left.
   tag. Retro themes still style the old pieces (`.move-counter`,
   `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
-- **The solutions page feels like part of the new look.** Revamp it to match the
-  puzzle page: the title with its lead line, the score badge, the type roles and
-  spacing levels, buttons, and the sidebar and mobile footer. The solve list
-  itself gets a visual pass too, so a solve reads at a glance (who, how many
-  moves, when).
+- **A solution says when it was found.** The solutions page shows who claimed
+  each path and how many moves it takes; it doesn't say when.
 
 - **On mobile, all puzzles are one feed to flick through.** A snap-scrolling
   feed of puzzle cards, newest first, that reads as one seamless list. The card
@@ -198,11 +195,9 @@ PR finishes only part of an item, trim the item to what is left.
   the computed Flash start lands the puck on with a Flash icon, so the builder
   knows where Flash players begin while shaping the board.
 
-- **Flash solves get a leaderboard of their own.** Flash solves are already
-  stored with names, as regular solutions marked `flash`; the leaderboard skips
-  them because they never enter the aggregates. Give them a board beside the
-  normal one (a tab or filter on the solutions page) and stats of their own, so
-  the celebration can compare a Flash solve against other Flash solves.
+- **Flash solves get stats of their own.** The solutions page's Flash tab lists
+  them by path, worked out from the solves; they still have no stats, so the
+  celebration can't compare a Flash solve against other Flash solves.
 
 - **Players earn stars each day for what they achieve.** 1 star for a solve, 2
   for a perfect, 1 for being first to find a solution, capped at 3 per puzzle
@@ -247,13 +242,6 @@ PR finishes only part of an item, trim the item to what is left.
   The open part is collisions: nothing stops two players picking the same name
   today, and a permanent name makes a clash permanent too. Claim names
   atomically when picked, so one name is one player.
-
-- **Players can replay solutions as good as theirs, never better.** On a
-  puzzle's solutions, you can watch any solution as long as or longer than your
-  own best; shorter ones stay closed until you beat your best. A perfect opens
-  them all. No solve yet, nothing to watch. A candidate answer to how many stars
-  unlock the best solutions (layer 5 of the stars stack): your own best is the
-  key, not a star count.
 
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of
