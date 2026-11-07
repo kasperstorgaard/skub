@@ -28,9 +28,10 @@ type StarsProps = {
 };
 
 /**
- * Earned stars, stacked with an overlap, each over the one before it. A star
- * after the first cuts a gap out of the one behind in `--star-knockout`, which
- * the container sets to its own background; the page surface otherwise.
+ * Earned stars in the theme's puck colour, stacked with an overlap, each over
+ * the one before it. A star after the first cuts a gap out of the one behind in
+ * `--star-knockout`, which the container sets to its own background; the page
+ * surface otherwise.
  */
 export function Stars({ kinds, className }: StarsProps) {
   if (kinds.length === 0) return null;
@@ -41,7 +42,7 @@ export function Stars({ kinds, className }: StarsProps) {
       role="img"
       aria-label={label}
       title={label}
-      className={clsx("inline-flex items-center", className)}
+      className={clsx("inline-flex items-center text-ui-2", className)}
     >
       {kinds.map((kind, i) => (
         <svg
@@ -106,7 +107,7 @@ type BadgeStarsProps = {
 export function BadgeStars({ kinds = [], children }: BadgeStarsProps) {
   return (
     <span className="flex items-center gap-2">
-      <Stars kinds={kinds} className="text-5 lg:text-4 text-text-1" />
+      <Stars kinds={kinds} className="text-5 lg:text-4" />
       {children}
     </span>
   );
