@@ -167,9 +167,17 @@ Decided so far (with Kasper, in chat):
   viewer's rank is known there even past the top 50; all time reads the
   stored index.
 - Layer 5 next (`solutions/revamp`, based on `stars/highscore`).
-- Still open: how many stars unlock the best solutions (ask before layer 5); highscore ties
-  past total, first and perfect are by user id (earliest-to-reach would need
-  a timestamp in the key); the daily high score's points calculation.
+- Decided in layer 4: ties past points, first and perfect go by user id, and
+  that's fine. A Flash solve is worth a solve's 50: missing perfect and first
+  is penalty enough. The star is called First in the UI. Home and profile show
+  streak, points and the stars (Solved, Perfect, First; Flash counts as
+  solved), and a High score button in home's panel once you have points.
+  Rate is gone from the puzzle page (it's the candidates flow), and See
+  solutions shows once you have a star on the puzzle.
+- Nothing runs against production (backfill, reindex) until Kasper has
+  cleaned up and tested the stack.
+- Still open: how many stars unlock the best solutions (ask before layer 5);
+  the daily high score's points calculation.
 
 Environment (cloud sandbox):
 
