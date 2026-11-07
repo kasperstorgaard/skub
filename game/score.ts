@@ -3,8 +3,9 @@ import type { Move, Puzzle } from "#/game/types.ts";
 
 /**
  * What a puzzle can score, one point per kind, each earned once per player for
- * all time. How it's shown is up to the UI. `getHighscoreRank` reads first and
- * perfect as the rarer kinds.
+ * all time, three at most: Flash is a solve from the Flash start, and gives way
+ * to solve once the puzzle is fully solved. How it's shown is up to the UI.
+ * `getHighscoreRank` reads first and perfect as the rarer kinds.
  */
 export const SCORE_KINDS = ["solve", "perfect", "first", "flash"] as const;
 export type ScoreKind = typeof SCORE_KINDS[number];
@@ -42,24 +43,48 @@ export function getSolveScore(
   return kinds;
 }
 
-/** The kinds not earned yet, in display order. */
+/**
+ * The kinds not earned yet, in display order. Flash is nothing new once the
+ * puzzle is solved, or is being solved.
+ */
 export function getNewScore(
   earned: ScoreKind[],
   kinds: ScoreKind[],
 ): ScoreKind[] {
+  const isSolved = earned.includes("solve") || kinds.includes("solve");
   return SCORE_KINDS.filter((kind) =>
-    kinds.includes(kind) && !earned.includes(kind)
+    kinds.includes(kind) && !earned.includes(kind) &&
+    !(kind === "flash" && isSolved)
   );
 }
 
-/** A user score with one point of each kind added. */
+/** A solution score with kinds added, in display order: solve replaces Flash. */
+export function withEarned(
+  earned: ScoreKind[],
+  kinds: ScoreKind[],
+): ScoreKind[] {
+  const isSolved = earned.includes("solve") || kinds.includes("solve");
+  return SCORE_KINDS.filter((kind) =>
+    (earned.includes(kind) || kinds.includes(kind)) &&
+    !(kind === "flash" && isSolved)
+  );
+}
+
+/**
+ * A user score after one puzzle's solution score went from `earned` to
+ * `updated`: a point for each kind gained, one off for a Flash that gave way.
+ */
 export function withScore(
   userScore: UserScore,
-  kinds: ScoreKind[],
+  earned: ScoreKind[],
+  updated: ScoreKind[],
 ): UserScore {
-  const updated = { ...userScore };
-  for (const kind of kinds) updated[kind]++;
-  return updated;
+  const result = { ...userScore };
+  for (const kind of SCORE_KINDS) {
+    if (updated.includes(kind) && !earned.includes(kind)) result[kind]++;
+    if (earned.includes(kind) && !updated.includes(kind)) result[kind]--;
+  }
+  return result;
 }
 
 export function getTotalScore(userScore: UserScore): number {
@@ -110,7 +135,7 @@ export function getPastScore(
       isNewPath: first,
       flash,
     });
-    earnedByUser.set(userId, [...earned, ...getNewScore(earned, kinds)]);
+    earnedByUser.set(userId, withEarned(earned, kinds));
   }
 
   return earnedByUser;

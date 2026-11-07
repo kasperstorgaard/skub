@@ -5,6 +5,7 @@ import {
   getNewScore,
   type ScoreKind,
   type UserScore,
+  withEarned,
   withScore,
 } from "#/game/score.ts";
 
@@ -29,7 +30,7 @@ export const getHighscoreKey = (userId: string, userScore: UserScore) => [
   userId,
 ];
 
-/** The kinds a player has earned on a puzzle: each award in display order. */
+/** The kinds a player has earned on a puzzle, in display order. */
 export async function getSolutionScore(
   userId: string,
   puzzleSlug: string,
@@ -60,15 +61,16 @@ export async function awardScore(
     const earned = solutionScoreEntry.value ?? [];
     const added = getNewScore(earned, kinds);
     if (added.length === 0) return [];
+    const updatedEarned = withEarned(earned, added);
 
     // Spread over the empty score, so a kind added later starts at 0.
     const current = { ...emptyUserScore, ...userScoreEntry.value };
-    const updated = withScore(current, added);
+    const updated = withScore(current, earned, updatedEarned);
 
     const atomic = kv.atomic()
       .check(solutionScoreEntry)
       .check(userScoreEntry)
-      .set(solutionScoreKey(userId, puzzleSlug), [...earned, ...added])
+      .set(solutionScoreKey(userId, puzzleSlug), updatedEarned)
       .set(userScoreKey(userId), updated)
       .set(getHighscoreKey(userId, updated), updated);
     if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
