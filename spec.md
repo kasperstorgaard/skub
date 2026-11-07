@@ -57,3 +57,39 @@ best (optimal) solutions unlock once you've earned stars on the puzzle.
 - Anonymous-first solves and the name prompt after the first star: a later
   stack.
 - A first-time explainer of stars in the celebration.
+
+## Working notes for the next session
+
+Decided so far (with Kasper, in chat):
+
+- Stack branches: `stars/rules` (this one, base main), then `stars/display`,
+  `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
+  the one before and opened against it. Rebase the next onto main as each
+  merges.
+- Layer 1 next: a pure rule (`game/stars.ts`: which kinds a solve earns, given
+  the puzzle, the move count, `isNewPath` and `flash`, plus what the player
+  already has) with unit tests; KV per user: earned kinds per puzzle, totals
+  per kind, and a ranking index keyed so a list reads in rank order, all
+  updated in one atomic commit; awarding in the solve POST in
+  `routes/puzzles/[slug]/index.tsx`, beside `saveSolution` /
+  `updateSolutionAggregates` (`isNewPath` comes from `saveSolution`); a
+  one-off backfill script over `solutions_by_puzzle`, first from solve order
+  (ULID ids sort by time).
+- Cards are server-rendered from the progress cookie (one byte of best moves
+  per puzzle, `game/progress.ts`). Solve and perfect follow from it; first and
+  Flash need extra bits, a layer 2 concern.
+- Still open: Flash bolt (merge with the badge's switch or not), how many
+  stars unlock the best solutions (ask before layer 5).
+
+Environment (cloud sandbox):
+
+- JSR is blocked, so `deno task build`, `deno check` and the dev server don't
+  run. npm works.
+- Format and lint with CI's Deno 2.7.11 (`npm i --prefix /tmp/deno27
+  deno@2.7.11`); newer Deno wraps CSS and Markdown differently and CI fails.
+- Unit tests: `deno test -A --no-config --import-map=<map>` with a map that
+  points `@std/assert` at a local stand-in and `#/` at the repo.
+- See pages with the render harness (Kasper's artifact "Skub render harness":
+  three scripts plus steps). Renders components and islands, not routes.
+- Commit as Kasper with the Claude co-author trailer; e2e tests aren't wanted
+  for every change, and negative assertions aren't wanted at all.
