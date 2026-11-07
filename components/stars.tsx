@@ -15,7 +15,8 @@ const RAYS =
 // fall rather than lining up with the tips.
 const FIRST_DASH = { array: "20.7 28.0", offset: 14 };
 
-const DISPLAY_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
+/** The order stars show in: Flash takes the solve star's place. */
+export const STAR_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
 
 const LABELS: Record<ScoreKind, string> = {
   solve: "Solved",
@@ -59,7 +60,7 @@ export function Stars({ kinds, className, getStarProps }: StarsProps) {
   if (kinds.length === 0) return null;
   // Flash stands in for solve, so it takes the solve star's place.
   const stars = [...kinds].sort((a, b) =>
-    DISPLAY_ORDER.indexOf(a) - DISPLAY_ORDER.indexOf(b)
+    STAR_ORDER.indexOf(a) - STAR_ORDER.indexOf(b)
   );
   const label = stars.map((kind) => LABELS[kind]).join(", ");
 
@@ -156,7 +157,7 @@ type StarCountsProps = {
 export function StarCounts({ userScore, className }: StarCountsProps) {
   return (
     <span className={clsx("inline-flex items-center gap-2", className)}>
-      {DISPLAY_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
+      {STAR_ORDER.filter((kind) => userScore[kind] > 0).map((kind) => (
         <span key={kind} className="inline-flex items-center gap-0.5">
           <Stars kinds={[kind]} />
           {userScore[kind]}
