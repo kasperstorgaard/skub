@@ -8,13 +8,13 @@ type MoveScoreProps = {
   /** A fixed count instead of the URL's, e.g. a best solve; null for none */
   moves?: number | null;
   minMoves?: number;
-  /** Show "?" for the shortest solution until the puzzle is solved. */
+  /** Show "–" for the target until the puzzle is solved: no solves yet. */
   hideMinMoves?: boolean;
   /** The player's best, in place of the shortest. */
   best?: number;
 };
 
-/** Moves played over the player's best or the shortest, e.g. "3/10" or "3/?". */
+/** Moves played over the player's best or the shortest, e.g. "3/10" or "3/–". */
 export function MoveScore(
   { href, moves, minMoves, hideMinMoves, best }: MoveScoreProps,
 ) {
@@ -32,7 +32,7 @@ export function MoveScore(
       <span className="mx-[0.1em]">/</span>
       {/* The player's count leads; the target sits back */}
       <span className={clsx(isPerfect ? "text-ui-2" : "opacity-50")}>
-        {hideMinMoves ? "?" : best ?? (minMoves || "—")}
+        {hideMinMoves ? "–" : best ?? (minMoves || "—")}
       </span>
     </span>
   );
