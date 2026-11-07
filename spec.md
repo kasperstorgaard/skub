@@ -12,7 +12,8 @@ A stack of PRs, each based on the one before:
    page
 6. `stars/celebration`: earning stars is the celebration's payoff
 7. `stars/highscore`: the high score page, its links, stars in the home footer
-8. `solutions/revamp`: the solutions page on the new design, with Flash
+8. `badge/your-best`: the score badge shows your best in place of the shortest
+9. `solutions/revamp`: the solutions page on the new design, with Flash
 
 ## Stars
 
