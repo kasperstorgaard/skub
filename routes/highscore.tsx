@@ -219,7 +219,8 @@ function PeriodTabs({ period }: { period: Period }) {
             // The other keeps a clear border as wide, so it's as tall, and
             // half the padding towards the active one.
             className={clsx(
-              "py-1 rounded-round",
+              // Taller on mobile, for thumbs
+              "py-1 max-lg:py-2 rounded-round",
               "text-1 no-underline whitespace-nowrap",
               isActive
                 ? "btn px-3 min-h-0 min-w-0 font-normal tracking-normal"
