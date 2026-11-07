@@ -111,23 +111,6 @@
   --animate-pulse: var(--animation-pulse);
   --animate-sneak-in-bottom: sneak-in-bottom 1.4s ease 500ms both;
   --animate-sneak-in-left: sneak-in-left 1.4s ease 500ms both;
-  --animate-star-fly: star-fly 600ms ease-out both;
-
-  /* From the top left on a curve: down first, then across, fading in */
-  @keyframes star-fly {
-    0% {
-      opacity: 0;
-      transform: translate(-1.6em, -1.4em) scale(0.6);
-    }
-    40% {
-      opacity: 1;
-      transform: translate(-0.8em, -0.2em) scale(0.9);
-    }
-    100% {
-      transform: translate(0, 0) scale(1);
-    }
-  }
-
   @keyframes sneak-in-bottom {
     0% {
       transform: translateY(100%);
@@ -693,6 +676,44 @@
 }
 
 @layer components {
+  /* Stars flying in one by one, from the top left on a curve: down first,
+     then across, fading in. Each star's start comes from the container as
+     --fly-n-x / --fly-n-y. */
+  @media (prefers-reduced-motion: no-preference) {
+    .stars-fly > svg {
+      animation: star-fly 600ms ease-out both;
+    }
+    .stars-fly > svg:nth-child(1) {
+      --fly-x: var(--fly-1-x);
+      --fly-y: var(--fly-1-y);
+    }
+    .stars-fly > svg:nth-child(2) {
+      --fly-x: var(--fly-2-x);
+      --fly-y: var(--fly-2-y);
+      animation-delay: 150ms;
+    }
+    .stars-fly > svg:nth-child(3) {
+      --fly-x: var(--fly-3-x);
+      --fly-y: var(--fly-3-y);
+      animation-delay: 300ms;
+    }
+  }
+
+  @keyframes star-fly {
+    0% {
+      opacity: 0;
+      transform: translate(var(--fly-x), var(--fly-y)) scale(0.6);
+    }
+    40% {
+      opacity: 1;
+      transform: translate(calc(var(--fly-x) * 0.5), calc(var(--fly-y) * 0.15))
+        scale(0.9);
+    }
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+  }
+
   /* Three sequenced dots to indicate loading */
   .loading-dots > span {
     display: inline-block;
