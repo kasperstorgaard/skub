@@ -76,26 +76,38 @@ export function getHighscoreRank(
   return [getTotalScore(userScore), userScore.first, userScore.perfect];
 }
 
+type PastSolve = { moves: Move[]; flash?: boolean; first?: boolean };
+
 /**
- * The kinds each player has scored on a puzzle from its past solves, given in
- * solve order: first goes to whoever found a path before anyone else.
+ * A puzzle's solves, in solve order, with `first` on the earliest solve of
+ * each path and on no other. Flash solves never find a path.
  */
+export function withFirstSolves<T extends PastSolve>(solves: T[]): T[] {
+  const paths = new Set<string>();
+
+  return solves.map((solve) => {
+    const { first: _, ...rest } = solve;
+    if (solve.flash) return rest as T;
+
+    const path = getCanonicalMoveKey(solve.moves);
+    if (paths.has(path)) return rest as T;
+    paths.add(path);
+    return { ...rest, first: true } as T;
+  });
+}
+
+/** The kinds each player has scored on a puzzle from its solves. */
 export function getPastScore(
   puzzle: Pick<Puzzle, "minMoves">,
-  solves: { userId: string; moves: Move[]; flash?: boolean }[],
+  solves: (PastSolve & { userId: string })[],
 ): Map<string, ScoreKind[]> {
-  const paths = new Set<string>();
   const earnedByUser = new Map<string, ScoreKind[]>();
 
-  for (const { userId, moves, flash = false } of solves) {
-    const path = getCanonicalMoveKey(moves);
-    const isNewPath = !flash && !paths.has(path);
-    if (!flash) paths.add(path);
-
+  for (const { userId, moves, flash = false, first = false } of solves) {
     const earned = earnedByUser.get(userId) ?? [];
     const kinds = getSolveScore(puzzle, {
       moves: moves.length,
-      isNewPath,
+      isNewPath: first,
       flash,
     });
     earnedByUser.set(userId, [...earned, ...getNewScore(earned, kinds)]);

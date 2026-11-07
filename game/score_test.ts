@@ -7,6 +7,7 @@ import {
   getPastScore,
   getSolveScore,
   getTotalScore,
+  withFirstSolves,
   withScore,
 } from "#/game/score.ts";
 import type { Move } from "#/game/types.ts";
@@ -110,13 +111,59 @@ const theLongWay: Move[] = [
   [{ x: 7, y: 0 }, { x: 7, y: 7 }],
 ];
 
-Deno.test("getPastScore() gives first to whoever found each path earliest", () => {
+Deno.test("withFirstSolves() marks the earliest solve of each path", () => {
+  assertEquals(
+    withFirstSolves([
+      { userId: "ane", moves: theLongWay },
+      { userId: "bo", moves: theLongWay },
+      { userId: "bo", moves: downRight },
+      { userId: "ane", moves: downRight },
+      { userId: "ane", moves: rightDown },
+    ]),
+    [
+      { userId: "ane", moves: theLongWay, first: true },
+      { userId: "bo", moves: theLongWay },
+      { userId: "bo", moves: downRight, first: true },
+      { userId: "ane", moves: downRight },
+      { userId: "ane", moves: rightDown, first: true },
+    ],
+  );
+});
+
+Deno.test("withFirstSolves() moves a mark wrongly given to a later solve", () => {
+  // Two near-simultaneous solves both claimed the path before claims were atomic.
+  assertEquals(
+    withFirstSolves([
+      { userId: "ane", moves: downRight, first: true },
+      { userId: "bo", moves: downRight, first: true },
+    ]),
+    [
+      { userId: "ane", moves: downRight, first: true },
+      { userId: "bo", moves: downRight },
+    ],
+  );
+});
+
+Deno.test("withFirstSolves() finds no new path in a Flash solve", () => {
+  // Flash went down and right first; the later full solve still finds it.
+  assertEquals(
+    withFirstSolves([
+      { userId: "ane", moves: downRight, flash: true },
+      { userId: "bo", moves: downRight },
+    ]),
+    [
+      { userId: "ane", moves: downRight, flash: true },
+      { userId: "bo", moves: downRight, first: true },
+    ],
+  );
+});
+
+Deno.test("getPastScore() gives each player the kinds of their solves", () => {
   const score = getPastScore(corner, [
-    { userId: "ane", moves: theLongWay },
+    { userId: "ane", moves: theLongWay, first: true },
     { userId: "bo", moves: theLongWay },
-    { userId: "bo", moves: downRight },
+    { userId: "bo", moves: downRight, first: true },
     { userId: "ane", moves: downRight },
-    { userId: "ane", moves: rightDown },
   ]);
 
   assertEquals(Object.fromEntries(score), {
@@ -125,23 +172,10 @@ Deno.test("getPastScore() gives first to whoever found each path earliest", () =
   });
 });
 
-Deno.test("getPastScore() finds no new path in a Flash solve", () => {
-  // Flash went down and right first; the later full solve still finds it.
-  const score = getPastScore(corner, [
-    { userId: "ane", moves: downRight, flash: true },
-    { userId: "bo", moves: downRight },
-  ]);
-
-  assertEquals(Object.fromEntries(score), {
-    ane: ["flash"],
-    bo: ["solve", "perfect", "first"],
-  });
-});
-
 Deno.test("getPastScore() gives a Flash solver the rest on a full solve", () => {
   const score = getPastScore(corner, [
     { userId: "ane", moves: downRight, flash: true },
-    { userId: "ane", moves: downRight },
+    { userId: "ane", moves: downRight, first: true },
   ]);
 
   assertEquals(Object.fromEntries(score), {
