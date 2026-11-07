@@ -41,12 +41,17 @@ export async function saveSolution(
     canonicalKey,
   ];
 
+  // Claimed by the first solve of a path, in the same commit, so exactly one
+  // solve finds it new. Paths solved before the claim existed have a group.
+  const pathKey = ["solution_paths_by_puzzle", puzzleSlug, canonicalKey];
+
   // User-level dedup: skip if this user already submitted this exact canonical path
-  const [existingSolution, existingGroup] = await Promise.all([
+  const [existingSolution, existingGroup, existingPath] = await Promise.all([
     payload.userId
       ? getCanonicalUserSolution(payload.userId, puzzleSlug, payload)
       : null,
     kv.get<CanonicalGroup>(groupKey),
+    kv.get<true>(pathKey),
   ]);
 
   if (existingSolution) {
@@ -58,9 +63,9 @@ export async function saveSolution(
   }
 
   const id = ulid().toLowerCase();
-  const solution = { ...payload, id };
   // A Flash solve isn't on the leaderboard, so it finds no new path on it.
-  const isNewPath = !payload.flash && existingGroup.value === null;
+  const claimsPath = !payload.flash && existingGroup.value === null &&
+    existingPath.value === null;
 
   // simple key by slug for easy direct lookup
   const primaryKey = ["solutions_by_puzzle", puzzleSlug, id];
@@ -73,29 +78,45 @@ export async function saveSolution(
     id,
   ];
 
-  // publicly available keys
-  const atomic = kv.atomic()
-    .check({ key: primaryKey, versionstamp: null })
-    .check({ key: byCanonicalKey, versionstamp: null })
-    .set(primaryKey, solution)
-    .set(byCanonicalKey, solution);
+  const commit = (solution: Solution, claim: boolean) => {
+    // publicly available keys
+    const atomic = kv.atomic()
+      .check({ key: primaryKey, versionstamp: null })
+      .check({ key: byCanonicalKey, versionstamp: null })
+      .set(primaryKey, solution)
+      .set(byCanonicalKey, solution);
 
-  // user-scoped keys
-  const byUserKey = ["solutions_by_user", payload.userId, id];
-  const byUserPuzzleKey = [
-    "solutions_by_user_puzzle",
-    payload.userId,
-    puzzleSlug,
+    // user-scoped keys
+    const byUserKey = ["solutions_by_user", payload.userId, id];
+    const byUserPuzzleKey = [
+      "solutions_by_user_puzzle",
+      payload.userId,
+      puzzleSlug,
+      id,
+    ];
+
+    atomic
+      .check({ key: byUserKey, versionstamp: null })
+      .check({ key: byUserPuzzleKey, versionstamp: null })
+      .set(byUserKey, solution)
+      .set(byUserPuzzleKey, solution);
+
+    if (claim) atomic.check(existingPath).set(pathKey, true);
+    return atomic.commit();
+  };
+
+  // Someone else claimed the path in the meantime: save without the claim.
+  let solution: Solution = {
+    ...payload,
     id,
-  ];
-
-  atomic
-    .check({ key: byUserKey, versionstamp: null })
-    .check({ key: byUserPuzzleKey, versionstamp: null })
-    .set(byUserKey, solution)
-    .set(byUserPuzzleKey, solution);
-
-  await atomic.commit();
+    ...(claimsPath && { first: true }),
+  };
+  const result = await commit(solution, claimsPath);
+  if (!result.ok && claimsPath) {
+    solution = { ...payload, id };
+    await commit(solution, false);
+  }
+  const isNewPath = !!solution.first;
 
   return {
     isNew: true,
@@ -296,4 +317,23 @@ async function getCanonicalUserSolution(
       s.flash === flash && getCanonicalMoveKey(s.moves) === canonicalKey
     ) ?? null
   );
+}
+
+/**
+ * Rewrites a stored solution under all four of its keys, as one commit. For
+ * the backfill, which marks the first solve of each path after the fact.
+ */
+export async function updateSolution(solution: Solution): Promise<void> {
+  const { puzzleSlug, userId, id } = solution;
+  const canonicalKey = getCanonicalMoveKey(solution.moves);
+
+  await kv.atomic()
+    .set(["solutions_by_puzzle", puzzleSlug, id], solution)
+    .set(
+      ["solutions_by_puzzle_canonical", puzzleSlug, canonicalKey, id],
+      solution,
+    )
+    .set(["solutions_by_user", userId, id], solution)
+    .set(["solutions_by_user_puzzle", userId, puzzleSlug, id], solution)
+    .commit();
 }

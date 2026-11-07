@@ -10,6 +10,7 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
+import { awardScore } from "#/db/score.ts";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
 import {
   getFlashSolveCount,
@@ -28,6 +29,7 @@ import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
 import { getOnboardingLabel } from "#/game/recommendation.ts";
+import { getSolveScore } from "#/game/score.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
@@ -185,6 +187,21 @@ export const handler = define.handlers<PageData>({
       }
     }
 
+    // Best effort, like the aggregates: a missed award is put right by
+    // re-running the backfill.
+    const awardSolveScore = () =>
+      withSpan("puzzle.award_score", async (span) => {
+        const kinds = getSolveScore(puzzle, {
+          moves: moves.length,
+          isNewPath,
+          flash: isFlash,
+        });
+        const added = await awardScore(ctx.state.userId, slug, kinds);
+        span.setAttribute("score.earned", added.length);
+      }).catch((err) => {
+        console.error("Failed to award score:", (err as Error).message);
+      });
+
     // One user write, alongside the aggregates. A Flash solve only counts
     // towards the Flash solves, apart from the leaderboard.
     const [user, puzzleStats] = await Promise.all([
@@ -197,6 +214,7 @@ export const handler = define.handlers<PageData>({
         ? updateSolutionAggregates(solution)
         : getPuzzleStats(slug),
       isFlash && isNew ? incrementFlashSolveCount(slug) : undefined,
+      isNew ? awardSolveScore() : undefined,
     ]);
     ctx.state.user = user;
 
