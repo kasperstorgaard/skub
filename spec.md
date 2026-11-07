@@ -110,6 +110,11 @@ Decided so far (with Kasper, in chat):
   `--star-knockout`. On the puzzle page, solutions page and replays: the
   viewer's own stars beside the badge. On cards they replace the check/trophy
   chip, beside the move count. The archive calendar keeps its check/trophy.
+- All-time per user is an updated aggregate, not computed: each puzzle
+  counts up to a max, so the total is a sum of per-puzzle bests, and a
+  better solve only adds its gain over the old best. Stored per user beside
+  the per-puzzle best, in the award's commit. Built with the points
+  calculation (layers 4/5).
 - Still open: Flash bolt (merge with the badge's switch or not), how many
   stars unlock the best solutions (ask before layer 5).
 
