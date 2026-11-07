@@ -3,6 +3,7 @@ import {
   emptyUserScore,
   getHighscoreRank,
   getNewScore,
+  type HighscoreEntry,
   SCORE_KINDS,
   type ScoreKind,
   type ScoreProgress,
@@ -61,8 +62,6 @@ export async function getUserScore(userId: string): Promise<UserScore> {
   const res = await kv.get<UserScore>(userScoreKey(userId));
   return { ...emptyUserScore, ...res.value };
 }
-
-export type HighscoreEntry = { userId: string; userScore: UserScore };
 
 /** The top of the highscore, in rank order. */
 export async function listHighscore(

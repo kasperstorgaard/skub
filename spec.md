@@ -160,6 +160,12 @@ Decided so far (with Kasper, in chat):
   footer's Stars stat (total and split, after the streak) links there, as do
   "High score" buttons in the puzzle page's panel (its sidebar on desktop,
   its footer on mobile), the solutions page's panel and the archive's.
+- High score since: the top three as a podium (bigger, with their stars), the
+  rest a plain numbered list; a pill switch on the right picks this week
+  (`/highscore`) or all time (`?period=all`). This week is worked out per
+  request from the week's dailies (`getWeekHighscore`, `getHighscore`), so the
+  viewer's rank is known there even past the top 50; all time reads the
+  stored index.
 - Layer 5 next (`solutions/revamp`, based on `stars/highscore`).
 - Still open: how many stars unlock the best solutions (ask before layer 5); highscore ties
   past total, first and perfect are by user id (earliest-to-reach would need

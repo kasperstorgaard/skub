@@ -4,6 +4,7 @@ import {
   decodeScoreKinds,
   emptyUserScore,
   encodeScoreKinds,
+  getHighscore,
   getHighscoreRank,
   getNewScore,
   getPastScore,
@@ -250,4 +251,33 @@ Deno.test("getProgressScore() counts each kind across puzzles", () => {
     }),
     { solve: 2, perfect: 1, first: 1, flash: 1 },
   );
+});
+
+Deno.test("getHighscore() adds each player's kinds across puzzles", () => {
+  const highscore = getHighscore([
+    new Map([["ane", ["solve", "perfect"]]]),
+    new Map([["ane", ["solve"]]]),
+  ]);
+
+  assertEquals(highscore, [
+    { userId: "ane", userScore: { ...emptyUserScore, solve: 2, perfect: 1 } },
+  ]);
+});
+
+Deno.test("getHighscore() ranks players by points", () => {
+  const highscore = getHighscore([
+    new Map([["ane", ["solve"]], ["bo", ["solve", "perfect"]]]),
+  ]);
+
+  assertEquals(highscore.map((entry) => entry.userId), ["bo", "ane"]);
+});
+
+Deno.test("getHighscore() ranks a tie on points by firsts", () => {
+  // 150 each: two solves and a first beat a solve and a perfect.
+  const highscore = getHighscore([
+    new Map([["ane", ["solve", "perfect"]], ["bo", ["solve", "first"]]]),
+    new Map([["bo", ["solve"]]]),
+  ]);
+
+  assertEquals(highscore.map((entry) => entry.userId), ["bo", "ane"]);
 });

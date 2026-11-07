@@ -160,6 +160,36 @@ export function getPastScore(
   return earnedByUser;
 }
 
+/** A player and their points per kind, on a highscore. */
+export type HighscoreEntry = { userId: string; userScore: UserScore };
+
+/**
+ * Players ranked by their solution scores on some puzzles, one map of player
+ * to kinds per puzzle. Ties past the rank go by user id, highest first, as the
+ * stored highscore reads.
+ */
+export function getHighscore(
+  scores: Map<string, ScoreKind[]>[],
+): HighscoreEntry[] {
+  const byUser = new Map<string, UserScore>();
+  for (const score of scores) {
+    for (const [userId, kinds] of score) {
+      const userScore = byUser.get(userId) ?? { ...emptyUserScore };
+      for (const kind of kinds) userScore[kind]++;
+      byUser.set(userId, userScore);
+    }
+  }
+
+  return [...byUser]
+    .map(([userId, userScore]) => ({ userId, userScore }))
+    .sort((a, b) => {
+      const rankA = getHighscoreRank(a.userScore);
+      const rankB = getHighscoreRank(b.userScore);
+      return rankB[0] - rankA[0] || rankB[1] - rankA[1] ||
+        rankB[2] - rankA[2] || (a.userId < b.userId ? 1 : -1);
+    });
+}
+
 /** A player's solution score per puzzle, by slug, each in display order. */
 export type ScoreProgress = Record<string, ScoreKind[]>;
 
