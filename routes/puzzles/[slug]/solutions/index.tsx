@@ -199,7 +199,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
               </p>
             )
             : (
-              <ol className="grid gap-fl-2 m-0 p-0 list-none">
+              // A faint line between paths, a sibling step either side
+              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
                 {paths.map((path) => (
                   <PathItem
                     key={path.canonicalKey}
@@ -210,7 +211,9 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
 
                 {extraPath && (
                   <>
-                    <li className="p-0 text-text-3" aria-hidden="true">…</li>
+                    <li className="p-0 py-fl-2 text-text-3" aria-hidden="true">
+                      …
+                    </li>
                     <PathItem path={extraPath} {...pathProps} />
                   </>
                 )}
@@ -255,7 +258,7 @@ function PathItem(
   const more = showsYou ? Math.max(path.more - 1, 0) : path.more;
 
   return (
-    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0">
+    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0 last:pb-0">
       {/* The path's moves; at the shortest, the puck's colour, like the badge */}
       <span
         className={clsx(
