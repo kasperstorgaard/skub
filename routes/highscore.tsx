@@ -6,46 +6,101 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { StarCounts } from "#/components/stars.tsx";
 import { define } from "#/core.ts";
-import { type HighscoreEntry, listHighscore } from "#/db/score.ts";
+import { listHighscore } from "#/db/score.ts";
+import { listPuzzleSolutions } from "#/db/solutions.ts";
 import { getUserNames } from "#/db/user.ts";
+import { getWeekPuzzleNumbers } from "#/game/date.ts";
+import { getAvailableEntries, getPuzzle } from "#/game/loader.ts";
 import {
+  getHighscore,
+  getPastScore,
   getProgressScore,
   getTotalScore,
+  type HighscoreEntry,
+  type ScoreKind,
   type UserScore,
 } from "#/game/score.ts";
 import { formatNumber } from "#/lib/format.ts";
 
+const LIMIT = 50;
+
+type Period = "week" | "all";
 type Row = HighscoreEntry & { name: string };
 
 type PageData = {
+  period: Period;
   rows: Row[];
-  /** The viewer's own row, when they have stars but aren't in the top rows. */
-  viewerRow: Row | null;
+  /**
+   * The viewer's own row, when they have stars but aren't in the top rows.
+   * Ranked only where it's known: this week, not all time.
+   */
+  viewerRow: (Row & { rank?: number }) | null;
 };
+
+/**
+ * This week's highscore: the stars on this week's dailies, worked out from
+ * their stored solutions in solve order, by the rules the awards use.
+ */
+async function getWeekHighscore(): Promise<HighscoreEntry[]> {
+  const { from, to } = getWeekPuzzleNumbers();
+  const entries = (await getAvailableEntries()).filter((entry) =>
+    !entry.isFuture && entry.number !== undefined && entry.number >= from &&
+    entry.number <= to
+  );
+
+  const scores = await Promise.all(entries.map(async (entry) => {
+    const [puzzle, solutions] = await Promise.all([
+      getPuzzle(entry.slug),
+      listPuzzleSolutions(entry.slug, { limit: 1000 }),
+    ]);
+    if (!puzzle) return new Map<string, ScoreKind[]>();
+    return getPastScore(
+      puzzle,
+      solutions.filter((solution) => solution.userId),
+    );
+  }));
+
+  return getHighscore(scores);
+}
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const { userId, user, score } = ctx.state;
+    const period: Period = ctx.url.searchParams.get("period") === "all"
+      ? "all"
+      : "week";
 
-    const entries = await listHighscore();
+    let entries: HighscoreEntry[];
+    let viewer: (HighscoreEntry & { rank?: number }) | null = null;
+
+    if (period === "week") {
+      const highscore = await getWeekHighscore();
+      entries = highscore.slice(0, LIMIT);
+      const index = highscore.findIndex((entry) => entry.userId === userId);
+      if (index >= LIMIT) viewer = { ...highscore[index], rank: index + 1 };
+    } else {
+      entries = await listHighscore({ limit: LIMIT });
+      // Past the top rows, from the cookie: where they rank isn't known.
+      const userScore = getProgressScore(score);
+      const isListed = entries.some((entry) => entry.userId === userId);
+      if (!isListed && getTotalScore(userScore) > 0) {
+        viewer = { userId, userScore };
+      }
+    }
+
     const names = await getUserNames(entries.map((entry) => entry.userId));
     const rows = entries.map((entry) => ({
       ...entry,
       name: names.get(entry.userId) ?? "Anonymous",
     }));
+    const viewerRow = viewer && { ...viewer, name: user.name ?? "You" };
 
-    const userScore = getProgressScore(score);
-    const isListed = rows.some((row) => row.userId === userId);
-    const viewerRow = !isListed && getTotalScore(userScore) > 0
-      ? { userId, userScore, name: user.name ?? "You" }
-      : null;
-
-    return page({ rows, viewerRow });
+    return page({ period, rows, viewerRow });
   },
 });
 
 export default define.page<typeof handler>(function HighscorePage(props) {
-  const { rows, viewerRow } = props.data;
+  const { period, rows, viewerRow } = props.data;
   const { userId } = props.state;
 
   return (
@@ -53,10 +108,19 @@ export default define.page<typeof handler>(function HighscorePage(props) {
       <Main className="max-lg:row-span-full justify-stretch content-start">
         <Header back={{ href: "/", label: "Back to home" }} />
 
-        <h1 className="text-brand text-6 leading-flat">High score</h1>
+        <div className="flex items-end justify-between flex-wrap gap-fl-2">
+          <h1 className="text-brand text-6 leading-flat">High score</h1>
+          <PeriodTabs period={period} />
+        </div>
 
         {rows.length === 0
-          ? <p className="text-3 text-text-2">No stars earned yet.</p>
+          ? (
+            <p className="text-3 text-text-2">
+              {period === "week"
+                ? "No stars on this week's puzzles yet."
+                : "No stars earned yet."}
+            </p>
+          )
           : (
             <div className="grid content-start gap-fl-4">
               {/* The top three, bigger and with their stars */}
@@ -106,17 +170,16 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                     </li>
                   ))}
 
-                  {
-                    /* The viewer, past the top rows: no rank, it isn't
-                      known */
-                  }
+                  {/* The viewer, past the top rows */}
                   {viewerRow && (
                     <>
                       <li className="p-0 text-text-3" aria-hidden="true">
                         …
                       </li>
                       <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 text-3">
-                        <span />
+                        <span className="text-text-3 tabular-nums">
+                          {viewerRow.rank}
+                        </span>
                         <Name name={viewerRow.name} isViewer />
                         <Points userScore={viewerRow.userScore} />
                       </li>
@@ -132,6 +195,41 @@ export default define.page<typeof handler>(function HighscorePage(props) {
     </>
   );
 });
+
+const PERIODS: { period: Period; label: string; href: string }[] = [
+  { period: "week", label: "This week", href: "/highscore" },
+  { period: "all", label: "All time", href: "/highscore?period=all" },
+];
+
+/** This week or all time, a pill switch of links: the period lives in the URL. */
+function PeriodTabs({ period }: { period: Period }) {
+  return (
+    <nav
+      aria-label="Period"
+      className="inline-flex p-1 rounded-round bg-surface-2"
+    >
+      {PERIODS.map((tab) => {
+        const isActive = tab.period === period;
+        return (
+          <a
+            key={tab.period}
+            href={tab.href}
+            aria-current={isActive ? "page" : undefined}
+            className={clsx(
+              "px-3 py-1 rounded-round",
+              "text-1 no-underline whitespace-nowrap transition-colors",
+              isActive
+                ? "bg-link text-surface-1"
+                : "text-text-2 hover:text-text-1",
+            )}
+          >
+            {tab.label}
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
 
 type NameProps = { name: string; isViewer: boolean; className?: string };
 
