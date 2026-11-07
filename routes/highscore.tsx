@@ -126,12 +126,12 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                 /* The top three, bigger and with what their points are made
                   of, a faint line between, a sibling step either side */
               }
-              <ol className="grid grid-cols-[2rem_1fr_repeat(3,auto)_auto] gap-x-fl-1 m-0 p-0 list-none divide-y divide-text-3/10">
+              <ol className="grid grid-cols-[2rem_minmax(0,max-content)_repeat(3,auto)_1fr_auto] gap-x-fl-1 m-0 p-0 list-none divide-y divide-text-3/10">
                 {rows.slice(0, 3).map((row, index) => (
                   <li
                     key={row.userId}
                     // Columns shared with the other podium rows, so the stats
-                    // line up
+                    // line up just after the longest name; points on the right
                     className="col-span-full grid grid-cols-subgrid items-baseline p-0 py-fl-2 first:pt-0"
                   >
                     <span className="text-4 text-text-3 tabular-nums">
@@ -145,7 +145,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                     <Breakdown userScore={row.userScore} />
                     <Points
                       userScore={row.userScore}
-                      className="text-4 font-semibold"
+                      className="col-[-2/-1] text-4 font-semibold"
                     />
                   </li>
                 ))}
