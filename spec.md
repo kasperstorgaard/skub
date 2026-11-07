@@ -26,25 +26,23 @@ Stars are per puzzle, for all time, and each kind is earned once: any puzzle
 counts, archive included, so at most solve, perfect, first and Flash on one
 puzzle.
 
-A player sees which stars a puzzle still has to give: the icons float left of
-the score badge, no background, dimmed until earned. On cards they float left
-of the best-moves chip in the top right, in its colours (teal solved, yellow
-perfect). A perfect shows check and trophy both, for now.
+Only earned stars show: no placeholder for unearned ones. They float left of
+the score badge, no background; on cards, left of the best-moves chip in the
+top right, in its colours (teal solved, yellow perfect).
+
+Stars stack with an overlap, like an avatar stack, to save space. Each has a
+double outline in the background colour of where it sits, which blocks out
+part of the star behind it; cards and the page differ, so that colour comes
+from the context. A perfect over its solve star then reads as two.
 
 Open: the badge's Flash switch already shows a bolt; whether the earned Flash
-icon merges with it or sits with the others.
+star merges with it or sits with the others.
 
 Open: variants of one star icon instead of four icons, so the shape says star
 and the variant says the kind: outline for solve, rays between the arms for
-perfect (🌟), sparkles for first, a dashed border for Flash. Unearned would then be
-the dimmed variant, since an outline is already solve; and a perfect might show
-the filled star alone while still counting two.
-
-Open: stack the stars with an overlap, like an avatar stack, to save space.
-Separate them with a mask cut-out rather than a ring, since the card and page
-backgrounds differ. Overlap hides the edges, where rays, sparkles and dashes
-live, so earned stars sit in front and the overlap stays small enough to keep
-each variant readable. A perfect over its solve star then reads as two.
+perfect (🌟), sparkles for first, a dashed border for Flash. The overlap hides
+edges, where rays, sparkles and dashes live, so it stays small enough to keep
+each variant readable.
 
 ## High score
 
