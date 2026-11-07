@@ -65,8 +65,12 @@ Three tabs: Solves, Flash and Users.
   shortest first, but each group lists its players, up to 10, instead of
   "+ x other users".
 - **Flash**: the same for Flash solves, compared by the moves played from the
-  Flash start. Arriving from a Flash solve opens this tab.
+  Flash start. A Flash solve lands here (today it goes back to the solved
+  board).
 - **Users**: the puzzle's high score per user, one row each.
+
+Each tab is deep linkable: it lives in the URL, so it works without JS and
+survives a share or reload.
 
 The best (optimal) solutions unlock once you've earned stars on the puzzle.
 
