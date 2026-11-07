@@ -29,7 +29,8 @@ puzzle.
 Only earned stars show: no placeholder for unearned ones, and no hint of
 what's left to earn anywhere. The stars are a vocabulary players learn. They float left of
 the score badge, no background; on cards, alone in the top right (no move
-count). One colour, the text colour: shape and count tell the kinds apart.
+count). One colour, the theme's puck colour (`--color-ui-2`): shape and count
+tell the kinds apart.
 
 Stars stack with an overlap, like an avatar stack, to save space. Each has a
 double outline in the background colour of where it sits, which blocks out

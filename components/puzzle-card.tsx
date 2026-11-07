@@ -64,7 +64,7 @@ export function PuzzleCard({
 
         <Stars
           kinds={score}
-          className="absolute top-0 right-0 p-2 py-2.5 text-4 text-text-1"
+          className="absolute top-0 right-0 p-2 py-2.5 text-4"
         />
       </div>
 
