@@ -7,6 +7,7 @@ import {
   getHighscoreRank,
   getNewScore,
   getPastScore,
+  getProgressScore,
   getSolveScore,
   getTotalScore,
   withEarned,
@@ -237,5 +238,16 @@ Deno.test("withSolutionScore() leaves the score as it was for a repeat solve", (
   assertStrictEquals(
     withSolutionScore(score, "daily-1", ["solve", "perfect"]),
     score,
+  );
+});
+
+Deno.test("getProgressScore() counts each kind across puzzles", () => {
+  assertEquals(
+    getProgressScore({
+      boxy: ["solve", "perfect"],
+      lone: ["solve", "first"],
+      loke: ["flash"],
+    }),
+    { solve: 2, perfect: 1, first: 1, flash: 1 },
   );
 });
