@@ -217,14 +217,15 @@ function PeriodTabs({ period }: { period: Period }) {
             aria-current={isActive ? "page" : undefined}
             // Active: an action button's ring and tint, sized down to a pill.
             // The other keeps a clear border as wide, so it's as tall, and
-            // padding only on its outer end: none towards the active one.
+            // half the padding towards the active one.
             className={clsx(
               "py-1 rounded-round",
               "text-1 no-underline whitespace-nowrap",
               isActive
                 ? "btn px-2 min-h-0 min-w-0 font-normal tracking-normal"
                 : clsx(
-                  "first:pl-2 last:pr-2 border-[3px] border-transparent",
+                  "first:pl-2 first:pr-1 last:pl-1 last:pr-2",
+                  "border-[3px] border-transparent",
                   "text-text-2 hover:text-text-1",
                 ),
             )}
