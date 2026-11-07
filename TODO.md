@@ -152,11 +152,10 @@ PR finishes only part of an item, trim the item to what is left.
   so "6/4" reads right from then on.
 
 - **The score badge reads at a glance.** It shows moves played over your best
-  (`3/9`), the best in the regular colour, even when perfect. Figure out whether
-  it reads better flipped, your best first and the live count on the right,
-  beside the stars you've earned. Flipped, the slash reads as a ratio, so it
-  likely needs another shape, e.g. a small "best 9" by the stars. The
-  celebration item's "6/4" example assumes the old badge.
+  (`3/9`). Figure out whether it reads better flipped, your best first and the
+  live count on the right, beside the stars you've earned. Flipped, the slash
+  reads as a ratio, so it likely needs another shape, e.g. a small "best 9" by
+  the stars. The celebration item's "6/4" example assumes the old badge.
 
 - **Smoother page changes.** View transitions between pages, opt-in per
   navigation. Going into a board page zones in, the page settling back around

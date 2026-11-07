@@ -251,7 +251,6 @@ type PathItemProps = {
 function PathItem(
   { path, solutionsHref, minMoves, userId, userCanonicalKeys }: PathItemProps,
 ) {
-  const isPerfect = path.moves <= minMoves;
   const stars = getSolveScore({ minMoves }, {
     moves: path.moves,
     isNewPath: !!path.claimer.first,
@@ -267,12 +266,9 @@ function PathItem(
 
   return (
     <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0 last:pb-0">
-      {/* The path's moves; at the shortest, the puck's colour, like the badge */}
+      {/* The path's moves */}
       <span
-        className={clsx(
-          "text-4 tabular-nums",
-          isPerfect ? "text-ui-2" : "text-text-3",
-        )}
+        className="text-4 tabular-nums text-text-3"
         title={`${path.moves} moves`}
       >
         {path.moves}
