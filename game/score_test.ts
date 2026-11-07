@@ -1,10 +1,10 @@
 import { assertEquals } from "@std/assert";
 
 import {
-  emptyScoreTotals,
+  emptyUserScore,
+  getHighscoreRank,
   getNewScore,
   getPastScore,
-  getScoreRank,
   getSolveScore,
   getTotalScore,
   withScore,
@@ -68,10 +68,10 @@ Deno.test("getNewScore() gives a repeat perfect solve nothing", () => {
   );
 });
 
-Deno.test("withScore() adds one point per new kind to a player's totals", () => {
-  const totals = { solve: 12, perfect: 4, first: 1, flash: 2 };
+Deno.test("withScore() adds one point per new kind to a user score", () => {
+  const userScore = { solve: 12, perfect: 4, first: 1, flash: 2 };
   assertEquals(
-    withScore(totals, ["perfect", "first"]),
+    withScore(userScore, ["perfect", "first"]),
     { solve: 12, perfect: 5, first: 2, flash: 2 },
   );
 });
@@ -83,11 +83,11 @@ Deno.test("getTotalScore() counts every kind alike", () => {
   );
 });
 
-Deno.test("getScoreRank() puts a tie on count behind the player with more firsts", () => {
+Deno.test("getHighscoreRank() puts a tie on count behind the player with more firsts", () => {
   // Both on 10 points: one first beats three perfects.
   const ranks = [
-    getScoreRank({ ...emptyScoreTotals, solve: 7, perfect: 3 }),
-    getScoreRank({ ...emptyScoreTotals, solve: 9, first: 1 }),
+    getHighscoreRank({ ...emptyUserScore, solve: 7, perfect: 3 }),
+    getHighscoreRank({ ...emptyUserScore, solve: 9, first: 1 }),
   ].sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
 
   assertEquals(ranks, [[10, 0, 3], [10, 1, 0]]);

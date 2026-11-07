@@ -81,11 +81,12 @@ Decided so far (with Kasper, in chat):
 - Layer 1 built. Stars are the UI's word; code and KV say score, one point
   per kind, so the display can change without touching storage. Pure rules
   in `game/score.ts` (`getSolveScore` for the kinds a solve scores,
-  `getNewScore` against what's earned, totals and rank, and `getPastScore`
-  for the backfill, first by solve order); KV in `db/score.ts`:
-  `score_by_user_puzzle`, `score_totals_by_user`, and a `score_ranking` index
-  of `[total, first, perfect, userId]` read reversed, all in one atomic
-  commit with retries; awarded best effort in the solve POST for new
+  `getNewScore` against what's earned, user score and highscore rank, and `getPastScore`
+  for the backfill, first by solve order); KV in `db/score.ts`: solution
+  score per user and puzzle (`solution_score_by_user_puzzle`), user score,
+  the aggregate per kind (`user_score`), and the highscore, keyed
+  `[total, first, perfect, userId]` and read reversed (`highscore`), all in
+  one atomic commit with retries; awarded best effort in the solve POST for new
   solves; `scripts/backfill-score.ts` is safe to re-run. This is solution
   score, what solves earn; `game/scoring.ts` is puzzle score, how good a
   board is.

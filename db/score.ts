@@ -1,49 +1,50 @@
 import { kv } from "#/db/kv.ts";
 import {
-  emptyScoreTotals,
+  emptyUserScore,
+  getHighscoreRank,
   getNewScore,
-  getScoreRank,
   type ScoreKind,
-  type ScoreTotals,
+  type UserScore,
   withScore,
 } from "#/game/score.ts";
 
 /**
  * Score lives in three places, written together:
- * - earned kinds per user and puzzle
- * - totals per kind per user
- * - a ranking index, `[count, first, perfect, userId]`, so a reversed list
- *   reads in rank order. Its value is the totals, so a list needs no lookups.
+ * - solution score: the kinds a user has earned on a puzzle
+ * - user score: their points per kind across all puzzles
+ * - the highscore, keyed `[total, first, perfect, userId]`, so a reversed list
+ *   reads in rank order. Its value is the user score, so a list needs no
+ *   lookups.
  */
-const earnedKey = (userId: string, puzzleSlug: string) => [
-  "score_by_user_puzzle",
+const solutionScoreKey = (userId: string, puzzleSlug: string) => [
+  "solution_score_by_user_puzzle",
   userId,
   puzzleSlug,
 ];
-const totalsKey = (userId: string) => ["score_totals_by_user", userId];
-const rankingKey = (userId: string, totals: ScoreTotals) => [
-  "score_ranking",
-  ...getScoreRank(totals),
+const userScoreKey = (userId: string) => ["user_score", userId];
+const highscoreKey = (userId: string, userScore: UserScore) => [
+  "highscore",
+  ...getHighscoreRank(userScore),
   userId,
 ];
 
 /** The kinds a player has earned on a puzzle, in the order earned. */
-export async function getPuzzleScore(
+export async function getSolutionScore(
   userId: string,
   puzzleSlug: string,
 ): Promise<ScoreKind[]> {
-  const res = await kv.get<ScoreKind[]>(earnedKey(userId, puzzleSlug));
+  const res = await kv.get<ScoreKind[]>(solutionScoreKey(userId, puzzleSlug));
   return res.value ?? [];
 }
 
-export async function getScoreTotals(userId: string): Promise<ScoreTotals> {
-  const res = await kv.get<ScoreTotals>(totalsKey(userId));
-  return res.value ?? emptyScoreTotals;
+export async function getUserScore(userId: string): Promise<UserScore> {
+  const res = await kv.get<UserScore>(userScoreKey(userId));
+  return res.value ?? emptyUserScore;
 }
 
 /**
  * Awards the kinds a player hasn't earned on the puzzle yet, and returns them.
- * Earned kinds, totals and ranking move in one commit, retried on conflict.
+ * Solution score, user score and highscore move in one commit, retried on conflict.
  */
 export async function awardScore(
   userId: string,
@@ -51,24 +52,24 @@ export async function awardScore(
   kinds: ScoreKind[],
 ): Promise<ScoreKind[]> {
   for (let attempt = 1; attempt <= 5; attempt++) {
-    const [earnedEntry, totalsEntry] = await kv.getMany<
-      [ScoreKind[], ScoreTotals]
-    >([earnedKey(userId, puzzleSlug), totalsKey(userId)]);
+    const [solutionScoreEntry, userScoreEntry] = await kv.getMany<
+      [ScoreKind[], UserScore]
+    >([solutionScoreKey(userId, puzzleSlug), userScoreKey(userId)]);
 
-    const earned = earnedEntry.value ?? [];
+    const earned = solutionScoreEntry.value ?? [];
     const added = getNewScore(earned, kinds);
     if (added.length === 0) return [];
 
-    const totals = totalsEntry.value ?? emptyScoreTotals;
-    const updated = withScore(totals, added);
+    const current = userScoreEntry.value ?? emptyUserScore;
+    const updated = withScore(current, added);
 
     const atomic = kv.atomic()
-      .check(earnedEntry)
-      .check(totalsEntry)
-      .set(earnedKey(userId, puzzleSlug), [...earned, ...added])
-      .set(totalsKey(userId), updated)
-      .set(rankingKey(userId, updated), updated);
-    if (totalsEntry.value) atomic.delete(rankingKey(userId, totals));
+      .check(solutionScoreEntry)
+      .check(userScoreEntry)
+      .set(solutionScoreKey(userId, puzzleSlug), [...earned, ...added])
+      .set(userScoreKey(userId), updated)
+      .set(highscoreKey(userId, updated), updated);
+    if (userScoreEntry.value) atomic.delete(highscoreKey(userId, current));
 
     const result = await atomic.commit();
     if (result.ok) return added;
