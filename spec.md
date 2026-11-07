@@ -71,29 +71,19 @@ the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
-Three tabs: Solutions, Flash and Users.
+Two tabs, Solutions and Flash, the high score's pill switch, in the URL
+(`?tab=flash`) so they work without JS and survive a share or reload. Flash
+solves start part way in, so they're shorter and get a list of their own.
 
-- **Solutions**: as today, a table of rows grouped by solution (canonical path),
-  shortest first, but each group lists its players, up to 10, instead of
-  "+ x other users".
-- **Flash**: the same for Flash solves, compared by the moves played from the
-  Flash start. A Flash solve lands here (today it goes back to the solved
-  board).
-- **Users**: the puzzle's high score, one row per player: their points on this
-  puzzle (50 solve, 100 perfect, 50 first, so 50–200), worked out from its
-  stored solutions with the award rules, not stored. Laid out like the high
-  score list.
+Each tab lists paths, shortest first. A path shows, podium style, the player
+who claimed it (found it first) with its move count, and under them the next
+five players who found it, then how many more. Flash paths are counted from
+the Flash start. A Flash solve lands on the Flash tab.
 
-Each tab is deep linkable: it lives in the URL, so it works without JS and
-survives a share or reload. The tabs are the high score's pill switch.
-
-You can replay solutions as good as yours, never better: any solution as long
-as or longer than your best on the puzzle. Shorter ones open as you improve; a
-perfect opens them all; no solve, nothing to replay. On Flash it's your best
-Flash solve, counted from the Flash start. Rows you can't replay still show
-their move count and players, without a Watch link, and the replay route
-sends you back to the solutions instead of showing one. The puzzle page's See
-solutions shows once you have a star on the puzzle.
+Every path has a Watch button. It's on once you've solved the puzzle, any
+solve, Flash included, and crossed out until then; the replay route sends you
+back to the solutions instead of showing one. The puzzle page's See solutions
+shows once you have a star on the puzzle.
 
 ## Non-goals
 
@@ -183,19 +173,15 @@ Decided so far (with Kasper, in chat):
   Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (backfill, reindex) until Kasper has
   cleaned up and tested the stack.
-- Layer 5 plan (`solutions/revamp`, on `badge/your-best`), decided with
-  Kasper: replay unlocks by your own best (above), and Users ranks this
-  puzzle's star points. Defaults picked, open to change:
-  - Tab param `?tab=flash|users`, Solutions without one; a Flash solve's
-    POST lands on `?tab=flash`.
+- Layer 5 plan (`solutions/revamp`, on `badge/your-best`), with Kasper:
+  one solutions page, no Users tab (the high score page covers ranking), Flash
+  as its own tab. Replays open after any solve: stricter rules (only as good
+  as your best) were weighed and dropped as too harsh. Defaults picked:
   - The pill switch moves out of the high score into a shared component.
-  - Players per group come from `solutions_by_puzzle_canonical` (ten per
-    group); Flash groups from the puzzle's Flash solves, by the canonical key
-    of the moves after the Flash start, worked out per request like the
-    weekly high score.
+  - Players per path from `solutions_by_puzzle_canonical` (the claimer plus
+    five); Flash paths from the puzzle's Flash solves, by the canonical key of
+    the moves after the Flash start, worked out per request.
   - Rows take the high score's plain list look: no cards.
-  - Locked rows stay visible, so you see there's a shorter path without
-    seeing it; the copy states facts, it doesn't grade.
 
 Environment (cloud sandbox):
 
