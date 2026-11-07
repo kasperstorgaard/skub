@@ -13,6 +13,7 @@ import {
   getTotalScore,
   type UserScore,
 } from "#/game/score.ts";
+import { formatNumber } from "#/lib/format.ts";
 
 type Row = HighscoreEntry & { name: string };
 
@@ -122,7 +123,7 @@ function HighscoreRow(
           className="text-1 text-text-3 max-sm:hidden"
         />
         <span className="font-5 text-4 text-text-1 leading-flat tabular-nums">
-          {getTotalScore(userScore)}
+          {formatNumber(getTotalScore(userScore))}
         </span>
       </span>
     </li>
