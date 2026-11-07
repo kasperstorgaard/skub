@@ -4,6 +4,7 @@ import { page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { PillSwitch } from "#/components/pill-switch.tsx";
 import { define } from "#/core.ts";
 import { listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
@@ -109,7 +110,21 @@ export default define.page<typeof handler>(function HighscorePage(props) {
 
         <div className="flex items-center justify-between flex-wrap gap-fl-2">
           <h1 className="text-brand text-6 leading-flat">High score</h1>
-          <PeriodTabs period={period} />
+          <PillSwitch
+            label="Period"
+            items={[
+              {
+                label: "This week",
+                href: "/highscore",
+                isActive: period === "week",
+              },
+              {
+                label: "All time",
+                href: "/highscore?period=all",
+                isActive: period === "all",
+              },
+            ]}
+          />
         </div>
 
         {rows.length === 0
@@ -199,49 +214,6 @@ export default define.page<typeof handler>(function HighscorePage(props) {
     </>
   );
 });
-
-const PERIODS: { period: Period; label: string; href: string }[] = [
-  { period: "week", label: "This week", href: "/highscore" },
-  { period: "all", label: "All time", href: "/highscore?period=all" },
-];
-
-/** This week or all time, a pill switch of links: the period lives in the URL. */
-function PeriodTabs({ period }: { period: Period }) {
-  return (
-    <nav
-      aria-label="Period"
-      className="inline-flex p-1 rounded-round bg-surface-2"
-    >
-      {PERIODS.map((tab) => {
-        const isActive = tab.period === period;
-        return (
-          <a
-            key={tab.period}
-            href={tab.href}
-            aria-current={isActive ? "page" : undefined}
-            // Active: an action button's ring and tint, sized down to a pill.
-            // The other keeps a clear border as wide, so it's as tall, and
-            // half the padding towards the active one.
-            className={clsx(
-              // Taller on mobile, for thumbs
-              "py-1 max-lg:py-2 rounded-round",
-              "text-1 no-underline whitespace-nowrap",
-              isActive
-                ? "btn px-3 min-h-0 min-w-0 font-normal tracking-normal"
-                : clsx(
-                  "first:pl-2 first:pr-1 last:pl-1 last:pr-2",
-                  "border-[3px] border-transparent",
-                  "text-text-2 hover:text-text-1",
-                ),
-            )}
-          >
-            {tab.label}
-          </a>
-        );
-      })}
-    </nav>
-  );
-}
 
 type NameProps = { name: string; isViewer: boolean; className?: string };
 
