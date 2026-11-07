@@ -223,8 +223,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
               </p>
             )
             : (
-              // A faint line between paths, half the sibling step either side
-              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
+              <ol className="grid gap-fl-2 m-0 p-0 list-none">
                 {paths.map((path) => (
                   <PathItem
                     key={path.canonicalKey}
@@ -235,9 +234,7 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
 
                 {extraPath && (
                   <>
-                    <li className="p-0 py-fl-1 text-text-3" aria-hidden="true">
-                      …
-                    </li>
+                    <li className="p-0 text-text-3" aria-hidden="true">…</li>
                     <PathItem path={extraPath} {...pathProps} />
                   </>
                 )}
@@ -282,7 +279,7 @@ function PathItem(
   const more = showsYou ? Math.max(path.more - 1, 0) : path.more;
 
   return (
-    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-1 first:pt-0 last:pb-0">
+    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0">
       {/* The path's moves; at the shortest, the puck's colour, like the badge */}
       <span
         className={clsx(
@@ -294,40 +291,37 @@ function PathItem(
         {path.moves}
       </span>
 
-      <span className="grid min-w-0">
+      <div className="grid min-w-0">
         <Name
           name={path.claimer.name}
           isViewer={path.claimer.userId === userId}
           className="text-4 font-medium"
         />
 
-        {(path.others.length > 0 || showsYou || more > 0) && (
-          <span className="text-1 text-text-3 overflow-hidden text-ellipsis whitespace-nowrap">
-            {path.others.map((solution, index) => (
-              <span key={solution.id}>
-                {index > 0 && ", "}
-                <span
-                  className={clsx(solution.userId === userId && "text-brand")}
-                >
-                  {solution.name}
-                </span>
-              </span>
+        {/* Who found it after, one a line, then how many more */}
+        {(path.others.length > 0 || showsYou) && (
+          <ul className="m-0 p-0 list-none text-1 text-text-3">
+            {path.others.map((solution) => (
+              <li key={solution.id} className="p-0">
+                <Name
+                  name={solution.name}
+                  isViewer={solution.userId === userId}
+                  className="block"
+                  muted
+                />
+              </li>
             ))}
-            {showsYou && (
-              <>
-                {path.others.length > 0 && ", "}
-                <span className="text-brand">you</span>
-              </>
-            )}
-            {more > 0 && ` and ${more} more`}
-          </span>
+            {showsYou && <li className="p-0 text-brand">you</li>}
+          </ul>
         )}
-      </span>
+        {more > 0 && <span className="text-1 text-text-3">+ {more} more</span>}
+      </div>
 
       {/* The toolbar's play button: one per path, so no label to repeat */}
       <a
         href={`${solutionsHref}/${path.claimer.id}`}
-        className={clsx(TOOL_BUTTON, "self-center aspect-square")}
+        // On the claimer's line
+        className={clsx(TOOL_BUTTON, "self-start aspect-square")}
         aria-label={`Watch ${path.claimer.name}'s ${path.moves} moves`}
         title="Watch"
       >
@@ -337,15 +331,21 @@ function PathItem(
   );
 }
 
-type NameProps = { name: string; isViewer: boolean; className?: string };
+type NameProps = {
+  name: string;
+  isViewer: boolean;
+  /** The quieter colour, for the players under a claimer */
+  muted?: boolean;
+  className?: string;
+};
 
 /** A player's name, in the brand colour for the viewer's own. */
-function Name({ name, isViewer, className }: NameProps) {
+function Name({ name, isViewer, muted, className }: NameProps) {
   return (
     <span
       className={clsx(
         "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap",
-        isViewer ? "text-brand" : "text-text-1",
+        isViewer ? "text-brand" : muted ? "text-text-3" : "text-text-1",
         className,
       )}
     >
