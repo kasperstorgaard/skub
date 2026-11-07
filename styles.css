@@ -657,6 +657,18 @@
   animation: var(--animation-pulse);
 }
 
+/* Flash, lit: a faint, slow glow */
+@utility flash-pulse {
+  animation: flash-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes flash-pulse {
+  50% {
+    box-shadow: 0 0 0.4rem
+      color-mix(in srgb, var(--color-link) 30%, transparent);
+  }
+}
+
 @utility jiggle {
   animation: var(--animation-shake-z);
   animation-iteration-count: infinite;

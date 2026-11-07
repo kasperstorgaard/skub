@@ -22,6 +22,7 @@ import {
   getResetHref,
   getUndoHref,
 } from "#/game/url.ts";
+import { FlashSwitch } from "#/islands/flash-switch.tsx";
 import { useRouter } from "#/islands/router.tsx";
 
 type PlayControlsProps = {
@@ -29,6 +30,12 @@ type PlayControlsProps = {
   href: Signal<string>;
   isDev: boolean;
   hintCount?: number;
+  /** The Flash switch, for puzzles that have a Flash start. */
+  flash?: {
+    isOn: boolean;
+    /** The Flash dialog was answered before, so the switch skips it. */
+    isExplained: boolean;
+  };
   isPreview?: boolean;
   className?: string;
 };
@@ -53,9 +60,10 @@ function ArrowKeysHint() {
   );
 }
 
-/** Beside the board: undo, redo, hint, start over, and how to move. */
+/** Beside the board: undo, redo, hint, start over, Flash, and how to move. */
 export function PlayControls(
-  { puzzle, href, isDev, hintCount, isPreview, className }: PlayControlsProps,
+  { puzzle, href, isDev, hintCount, flash, isPreview, className }:
+    PlayControlsProps,
 ) {
   // A board caught in a portal loop has one way on, and the hint route refuses
   // it too — offering one here would only 400.
@@ -123,7 +131,18 @@ export function PlayControls(
   }, [href.value]);
 
   return (
-    <Toolbar size="lg" className={clsx("print:hidden", className)}>
+    <Toolbar
+      size="lg"
+      className={clsx(
+        "print:hidden",
+        // Four tools, the gap, then Flash; on desktop Flash and the gap go
+        // first. Flash only comes with the hint.
+        flash &&
+          "max-lg:grid-cols-[repeat(4,minmax(0,3.5rem))_0_minmax(0,3.5rem)]",
+        flash && "lg:grid-rows-[2.5rem_0.5rem_repeat(4,2.5rem)]",
+        className,
+      )}
+    >
       <a
         href={getUndoHref(href.value, state)}
         className={TOOL}
@@ -217,6 +236,20 @@ export function PlayControls(
         />
       </a>
       <KeyHint>⇧U</KeyHint>
+
+      {flash && (
+        <>
+          {/* The gap before Flash: its own track, so the toolbar stays centred */}
+          <span aria-hidden="true" className="lg:col-span-2 lg:-order-1" />
+          <FlashSwitch
+            href={href}
+            isOn={flash.isOn}
+            isExplained={flash.isExplained}
+            className={clsx(TOOL, "text-text-2 lg:-order-2")}
+            iconClassName="text-[1.25rem] max-lg:text-[2rem]"
+          />
+        </>
+      )}
 
       <ArrowKeysHint />
     </Toolbar>
