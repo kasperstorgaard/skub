@@ -2,12 +2,16 @@
 
 A stack of PRs, each based on the one before:
 
-1. `stars/rules`: score rules, storage and backfill
-2. `stars/display`: stars on the puzzle page, cards, replays and the solutions
+1. `fix/one-dialog`: one dialog at a time, solve dialogs give way to URL
+   dialogs
+2. `copy/solutions-wording`: solutions for what players saved, paths for the
+   routes, and the name dialog's copy
+3. `stars/rules`: score rules, storage and backfill
+4. `stars/display`: stars on the puzzle page, cards, replays and the solutions
    page
-3. `stars/celebration`: earning stars is the celebration's payoff
-4. `stars/highscore`: the high score page, its links, stars in the home footer
-5. `solutions/revamp`: the solutions page on the new design, with Flash
+5. `stars/celebration`: earning stars is the celebration's payoff
+6. `stars/highscore`: the high score page, its links, stars in the home footer
+7. `solutions/revamp`: the solutions page on the new design, with Flash
 
 ## Stars
 
@@ -56,9 +60,9 @@ the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
-Three tabs: Solves, Flash and Users.
+Three tabs: Solutions, Flash and Users.
 
-- **Solves**: as today, a table of rows grouped by solution (canonical path),
+- **Solutions**: as today, a table of rows grouped by solution (canonical path),
   shortest first, but each group lists its players, up to 10, instead of
   "+ x other users".
 - **Flash**: the same for Flash solves, compared by the moves played from the
@@ -83,10 +87,14 @@ The best (optimal) solutions unlock once you've earned stars on the puzzle.
 
 Decided so far (with Kasper, in chat):
 
-- Stack branches: `stars/rules` (base main), then `stars/display`,
+- Stack branches: `fix/one-dialog` (base main), then
+  `copy/solutions-wording`, `stars/rules`, `stars/display`,
   `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
   the one before and opened against it. Rebase the next onto main as each
-  merges.
+  merges. Generic side changes go at the bottom, so the layers above build on
+  them instead of conflicting with them.
+- Wording: a solution is what a player saved, a path is its route, and solve
+  is the verb. Matches the `/solutions` URL and the code.
 - Layer 1 built. Stars are the UI's word; code and KV say score, one point
   per kind, so the display can change without touching storage. Pure rules
   in `game/score.ts` (`getSolveScore` for the kinds a solve scores,

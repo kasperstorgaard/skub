@@ -129,7 +129,7 @@ export function CelebrationDialog(
 
         <p className="text-3 text-text-2">
           {celebrationError.value
-            ? "Couldn't save your solve."
+            ? "Couldn't save your solution."
             : "Thanks for playing. What's next?"}
         </p>
       </div>
