@@ -69,7 +69,7 @@ type StarsProps = {
 
 /**
  * Earned stars, stacked with an overlap, each over the one before it. A star
- * cuts a gap out of the one behind in `--star-knockout`, which the container
+ * after the first cuts a gap out of the one behind in `--star-knockout`, which the container
  * sets to its own background; the page surface otherwise.
  */
 export function Stars({ kinds, className }: StarsProps) {
@@ -83,7 +83,7 @@ export function Stars({ kinds, className }: StarsProps) {
       title={label}
       className={clsx("inline-flex items-center", className)}
     >
-      {kinds.map((kind) => (
+      {kinds.map((kind, i) => (
         <svg
           key={kind}
           xmlns="http://www.w3.org/2000/svg"
@@ -94,14 +94,17 @@ export function Stars({ kinds, className }: StarsProps) {
           className="overflow-visible not-first:-ml-[0.35em]"
           stroke-linejoin="round"
         >
-          <g
-            fill="var(--star-knockout, var(--color-surface-1))"
-            stroke="var(--star-knockout, var(--color-surface-1))"
-          >
-            {GLYPHS[kind].map((part) => (
-              <StarPart part={part} width={STROKE + KNOCKOUT} />
-            ))}
-          </g>
+          {/* The first star has nothing behind it to cut into. */}
+          {i > 0 && (
+            <g
+              fill="var(--star-knockout, var(--color-surface-1))"
+              stroke="var(--star-knockout, var(--color-surface-1))"
+            >
+              {GLYPHS[kind].map((part) => (
+                <StarPart part={part} width={STROKE + KNOCKOUT} />
+              ))}
+            </g>
+          )}
           <g fill="currentColor" stroke="currentColor">
             {GLYPHS[kind].map((part) => (
               <StarPart
