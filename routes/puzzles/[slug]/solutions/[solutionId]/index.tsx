@@ -66,8 +66,12 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             />
           </h1>
 
-          {/* This solve's moves as it plays, against the shortest; no stars */}
-          <ScoreBadge puzzle={puzzle} href={href} />
+          {/* This solve's moves against the shortest; no stars */}
+          <ScoreBadge
+            puzzle={puzzle}
+            href={href}
+            moves={props.data.solution.moves.length}
+          />
         </div>
 
         <Board puzzle={puzzle} href={href} mode={mode} />
