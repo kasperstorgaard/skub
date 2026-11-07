@@ -235,11 +235,11 @@ PR finishes only part of an item, trim the item to what is left.
   atomically when picked, so one name is one player.
 
 - **Players can replay solutions as good as theirs, never better.** On a
-  puzzle's solutions, you can watch any solution as long as or longer than
-  your own best; shorter ones stay closed until you beat your best. A perfect
-  opens them all. No solve yet, nothing to watch. A candidate answer to how
-  many stars unlock the best solutions (layer 5 of the stars stack): your own
-  best is the key, not a star count.
+  puzzle's solutions, you can watch any solution as long as or longer than your
+  own best; shorter ones stay closed until you beat your best. A perfect opens
+  them all. No solve yet, nothing to watch. A candidate answer to how many stars
+  unlock the best solutions (layer 5 of the stars stack): your own best is the
+  key, not a star count.
 
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of
