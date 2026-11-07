@@ -199,26 +199,9 @@ PR finishes only part of an item, trim the item to what is left.
   them by path, worked out from the solves; they still have no stats, so the
   celebration can't compare a Flash solve against other Flash solves.
 
-- **Players earn stars each day for what they achieve.** 1 star for a solve, 2
-  for a perfect, 1 for being first to find a solution, capped at 3 per puzzle
-  per day: a perfect, never-seen solution is 3 stars on its own, and three
-  separate solves are 1 each. Open: a Flash solve could earn a lower-tier star;
-  the Flash explainer already promises "smaller prizes", not none. Stars add up
-  into all-time leaderboards, and puzzle thumbnails show each puzzle's stars so
-  players can see what's left to earn. Open: should a solve only count within 2
-  moves of perfect? Leaning towards a tiered solutions page: suboptimal
-  solutions stay open to everyone, and the optimal ones unlock once you've
-  earned stars on the puzzle yourself. New players learn from the solutions
-  within reach; the best play is the reward. This fits the badge, which already
-  hides the shortest count until you've solved the puzzle. Separate solves earn
-  stars too, so players without a perfect have a route to the unlock. Open: how
-  many stars unlock it, 1 or 3? Simpler cousin, also open: should See solutions
-  stay closed until you've solved the puzzle at all? Puzzle cards show your
-  result where the difficulty tag used to sit (bottom right): your best score,
-  and your stars once they exist. Earning stars is the celebration's payoff:
-  they animate in as the moment of the solve. The first celebration a player
-  sees explains what stars are and how to earn them. The solutions page shows
-  the stars earned on the puzzle.
+- **A player's first stars come with an explainer.** The first celebration a
+  player sees says what stars are and how to earn them: one for a solution, two
+  for perfect or first, three for both.
 
 - **Players play without being asked for a name.** Today a new player's first
   solve asks for a name before anything else. Instead, every solve is saved and

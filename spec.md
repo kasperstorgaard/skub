@@ -17,29 +17,30 @@ A stack of PRs, each based on the one before:
 
 ## Stars
 
-Three stars per puzzle at most, one rounded star with a slim outline, drawn
-three ways:
+Stars belong to a solution, three at most, one rounded star with a slim
+outline, the same for every kind; the count tells them apart:
 
-- **Solve**: any solve of the puzzle. An outline.
-- **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
-  star. Filled, with tiny rays between the arms.
-- **First**: being first to find a solution path no one had found before, in
-  at most two moves more than the minimum, or any detour would find one. The
-  outline in thirteen even dashes that don't line up with the tips.
+- **One**: any solution.
+- **Two**: a solution in the puzzle's minimum moves (perfect), or the first to
+  find a path no one had found before, in at most two moves more than the
+  minimum, or any detour would find one (first).
+- **Three**: both, a new perfect path. Rare by design: a puzzle has few
+  optimal paths, and they're claimed early.
 
-A Flash solve earns the solve star in the pearl (`--pearl`, Flash mode's own
-look), the only star that changes colour. A later full solve turns it into the regular
-solve star, moving the point from Flash to solve; perfect and first need a
-full solve.
+A Flash solve earns a single star in the pearl (`--pearl`, Flash mode's own
+look), the only star that changes colour; perfect and first need a full
+solve.
 
-Stars are per puzzle, for all time, and each kind is earned once: any puzzle
-counts, archive included.
+A player's stars on a puzzle are their best single solution's, for all time,
+any puzzle, archive included: solves don't add up. A better solution
+replaces them (more stars, or a full solve over a Flash one); on a tie the
+earlier stays.
 
 Only earned stars show: no placeholder for unearned ones, and no hint of
-what's left to earn anywhere. The stars are a vocabulary players learn. They
-float left of the score badge, no background; on cards, alone in the top right
-(no move count). The theme's puck colour (`--color-ui-2`): shape and count
-tell the kinds apart.
+what's left to earn anywhere. They float left of the score badge, no
+background; on cards, alone in the top right (no move count); on the
+solutions page, beside each path's claimer. The theme's puck colour
+(`--color-ui-2`).
 
 Stars stack with a 0.3em overlap, like an avatar stack, to save space. Each
 after the first cuts a gap out of the one behind in the background colour of
@@ -51,8 +52,8 @@ against its bolt.
 
 ## High score
 
-Players rank by points: 50 for a solve (or a Flash solve), 50 for first and
-100 for perfect, so 200 at most per puzzle. Ties are broken by the rarer kinds:
+Players rank by points: 50 a star, so 150 at most per puzzle. Stars alone
+would make a week's best 21; 1,050 reads like the high score it is. Ties are broken by the rarer kinds:
 first, then perfect. Totals per kind live in KV per user, with a ranking index kept in step
 on every star earned.
 
@@ -64,12 +65,8 @@ only the stars on the week's dailies (Monday to Sunday), so everyone races on
 the same boards; archive play moves only all time. It is worked out from those
 puzzles' stored solutions when shown, not stored.
 
-The puzzle page links to its solutions once the player has a star on it.
-
-Links to the high score page: a quiet trophy beside the profile icon in every
-page's header, for when you go looking for it, and buttons in the puzzle page's
-sidebar and footer, the solutions page and the profile's stats (once you have
-points). The stats' numbers aren't links.
+Links to the high score page: the home footer's star split (next to the streak),
+the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
