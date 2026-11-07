@@ -206,7 +206,8 @@ function PeriodTabs({ period }: { period: Period }) {
   return (
     <nav
       aria-label="Period"
-      className="inline-flex p-1 rounded-round bg-surface-2"
+      // Room at the ends for a label without padding of its own
+      className="inline-flex gap-2 py-1 px-2 rounded-round bg-surface-2"
     >
       {PERIODS.map((tab) => {
         const isActive = tab.period === period;
@@ -216,13 +217,14 @@ function PeriodTabs({ period }: { period: Period }) {
             href={tab.href}
             aria-current={isActive ? "page" : undefined}
             // Active: an action button's ring and tint, sized down to a pill.
-            // The other carries a clear border as wide, so nothing shifts.
+            // The other is just its label, a clear border top and bottom
+            // keeping it as tall.
             className={clsx(
-              "px-2 py-1 rounded-round",
+              "py-1 rounded-round",
               "text-1 no-underline whitespace-nowrap",
               isActive
-                ? "btn min-h-0 min-w-0 font-normal tracking-normal"
-                : "border-[3px] border-transparent text-text-2 hover:text-text-1",
+                ? "btn px-2 min-h-0 min-w-0 font-normal tracking-normal"
+                : "border-y-[3px] border-transparent text-text-2 hover:text-text-1",
             )}
           >
             {tab.label}
