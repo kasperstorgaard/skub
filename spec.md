@@ -124,7 +124,8 @@ Decided so far (with Kasper, in chat):
   (motion-safe only). Only new stars: a replay that earns nothing shows none.
   On the headline's row so nothing shifts when the data lands after the
   loading state. The headline is just "Solved!" or "Perfect!", over one
-  warm line, "Nice solution", the same for every solve: the stars carry the
+  warm line picked at random from "Nice solution", "Well done" and "Well
+  played", for every solve: the stars carry the
   news, so the stats lines (first to solve, new path, percentiles, counts) and
   the loading state are gone, and the POST returns only the earned stars.
   No-JS solves get no dialog for full solves (they go to
