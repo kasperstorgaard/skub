@@ -100,7 +100,7 @@ export function CelebrationDialog(
         <p className="text-3 text-text-2">
           {celebrationError.value
             ? "Couldn't save your solve."
-            : "Well played."}
+            : "Nice solution"}
         </p>
       </div>
 
