@@ -31,9 +31,9 @@ type StarsProps = {
 
 /**
  * Earned stars in the theme's puck colour, stacked with an overlap, each over
- * the one before it. A star after the first cuts a gap out of the one behind in
- * `--star-knockout`, which the container sets to its own background; the page
- * surface otherwise.
+ * the one to its right. Drawn right to left, so each star after the rightmost
+ * cuts a gap out of the one behind in `--star-knockout`, which the container
+ * sets to its own background; the page surface otherwise.
  */
 export function Stars({ kinds, className }: StarsProps) {
   const id = useId();
@@ -43,15 +43,20 @@ export function Stars({ kinds, className }: StarsProps) {
     DISPLAY_ORDER.indexOf(a) - DISPLAY_ORDER.indexOf(b)
   );
   const label = stars.map((kind) => LABELS[kind]).join(", ");
+  // Right to left in the DOM, laid out reversed, so the left star is on top.
+  const drawn = [...stars].reverse();
 
   return (
     <span
       role="img"
       aria-label={label}
       title={label}
-      className={clsx("inline-flex items-center text-ui-2", className)}
+      className={clsx(
+        "inline-flex flex-row-reverse justify-end items-center text-ui-2",
+        className,
+      )}
     >
-      {stars.map((kind, i) => (
+      {drawn.map((kind, i) => (
         <svg
           key={kind}
           xmlns="http://www.w3.org/2000/svg"
@@ -59,10 +64,10 @@ export function Stars({ kinds, className }: StarsProps) {
           height="1em"
           viewBox="0 0 256 256"
           aria-hidden="true"
-          className="overflow-visible not-first:-ml-[0.3em]"
+          className="overflow-visible not-first:-mr-[0.3em]"
           stroke-linejoin="round"
         >
-          {/* The first star has nothing behind it to cut into. */}
+          {/* The rightmost star has nothing behind it to cut into. */}
           {i > 0 && (
             <path
               d={STAR}
