@@ -7,6 +7,7 @@ import {
   getPastScore,
   getSolveScore,
   getTotalScore,
+  withEarned,
   withFirstSolves,
   withScore,
 } from "#/game/score.ts";
@@ -72,8 +73,27 @@ Deno.test("getNewScore() gives a repeat perfect solve nothing", () => {
 Deno.test("withScore() adds one point per new kind to a user score", () => {
   const userScore = { solve: 12, perfect: 4, first: 1, flash: 2 };
   assertEquals(
-    withScore(userScore, ["perfect", "first"]),
+    withScore(userScore, ["solve"], ["solve", "perfect", "first"]),
     { solve: 12, perfect: 5, first: 2, flash: 2 },
+  );
+});
+
+Deno.test("withScore() moves a Flash point to solve on a full solve", () => {
+  const userScore = { solve: 12, perfect: 4, first: 1, flash: 2 };
+  assertEquals(
+    withScore(userScore, ["flash"], ["solve", "perfect"]),
+    { solve: 13, perfect: 5, first: 1, flash: 1 },
+  );
+});
+
+Deno.test("getNewScore() finds nothing new in a Flash solve after a full one", () => {
+  assertEquals(getNewScore(["solve"], ["flash"]), []);
+});
+
+Deno.test("withEarned() swaps Flash for solve, keeping three kinds at most", () => {
+  assertEquals(
+    withEarned(["flash"], ["solve", "perfect", "first"]),
+    ["solve", "perfect", "first"],
   );
 });
 
@@ -167,18 +187,18 @@ Deno.test("getPastScore() gives each player the kinds of their solves", () => {
   ]);
 
   assertEquals(Object.fromEntries(score), {
-    ane: ["solve", "first", "perfect"],
+    ane: ["solve", "perfect", "first"],
     bo: ["solve", "perfect", "first"],
   });
 });
 
-Deno.test("getPastScore() gives a Flash solver the rest on a full solve", () => {
+Deno.test("getPastScore() turns a Flash solver's star into a solve on a full solve", () => {
   const score = getPastScore(corner, [
     { userId: "ane", moves: downRight, flash: true },
     { userId: "ane", moves: downRight, first: true },
   ]);
 
   assertEquals(Object.fromEntries(score), {
-    ane: ["flash", "solve", "perfect", "first"],
+    ane: ["solve", "perfect", "first"],
   });
 });
