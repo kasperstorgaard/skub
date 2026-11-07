@@ -26,7 +26,8 @@ Stars are per puzzle, for all time, and each kind is earned once: any puzzle
 counts, archive included, so at most solve, perfect, first and Flash on one
 puzzle.
 
-Only earned stars show: no placeholder for unearned ones. They float left of
+Only earned stars show: no placeholder for unearned ones, and no hint of
+what's left to earn anywhere. The stars are a vocabulary players learn. They float left of
 the score badge, no background; on cards, left of the best-moves chip in the
 top right, in its colours (teal solved, yellow perfect).
 
