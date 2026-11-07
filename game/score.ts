@@ -2,10 +2,11 @@ import { getCanonicalMoveKey } from "#/game/strings.ts";
 import type { Move, Puzzle } from "#/game/types.ts";
 
 /**
- * What a puzzle can score, one point per kind, each earned once per player for
- * all time, three at most: Flash is a solve from the Flash start, and gives way
- * to solve once the puzzle is fully solved. How it's shown is up to the UI.
- * `getHighscoreRank` reads first and perfect as the rarer kinds.
+ * What a solution can score, one point per kind, three at most: solve, plus
+ * perfect and first. A player's score on a puzzle is their best single
+ * solution, for all time, not what their solves add up to. Flash is a solve
+ * from the Flash start, and gives way to a full solve. How it's shown is up to
+ * the UI. `getHighscoreRank` reads first and perfect as the rarer kinds.
  */
 export const SCORE_KINDS = ["solve", "perfect", "first", "flash"] as const;
 export type ScoreKind = typeof SCORE_KINDS[number];
@@ -50,31 +51,33 @@ export function getSolveScore(
   return kinds;
 }
 
+/** How a solution's kinds compare: more is better, and Flash ranks below a solve. */
+function getScoreRank(kinds: ScoreKind[]): number {
+  return kinds.length - (kinds.includes("flash") ? 0.5 : 0);
+}
+
 /**
- * The kinds not earned yet, in display order. Flash is nothing new once the
- * puzzle is solved, or is being solved.
+ * The kinds a solve adds over the best solution so far, in display order:
+ * none unless it's better, more kinds or a full solve over a Flash one. On a
+ * tie the earlier solution stays.
  */
 export function getNewScore(
   earned: ScoreKind[],
   kinds: ScoreKind[],
 ): ScoreKind[] {
-  const isSolved = earned.includes("solve") || kinds.includes("solve");
+  if (getScoreRank(kinds) <= getScoreRank(earned)) return [];
   return SCORE_KINDS.filter((kind) =>
-    kinds.includes(kind) && !earned.includes(kind) &&
-    !(kind === "flash" && isSolved)
+    kinds.includes(kind) && !earned.includes(kind)
   );
 }
 
-/** A solution score with kinds added, in display order: solve replaces Flash. */
+/** The better of two solutions' kinds, in display order; the earlier on a tie. */
 export function withEarned(
   earned: ScoreKind[],
   kinds: ScoreKind[],
 ): ScoreKind[] {
-  const isSolved = earned.includes("solve") || kinds.includes("solve");
-  return SCORE_KINDS.filter((kind) =>
-    (earned.includes(kind) || kinds.includes(kind)) &&
-    !(kind === "flash" && isSolved)
-  );
+  const best = getScoreRank(kinds) > getScoreRank(earned) ? kinds : earned;
+  return SCORE_KINDS.filter((kind) => best.includes(kind));
 }
 
 /**
@@ -128,7 +131,7 @@ export function withFirstSolves<T extends PastSolve>(solves: T[]): T[] {
   });
 }
 
-/** The kinds each player has scored on a puzzle from its solves. */
+/** The kinds each player has scored on a puzzle: their best solution's. */
 export function getPastScore(
   puzzle: Pick<Puzzle, "minMoves">,
   solves: (PastSolve & { userId: string })[],

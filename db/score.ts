@@ -11,7 +11,7 @@ import {
 
 /**
  * Score lives in three places, written together:
- * - solution score: the kinds a user has earned on a puzzle
+ * - solution score: the kinds of a user's best solution on a puzzle
  * - user score: their points per kind across all puzzles
  * - the highscore, keyed `[total, first, perfect, userId]`, so a reversed list
  *   reads in rank order. Its value is the user score, so a list needs no
@@ -45,7 +45,8 @@ export async function getUserScore(userId: string): Promise<UserScore> {
 }
 
 /**
- * Awards the kinds a player hasn't earned on the puzzle yet, and returns them.
+ * Awards a solve that beats the player's best solution on the puzzle, and
+ * returns the kinds it adds; nothing when it's no better.
  * Solution score, user score and highscore move in one commit, retried on conflict.
  */
 export async function awardScore(

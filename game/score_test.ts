@@ -70,6 +70,18 @@ Deno.test("getNewScore() gives a full solve after Flash solve", () => {
   assertEquals(getNewScore(["flash"], ["solve"]), ["solve"]);
 });
 
+Deno.test("getNewScore() gives nothing for a solve no better than the best one", () => {
+  // A first earlier, a perfect now: one solution each, two kinds each.
+  assertEquals(getNewScore(["solve", "first"], ["solve", "perfect"]), []);
+});
+
+Deno.test("withEarned() keeps the earlier solution on a tie", () => {
+  assertEquals(
+    withEarned(["solve", "first"], ["solve", "perfect"]),
+    ["solve", "first"],
+  );
+});
+
 Deno.test("getNewScore() gives a repeat perfect solve nothing", () => {
   assertEquals(
     getNewScore(["solve", "perfect"], ["solve", "perfect"]),
@@ -190,7 +202,7 @@ Deno.test("withFirstSolves() finds no new path in a Flash solve", () => {
   );
 });
 
-Deno.test("getPastScore() gives each player the kinds of their solves", () => {
+Deno.test("getPastScore() gives each player the kinds of their best solution", () => {
   const score = getPastScore(corner, [
     { userId: "ane", moves: theLongWay, first: true },
     { userId: "bo", moves: theLongWay },
@@ -198,8 +210,9 @@ Deno.test("getPastScore() gives each player the kinds of their solves", () => {
     { userId: "ane", moves: downRight },
   ]);
 
+  // Ane's first and perfect came on different solutions; Bo's on one.
   assertEquals(Object.fromEntries(score), {
-    ane: ["solve", "perfect", "first"],
+    ane: ["solve", "first"],
     bo: ["solve", "perfect", "first"],
   });
 });
