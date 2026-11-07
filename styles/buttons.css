@@ -23,6 +23,13 @@
     background-color: color-mix(in srgb, var(--color-link) 12%, transparent);
   }
 
+  /* Mobile: one width for buttons side by side, the nudge's */
+  @media (width < 64rem) {
+    .btn {
+      min-inline-size: 10rem;
+    }
+  }
+
   .btn[data-size="lg"] {
     padding-block: calc(var(--size-2) + 2px);
     padding-inline: var(--size-4);
