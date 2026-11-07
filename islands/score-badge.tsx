@@ -41,7 +41,7 @@ export function ScoreBadge(
         title={bestMoves !== undefined
           ? "moves played / your best"
           : hideMinMoves
-          ? "moves played / solve the puzzle to reveal the shortest"
+          ? "moves played / no solves yet"
           : "moves played / shortest possible path"}
       >
         <MoveScore
