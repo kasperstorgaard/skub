@@ -1,8 +1,10 @@
 import { clsx } from "clsx/lite";
 import { AnchorHTMLAttributes } from "preact";
 
-import { Check, Icon, Play, Trophy } from "#/components/icons.tsx";
+import { Icon, Play } from "#/components/icons.tsx";
+import { Stars } from "#/components/stars.tsx";
 import { Thumbnail } from "#/components/thumbnail.tsx";
+import type { ScoreKind } from "#/game/score.ts";
 import type { Puzzle } from "#/game/types.ts";
 
 export type PuzzleCardProps =
@@ -10,6 +12,8 @@ export type PuzzleCardProps =
   & {
     puzzle: Puzzle;
     bestMoves?: number;
+    /** The player's solution score on the puzzle, in display order. */
+    score?: ScoreKind[];
     tagline?: string;
     showPlay?: boolean;
   };
@@ -18,15 +22,15 @@ export type PuzzleCardProps =
  * Canonical clickable puzzle card,
  * showing an svg of the puzzle, and letting the consumer pass the
  *
- * States:
- *   - solved (bestMoves > minMoves): ph-check icon + move count
- *   - optimal (bestMoves === minMoves): ph-trophy icon + move count
+ * Once solved: the earned stars beside the move count, teal, or yellow when
+ * optimal (bestMoves === minMoves).
  *
  * Pass `children` for a rich tagline or `tagline` for a plain string.
  */
 export function PuzzleCard({
   puzzle,
   bestMoves,
+  score = [],
   tagline,
   showPlay,
   className,
@@ -70,21 +74,13 @@ export function PuzzleCard({
           <div
             class={clsx(
               "absolute top-0 right-0 p-2 py-2.5",
-              "grid grid-flow-col gap-1 place-content-center",
+              "grid grid-flow-col gap-1 place-content-center items-center",
             )}
           >
-            <span
-              class={clsx(
-                "flex items-center justify-center gap-1 p-0.5 border-1 rounded-2 aspect-square",
-                "text-surface-1 leading-tight text-3 text-center",
-                isOptimal ? "bg-ui-2 border-ui-2" : "bg-ui-1 border-ui-1",
-              )}
-            >
-              <Icon
-                icon={isOptimal ? Trophy : Check}
-                aria-label={isOptimal ? "Perfect" : "Solved"}
-              />
-            </span>
+            <Stars
+              kinds={score}
+              className={clsx("text-4", isOptimal ? "text-ui-2" : "text-ui-1")}
+            />
             <span
               class={clsx(
                 "flex items-center justify-center gap-1 p-0.5 border-text-1 border-1 rounded-2 aspect-square",

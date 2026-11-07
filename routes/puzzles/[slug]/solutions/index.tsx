@@ -8,6 +8,7 @@ import { Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
+import { BadgeStars } from "#/components/stars.tsx";
 import {
   getCanonicalGroup,
   listCanonicalGroups,
@@ -111,11 +112,13 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
             <PuzzleName puzzle={props.data.puzzle} lead="Solutions" />
           </h1>
 
-          <ScoreBadge
-            puzzle={puzzle}
-            href={href}
-            moves={props.data.bestMoves}
-          />
+          <BadgeStars kinds={props.state.score[props.data.puzzle.slug]}>
+            <ScoreBadge
+              puzzle={puzzle}
+              href={href}
+              moves={props.data.bestMoves}
+            />
+          </BadgeStars>
         </div>
 
         {

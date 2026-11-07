@@ -9,6 +9,7 @@ import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
+import { BadgeStars } from "#/components/stars.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { awardScore } from "#/db/score.ts";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
@@ -285,11 +286,13 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             />
           </h1>
 
-          <ScoreBadge
-            puzzle={puzzle}
-            href={href}
-            hideMinMoves={!props.data.hasSolved}
-          />
+          <BadgeStars kinds={props.state.score[props.data.puzzle.slug]}>
+            <ScoreBadge
+              puzzle={puzzle}
+              href={href}
+              hideMinMoves={!props.data.hasSolved}
+            />
+          </BadgeStars>
         </div>
 
         <div className="relative">
