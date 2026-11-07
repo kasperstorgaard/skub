@@ -52,7 +52,7 @@ export function SolutionDialog(
     <Dialog open={isOpen}>
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h2 className="text-fl-2 font-semibold text-text-1">
-          Nice solve!
+          Solved!
         </h2>
 
         <p>
@@ -61,8 +61,8 @@ export function SolutionDialog(
               ? "Save your Flash solve."
               : "Pick a name and save your Flash solve."
             : savedName
-            ? "Get your solve on the board."
-            : "Pick a name and get your solve on the board."}
+            ? "Save your solve so other players can see the path you found."
+            : "Pick a name to save your solve. Other players will see it next to the path you found. No account, just a name."}
         </p>
       </div>
 
