@@ -152,7 +152,7 @@ export function CelebrationDialog(
           // Flash solves are compared above, not on the leaderboard
           !isFlash && (
             <a href={`/puzzles/${puzzle.value.slug}/solutions`} className="btn">
-              <Icon icon={Ranking} /> See solves
+              <Icon icon={Ranking} /> See solutions
             </a>
           )
         }
