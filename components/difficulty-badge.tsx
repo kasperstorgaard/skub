@@ -32,7 +32,7 @@ export function DifficultyBadge(
         className="px-2 bg-surface-3 min-w-[3ch] text-center cursor-help"
         title={hideMinMoves
           ? "solve the puzzle to reveal"
-          : "shortest possible solution"}
+          : "shortest possible path"}
       >
         {hideMinMoves ? "?" : puzzle.minMoves || "—"}
       </span>
