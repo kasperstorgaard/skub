@@ -189,6 +189,29 @@ export async function listCanonicalGroups(
 }
 
 /**
+ * The solutions on one path of a puzzle, in the order they were found: who
+ * claimed it, then who found it after. Flash solves of the same moves are
+ * left out. `limit` is required, and counts before Flash solves are left out.
+ */
+export async function listPathSolutions(
+  puzzleSlug: string,
+  canonicalKey: string,
+  options: { limit: number },
+) {
+  const solutions: Solution[] = [];
+  const iter = kv.list<Solution>(
+    { prefix: ["solutions_by_puzzle_canonical", puzzleSlug, canonicalKey] },
+    { limit: options.limit },
+  );
+
+  for await (const res of iter) {
+    if (!res.value.flash) solutions.push(res.value);
+  }
+
+  return solutions;
+}
+
+/**
  * Updates the canonical group aggregate for a puzzle after a new solution is added.
  * Creates the group entry if absent; increments count if present.
  * Retries up to 5 times on optimistic concurrency conflicts.
