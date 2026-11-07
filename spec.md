@@ -16,8 +16,9 @@ Three stars per puzzle at most, one rounded star drawn three ways:
 - **Solve**: any solve of the puzzle. An outline.
 - **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
   star. Filled, with tiny rays between the arms.
-- **First**: being first to find a solution path no one had found before. The
-  outline in nine even dashes that don't line up with the tips.
+- **First**: being first to find a solution path no one had found before. A
+  path drawn like a G: round the star, open before closing, then in to the
+  centre, in eight dashes.
 
 A Flash solve earns the solve star in the Flash colour (`--color-ui-1`), the
 only star that changes colour. A later full solve turns it into the regular
