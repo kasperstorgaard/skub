@@ -32,7 +32,10 @@ type StarsProps = {
   /** Earned kinds. Nothing earned renders nothing. */
   kinds: ScoreKind[];
   className?: string;
-  style?: Record<string, string>;
+  /** Per-star class and style, e.g. to animate some of them. */
+  getStarProps?: (
+    kind: ScoreKind,
+  ) => { className?: string; style?: Record<string, string> } | undefined;
 };
 
 /**
@@ -41,7 +44,7 @@ type StarsProps = {
  * `--star-knockout`, which the container sets to its own background; the page
  * surface otherwise.
  */
-export function Stars({ kinds, className, style }: StarsProps) {
+export function Stars({ kinds, className, getStarProps }: StarsProps) {
   const id = useId();
   if (kinds.length === 0) return null;
   // Flash stands in for solve, so it takes the solve star's place.
@@ -56,31 +59,37 @@ export function Stars({ kinds, className, style }: StarsProps) {
       aria-label={label}
       title={label}
       className={clsx("inline-flex items-center text-ui-2", className)}
-      style={style}
     >
-      {stars.map((kind, i) => (
-        <svg
-          key={kind}
-          xmlns="http://www.w3.org/2000/svg"
-          width="1em"
-          height="1em"
-          viewBox="0 0 256 256"
-          aria-hidden="true"
-          className="overflow-visible not-first:-ml-[0.3em]"
-          stroke-linejoin="round"
-        >
-          {/* The first star has nothing behind it to cut into. */}
-          {i > 0 && (
-            <path
-              d={STAR}
-              fill="var(--star-knockout, var(--color-surface-1))"
-              stroke="var(--star-knockout, var(--color-surface-1))"
-              stroke-width={STROKE + KNOCKOUT}
-            />
-          )}
-          <StarPath kind={kind} id={id} />
-        </svg>
-      ))}
+      {stars.map((kind, i) => {
+        const starProps = getStarProps?.(kind);
+        return (
+          <svg
+            key={kind}
+            xmlns="http://www.w3.org/2000/svg"
+            width="1em"
+            height="1em"
+            viewBox="0 0 256 256"
+            aria-hidden="true"
+            className={clsx(
+              "overflow-visible not-first:-ml-[0.3em]",
+              starProps?.className,
+            )}
+            style={starProps?.style}
+            stroke-linejoin="round"
+          >
+            {/* The first star has nothing behind it to cut into. */}
+            {i > 0 && (
+              <path
+                d={STAR}
+                fill="var(--star-knockout, var(--color-surface-1))"
+                stroke="var(--star-knockout, var(--color-surface-1))"
+                stroke-width={STROKE + KNOCKOUT}
+              />
+            )}
+            <StarPath kind={kind} id={id} />
+          </svg>
+        );
+      })}
     </span>
   );
 }
