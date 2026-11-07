@@ -59,9 +59,16 @@ the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
-Regular and Flash solves as tabs. Arriving from a Flash solve opens the Flash
-tab; Flash solves are compared by the moves played from the Flash start. The
-best (optimal) solutions unlock once you've earned stars on the puzzle.
+Three tabs: Solves, Flash and Users.
+
+- **Solves**: as today, a table of rows grouped by solution (canonical path),
+  shortest first, but each group lists its players, up to 10, instead of
+  "+ x other users".
+- **Flash**: the same for Flash solves, compared by the moves played from the
+  Flash start. Arriving from a Flash solve opens this tab.
+- **Users**: the puzzle's high score per user, one row each.
+
+The best (optimal) solutions unlock once you've earned stars on the puzzle.
 
 ## Non-goals
 
