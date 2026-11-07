@@ -3,14 +3,14 @@ import type { Move, Puzzle } from "#/game/types.ts";
 
 /**
  * What a puzzle can score, one point per kind, each earned once per player for
- * all time. How it's shown is up to the UI. `getScoreRank` reads first and
+ * all time. How it's shown is up to the UI. `getHighscoreRank` reads first and
  * perfect as the rarer kinds.
  */
 export const SCORE_KINDS = ["solve", "perfect", "first", "flash"] as const;
 export type ScoreKind = typeof SCORE_KINDS[number];
 
 /** A player's points per kind, across all puzzles. */
-export type ScoreTotals = Record<ScoreKind, number>;
+export type UserScore = Record<ScoreKind, number>;
 
 export type ScoreSolve = {
   moves: number;
@@ -19,7 +19,7 @@ export type ScoreSolve = {
   flash: boolean;
 };
 
-export const emptyScoreTotals: ScoreTotals = {
+export const emptyUserScore: UserScore = {
   solve: 0,
   perfect: 0,
   first: 0,
@@ -52,26 +52,28 @@ export function getNewScore(
   );
 }
 
-/** Totals with one point of each kind added. */
+/** A user score with one point of each kind added. */
 export function withScore(
-  totals: ScoreTotals,
+  userScore: UserScore,
   kinds: ScoreKind[],
-): ScoreTotals {
-  const updated = { ...totals };
+): UserScore {
+  const updated = { ...userScore };
   for (const kind of kinds) updated[kind]++;
   return updated;
 }
 
-export function getTotalScore(totals: ScoreTotals): number {
-  return SCORE_KINDS.reduce((count, kind) => count + totals[kind], 0);
+export function getTotalScore(userScore: UserScore): number {
+  return SCORE_KINDS.reduce((count, kind) => count + userScore[kind], 0);
 }
 
 /**
- * Sorts players by total score, ties broken by first, then perfect. Compares
+ * Sorts the highscore by total score, ties broken by first, then perfect. Compares
  * as a KV key part, so a reversed list reads in rank order.
  */
-export function getScoreRank(totals: ScoreTotals): [number, number, number] {
-  return [getTotalScore(totals), totals.first, totals.perfect];
+export function getHighscoreRank(
+  userScore: UserScore,
+): [number, number, number] {
+  return [getTotalScore(userScore), userScore.first, userScore.perfect];
 }
 
 /**
