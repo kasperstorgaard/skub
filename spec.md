@@ -11,13 +11,14 @@ A stack of PRs, each based on the one before:
 
 ## Stars
 
-Three stars per puzzle at most, one rounded star drawn three ways:
+Three stars per puzzle at most, one rounded star with a slim outline, drawn
+three ways:
 
 - **Solve**: any solve of the puzzle. An outline.
 - **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
   star. Filled, with tiny rays between the arms.
 - **First**: being first to find a solution path no one had found before. The
-  outline, slimmer, in thirteen even dashes that don't line up with the tips.
+  outline in thirteen even dashes that don't line up with the tips.
 
 A Flash solve earns the solve star in the Flash colour (`--color-ui-1`), the
 only star that changes colour. A later full solve turns it into the regular
