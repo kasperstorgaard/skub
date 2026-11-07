@@ -159,7 +159,10 @@ PR finishes only part of an item, trim the item to what is left.
 - **Smoother page changes.** View transitions between pages, opt-in per
   navigation. Needs the Fresh 2.3 upgrade first. Going into a board page zones
   in, the page settling back around the board, so its narrower mobile width
-  reads as focusing in rather than a jump.
+  reads as focusing in rather than a jump. Opening a puzzle from its card
+  swaps that card's thumbnail for the real board, one element morphing into
+  the other. The thumbnail may need to be higher quality than today's, so the
+  hand-off doesn't show a jump in detail.
 
 ## Play
 
