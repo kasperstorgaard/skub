@@ -65,6 +65,11 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## Hosting
 
+- **Production data has a backup.** Today production KV has none of its own: no
+  snapshot, no continuous S3 backup. Take snapshots with `scripts/export-kv.ts`
+  over KV Connect (it only reads), and consider Deploy's continuous S3 backup
+  for point-in-time history, which also helps moving off Deno Deploy.
+
 - **Skub keeps running after Deno Deploy shuts down.** Deno joined Cloudflare
   (announced 2026-10-09): Deno Deploy shuts down in about six months, and the
   Deno runtime gets bug-fix and security releases for a year, then development
