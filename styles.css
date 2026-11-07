@@ -111,6 +111,19 @@
   --animate-pulse: var(--animation-pulse);
   --animate-sneak-in-bottom: sneak-in-bottom 1.4s ease 500ms both;
   --animate-sneak-in-left: sneak-in-left 1.4s ease 500ms both;
+  --animate-star-pop: star-pop 500ms var(--ease-3) both;
+
+  @keyframes star-pop {
+    0% {
+      transform: scale(0);
+    }
+    60% {
+      transform: scale(1.2);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
 
   @keyframes sneak-in-bottom {
     0% {

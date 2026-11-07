@@ -118,10 +118,16 @@ Decided so far (with Kasper, in chat):
 - The first solve of a path is marked `first: true` on the solution, claimed
   atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
   marks old ones by solve order.
-- Layer 3 next (`stars/celebration`, based on `stars/display`): earning stars
-  is the celebration's payoff. The solve POST already gets the newly awarded
-  kinds back from `awardScore`; return them in `CelebrationData` and show
-  them in the dialog, with no explainer of stars (non-goal).
+- Layer 3 built (`stars/celebration`): the solve POST returns the newly
+  awarded kinds as `earned` in `CelebrationData`, and the dialog shows them
+  on the headline's row, at the headline's size, popping in one by one
+  (motion-safe only). Only new stars: a replay that earns nothing shows none.
+  On the headline's row so nothing shifts when the data lands after the
+  loading state; at that size three stars and "Perfect — 10 moves!" fit one
+  line at phone width. No-JS solves get no dialog for full solves (they go to
+  the solutions page), so they don't show the payoff; the page's own badge
+  stars update on the next load.
+- Layer 4 next (`stars/highscore`, based on `stars/celebration`).
 - Still open: the badge's Flash bolt next to a Flash-coloured solve star; how
   many stars unlock the best solutions (ask before layer 5); highscore ties
   past total, first and perfect are by user id (earliest-to-reach would need
