@@ -265,9 +265,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           <ScoreBadge
             puzzle={puzzle}
             href={href}
-            flash={hasFlash
-              ? { isOn: isFlashOn, isExplained: props.data.isFlashExplained }
-              : undefined}
             hideMinMoves={!props.data.hasSolved}
           />
         </div>
@@ -284,6 +281,9 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             puzzle={puzzle}
             href={href}
             hintCount={props.data.hintCount}
+            flash={hasFlash
+              ? { isOn: isFlashOn, isExplained: props.data.isFlashExplained }
+              : undefined}
             isDev={isDev}
             className={clsx(
               // Mobile: as far under the board as the old footer's controls sat
