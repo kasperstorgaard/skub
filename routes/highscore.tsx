@@ -132,7 +132,8 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                     key={row.userId}
                     className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0"
                   >
-                    <span className="text-4 text-text-3 tabular-nums">
+                    {/* The spot centred on the row, the points on its bottom line */}
+                    <span className="self-center text-4 text-text-3 tabular-nums">
                       {index + 1}
                     </span>
                     <div className="grid min-w-0">
@@ -145,7 +146,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                     </div>
                     <Points
                       userScore={row.userScore}
-                      className="text-4 font-semibold"
+                      className="self-end text-4 font-semibold leading-flat"
                     />
                   </li>
                 ))}
