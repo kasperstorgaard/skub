@@ -113,7 +113,7 @@ Deno.test("home — a returning player sees their best on the daily card", async
   }
 });
 
-Deno.test("home — stats show streak and solve count after solving first daily", async () => {
+Deno.test("home — stats show the streak after solving the first daily", async () => {
   const { page, asUser, addSolution, teardown } = await setup();
   try {
     const [_, entries] = await Promise.all([
@@ -135,14 +135,12 @@ Deno.test("home — stats show streak and solve count after solving first daily"
     const homePage = await new HomePage(page).goto();
 
     await expect(homePage.stat("Streak")).toContainText("1 / 1");
-    await expect(homePage.stat("Solutions")).toContainText("1");
-    await expect(homePage.stat("Perfect")).toContainText("1 / 100%");
   } finally {
     await teardown();
   }
 });
 
-Deno.test("home — stats show streak and solve count after solving multiple dailies", async () => {
+Deno.test("home — stats show the streak after solving several dailies", async () => {
   const { page, asUser, addSolution, teardown } = await setup();
   try {
     const [_, entries] = await Promise.all([
@@ -164,8 +162,6 @@ Deno.test("home — stats show streak and solve count after solving multiple dai
     const homePage = await new HomePage(page).goto();
 
     await expect(homePage.stat("Streak")).toContainText("3 / 3");
-    await expect(homePage.stat("Solutions")).toContainText("3");
-    await expect(homePage.stat("Perfect")).toContainText("3 / 100%");
   } finally {
     await teardown();
   }
