@@ -11,37 +11,35 @@ A stack of PRs, each based on the one before:
 
 ## Stars
 
-Four kinds, each shown as an icon (no new colours): check for solve, trophy
-for perfect, a path for first, the bolt for Flash.
+Three stars per puzzle at most, one rounded star drawn three ways:
 
-- **Solve**: any solve of the puzzle.
-- **Perfect**: a solve in the puzzle's minimum moves. Comes on top of the solve
-  star, so a perfect is two stars.
-- **First**: being first to find a solution path no one had found before.
-- **Flash**: a solve from the Flash start. It takes the solve star's place: a
-  later full solve still earns the solve star, and perfect and first need a
-  full solve.
+- **Solve**: any solve of the puzzle. An outline.
+- **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
+  star. Filled, with tiny rays between the arms.
+- **First**: being first to find a solution path no one had found before. The
+  outline in nine even dashes that don't line up with the tips.
+
+A Flash solve earns the solve star in the Flash colour (`--color-ui-1`), the
+only star that changes colour. A later full solve turns it into the regular
+solve star, moving the point from Flash to solve; perfect and first need a
+full solve.
 
 Stars are per puzzle, for all time, and each kind is earned once: any puzzle
-counts, archive included, so at most solve, perfect, first and Flash on one
-puzzle.
+counts, archive included.
 
 Only earned stars show: no placeholder for unearned ones, and no hint of
-what's left to earn anywhere. The stars are a vocabulary players learn. They float left of
-the score badge, no background; on cards, alone in the top right (no move
-count). One colour, the theme's puck colour (`--color-ui-2`): shape and count
+what's left to earn anywhere. The stars are a vocabulary players learn. They
+float left of the score badge, no background; on cards, alone in the top right
+(no move count). The theme's puck colour (`--color-ui-2`): shape and count
 tell the kinds apart.
 
-Stars stack with an overlap, like an avatar stack, to save space. Each has a
-double outline in the background colour of where it sits, which blocks out
-part of the star behind it; cards and the page differ, so that colour comes
-from the context. A perfect over its solve star then reads as two.
+Stars stack with a 0.3em overlap, like an avatar stack, to save space. Each
+after the first cuts a gap out of the one behind in the background colour of
+where it sits; cards and the page differ, so that colour comes from the
+context (`--star-knockout`).
 
-Open: the badge's Flash switch already shows a bolt; whether the earned Flash
-star merges with it or sits with the others.
-
-Stars are one rounded star drawn four ways: outline for solve, filled for
-perfect, a faded fill (duotone) for first, the outline dashed for Flash.
+Open: the badge's Flash switch already shows a bolt; whether that matters next
+to a Flash-coloured solve star.
 
 ## High score
 
@@ -103,13 +101,11 @@ Decided so far (with Kasper, in chat):
 - Layer 2 built: the progress cookie is v2, two bytes per puzzle (best
   moves, then the solution score as bits), so each device rebuilds it from KV
   once; `ctx.state.score` carries it, updated on award. `components/stars.tsx`
-  draws one rounded star four ways (outline, fill, duotone, dashed) on
-  Phosphor's 256 grid, stacked at a 0.25em overlap, each after the first cutting a gap in
-  `--star-knockout`, one colour. On the puzzle page, solutions page and replays: the
-  viewer's own stars beside the badge. On cards they replace the check/trophy
-  chip and the move count; the archive calendar's cells show them too.
-  Kinds always come from the stored score per puzzle, never worked out from
-  best moves against minimum moves.
+  draws the stars as above. On the puzzle page, solutions page and replays:
+  the viewer's own stars beside the badge. On cards they replace the
+  check/trophy chip and the move count; the archive calendar's cells show
+  them too. Kinds always come from the stored score per puzzle, never worked
+  out from best moves against minimum moves.
 - All-time per user is an updated aggregate, not computed: each puzzle
   counts up to a max, so the total is a sum of per-puzzle bests, and a
   better solve only adds its gain over the old best. Stored per user beside

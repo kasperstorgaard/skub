@@ -225,10 +225,10 @@ Deno.test("decodeScoreKinds() reads back every kind but first, in display order"
   );
 });
 
-Deno.test("withSolutionScore() adds a full solve's kinds after Flash, in display order", () => {
+Deno.test("withSolutionScore() swaps Flash for a full solve's kinds", () => {
   assertEquals(
     withSolutionScore({ "daily-1": ["flash"] }, "daily-1", ["solve", "first"]),
-    { "daily-1": ["solve", "first", "flash"] },
+    { "daily-1": ["solve", "first"] },
   );
 });
 
