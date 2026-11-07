@@ -63,7 +63,13 @@ export function CelebrationDialog(
 
   const hasSolution = useMemo(() => isValidSolution(board), [board]);
 
-  const isOpen = hasSolution && minElapsed;
+  const dialog = useMemo(
+    () => new URL(href.value).searchParams.get("dialog"),
+    [href.value],
+  );
+
+  // Gives way to any dialog named in the URL: one dialog at a time.
+  const isOpen = hasSolution && minElapsed && !dialog;
 
   // Wait for the board ripple transition before opening. Resets when the
   // user undoes back across the solve.
