@@ -234,10 +234,6 @@ PR finishes only part of an item, trim the item to what is left.
   today, and a permanent name makes a clash permanent too. Claim names
   atomically when picked, so one name is one player.
 
-- **Players can see who has the most stars.** A high score page ranks players by
-  all-time stars, linked from home's sidebar, the archive and the solutions
-  page. Builds on the stars item above.
-
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of
   behind the highscore page where few find them. Stands on its own; the tiered
