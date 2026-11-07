@@ -218,7 +218,7 @@ function PeriodTabs({ period }: { period: Period }) {
             // Active: an action button's ring and tint, sized down to a pill.
             // The other carries a clear border as wide, so nothing shifts.
             className={clsx(
-              "px-3 py-1 rounded-round",
+              "px-2 py-1 rounded-round",
               "text-1 no-underline whitespace-nowrap",
               isActive
                 ? "btn min-h-0 min-w-0 font-normal tracking-normal"
