@@ -101,12 +101,24 @@ export function withScore(
   return result;
 }
 
+/** Points per kind: 200 at most per puzzle. Flash stands in for solve. */
+export const SCORE_POINTS: UserScore = {
+  solve: 50,
+  perfect: 100,
+  first: 50,
+  flash: 50,
+};
+
+/** A player's points, across all puzzles. */
 export function getTotalScore(userScore: UserScore): number {
-  return SCORE_KINDS.reduce((count, kind) => count + userScore[kind], 0);
+  return SCORE_KINDS.reduce(
+    (points, kind) => points + userScore[kind] * SCORE_POINTS[kind],
+    0,
+  );
 }
 
 /**
- * Sorts the highscore by total score, ties broken by first, then perfect. Compares
+ * Sorts the highscore by points, ties broken by first, then perfect. Compares
  * as a KV key part, so a reversed list reads in rank order.
  */
 export function getHighscoreRank(

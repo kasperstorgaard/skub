@@ -50,7 +50,7 @@ export function StatsSummary({ stats, userScore, className }: Props) {
               />
             </a>
           </dd>
-          <dt className="text-2 text-text-2">Stars</dt>
+          <dt className="text-2 text-text-2">Points</dt>
         </div>
       )}
 

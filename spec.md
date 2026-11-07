@@ -49,12 +49,20 @@ against its bolt.
 
 ## High score
 
-Players rank by star count, ties broken by the rarer kinds: first, then
-perfect. Totals per kind live in KV per user, with a ranking index kept in step
+Players rank by points: 50 for a solve (or a Flash solve), 50 for first and
+100 for perfect, so 200 at most per puzzle. Ties are broken by the rarer kinds:
+first, then perfect. Totals per kind live in KV per user, with a ranking index kept in step
 on every star earned.
 
 Past solves earn their stars too: a one-off backfill over stored solutions,
 with first worked out from solve order, so the board isn't empty on day one.
+
+Two boards, switched in the URL: this week and all time. This week counts
+only the stars on the week's dailies (Monday to Sunday), so everyone races on
+the same boards; archive play moves only all time. It is worked out from those
+puzzles' stored solutions when shown, not stored.
+
+The puzzle page links to its solutions once the player has a star on it.
 
 Links to the high score page: the home footer's star split (next to the streak),
 the puzzle page's sidebar and footer, the solutions page and the archive.
