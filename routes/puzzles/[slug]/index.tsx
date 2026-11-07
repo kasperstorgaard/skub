@@ -238,6 +238,7 @@ export const handler = define.handlers<PageData>({
         isNewPath,
         puzzleStats: puzzleStats ?? defaultPuzzleStats,
         flashSolves,
+        earned: awarded ?? [],
       };
       return Response.json(data);
     }

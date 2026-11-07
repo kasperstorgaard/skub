@@ -3,12 +3,14 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
+import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import {
   type CelebrationType,
   countSolvesAbove,
   getCelebrationType,
 } from "#/game/celebration.ts";
+import type { ScoreKind } from "#/game/score.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Puzzle, PuzzleStats } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
@@ -20,6 +22,8 @@ export type CelebrationData = {
   puzzleStats: PuzzleStats;
   /** Flash solves of this puzzle, this one included, for a Flash solve. */
   flashSolves?: number;
+  /** Stars this solve earned on the puzzle: only the new ones. */
+  earned: ScoreKind[];
 };
 
 type Props = {
@@ -113,9 +117,19 @@ export function CelebrationDialog(
   return (
     <Dialog open={isOpen} className="w-full">
       <div className="flex flex-col gap-fl-2">
-        <h2 className="text-fl-2 font-semibold text-text-1">
-          {headline}
-        </h2>
+        {/* The payoff, beside the headline so nothing shifts when it lands */}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-fl-2 font-semibold text-text-1">
+            {headline}
+          </h2>
+
+          {data && data.earned.length > 0 && (
+            <Stars
+              kinds={data.earned}
+              className="shrink-0 text-fl-2 [&>svg]:motion-safe:animate-star-pop [&>svg:nth-child(2)]:[animation-delay:150ms] [&>svg:nth-child(3)]:[animation-delay:300ms]"
+            />
+          )}
+        </div>
 
         {isLoading
           ? (
