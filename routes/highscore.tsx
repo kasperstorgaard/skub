@@ -58,28 +58,73 @@ export default define.page<typeof handler>(function HighscorePage(props) {
         {rows.length === 0
           ? <p className="text-3 text-text-2">No stars earned yet.</p>
           : (
-            <ol className="m-0 p-0 list-none flex flex-col gap-y-2 w-full">
-              {rows.map((row, index) => (
-                <HighscoreRow
-                  key={row.userId}
-                  rank={index + 1}
-                  name={row.name}
-                  userScore={row.userScore}
-                  isViewer={row.userId === userId}
-                />
-              ))}
+            <div className="grid content-start gap-fl-4">
+              {/* The top three, bigger and with their stars */}
+              <ol className="grid gap-fl-2 m-0 p-0 list-none">
+                {rows.slice(0, 3).map((row, index) => (
+                  <li
+                    key={row.userId}
+                    className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0"
+                  >
+                    <span className="text-4 text-text-3 tabular-nums">
+                      {index + 1}
+                    </span>
+                    <span className="grid min-w-0">
+                      <Name
+                        name={row.name}
+                        isViewer={row.userId === userId}
+                        className="text-4 font-medium"
+                      />
+                      <StarCounts
+                        userScore={row.userScore}
+                        className="text-1 text-text-3"
+                      />
+                    </span>
+                    <Points
+                      userScore={row.userScore}
+                      className="text-4 font-semibold"
+                    />
+                  </li>
+                ))}
+              </ol>
 
-              {viewerRow && (
-                <>
-                  <li className="p-0 px-2 text-0 text-text-3">…</li>
-                  <HighscoreRow
-                    name={viewerRow.name}
-                    userScore={viewerRow.userScore}
-                    isViewer
-                  />
-                </>
+              {(rows.length > 3 || viewerRow) && (
+                <ol start={4} className="grid gap-1 m-0 p-0 list-none">
+                  {rows.slice(3).map((row, index) => (
+                    <li
+                      key={row.userId}
+                      className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 text-3"
+                    >
+                      <span className="text-text-3 tabular-nums">
+                        {index + 4}
+                      </span>
+                      <Name
+                        name={row.name}
+                        isViewer={row.userId === userId}
+                      />
+                      <Points userScore={row.userScore} />
+                    </li>
+                  ))}
+
+                  {
+                    /* The viewer, past the top rows: no rank, it isn't
+                      known */
+                  }
+                  {viewerRow && (
+                    <>
+                      <li className="p-0 text-text-3" aria-hidden="true">
+                        …
+                      </li>
+                      <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 text-3">
+                        <span />
+                        <Name name={viewerRow.name} isViewer />
+                        <Points userScore={viewerRow.userScore} />
+                      </li>
+                    </>
+                  )}
+                </ol>
               )}
-            </ol>
+            </div>
           )}
       </Main>
 
@@ -88,44 +133,29 @@ export default define.page<typeof handler>(function HighscorePage(props) {
   );
 });
 
-type HighscoreRowProps = {
-  name: string;
-  userScore: UserScore;
-  /** Left out past the top rows, where it isn't known. */
-  rank?: number;
-  isViewer: boolean;
-};
+type NameProps = { name: string; isViewer: boolean; className?: string };
 
-function HighscoreRow(
-  { name, userScore, rank, isViewer }: HighscoreRowProps,
-) {
+/** A player's name, in the brand colour for the viewer's own. */
+function Name({ name, isViewer, className }: NameProps) {
   return (
-    <li
+    <span
       className={clsx(
-        "grid grid-cols-[2rem_1fr_auto] items-center gap-x-fl-1",
-        "p-0 px-2 pr-3 py-2 rounded-2",
-        "bg-surface-3/20 border-text-3/20 border-1 border-l-3 border-l-text-3",
-        "data-viewer:border-l-brand",
+        "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap",
+        isViewer ? "text-brand" : "text-text-1",
+        className,
       )}
-      data-viewer={isViewer ? true : undefined}
     >
-      <span className="text-center text-3 text-text-3 tabular-nums">
-        {rank}
-      </span>
+      {name}
+    </span>
+  );
+}
 
-      <span className="min-w-0 text-3 text-text-2 overflow-hidden text-ellipsis whitespace-nowrap">
-        {name}
-      </span>
+type PointsProps = { userScore: UserScore; className?: string };
 
-      <span className="flex items-center gap-fl-1">
-        <StarCounts
-          userScore={userScore}
-          className="text-1 text-text-3 max-sm:hidden"
-        />
-        <span className="font-5 text-4 text-text-1 leading-flat tabular-nums">
-          {formatNumber(getTotalScore(userScore))}
-        </span>
-      </span>
-    </li>
+function Points({ userScore, className }: PointsProps) {
+  return (
+    <span className={clsx("text-text-1 tabular-nums text-right", className)}>
+      {formatNumber(getTotalScore(userScore))}
+    </span>
   );
 }
