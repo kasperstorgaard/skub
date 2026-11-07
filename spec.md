@@ -20,8 +20,8 @@ three ways:
 - **First**: being first to find a solution path no one had found before. The
   outline in thirteen even dashes that don't line up with the tips.
 
-A Flash solve earns the solve star in the Flash colour (`--color-ui-1`), the
-only star that changes colour. A later full solve turns it into the regular
+A Flash solve earns the solve star in the pearl (`--pearl`, Flash mode's own
+look), the only star that changes colour. A later full solve turns it into the regular
 solve star, moving the point from Flash to solve; perfect and first need a
 full solve.
 
@@ -113,7 +113,7 @@ Decided so far (with Kasper, in chat):
   the per-puzzle best, in the award's commit. Built with the points
   calculation (layers 4/5).
 - Flash is not a star of its own: a Flash solve scores `flash`, which shows as
-  the solve star in `--color-ui-1`; a full solve swaps it for `solve`
+  the solve star in the pearl; a full solve swaps it for `solve`
   (`withEarned`), moving the point, so three stars at most per puzzle.
 - The first solve of a path is marked `first: true` on the solution, claimed
   atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
