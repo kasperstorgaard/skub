@@ -12,8 +12,7 @@ type ScoreBadgeProps = {
   /** Hide the shortest solution when the user hasn't solved this puzzle. */
   hideMinMoves?: boolean;
   /**
-   * The player's best on the puzzle, in place of the shortest: the perfect
-   * star says when it is the shortest.
+   * The player's best on the puzzle, in place of the shortest.
    */
   bestMoves?: number;
   className?: string;

@@ -1,5 +1,4 @@
 import type { Signal } from "@preact/signals";
-import { clsx } from "clsx/lite";
 
 import { decodeState } from "#/game/url.ts";
 
@@ -22,16 +21,13 @@ export function MoveScore(
   const played = Math.min(state.moves.length, state.cursor ?? 0);
   // No moves yet reads as a dash, not a zero.
   const count = moves === undefined ? played || "–" : moves ?? "–";
-  // A best at the shortest is the puck's colour, like the stars.
-  const isPerfect = best !== undefined && minMoves !== undefined &&
-    best <= minMoves;
 
   return (
     <span className="tabular-nums tracking-widest">
       {count}
       <span className="mx-[0.1em]">/</span>
       {/* The player's count leads; the target sits back */}
-      <span className={clsx(isPerfect ? "text-ui-2" : "opacity-50")}>
+      <span className="opacity-50">
         {hideMinMoves ? "–" : best ?? (minMoves || "—")}
       </span>
     </span>
