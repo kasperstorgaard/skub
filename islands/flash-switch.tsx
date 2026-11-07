@@ -18,7 +18,7 @@ type FlashSwitchProps = {
 
 /**
  * The Flash tool. Off, it opens the Flash dialog the first time and turns
- * Flash on after that; on, it stays on for the day, its bolt in the pearl.
+ * Flash on after that; on, it stays on for the day, lit in the pearl.
  */
 export function FlashSwitch(
   { href, isOn, isExplained, className, iconClassName }: FlashSwitchProps,
@@ -36,13 +36,18 @@ export function FlashSwitch(
       <span
         role="switch"
         aria-checked="true"
-        // Read-only, not disabled: disabled tools fade, and this one is lit
+        // Read-only, not disabled: disabled tools fade
         aria-readonly="true"
         aria-label="Flash"
         title="Flash mode: activated"
-        className={className}
+        className={clsx(
+          className,
+          // On: faint pearl fill, slow glow
+          "bg-(image:--pearl-border-faint) border-transparent text-text-1",
+          "motion-safe:flash-pulse",
+        )}
       >
-        <PearlBolt className={iconClassName} />
+        <Icon icon={LightningFill} className={iconClassName} />
       </span>
     );
   }
@@ -67,26 +72,4 @@ export function FlashSwitch(
       </form>
     )
     : <a href={dialogHref} data-router {...props}>{icon}</a>;
-}
-
-// The filled bolt as a mask, so the pearl shows through its shape.
-const BOLT_MASK = `url("data:image/svg+xml,${
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">${LightningFill}</svg>`,
-  )
-}")`;
-
-/** A bolt filled with the pearl. */
-function PearlBolt({ className }: { className: string }) {
-  return (
-    <span aria-hidden="true" className={className}>
-      <span
-        className={clsx(
-          "block size-[1em] bg-(image:--pearl)",
-          "[mask-size:contain] [mask-repeat:no-repeat] [mask-position:center]",
-        )}
-        style={{ maskImage: BOLT_MASK, WebkitMaskImage: BOLT_MASK }}
-      />
-    </span>
-  );
 }

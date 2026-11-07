@@ -47,11 +47,13 @@ const TOOL = clsx(
 );
 
 // Not a control. Desktop only; touch swipes.
-function ArrowKeysHint() {
+function ArrowKeysHint({ isBelowFlash }: { isBelowFlash: boolean }) {
   return (
     <p
       className={clsx(
-        "not-lg:hidden col-span-2 row-span-2 self-start mt-1 w-[150%]",
+        "not-lg:hidden col-span-2 row-span-2 self-start w-[150%]",
+        // Clears Flash's gap
+        isBelowFlash ? "mt-4" : "mt-1",
         "font-mono text-0 leading-tight text-text-1",
       )}
     >
@@ -60,7 +62,7 @@ function ArrowKeysHint() {
   );
 }
 
-/** Beside the board: undo, redo, hint, Flash, start over, and how to move. */
+/** Beside the board: undo, redo, hint, start over, Flash, and how to move. */
 export function PlayControls(
   { puzzle, href, isDev, hintCount, flash, isPreview, className }:
     PlayControlsProps,
@@ -212,20 +214,6 @@ export function PlayControls(
         </>
       )}
 
-      {flash && (
-        <>
-          <FlashSwitch
-            href={href}
-            isOn={flash.isOn}
-            isExplained={flash.isExplained}
-            className={clsx(TOOL, "text-text-2")}
-            iconClassName="text-[1.25rem] max-lg:text-[2rem]"
-          />
-          {/* No key for Flash: keeps the next tool in the first column */}
-          <span aria-hidden="true" className="not-lg:hidden col-2" />
-        </>
-      )}
-
       <a
         href={getResetHref(href.value)}
         className={TOOL}
@@ -240,7 +228,23 @@ export function PlayControls(
       </a>
       <KeyHint>⇧U</KeyHint>
 
-      <ArrowKeysHint />
+      {flash && (
+        <>
+          <FlashSwitch
+            href={href}
+            isOn={flash.isOn}
+            isExplained={flash.isExplained}
+            // Set apart from the other tools
+            className={clsx(
+              TOOL,
+              "text-text-2 max-lg:translate-x-3 lg:translate-y-3",
+            )}
+            iconClassName="text-[1.25rem] max-lg:text-[2rem]"
+          />
+        </>
+      )}
+
+      <ArrowKeysHint isBelowFlash={!!flash} />
     </Toolbar>
   );
 }
