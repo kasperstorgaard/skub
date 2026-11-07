@@ -10,8 +10,8 @@ import { Main } from "#/components/main.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
-import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
 import { awardScore } from "#/db/score.ts";
+import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
 import {
   getFlashSolveCount,
   getPuzzleStats,
@@ -29,8 +29,8 @@ import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
 import { getOnboardingLabel } from "#/game/recommendation.ts";
-import { assessSkillLevel } from "#/game/skill.ts";
 import { getSolveScore } from "#/game/score.ts";
+import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState, encodeState, getPuzzleArchiveHref } from "#/game/url.ts";
