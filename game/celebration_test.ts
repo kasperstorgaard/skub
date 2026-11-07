@@ -34,22 +34,6 @@ Deno.test("champion: perfect with no histogram entry yet", () => {
   assertEquals(result, "champion");
 });
 
-Deno.test("perfectionist: perfect, others have hit it too", () => {
-  const result = getCelebrationType(6, puzzle, {
-    puzzleStats: stats({ totalSolutions: 10, histogram: { 6: 5, 7: 3, 8: 2 } }),
-    isNewPath: false,
-  });
-  assertEquals(result, "perfectionist");
-});
-
-Deno.test("perfectionist precedence beats creative when isNewPath", () => {
-  const result = getCelebrationType(6, puzzle, {
-    puzzleStats: stats({ totalSolutions: 10, histogram: { 6: 3, 7: 7 } }),
-    isNewPath: true,
-  });
-  assertEquals(result, "perfectionist");
-});
-
 Deno.test("pioneer: only solver so far, not perfect", () => {
   const result = getCelebrationType(8, puzzle, {
     puzzleStats: stats({ totalSolutions: 1, histogram: { 8: 1 } }),
@@ -74,37 +58,12 @@ Deno.test("creative: new path, not perfect, not first solver", () => {
   assertEquals(result, "creative");
 });
 
-Deno.test("creative beats adept and fallback when isNewPath true", () => {
-  const result = getCelebrationType(7, puzzle, {
-    puzzleStats: stats({
-      totalSolutions: 10,
-      histogram: { 7: 2, 8: 8 },
-    }),
+Deno.test("creative: perfect, but others hit it first", () => {
+  const result = getCelebrationType(6, puzzle, {
+    puzzleStats: stats({ totalSolutions: 10, histogram: { 6: 3, 7: 7 } }),
     isNewPath: true,
   });
   assertEquals(result, "creative");
-});
-
-Deno.test("adept: ≥10 solves, beat exactly 40%", () => {
-  const result = getCelebrationType(7, puzzle, {
-    puzzleStats: stats({
-      totalSolutions: 10,
-      histogram: { 7: 6, 8: 4 }, // 4/10 = 40% slower
-    }),
-    isNewPath: false,
-  });
-  assertEquals(result, "adept");
-});
-
-Deno.test("adept: ≥10 solves, beat ≥40%", () => {
-  const result = getCelebrationType(7, puzzle, {
-    puzzleStats: stats({
-      totalSolutions: 20,
-      histogram: { 7: 5, 8: 5, 9: 10 }, // 15/20 = 75% slower
-    }),
-    isNewPath: false,
-  });
-  assertEquals(result, "adept");
 });
 
 Deno.test("fallback: <10 solves, didn't beat anyone", () => {
@@ -129,23 +88,9 @@ Deno.test("fallback: <10 solves, beat someone", () => {
   assertEquals(result, "fallback");
 });
 
-Deno.test("fallback: ≥10 solves but beat <40%", () => {
-  const result = getCelebrationType(9, puzzle, {
-    puzzleStats: stats({
-      totalSolutions: 20,
-      histogram: { 7: 10, 8: 7, 9: 2, 10: 1 }, // 1/20 = 5% slower
-    }),
-    isNewPath: false,
-  });
-  assertEquals(result, "fallback");
-});
-
-Deno.test("fallback: ≥10 solves, just below 40% (39.9%)", () => {
-  const result = getCelebrationType(7, puzzle, {
-    puzzleStats: stats({
-      totalSolutions: 1000,
-      histogram: { 7: 601, 8: 399 }, // 39.9% slower
-    }),
+Deno.test("fallback: perfect, others hit it first, same path", () => {
+  const result = getCelebrationType(6, puzzle, {
+    puzzleStats: stats({ totalSolutions: 10, histogram: { 6: 5, 7: 3, 8: 2 } }),
     isNewPath: false,
   });
   assertEquals(result, "fallback");
