@@ -29,7 +29,7 @@ import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { withSolve } from "#/game/progress.ts";
 import { getOnboardingLabel } from "#/game/recommendation.ts";
-import { getSolveScore } from "#/game/score.ts";
+import { getSolveScore, withSolutionScore } from "#/game/score.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
 import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
@@ -198,13 +198,15 @@ export const handler = define.handlers<PageData>({
         });
         const added = await awardScore(ctx.state.userId, slug, kinds);
         span.setAttribute("score.earned", added.length);
+        return added;
       }).catch((err) => {
         console.error("Failed to award score:", (err as Error).message);
+        return [];
       });
 
     // One user write, alongside the aggregates. A Flash solve only counts
     // towards the Flash solves, apart from the leaderboard.
-    const [user, puzzleStats] = await Promise.all([
+    const [user, puzzleStats, , awarded] = await Promise.all([
       Object.keys(patch).length > 0
         ? setUser(ctx.state.userId, patch)
         : ctx.state.user,
@@ -217,6 +219,9 @@ export const handler = define.handlers<PageData>({
       isNew ? awardSolveScore() : undefined,
     ]);
     ctx.state.user = user;
+    if (awarded) {
+      ctx.state.score = withSolutionScore(ctx.state.score, slug, awarded);
+    }
 
     // This solve included, like the leaderboard's own count.
     const flashSolves = flashSolvesBefore === undefined

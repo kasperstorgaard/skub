@@ -26,7 +26,7 @@ function solves(numbers: number[], moves = 7) {
 }
 
 function roundTrip(progress: Record<string, number>, entries = manifest(300)) {
-  return decodeProgress(encodeProgress(progress, entries), entries);
+  return decodeProgress(encodeProgress(progress, entries), entries).progress;
 }
 
 const m: Move = [{ x: 0, y: 0 }, { x: 1, y: 0 }];
@@ -91,13 +91,16 @@ Deno.test("decodeProgress() round trips dailies with gaps and the reserved puzzl
 Deno.test("decodeProgress() resolves against a manifest that gained puzzles", () => {
   const bytes = encodeProgress(solves([1, 2, 40]), manifest(40));
 
-  assertEquals(decodeProgress(bytes, manifest(60)), solves([1, 2, 40]));
+  assertEquals(
+    decodeProgress(bytes, manifest(60)).progress,
+    solves([1, 2, 40]),
+  );
 });
 
 Deno.test("decodeProgress() skips a number the manifest no longer has", () => {
   const bytes = encodeProgress(solves([1, 2, 40]), manifest(40));
 
-  assertEquals(decodeProgress(bytes, manifest(30)), solves([1, 2]));
+  assertEquals(decodeProgress(bytes, manifest(30)).progress, solves([1, 2]));
 });
 
 Deno.test("encodeProgress() drops a slug with no number or reserved slot", () => {
@@ -106,9 +109,26 @@ Deno.test("encodeProgress() drops a slug with no number or reserved slot", () =>
   });
 });
 
-Deno.test("encodeProgress() takes a byte per puzzle number up to the highest solved", () => {
+Deno.test("encodeProgress() takes two bytes per puzzle number up to the highest solved", () => {
   const bytes = encodeProgress(solves([2_700]), manifest(2_700));
 
   // Slot 0 is unused; dailies start at 1
-  assertEquals(bytes.length, 2_701);
+  assertEquals(bytes.length, 2_701 * 2);
+});
+
+Deno.test("decodeProgress() round trips solution score beside best moves", () => {
+  const entries = manifest(300);
+  const progress = { "daily-1": 7, "daily-2": 12, tutorial: 4 };
+  // Flash only on daily-3: a solution score with no full solve's moves.
+  const score = {
+    "daily-1": ["solve" as const, "perfect" as const],
+    "daily-2": ["solve" as const, "first" as const, "flash" as const],
+    "daily-3": ["flash" as const],
+    tutorial: ["solve" as const],
+  };
+
+  assertEquals(
+    decodeProgress(encodeProgress(progress, entries, score), entries),
+    { progress, score },
+  );
 });

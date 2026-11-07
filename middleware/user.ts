@@ -1,4 +1,5 @@
 import { define } from "#/core.ts";
+import { listSolutionScores } from "#/db/score.ts";
 import { listUserSolutions } from "#/db/solutions.ts";
 import type { User } from "#/db/types.ts";
 import { getUser, newUser } from "#/db/user.ts";
@@ -21,7 +22,8 @@ import { getUserIdCookie } from "#/lib/user-cookie.ts";
 const SYNC_INTERVAL_MS = 30 * 60 * 1000;
 
 /**
- * Populates ctx.state.user and ctx.state.progress from the signed `profile`
+ * Populates ctx.state.user, ctx.state.progress and ctx.state.score from the
+ * signed `profile`
  * and `progress` cookies, reading KV only when a cookie is missing, belongs to
  * another user or login, or a logged-in device last synced over 30 minutes ago
  * (so devices converge). Re-issues the cookies when they changed. Requires
@@ -43,11 +45,11 @@ export const user = define.middleware(async (ctx) => {
   const isKnown = !!sessionId || !!getUserIdCookie(headers);
 
   // Progress resyncs with the profile, in the same round trip.
-  const [stored, solutions] = await Promise.all([
+  const isProgressDue = isKnown && (!isFresh || !cookieProgress);
+  const [stored, solutions, storedScore] = await Promise.all([
     !isFresh && isKnown ? getUser(userId) : null,
-    isKnown && (!isFresh || !cookieProgress)
-      ? listUserSolutions(userId, { limit: "max" })
-      : null,
+    isProgressDue ? listUserSolutions(userId, { limit: "max" }) : null,
+    isProgressDue ? listSolutionScores(userId) : null,
   ]);
 
   let syncedAt = profile?.syncedAt;
@@ -60,10 +62,14 @@ export const user = define.middleware(async (ctx) => {
     syncedAt = Date.now();
     user = stored ?? newUser(userId);
   }
-  const progress = solutions ? getProgress(solutions) : cookieProgress ?? {};
+  const progress = solutions
+    ? getProgress(solutions)
+    : cookieProgress?.progress ?? {};
+  const score = storedScore ?? cookieProgress?.score ?? {};
 
   ctx.state.user = user;
   ctx.state.progress = progress;
+  ctx.state.score = score;
 
   const res = await ctx.next();
 
@@ -84,9 +90,9 @@ export const user = define.middleware(async (ctx) => {
 
   let progressValue: string | null = null;
   const isProgressSame = cookieProgress && !solutions &&
-    ctx.state.progress === progress;
+    ctx.state.progress === progress && ctx.state.score === score;
   if (!isSet("progress") && !isProgressSame) {
-    progressValue = await signProgress(ctx.state.progress, userId);
+    progressValue = await signProgress(ctx.state, userId);
   }
 
   if (!profileValue && !progressValue) return res;

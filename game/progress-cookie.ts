@@ -2,6 +2,7 @@ import { deleteCookie, getCookies, setCookie } from "@std/http/cookie";
 
 import { getPuzzleManifest } from "#/game/loader.ts";
 import { decodeProgress, encodeProgress, Progress } from "#/game/progress.ts";
+import type { ScoreProgress } from "#/game/score.ts";
 import { deflate, inflate } from "#/lib/deflate.ts";
 import { isDev } from "#/lib/env.ts";
 import {
@@ -12,7 +13,8 @@ import {
 
 const PROGRESS_KEY = "progress";
 // Bumping it makes every device rebuild its progress from KV once.
-const PROGRESS_VERSION = 1;
+// 2: solution score beside best moves.
+const PROGRESS_VERSION = 2;
 // 5 years in seconds, same as user_id
 const PROGRESS_DURATION = 60 * 60 * 24 * 365 * 5;
 // Leave headroom under the 4 KB cookie cap; bigger progress stays in KV only.
@@ -21,11 +23,13 @@ const PROGRESS_MAX_LENGTH = 3800;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
+export type ProgressCookie = { progress: Progress; score: ScoreProgress };
+
 /** The verified `progress` cookie, or `null` if absent, tampered with or another user's. */
 export async function getProgressCookie(
   req: Request,
   userId: string,
-): Promise<Progress | null> {
+): Promise<ProgressCookie | null> {
   const value = getCookies(req.headers)[PROGRESS_KEY];
   if (!value) return null;
 
@@ -49,12 +53,12 @@ export async function getProgressCookie(
 
 /** Signs progress bound to its user, or `null` if it won't fit in a cookie. */
 export async function signProgress(
-  progress: Progress,
+  { progress, score }: ProgressCookie,
   userId: string,
 ): Promise<string | null> {
   const manifest = await getPuzzleManifest();
   const id = encoder.encode(userId);
-  const body = await deflate(encodeProgress(progress, manifest));
+  const body = await deflate(encodeProgress(progress, manifest, score));
   const payload = new Uint8Array([PROGRESS_VERSION, id.length, ...id, ...body]);
 
   const value = await signBytes(payload, COOKIE_SIGNING_KEY);
