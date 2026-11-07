@@ -7,6 +7,7 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
+import { Stars } from "#/components/stars.tsx";
 import { TOOL_BUTTON } from "#/components/toolbar.tsx";
 import {
   getCanonicalGroup,
@@ -17,6 +18,7 @@ import {
 } from "#/db/solutions.ts";
 import type { CanonicalGroup, Solution } from "#/db/types.ts";
 import { getPathGroups } from "#/game/paths.ts";
+import { getSolveScore } from "#/game/score.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
@@ -250,6 +252,11 @@ function PathItem(
   { path, solutionsHref, minMoves, userId, userCanonicalKeys }: PathItemProps,
 ) {
   const isPerfect = path.moves <= minMoves;
+  const stars = getSolveScore({ minMoves }, {
+    moves: path.moves,
+    isNewPath: !!path.claimer.first,
+    flash: !!path.claimer.flash,
+  });
   const isFound = userCanonicalKeys.includes(path.canonicalKey);
   const isShown = [path.claimer, ...path.others].some((solution) =>
     solution.userId === userId
@@ -272,11 +279,15 @@ function PathItem(
       </span>
 
       <div className="grid min-w-0">
-        <Name
-          name={path.claimer.name}
-          isViewer={path.claimer.userId === userId}
-          className="text-4 font-medium"
-        />
+        {/* The claimer's solution and the stars it earned */}
+        <span className="flex items-center gap-2 min-w-0">
+          <Name
+            name={path.claimer.name}
+            isViewer={path.claimer.userId === userId}
+            className="text-4 font-medium"
+          />
+          <Stars kinds={stars} className="shrink-0 text-2" />
+        </span>
 
         {/* Who found it after, one a line, then how many more */}
         {(path.others.length > 0 || showsYou) && (
