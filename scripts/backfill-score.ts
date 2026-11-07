@@ -1,17 +1,17 @@
 /**
- * Awards the stars past solves earned, so the high score isn't empty on day
+ * Awards the score past solves earned, so the high score isn't empty on day
  * one. First goes by solve order: solution ids are ULIDs, so a puzzle's
  * solutions list oldest first. Run against production with:
- * deno run --tunnel -A ./scripts/backfill-stars.ts
+ * deno run --tunnel -A ./scripts/backfill-score.ts
  *
  * Safe to run again: awarding skips what a player has, so a re-run only adds
- * stars a live award missed.
+ * points a live award missed.
  */
 import { kv } from "#/db/kv.ts";
-import { awardStars } from "#/db/stars.ts";
+import { awardScore } from "#/db/score.ts";
 import type { Solution } from "#/db/types.ts";
 import { parsePuzzle } from "#/game/parser.ts";
-import { getPastStars } from "#/game/stars.ts";
+import { getPastScore } from "#/game/score.ts";
 
 const PUZZLES_DIR = "./static/puzzles";
 
@@ -43,14 +43,14 @@ for (const [slug, solves] of solvesBySlug) {
     continue;
   }
 
-  const starsByUser = getPastStars({ minMoves }, solves);
-  for (const [userId, kinds] of starsByUser) {
-    awarded += (await awardStars(userId, slug, kinds)).length;
+  const scoreByUser = getPastScore({ minMoves }, solves);
+  for (const [userId, kinds] of scoreByUser) {
+    awarded += (await awardScore(userId, slug, kinds)).length;
   }
-  console.log(`${slug}: ${solves.length} solves, ${starsByUser.size} players`);
+  console.log(`${slug}: ${solves.length} solves, ${scoreByUser.size} players`);
 }
 
-console.log(`Awarded ${awarded} stars.`);
+console.log(`Awarded ${awarded} points.`);
 if (unknown.length) {
   console.log(`No puzzle file, skipped: ${unknown.join(", ")}`);
 }

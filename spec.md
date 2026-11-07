@@ -2,7 +2,7 @@
 
 A stack of PRs, each based on the one before:
 
-1. `stars/rules`: star rules, storage and backfill
+1. `stars/rules`: score rules, storage and backfill
 2. `stars/display`: stars on the puzzle page, cards, replays and the solutions
    page
 3. `stars/celebration`: earning stars is the celebration's payoff
@@ -72,13 +72,16 @@ Decided so far (with Kasper, in chat):
   `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
   the one before and opened against it. Rebase the next onto main as each
   merges.
-- Layer 1 built: pure rules in `game/stars.ts` (`getSolveStars` for what a
-  solve qualifies for, `getNewStars` against what's earned, totals and rank,
-  and `getPastStars` for the backfill, first by solve order); KV in
-  `db/stars.ts`: earned kinds per user and puzzle, totals per user, and a
-  `star_ranking` index of `[count, first, perfect, userId]` read reversed,
-  all in one atomic commit with retries; awarded best effort in the solve
-  POST for new solves; `scripts/backfill-stars.ts` is safe to re-run.
+- Layer 1 built. Stars are the UI's word; code and KV say score, one point
+  per kind, so the display can change without touching storage. Pure rules
+  in `game/score.ts` (`getSolveScore` for the kinds a solve scores,
+  `getNewScore` against what's earned, totals and rank, and `getPastScore`
+  for the backfill, first by solve order); KV in `db/score.ts`:
+  `score_by_user_puzzle`, `score_totals_by_user`, and a `score_ranking` index
+  of `[total, first, perfect, userId]` read reversed, all in one atomic
+  commit with retries; awarded best effort in the solve POST for new
+  solves; `scripts/backfill-score.ts` is safe to re-run. Not to be confused
+  with `game/scoring.ts`, which rates puzzles.
 - Cards are server-rendered from the progress cookie (one byte of best moves
   per puzzle, `game/progress.ts`). Solve and perfect follow from it; first and
   Flash need extra bits, a layer 2 concern.
