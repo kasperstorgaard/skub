@@ -56,7 +56,7 @@ export function Stars({ kinds, className }: StarsProps) {
         className,
       )}
     >
-      {drawn.map((kind, i) => (
+      {drawn.map((kind) => (
         <svg
           key={kind}
           xmlns="http://www.w3.org/2000/svg"
@@ -67,15 +67,17 @@ export function Stars({ kinds, className }: StarsProps) {
           className="overflow-visible not-first:-mr-[0.3em]"
           stroke-linejoin="round"
         >
-          {/* The rightmost star has nothing behind it to cut into. */}
-          {i > 0 && (
-            <path
-              d={STAR}
-              fill="var(--star-knockout, var(--color-surface-1))"
-              stroke="var(--star-knockout, var(--color-surface-1))"
-              stroke-width={STROKE + KNOCKOUT}
-            />
-          )}
+          {
+            /* Every star carries the ring, the rightmost too: where the
+              background isn't quite --star-knockout, it shows, and so must
+              show on all of them alike. */
+          }
+          <path
+            d={STAR}
+            fill="var(--star-knockout, var(--color-surface-1))"
+            stroke="var(--star-knockout, var(--color-surface-1))"
+            stroke-width={STROKE + KNOCKOUT}
+          />
           <StarPath kind={kind} id={id} />
         </svg>
       ))}
