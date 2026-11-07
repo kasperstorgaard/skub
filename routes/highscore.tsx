@@ -135,14 +135,14 @@ export default define.page<typeof handler>(function HighscorePage(props) {
                     <span className="text-4 text-text-3 tabular-nums">
                       {index + 1}
                     </span>
-                    <span className="grid min-w-0">
+                    <div className="grid gap-1 min-w-0">
                       <Name
                         name={row.name}
                         isViewer={row.userId === userId}
                         className="text-4 font-medium"
                       />
                       <Breakdown userScore={row.userScore} />
-                    </span>
+                    </div>
                     <Points
                       userScore={row.userScore}
                       className="text-4 font-semibold"
@@ -260,18 +260,32 @@ function Name({ name, isViewer, className }: NameProps) {
 
 // Flash counts as solved here, no kind of its own.
 const BREAKDOWN = [
-  { kind: "solve", label: "solved" },
-  { kind: "perfect", label: "perfect" },
-  { kind: "first", label: "first" },
+  { kind: "solve", label: "Solved" },
+  { kind: "perfect", label: "Perfect" },
+  { kind: "first", label: "First" },
 ] as const;
 
-/** What a player's points are made of, in words: "10 solved · 4 perfect". */
+/**
+ * What a player's points are made of, each a number over its label like the
+ * home page's stats, a size down.
+ */
 function Breakdown({ userScore }: { userScore: UserScore }) {
   const counts = { ...userScore, solve: userScore.solve + userScore.flash };
-  const parts = BREAKDOWN.filter(({ kind }) => counts[kind] > 0)
-    .map(({ kind, label }) => `${counts[kind]} ${label}`);
 
-  return <span className="text-1 text-text-3">{parts.join(" · ")}</span>;
+  return (
+    <dl className="flex gap-fl-2 m-0">
+      {BREAKDOWN.filter(({ kind }) => counts[kind] > 0).map((
+        { kind, label },
+      ) => (
+        <div key={kind} className="flex flex-col">
+          <dd className="m-0 text-2 font-semibold leading-flat tabular-nums text-text-2">
+            {formatNumber(counts[kind])}
+          </dd>
+          <dt className="text-0 text-text-3">{label}</dt>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 type PointsProps = { userScore: UserScore; className?: string };
