@@ -14,9 +14,9 @@ import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 const MESSAGES = ["Nice solution", "Well done", "Well played"] as const;
 
 // Where a star starts its fly-in, in em from where it lands: five spots evenly
-// spaced on a 0.5em circle around 2 left, 1 up.
-const FLY_BASE = [-2, -1];
-const FLY_RADIUS = 0.5;
+// spaced on a 1em circle around 4 left, 2 up.
+const FLY_BASE = [-4, -2];
+const FLY_RADIUS = 1;
 const FLY_STARTS = [0, 1, 2, 3, 4].map((i) => {
   const radians = (i * 2 * Math.PI) / 5;
   return [
