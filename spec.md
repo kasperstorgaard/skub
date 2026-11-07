@@ -42,10 +42,11 @@ background; on cards, alone in the top right (no move count); on the
 solutions page, beside each path's claimer. The theme's puck colour
 (`--color-ui-2`).
 
-Stars stack with a 0.3em overlap, like an avatar stack, to save space. Each
-after the first cuts a gap out of the one behind in the background colour of
-where it sits; cards and the page differ, so that colour comes from the
-context (`--star-knockout`).
+Stars stack with a 0.3em overlap, like an avatar stack, to save space, the
+left one on top, so a star flying in from the left settles in behind the ones
+already there. Each cuts a gap out of the one to its right in the background
+colour of where it sits; cards and the page differ, so that colour comes from
+the context (`--star-knockout`).
 
 The Flash switch lives in the toolbar, not the badge, so the stars don't sit
 against its bolt.
