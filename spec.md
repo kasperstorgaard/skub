@@ -11,7 +11,8 @@ A stack of PRs, each based on the one before:
 
 ## Stars
 
-Four kinds, each its own colour:
+Four kinds, each shown as an icon (no new colours): check for solve, trophy
+for perfect, a path for first, the bolt for Flash.
 
 - **Solve**: any solve of the puzzle.
 - **Perfect**: a solve in the puzzle's minimum moves. Comes on top of the solve
@@ -25,9 +26,13 @@ Stars are per puzzle, for all time, and each kind is earned once: any puzzle
 counts, archive included, so at most solve, perfect, first and Flash on one
 puzzle.
 
-A player sees which stars a puzzle still has to give: empty slots by the score
-badge before solving, filled once earned. First can't be known in advance, so
-its slot reads as a maybe.
+A player sees which stars a puzzle still has to give: the icons float left of
+the score badge, no background, dimmed until earned. On cards they float left
+of the best-moves chip in the top right, in its colours (teal solved, yellow
+perfect). A perfect shows check and trophy both, for now.
+
+Open: the badge's Flash switch already shows a bolt; whether the earned Flash
+icon merges with it or sits with the others.
 
 ## High score
 
