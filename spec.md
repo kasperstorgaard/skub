@@ -20,11 +20,16 @@ Storage, or by hand to a file. Restore either into any database.
 - **What's kept per player:** their `user` entries (the record and their puzzle
   draft), every solution under all four of its index keys
   (`solutions_by_puzzle`, `solutions_by_puzzle_canonical`, `solutions_by_user`,
-  `solutions_by_user_puzzle`) and their `auth` link. Once the stars stack is
+  `solutions_by_user_puzzle`), the paths the solutions page lists
+  (`solution_groups_by_puzzle`) and their `auth` link. Once the stars stack is
   in, their score too (`solution_score_by_user_puzzle`, `user_score`). Index
   keys are read, not worked out, so the file is exactly what was stored.
 - **Each backup is a full copy of that set,** not a diff: small enough to redo
-  every hour, and any one file restores on its own.
+  every hour, and any one file restores on its own. Production's first: 1,241
+  players, 76,163 entries, 42 MB, in 76 s from a laptop.
+- **Not a snapshot:** prefixes are read moments apart, so a solve landing
+  mid-backup can be under some of its keys and not others. The next hour's
+  file has it whole.
 - **The file:** JSON Lines in `lib/kv-json.ts`'s format, keeping dates, big
   integers, bytes and KV's counters. The cron names it by the hour,
   `players/2026-11-08T11.jsonl`.
@@ -34,6 +39,8 @@ Storage, or by hand to a file. Restore either into any database.
 - **Restore:** `scripts/restore-kv.ts <file> --confirm` writes every entry over
   what's there, 100 to a commit, and leaves the rest alone (and, with the
   stars stack in, `scripts/reindex-highscore.ts` rebuilds the high score).
+  Into an empty database, puzzle stats start from zero. Tested: production's
+  backup restored onto preview, every entry back with the same value.
 - **Where:** `gs://skub-kv-backups` (project `skub-app`, `us-east4`, next to
   KV), written through Deploy's GCP cloud connection with
   `@google-cloud/storage`; no keys anywhere. The service account can create
@@ -58,9 +65,9 @@ it rebases onto main.
 
 ## Non-goals
 
-- Shared and derived data: `puzzle_stats`, `puzzle_solvers`, `flash_solve_count`,
-  path claims and solution groups, the `highscore` index. Rebuildable, or a
-  count that can be off without anyone losing anything.
+- Puzzle stats and other derived data: `puzzle_stats`, `puzzle_solvers`,
+  `flash_solve_count`, path claims, the `highscore` index. Counts no page
+  depends on once the stars stack is in, or rebuilt by its backfill.
 - A full dump of the database: the stars stack keeps its export for the
   migration's snapshot.
 - Incremental backups from a change log on every write (if an hour turns out

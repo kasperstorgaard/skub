@@ -105,6 +105,8 @@ export const rawKv = await Deno.openKv(Deno.env.get("SKUB_KV_URL"));
 /**
  * The app's KV: Deploy's for the timeline it runs on, a local file otherwise.
  * Scripts can point it at a hosted database over KV Connect with
- * `SKUB_KV_URL` (its `.../connect` URL) and `DENO_KV_ACCESS_TOKEN`.
+ * `SKUB_KV_URL` (its `.../connect` URL) and `DENO_KV_ACCESS_TOKEN`. Set them
+ * per command, never exported: they redirect everything in the process, the
+ * dev server and e2e included.
  */
 export const kv = instrument(rawKv);
