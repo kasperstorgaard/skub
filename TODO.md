@@ -58,6 +58,11 @@ PR finishes only part of an item, trim the item to what is left.
   were fit to a one-directional `too-easy` bias that the board/route tag split
   has since corrected.
 
+- **Pioneer stays within reach as players grow.** Today only the first to find a
+  path is its pioneer; with more players the paths get claimed early and the
+  star stops being earnable. Make it the first X on a path, X growing with the
+  player count.
+
 ## Hosting
 
 - **Skub keeps running after Deno Deploy shuts down.** Deno joined Cloudflare
