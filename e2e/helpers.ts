@@ -15,6 +15,14 @@ export type SeedUserInput =
   & Partial<Omit<User, "id" | "name">>;
 
 /**
+ * A test name no other run uses: runs share the preview database, and leftover
+ * players under the same name would show up twice.
+ */
+export function uniqueName(name: string) {
+  return `${name}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+/**
  * Seeds a user via the e2e users endpoint.
  * Returns the created User (with server-generated id).
  */

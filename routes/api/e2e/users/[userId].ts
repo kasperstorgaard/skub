@@ -1,7 +1,7 @@
 import { define } from "#/core.ts";
 import { kv } from "#/db/kv.ts";
 import { getHighscoreKey, getUserScore } from "#/db/score.ts";
-import type { Solution } from "#/db/types.ts";
+import type { CanonicalGroup, Solution } from "#/db/types.ts";
 import { getUser } from "#/db/user.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { isAuthorized } from "#/routes/api/e2e/_auth.ts";
@@ -70,12 +70,25 @@ export const handler = define.handlers({
       ]);
       // A Flash solve never joined a group, so the group is someone else's.
       if (solution.flash) continue;
-      await kv.delete([
+      // Other runs' players share the group: count this one out, and delete
+      // it only with its last solve.
+      const groupKey = [
         "solution_groups_by_puzzle",
         solution.puzzleSlug,
         solution.moves.length,
         canonicalKey,
-      ]);
+      ];
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        const group = await kv.get<CanonicalGroup>(groupKey);
+        if (!group.value) break;
+        const atomic = kv.atomic().check(group);
+        if (group.value.count <= 1) atomic.delete(groupKey);
+        else {atomic.set(groupKey, {
+            ...group.value,
+            count: group.value.count - 1,
+          });}
+        if ((await atomic.commit()).ok) break;
+      }
     }
 
     return new Response("OK", { status: 200 });

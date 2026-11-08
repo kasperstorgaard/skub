@@ -1,7 +1,7 @@
 // deno-lint-ignore skub-imports/use-hash-alias
 import { HomePage } from "../routes/_e2e/home-page.ts";
 import { expect, setup } from "./base.ts";
-import { solvePuzzle } from "./helpers.ts";
+import { solvePuzzle, uniqueName } from "./helpers.ts";
 
 Deno.test("new user flow — a new user completes the tutorial", async () => {
   const { page, teardown } = await setup();
@@ -51,8 +51,9 @@ Deno.test("without JavaScript — a new user solves a puzzle and submits their n
     await puzzlePage.solveByClicking(moves);
 
     await expect(puzzlePage.solutionDialog.heading).toBeVisible();
-    const solutions = await puzzlePage.solutionDialog.submitName("e2enora");
-    await expect(solutions.solveByName("e2enora")).toBeVisible();
+    const name = uniqueName("e2enora");
+    const solutions = await puzzlePage.solutionDialog.submitName(name);
+    await expect(solutions.ownSolve(name)).toBeVisible();
   } finally {
     await teardown();
   }

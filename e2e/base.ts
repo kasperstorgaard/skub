@@ -7,6 +7,7 @@ import {
   seedSolution,
   seedUser,
   type SeedUserInput,
+  uniqueName,
 } from "./helpers.ts";
 import type { Solution, User } from "#/db/types.ts";
 
@@ -22,7 +23,7 @@ type AddSolutionInput = Omit<Solution, "id" | "name" | "userId"> & {
 
 export type Fixtures = {
   page: Page;
-  asUser: (input: SeedUserInput) => Promise<User>;
+  asUser: (input: SeedUserInput) => Promise<User & { name: string }>;
   addSolution: (input: AddSolutionInput) => Promise<Solution>;
   teardown: () => Promise<void>;
 };
@@ -42,10 +43,11 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   return {
     page,
     async asUser(input: SeedUserInput) {
-      const user = await seedUser(input);
+      const name = uniqueName(input.name);
+      const user = await seedUser({ ...input, name });
       await addUserCookie(context, user.id);
       currentUser = user;
-      return user;
+      return { ...user, name };
     },
     async addSolution(input: AddSolutionInput) {
       if (!currentUser?.name) {

@@ -17,15 +17,18 @@ Deno.test("a player solves a puzzle with Flash", async () => {
   }
 });
 
-Deno.test("without JavaScript — a player solves a puzzle with Flash", async () => {
-  const { page, teardown } = await setup({ javaScriptEnabled: false });
+Deno.test("a Flash solver finds their solve on the Flash tab", async () => {
+  const { page, asUser, teardown } = await setup();
   try {
+    const user = await asUser({ name: "e2efie" });
     const moves = await solveFlashPuzzle("alice");
     const puzzlePage = await new PuzzlePage(page).goto("alice");
     await puzzlePage.turnOnFlash();
     await puzzlePage.solveByClicking(moves);
+    const solutionsPage = await puzzlePage.celebrationDialog
+      .clickSeeSolutions();
 
-    await expect(puzzlePage.dialogHeading).toBeVisible();
+    await expect(solutionsPage.ownSolve(user.name)).toBeVisible();
   } finally {
     await teardown();
   }

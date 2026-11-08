@@ -120,12 +120,29 @@ PR finishes only part of an item, trim the item to what is left.
   Specs with budgets and order exist on the `perf/*` branches; the first one
   holds the measured baseline.
 
+- **The entry CSS fits in 15 KB again.** The stars stack pushed it to 15.0 KB
+  gzipped, and the budget in `scripts/check-css.ts` went up to 16 to let the
+  stack land. Trim what the rewrites left behind (unused utilities, one-off
+  arbitrary values) and put the budget back to 15.
+
 - **The next page should be ready before you tap it.** Prefetch likely
   destinations on hover or touch-down so the puzzle appears the moment the card
   is pressed. Comes after the server work above, so a prefetched page is cheap
   and the server is measured before prefetch hides it.
 
 ## UI
+
+- **The hint dialog reads as tight as the rest.** Its wording grew per state and
+  drifted: "You've gone a bit off track" grades the play, "(optimal is N)" reads
+  like a score, full stops come and go, and "Found it" isn't bold like the other
+  headings. One voice, facts only, as short as the Flash dialog.
+
+- **The cookie banner is just nice.** It's quirky today: a bitten cookie peeking
+  out of the corner, "One quick thing", and a line break before Learn more. Make
+  it calm and plain like the rest of the main look. The cookie policy page reads
+  the same way ("That's it. (and it's opt in)"), and it says Skub uses a single
+  cookie, though the game sets its own functional ones too (player, Flash,
+  hints).
 
 - **Retro themes follow the new layout.** The main look moved on: play controls
   are a toolbar beside the board, the score badge replaced the difficulty badge
@@ -149,16 +166,32 @@ PR finishes only part of an item, trim the item to what is left.
   a slow trickle of particles. Subtle, never distracting, and off under reduced
   motion.
 
+- **A solve saves as the variant it was played.** Turning Flash on and going
+  back in the browser can bring back the regular board from the back/forward
+  cache, with the Flash cookie set. The solve POST reads the variant from the
+  cookie, puts the Flash start in front of the regular moves, and rejects the
+  solve ("Couldn't save your solution"), or now and then saves it as Flash. Two
+  tabs, one with Flash on, do the same. The page should send the variant it
+  played (JSON field, hidden form input), and the server should build and check
+  the moves from that, using the puzzle's own Flash start.
+
+- **Reloading a solved board shows the celebration.** Any GET with a solved
+  board redirects to `?dialog=solution`, the no-JS name form, since the server
+  can't tell JS from no JS. So a named player who reloads, misses the
+  back/forward cache, or opens a shared solved URL gets "Solved!" with a name
+  field and Post instead of the celebration. With JS and a saved name, the name
+  dialog should step aside (drop `dialog=solution` on replace, `js:hidden` until
+  then) and let auto-post and the celebration run; without JS it stays as is.
+
 - **Undo and redo are easy to hit with a mouse.** Check whether the desktop
   toolbar's buttons, sized like the editor's, are too small for quick undo/redo,
   and size them up if so.
 
-- **A celebration that feels like a win.** Revamp the solve dialog: the wording
-  (factual, never grading the play) and the celebration moment itself. The
-  payoff is the stars you just earned animating in (see the stars item under
-  Play). A solve longer than the shortest gets a soft line that also teaches the
-  score badge, e.g. "If you're curious, the shortest possible path is 4 moves",
-  so "6/4" reads right from then on.
+- **A celebration that feels like a win.** The stars now fly in as the payoff;
+  the wording is what's left (factual, never grading the play). A solve longer
+  than the shortest gets a soft line that also teaches the score badge, e.g. "If
+  you're curious, the shortest possible path is 4 moves", so "6/4" reads right
+  from then on.
 
 - **The score badge reads at a glance.** It shows moves played over your best
   (`3/9`). Figure out whether it reads better flipped, your best first and the
@@ -174,6 +207,13 @@ PR finishes only part of an item, trim the item to what is left.
   higher quality than today's, so the hand-off doesn't show a jump in detail.
 
 ## Play
+
+- **Flash makes a puzzle noticeably easier.** Flash plays a fixed share of the
+  opening (`getFlashStartLength`: 1 move from 5, 2 from 8, 3 from 10), and on
+  many puzzles that barely helps: the hard part is often later, so a few moves
+  off the front changes little. Check how much easier Flash boards actually are,
+  for example by scoring the board from the Flash start, and play more of the
+  solution where it doesn't help.
 
 - **Every player can rate a puzzle.** A Rate action opens a dialog for
   difficulty, fun and a line of feedback, so ratings come from players, not only
@@ -207,23 +247,20 @@ PR finishes only part of an item, trim the item to what is left.
   them by path, worked out from the solves; they still have no stats, so the
   celebration can't compare a Flash solve against other Flash solves.
 
+- **The Flash tab lists every Flash solve.** It groups the puzzle's solutions
+  read oldest first, up to 1,000, so once a puzzle has more, new Flash solves
+  never show. Flash solves need an index of their own, or a group like full
+  solves have.
+
 - **A player's first stars come with an explainer.** The first celebration a
   player sees says what stars are and how to earn them: one for a solution, two
-  for perfect or first, three for both.
+  for perfect or pioneer, three for both, and that a puzzle's stars are your
+  best solution's, not a sum.
 
-- **Players play without being asked for a name.** Today a new player's first
-  solve asks for a name before anything else. Instead, every solve is saved and
-  counts from the start, anonymous or not, and the name prompt comes as the
-  natural next step after the first star: you just earned a star, pick a name to
-  put it on the board. Opening a puzzle's solutions or the high score page
-  offers the same prompt to players who skipped it.
-
-  Solves are keyed by user id; the name is a copy saved on each one, which
-  renaming in the profile doesn't touch today. So: solves start anonymous, and
-  picking a name writes it back to that user's solves (listed by
-  `solutions_by_user`: all four keys per solve, plus a leaderboard group's
-  `firstSolution` where it's theirs), soon enough that their next look at a
-  board shows it. Keeps leaderboard reads free of user lookups.
+- **Picking a name feels like giving nothing up.** The first solve asks for a
+  name, and that's fine: it isn't the barrier. The moment should read as nothing
+  to lose, no account, no email, nothing tied to it but your solutions, so
+  players pick one rather than reach for "Not now".
 
 - **A player's name stays the name others saw.** Once picked, a name is
   permanent: the profile shows it but can't change it. Players have seen names

@@ -11,24 +11,4 @@ export class SolutionPage {
     );
     return this;
   }
-
-  get heading() {
-    return this.page.getByRole("heading", { level: 1 });
-  }
-
-  get solvedByText() {
-    return this.page.getByText("solved by");
-  }
-
-  get puck() {
-    return this.page.locator("a[id=p_1]");
-  }
-
-  get blockers() {
-    return this.page.locator("a[id^=b_]");
-  }
-
-  get keyframes() {
-    return this.page.locator("div[data-e2e=replay-keyframes] style");
-  }
 }

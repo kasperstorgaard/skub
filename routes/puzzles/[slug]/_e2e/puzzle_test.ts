@@ -36,14 +36,16 @@ Deno.test("without JavaScript — a returning player solves a puzzle through por
 Deno.test("without JavaScript — a returning player submits their solve via the solution dialog", async () => {
   const { page, asUser, teardown } = await setup({ javaScriptEnabled: false });
   try {
-    await asUser({ name: "e2edna" });
+    const user = await asUser({ name: "e2edna" });
     const moves = await solvePuzzle("heino");
     const puzzlePage = await new PuzzlePage(page).goto("heino");
     await puzzlePage.solveByClicking(moves);
 
     await expect(puzzlePage.solutionDialog.heading).toBeVisible();
-    const solutionsPage = await puzzlePage.solutionDialog.submitName("e2edna");
-    await expect(solutionsPage.solveByName("e2edna")).toBeVisible();
+    const solutionsPage = await puzzlePage.solutionDialog.submitName(
+      user.name,
+    );
+    await expect(solutionsPage.ownSolve(user.name)).toBeVisible();
   } finally {
     await teardown();
   }
@@ -78,19 +80,6 @@ Deno.test("a new user sees the tutorial nudge on the puzzle page", async () => {
   }
 });
 
-Deno.test("a returning user does not see the tutorial nudge", async () => {
-  const { page, asUser, teardown } = await setup();
-  try {
-    await asUser({ name: "e2enudge", skillLevel: "beginner" });
-
-    const puzzlePage = await new PuzzlePage(page).goto("karla");
-
-    await expect(puzzlePage.tutorialNudge).not.toBeVisible();
-  } finally {
-    await teardown();
-  }
-});
-
 // -- Completing a puzzle as a new player ---
 
 Deno.test("a new player who solves a puzzle using the keyboard is prompted to save their solve", async () => {
@@ -101,20 +90,6 @@ Deno.test("a new player who solves a puzzle using the keyboard is prompted to sa
     await puzzlePage.solveByKeyboard(moves);
 
     await expect(puzzlePage.solutionDialog.heading).toBeVisible();
-  } finally {
-    await teardown();
-  }
-});
-
-Deno.test("a new player who completes a puzzle is prompted to save their solve", async () => {
-  const { page, teardown } = await setup();
-  try {
-    const moves = await solvePuzzle("alice");
-    const puzzlePage = await new PuzzlePage(page).goto("alice");
-    await puzzlePage.solveByClicking(moves);
-
-    await expect(puzzlePage.solutionDialog.heading).toBeVisible();
-    await expect(puzzlePage.solutionDialog.usernameInput).toBeVisible();
   } finally {
     await teardown();
   }

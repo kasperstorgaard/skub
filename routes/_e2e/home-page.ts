@@ -18,16 +18,8 @@ export class HomePage {
     return this.page.getByRole("heading", { name: /Skub/i });
   }
 
-  get profileLink() {
-    return this.page.getByRole("link", { name: /profile/i });
-  }
-
   get dailyPuzzleLink() {
     return this.page.getByRole("link").filter({ hasText: /daily puzzle/i });
-  }
-
-  get randomPuzzleLink() {
-    return this.page.getByRole("link").filter({ hasText: /random puzzle/i });
   }
 
   get starterPuzzleLink() {
