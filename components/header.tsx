@@ -28,7 +28,11 @@ export function Header({ back, hideProfile, hideHighscore }: Props) {
           <Icon icon={ArrowLeft} />
         </a>
       )}
-      <div className="flex items-center ml-auto">
+      {
+        /* Shifted out by the tap box's padding, so the icon lines up with the
+        edge; a translate, so the layout and the back arrow stay put */
+      }
+      <div className="flex items-center ml-auto translate-x-[calc((44px_-_1em)/2)]">
         {/* Quiet, like profile: for when you go looking for it */}
         {!hideHighscore && (
           <a
