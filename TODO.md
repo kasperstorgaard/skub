@@ -108,6 +108,14 @@ PR finishes only part of an item, trim the item to what is left.
   what Cloudflare's self-hosting path centres on. D1 stays the fallback if the
   redesign proves too big.
 
+- **E2E runs start from clean data.** Today every preview deployment shares
+  one KV database (`{app-id}-preview`), so runs that overlap across a stack,
+  and runs cancelled before teardown, leave data the next run sees: a fixed
+  test name on a shared puzzle (`e2ellie` on karla) can show up twice, or
+  drop out of the solutions page's first six. On the next provider, each run
+  gets a clean database, either fresh from the start or cleaned by a script
+  before it runs.
+
 ## Performance
 
 - **The site should feel instant.** Pages are 6 KB of HTML, yet first paint is
