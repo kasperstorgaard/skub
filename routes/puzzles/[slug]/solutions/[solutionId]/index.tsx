@@ -50,7 +50,10 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
   const puzzle = useSignal(props.data.puzzle);
   const href = useSignal(props.url.href);
   const mode = useSignal<"replay">("replay");
-  const backHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
+  // Back to the tab the solution is listed on.
+  const backHref = `/puzzles/${props.data.puzzle.slug}/solutions${
+    props.data.solution.flash ? "?tab=flash" : ""
+  }`;
 
   return (
     <>

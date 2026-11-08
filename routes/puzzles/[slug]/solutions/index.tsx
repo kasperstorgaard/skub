@@ -88,9 +88,12 @@ export const handler = define.handlers<Data>({
     // Flash paths are told apart, and counted, from the Flash start.
     const skip = tab === "flash" ? puzzle.flashStart?.length ?? 0 : 0;
 
-    const allUserSolutions = await listUserPuzzleSolutions(userId, slug, {
-      limit: 100,
-    });
+    // Independent reads, at once: KV is far from the isolate.
+    const [allUserSolutions, groups, solutions] = await Promise.all([
+      listUserPuzzleSolutions(userId, slug, { limit: 100 }),
+      tab === "solutions" ? listCanonicalGroups(slug, { limit: PATHS }) : [],
+      tab === "flash" ? listPuzzleSolutions(slug, { limit: 1000 }) : [],
+    ]);
     const userSolutions = allUserSolutions.filter((solution) =>
       tab === "flash" ? solution.flash : !solution.flash
     );
@@ -107,20 +110,22 @@ export const handler = define.handlers<Data>({
     let extraPath: Path | null = null;
 
     if (tab === "solutions") {
-      const groups = await listCanonicalGroups(slug, { limit: PATHS });
-      paths = await Promise.all(
-        groups.map((group) => getGroupPath(slug, group)),
-      );
-
       const latest = userSolutions.at(-1);
-      if (latest && !paths.some((path) => path.canonicalKey === latestKey)) {
+      const isLatestShown = groups.some((group) =>
+        group.canonicalKey === latestKey
+      );
+      const getExtraPath = async () => {
+        if (!latest || isLatestShown) return null;
         const group = await getCanonicalGroup(latest);
-        if (group) extraPath = await getGroupPath(slug, group);
-      }
+        return group && await getGroupPath(slug, group);
+      };
+      [paths, extraPath] = await Promise.all([
+        Promise.all(groups.map((group) => getGroupPath(slug, group))),
+        getExtraPath(),
+      ]);
     } else {
       // Flash solves aren't in the aggregates: grouped from the solves.
-      const solutions = await listPuzzleSolutions(slug, { limit: 1000 });
-      const groups = getPathGroups(
+      const flashGroups = getPathGroups(
         solutions.filter((solution) => solution.flash),
         { skip },
       ).map((group) =>
@@ -130,10 +135,11 @@ export const handler = define.handlers<Data>({
         })
       );
 
-      paths = groups.slice(0, PATHS);
+      paths = flashGroups.slice(0, PATHS);
       if (latestKey && !paths.some((path) => path.canonicalKey === latestKey)) {
-        extraPath = groups.find((path) => path.canonicalKey === latestKey) ??
-          null;
+        extraPath = flashGroups.find((path) =>
+          path.canonicalKey === latestKey
+        ) ?? null;
       }
     }
 
