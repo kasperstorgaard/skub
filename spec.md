@@ -66,9 +66,10 @@ only the stars on the week's dailies (Monday to Sunday), so everyone races on
 the same boards; archive play moves only all time. It is worked out from those
 puzzles' stored solutions when shown, not stored.
 
-Links to the high score page: the home footer's star split (next to the streak),
-a solution's replay page, the solutions page and the archive. Not the puzzle
-page: while playing, the board is the point.
+Links to the high score page: a quiet trophy beside the profile icon in every
+page's header, for when you go looking for it, and buttons on a solution's
+replay page, the solutions page and the profile's stats (once you have
+points). The stats' numbers aren't links.
 
 ## Solutions page
 
@@ -179,9 +180,10 @@ Decided so far (with Kasper, in chat):
 - Layer 5 built (`solutions/revamp`, on `badge/your-best`).
 - Decided in layer 4: ties past points, first and perfect go by user id, and
   that's fine. A Flash solve is worth a solve's 50: missing perfect and first
-  is penalty enough. The star is called First in the UI. Home and profile show
-  streak, points, then solved, perfect and first, each a number over its
-  label and no stars (Flash counts as solved), and a High score button in home's panel once you have points.
+  is penalty enough. The star is called Pioneer in the UI: several can open a
+  puzzle, one per path. Home and profile show streak, points, then solved,
+  perfect and pioneer, each a number over its label and no stars (Flash counts
+  as solved).
   Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (the migration) until Kasper has
   cleaned up and tested the stack.
