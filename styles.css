@@ -680,7 +680,7 @@
      fading in. Its start and delay come as --fly-x / --fly-y / --fly-delay. */
   @media (prefers-reduced-motion: no-preference) {
     .star-fly {
-      animation: star-fly 600ms ease-out var(--fly-delay, 0ms) both;
+      animation: star-fly 1200ms ease-out var(--fly-delay, 0ms) both;
     }
   }
 
@@ -692,11 +692,11 @@
 
   @media (prefers-reduced-motion: no-preference) {
     .star-upgrade .star-unflash {
-      animation: star-unflash 900ms ease-in-out both;
+      animation: star-unflash 1400ms ease-in-out both;
     }
 
     .star-upgrade {
-      animation: star-upgrade 900ms ease-in-out both;
+      animation: star-upgrade 1400ms ease-in-out both;
     }
   }
 

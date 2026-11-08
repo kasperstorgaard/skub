@@ -12,8 +12,8 @@ import { Dialog } from "#/islands/dialog.tsx";
 import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 
 // Where a star starts its fly-in, in em from where it lands: five spots evenly
-// spaced on a 1em circle around 4 left, 2 up.
-const FLY_BASE = [-4, -2];
+// spaced on a 1em circle around 2 right, 3 up, outside the dialog.
+const FLY_BASE = [2, -3];
 const FLY_RADIUS = 1;
 const FLY_STARTS = [0, 1, 2, 3, 4].map((i) => {
   const radians = (i * 2 * Math.PI) / 5;
@@ -104,7 +104,8 @@ export function CelebrationDialog(
   );
 
   return (
-    <Dialog open={isOpen} className="w-full">
+    <Dialog open={isOpen} className="w-full overflow-visible">
+      {/* Overflow visible: the stars fly in from outside the dialog */}
       <div className="flex flex-col gap-fl-2">
         {/* The payoff, beside the headline so nothing shifts when it lands */}
         <div className="flex items-center justify-between gap-3">
@@ -114,7 +115,7 @@ export function CelebrationDialog(
 
           <Stars
             kinds={shown}
-            className="shrink-0 text-fl-2"
+            className="shrink-0 text-[calc(var(--text-fl-2)*1.25)]"
             getStarProps={(kind) => {
               if (isUpgrade && kind === "solve") {
                 return { className: "star-upgrade", fromFlash: true };
@@ -127,7 +128,7 @@ export function CelebrationDialog(
                 style: {
                   "--fly-x": `${x.toFixed(2)}em`,
                   "--fly-y": `${y.toFixed(2)}em`,
-                  "--fly-delay": `${i * 150}ms`,
+                  "--fly-delay": `${i * 350}ms`,
                 },
               };
             }}
