@@ -199,7 +199,8 @@ export const handler = define.handlers<PageData>({
         });
         const added = await awardScore(ctx.state.userId, slug, kinds);
         span.setAttribute("score.earned", added.length);
-        return added;
+        // The whole solve's kinds: the cookie replaces its stars with them.
+        return added.length > 0 ? kinds : [];
       }).catch((err) => {
         console.error("Failed to award score:", (err as Error).message);
         return [];
