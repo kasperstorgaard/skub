@@ -105,7 +105,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
   return (
     <>
       <Main className="max-lg:row-span-full justify-stretch content-start">
-        <Header back={{ href: "/", label: "Back to home" }} />
+        <Header back={{ href: "/", label: "Back to home" }} hideHighscore />
 
         <div className="flex items-center justify-between flex-wrap gap-fl-2">
           <h1 className="text-brand text-6 leading-flat">High score</h1>

@@ -1,14 +1,15 @@
 import clsx from "clsx/lite";
 
-import { ArrowLeft, Icon, UserCircle } from "#/components/icons.tsx";
+import { ArrowLeft, Icon, Trophy, UserCircle } from "#/components/icons.tsx";
 
 type Props = {
   /** label: where back goes, for screen readers and on hover */
   back?: { href: string; label?: string };
   hideProfile?: boolean;
+  hideHighscore?: boolean;
 };
 
-export function Header({ back, hideProfile }: Props) {
+export function Header({ back, hideProfile, hideHighscore }: Props) {
   return (
     <header
       f-client-nav
@@ -28,6 +29,20 @@ export function Header({ back, hideProfile }: Props) {
         </a>
       )}
       <div className="flex items-center ml-auto">
+        {/* Quiet, like profile: for when you go looking for it */}
+        {!hideHighscore && (
+          <a
+            href="/highscore"
+            className={clsx(
+              "inline-flex items-center justify-center min-w-[44px] min-h-[44px]",
+              "no-underline text-inherit text-5 hover:text-link",
+            )}
+            aria-label="High score"
+            title="High score"
+          >
+            <Icon icon={Trophy} />
+          </a>
+        )}
         {!hideProfile && (
           <a
             href="/profile"

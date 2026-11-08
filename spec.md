@@ -65,9 +65,10 @@ puzzles' stored solutions when shown, not stored.
 
 The puzzle page links to its solutions once the player has a star on it.
 
-Links to the high score page, as buttons: home's panel and the profile's stats
-once you have points, the puzzle page's sidebar and footer, and the solutions
-page. The stats' numbers aren't links. Not the archive.
+Links to the high score page: a quiet trophy beside the profile icon in every
+page's header, for when you go looking for it, and buttons in the puzzle page's
+sidebar and footer, the solutions page and the profile's stats (once you have
+points). The stats' numbers aren't links.
 
 ## Solutions page
 
@@ -173,7 +174,7 @@ Decided so far (with Kasper, in chat):
   is penalty enough. The star is called Pioneer in the UI: several can open a
   puzzle, one per path. Home and profile show
   streak, points and the stars (Solved, Perfect, Pioneer; Flash counts as
-  solved), and a High score button in home's panel once you have points.
+  solved), and a trophy in the header links to the high score.
   Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (backfill, reindex) until Kasper has
   cleaned up and tested the stack.

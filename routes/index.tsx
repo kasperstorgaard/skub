@@ -2,12 +2,7 @@ import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import {
-  ArrowRight,
-  ChalkboardTeacher,
-  Icon,
-  Trophy,
-} from "#/components/icons.tsx";
+import { ArrowRight, ChalkboardTeacher, Icon } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
@@ -18,7 +13,7 @@ import {
   getOnboardingLabel,
   pickRecommendedPuzzle,
 } from "#/game/recommendation.ts";
-import { getProgressScore, getTotalScore } from "#/game/score.ts";
+import { getProgressScore } from "#/game/score.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -169,12 +164,6 @@ export default define.page<typeof handler>(function Home(ctx) {
               userScore={userScore}
               className="lg:w-full"
             />
-
-            {getTotalScore(userScore) > 0 && (
-              <a href="/highscore" className="btn">
-                <Icon icon={Trophy} /> High score
-              </a>
-            )}
           </div>
         )}
       </Panel>
