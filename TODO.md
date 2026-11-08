@@ -132,6 +132,13 @@ PR finishes only part of an item, trim the item to what is left.
   like a score, full stops come and go, and "Found it" isn't bold like the other
   headings. One voice, facts only, as short as the Flash dialog.
 
+- **The cookie banner is just nice.** It's quirky today: a bitten cookie peeking
+  out of the corner, "One quick thing", and a line break before Learn more. Make
+  it calm and plain like the rest of the main look. The cookie policy page reads
+  the same way ("That's it. (and it's opt in)"), and it says Skub uses a single
+  cookie, though the game sets its own functional ones too (player, Flash,
+  hints).
+
 - **Retro themes follow the new layout.** The main look moved on: play controls
   are a toolbar beside the board, the score badge replaced the difficulty badge
   and move counter, the sidebar has a footer, and cards lost their difficulty
@@ -237,18 +244,10 @@ PR finishes only part of an item, trim the item to what is left.
   for perfect or pioneer, three for both, and that a puzzle's stars are your
   best solution's, not a sum.
 
-- **Players play without being asked for a name.** Today a new player's first
-  solve asks for a name before anything else. Instead, every solve is saved and
-  counts from the start, anonymous or not, and the name prompt comes as the
-  natural next step after the first star: you just earned a star, pick a name to
-  put it on the board. Opening a puzzle's solutions or the high score page
-  offers the same prompt to players who skipped it.
-
-  Solves are keyed by user id; the name is a copy saved on each one. So: solves
-  start anonymous, and picking a name writes it back to that user's solves
-  (listed by `solutions_by_user`: all four keys per solve, plus a leaderboard
-  group's `firstSolution` where it's theirs), soon enough that their next look
-  at a board shows it. Keeps leaderboard reads free of user lookups.
+- **Picking a name feels like giving nothing up.** The first solve asks for a
+  name, and that's fine: it isn't the barrier. The moment should read as nothing
+  to lose, no account, no email, nothing tied to it but your solutions, so
+  players pick one rather than reach for "Not now".
 
 - **A player's name stays the name others saw.** Once picked, a name is
   permanent: the profile shows it but can't change it. Players have seen names
