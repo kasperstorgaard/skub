@@ -48,6 +48,20 @@ Deno.test("currentStreak — gap in the middle breaks the streak", () => {
   );
 });
 
+Deno.test("currentStreak — a future puzzle doesn't break the streak", () => {
+  const entries = [
+    { ...entry("d"), isFuture: true },
+    entry("c"),
+    entry("b"),
+  ];
+  const solutions = [solution("c", 3), solution("b", 3)];
+
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions)).currentStreak,
+    2,
+  );
+});
+
 Deno.test("currentStreak — no solves returns 0", () => {
   const entries = [entry("b"), entry("a")];
 

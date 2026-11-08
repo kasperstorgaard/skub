@@ -14,14 +14,20 @@ export type UserStats = {
   optimalSolves: number;
 };
 
+type StatsEntry = Pick<PuzzleManifestEntry, "slug" | "minMoves"> & {
+  isFuture?: boolean;
+};
+
 /**
  * Pure computation: derives streak and solve stats from entries and progress.
- * Entries must be newest-first.
+ * Entries must be newest-first. Future ones (dev lists the whole schedule)
+ * aren't playable yet, so they don't count.
  */
 export function computeUserStats(
-  entries: Pick<PuzzleManifestEntry, "slug" | "minMoves">[],
+  allEntries: StatsEntry[],
   progress: Progress,
 ): UserStats {
+  const entries = allEntries.filter((entry) => !entry.isFuture);
   const solvedSlugs = new Set(Object.keys(progress));
 
   // totalSolves: unique puzzle slugs solved
