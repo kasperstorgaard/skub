@@ -23,7 +23,7 @@ export class PuzzlePage {
   }
 
   // In the controls panel, not the celebration dialog
-  get seeSolvesLink() {
+  get seeSolutionsLink() {
     return this.page.getByRole("complementary")
       .getByRole("link", { name: /See solutions/i });
   }
@@ -49,8 +49,8 @@ export class PuzzlePage {
     return {
       heading: dialog.getByRole("heading"),
       body: dialog.locator("p"),
-      seeSolvesLink: dialog.getByRole("link", { name: /See solutions/i }),
-      clickSeeSolves: async () => {
+      seeSolutionsLink: dialog.getByRole("link", { name: /See solutions/i }),
+      clickSeeSolutions: async () => {
         await dialog.getByRole("link", { name: /See solutions/i }).click();
         return new SolutionsPage(page);
       },

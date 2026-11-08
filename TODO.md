@@ -146,8 +146,8 @@ PR finishes only part of an item, trim the item to what is left.
   (factual, never grading the play) and the celebration moment itself. The
   payoff is the stars you just earned animating in (see the stars item under
   Play). A solve longer than the shortest gets a soft line that also teaches the
-  score badge, e.g. "If you're curious, the shortest possible solution is 4
-  moves", so "6/4" reads right from then on.
+  score badge, e.g. "If you're curious, the shortest possible path is 4 moves",
+  so "6/4" reads right from then on.
 
 - **Smoother page changes.** View transitions between pages, opt-in per
   navigation. Needs the Fresh 2.3 upgrade first. Going into a board page zones
@@ -172,9 +172,9 @@ PR finishes only part of an item, trim the item to what is left.
 - **The spot under the board always offers the next step.** One lead-in line and
   one action, picked by state in a fixed order, with one wording per state: new
   players get the tutorial, stuck players get Flash, a replay of a solved puzzle
-  offers Rate, a fresh solve offers See solves. The sidebar becomes footer and
-  navigation only. The editor already works this way ("Happy with it? Send it
-  in").
+  offers Rate, a fresh solve offers See solutions. The sidebar becomes footer
+  and navigation only. The editor already works this way ("Happy with it? Send
+  it in").
 
 - **Builders send a puzzle in once they've solved it themselves.** The preview
   page offers "Send it in" after the builder solves their own puzzle there, so
@@ -203,7 +203,7 @@ PR finishes only part of an item, trim the item to what is left.
   within reach; the best play is the reward. This fits the badge, which already
   hides the shortest count until you've solved the puzzle. Separate solves earn
   stars too, so players without a perfect have a route to the unlock. Open: how
-  many stars unlock it, 1 or 3? Simpler cousin, also open: should See solves
+  many stars unlock it, 1 or 3? Simpler cousin, also open: should See solutions
   stay closed until you've solved the puzzle at all? Puzzle cards show your
   result where the difficulty tag used to sit (bottom right): your best score,
   and your stars once they exist. Earning stars is the celebration's payoff:

@@ -214,7 +214,7 @@ export const handler = define.handlers<PageData>({
       return Response.json(data);
     }
 
-    // Flash solves are off the leaderboard, so the solves page would only
+    // Flash solves are off the leaderboard, so the solutions page would only
     // show longer, unrelated solves: back to the solved board instead. The
     // dialog param stops the GET from detecting the solve again.
     if (isFlash) {
