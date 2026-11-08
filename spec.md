@@ -82,7 +82,8 @@ solves start part way in, so they're shorter and get a list of their own.
 
 Each tab lists paths, shortest first. A path shows, podium style, the player
 who claimed it (found it first) with its move count, and under them the next
-five players who found it, then how many more. Flash paths are counted from
+five players who found it, each with the stars their solution earned (one
+less than the claimer's, Pioneer), then how many more. Flash paths are counted from
 the Flash start. A Flash solve lands on the Flash tab.
 
 Every path has a Watch button. The way in is the gate: the puzzle page links
@@ -167,10 +168,10 @@ Decided so far (with Kasper, in chat):
   footer's Stars stat (total and split, after the streak) links there, as do
   "High score" buttons in the puzzle page's panel (its sidebar on desktop,
   its footer on mobile), the solutions page's panel and the archive's.
-- High score since: the top three as a podium (bigger, with what their points
-  are made of: solved, perfect, first, on one line under the name,
-  each number then its label), faint lines between, the
-  rest a plain numbered list; a pill switch on the right picks this week
+- High score since: laid out as the solutions list, every row alike: the
+  rank, the name over what the points are made of (solved, perfect, pioneer,
+  each number then its label), the points on the name's line, faint lines
+  between; a pill switch on the right picks this week
   (`/highscore`) or all time (`?period=all`). This week is worked out per
   request from the week's dailies (`getWeekHighscore`, `getHighscore`), so the
   viewer's rank is known there even past the top 50; all time reads the
