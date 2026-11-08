@@ -1,8 +1,9 @@
 /**
  * Migrates stored solves to stars: marks the first solve of each path, by
  * solve order (solution ids are ULIDs, so a puzzle's solutions list oldest
- * first), awards the score past solves earned, and deletes the retired
- * puzzle stats.
+ * first), awards the score past solves earned, rebuilds the high score
+ * from the user scores (an award only moves the key its rank would have
+ * today) and deletes the retired puzzle stats.
  *
  * Run from an up-to-date main: minimum moves come from the puzzle files here.
  * Locally: deno run -A ./scripts/migrate-score.ts [--dry-run]
@@ -16,11 +17,17 @@
  * keeps a player's best and never takes a star back.
  */
 import { kv } from "#/db/kv.ts";
-import { awardPastScore } from "#/db/score.ts";
+import { awardPastScore, getHighscoreKey } from "#/db/score.ts";
 import { updateSolutions } from "#/db/solutions.ts";
 import type { Solution } from "#/db/types.ts";
 import { parsePuzzle } from "#/game/parser.ts";
-import { getPastScore, type ScoreKind, withFirstSolves } from "#/game/score.ts";
+import {
+  emptyUserScore,
+  getPastScore,
+  type ScoreKind,
+  type UserScore,
+  withFirstSolves,
+} from "#/game/score.ts";
 
 const isDryRun = Deno.args.includes("--dry-run");
 
@@ -129,6 +136,22 @@ if (isDryRun) {
   });
 }
 
+let reindexed = 0;
+if (!isDryRun) {
+  for await (const { key } of kv.list({ prefix: ["highscore"] })) {
+    await kv.delete(key);
+  }
+}
+for await (
+  const { key, value } of kv.list<UserScore>({ prefix: ["user_score"] })
+) {
+  const userScore = { ...emptyUserScore, ...value };
+  if (!isDryRun) {
+    await kv.set(getHighscoreKey(key[1] as string, userScore), userScore);
+  }
+  reindexed++;
+}
+
 // Retired stats. The old code writes them until the deploy, so the run after
 // it clears them for good.
 const retiredPrefixes = ["puzzle_stats", "puzzle_solvers", "flash_solve_count"];
@@ -163,6 +186,11 @@ console.log(
   isDryRun
     ? `Dry run, nothing written: would award up to ${awarded} stars and mark ${marked} first solves.`
     : `Awarded ${awarded} stars, marked ${marked} first solves.`,
+);
+console.log(
+  `${
+    isDryRun ? "Would rank" : "Ranked"
+  } ${reindexed} players on the high score.`,
 );
 console.log(
   `${isDryRun ? "Would delete" : "Deleted"} ${deleted} retired stats keys.`,
