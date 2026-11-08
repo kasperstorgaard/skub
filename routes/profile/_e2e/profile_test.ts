@@ -23,11 +23,11 @@ class ProfilePage {
 Deno.test("a signed-in player who visits their profile sees their saved username", async () => {
   const { page, asUser, teardown } = await setup();
   try {
-    await asUser({ name: "e2ezra" });
+    const user = await asUser({ name: "e2ezra" });
     const profilePage = await new ProfilePage(page).goto();
 
     await expect(profilePage.usernameInput).toBeVisible();
-    await expect(profilePage.usernameInput).toHaveValue("e2ezra");
+    await expect(profilePage.usernameInput).toHaveValue(user.name);
   } finally {
     await teardown();
   }

@@ -25,12 +25,10 @@ export const handler = define.handlers({
       });
     }
 
-    const [{ isNew, isNewPath, solution }, puzzle] = await Promise.all([
-      saveSolution(body),
-      getPuzzle(body.puzzleSlug),
-    ]);
-
+    const puzzle = await getPuzzle(body.puzzleSlug);
     if (!puzzle) return new Response("No such puzzle", { status: 404 });
+
+    const { isNew, isNewPath, solution } = await saveSolution(body);
     if (!isNew) {
       return new Response("Duplicate solution", { status: 409 });
     }
@@ -41,8 +39,9 @@ export const handler = define.handlers({
       isNewPath,
       flash: !!solution.flash,
     });
+    // Like the solve POST: a Flash solve isn't in the aggregates.
     await Promise.all([
-      updateSolutionAggregates(solution),
+      solution.flash ? undefined : updateSolutionAggregates(solution),
       awardScore(solution.userId, solution.puzzleSlug, kinds),
     ]);
 

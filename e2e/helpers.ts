@@ -19,7 +19,7 @@ export type SeedUserInput =
  * players under the same name would show up twice.
  */
 export function uniqueName(name: string) {
-  return `${name}-${crypto.randomUUID().slice(0, 4)}`;
+  return `${name}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 /**
