@@ -12,8 +12,8 @@ const HINT_COUNT_KEY = "hint_count";
 const HINT_COUNT_DURATION = 60 * 60 * 24;
 
 const FLASH_EXPLAINED_KEY = "flash_explained";
-// 1 year in seconds
-const FLASH_EXPLAINED_DURATION = 60 * 60 * 24 * 365;
+// 1 week in seconds: the dialog and nudge come back after a week away
+const FLASH_EXPLAINED_DURATION = 60 * 60 * 24 * 7;
 
 const FLASH_KEY = "flash";
 // 24 h in seconds
