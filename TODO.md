@@ -167,12 +167,11 @@ PR finishes only part of an item, trim the item to what is left.
   toolbar's buttons, sized like the editor's, are too small for quick undo/redo,
   and size them up if so.
 
-- **A celebration that feels like a win.** Revamp the solve dialog: the wording
-  (factual, never grading the play) and the celebration moment itself. The
-  payoff is the stars you just earned animating in (see the stars item under
-  Play). A solve longer than the shortest gets a soft line that also teaches the
-  score badge, e.g. "If you're curious, the shortest possible path is 4 moves",
-  so "6/4" reads right from then on.
+- **A celebration that feels like a win.** The stars now fly in as the payoff;
+  the wording is what's left (factual, never grading the play). A solve longer
+  than the shortest gets a soft line that also teaches the score badge, e.g. "If
+  you're curious, the shortest possible path is 4 moves", so "6/4" reads right
+  from then on.
 
 - **The score badge reads at a glance.** It shows moves played over your best
   (`3/9`). Figure out whether it reads better flipped, your best first and the
@@ -235,7 +234,8 @@ PR finishes only part of an item, trim the item to what is left.
 
 - **A player's first stars come with an explainer.** The first celebration a
   player sees says what stars are and how to earn them: one for a solution, two
-  for perfect or first, three for both.
+  for perfect or pioneer, three for both, and that a puzzle's stars are your
+  best solution's, not a sum.
 
 - **Players play without being asked for a name.** Today a new player's first
   solve asks for a name before anything else. Instead, every solve is saved and
@@ -244,12 +244,11 @@ PR finishes only part of an item, trim the item to what is left.
   put it on the board. Opening a puzzle's solutions or the high score page
   offers the same prompt to players who skipped it.
 
-  Solves are keyed by user id; the name is a copy saved on each one, which
-  renaming in the profile doesn't touch today. So: solves start anonymous, and
-  picking a name writes it back to that user's solves (listed by
-  `solutions_by_user`: all four keys per solve, plus a leaderboard group's
-  `firstSolution` where it's theirs), soon enough that their next look at a
-  board shows it. Keeps leaderboard reads free of user lookups.
+  Solves are keyed by user id; the name is a copy saved on each one. So: solves
+  start anonymous, and picking a name writes it back to that user's solves
+  (listed by `solutions_by_user`: all four keys per solve, plus a leaderboard
+  group's `firstSolution` where it's theirs), soon enough that their next look
+  at a board shows it. Keeps leaderboard reads free of user lookups.
 
 - **A player's name stays the name others saw.** Once picked, a name is
   permanent: the profile shows it but can't change it. Players have seen names
