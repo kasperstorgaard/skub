@@ -324,20 +324,24 @@ async function getCanonicalUserSolution(
 }
 
 /**
- * Rewrites a stored solution under all four of its keys, as one commit. For
+ * Rewrites stored solutions under all four of their keys, 50 to a commit:
+ * four copies of a long solution add up, against KV's 800 KB a commit. For
  * the migration, which marks the first solve of each path after the fact.
  */
-export async function updateSolution(solution: Solution): Promise<void> {
-  const { puzzleSlug, userId, id } = solution;
-  const canonicalKey = getCanonicalMoveKey(solution.moves);
-
-  await kv.atomic()
-    .set(["solutions_by_puzzle", puzzleSlug, id], solution)
-    .set(
-      ["solutions_by_puzzle_canonical", puzzleSlug, canonicalKey, id],
-      solution,
-    )
-    .set(["solutions_by_user", userId, id], solution)
-    .set(["solutions_by_user_puzzle", userId, puzzleSlug, id], solution)
-    .commit();
+export async function updateSolutions(solutions: Solution[]): Promise<void> {
+  const atomic = kv.atomic();
+  for (const solution of solutions.slice(0, 50)) {
+    const { puzzleSlug, userId, id } = solution;
+    const canonicalKey = getCanonicalMoveKey(solution.moves);
+    atomic
+      .set(["solutions_by_puzzle", puzzleSlug, id], solution)
+      .set(
+        ["solutions_by_puzzle_canonical", puzzleSlug, canonicalKey, id],
+        solution,
+      )
+      .set(["solutions_by_user", userId, id], solution)
+      .set(["solutions_by_user_puzzle", userId, puzzleSlug, id], solution);
+  }
+  await atomic.commit();
+  if (solutions.length > 50) await updateSolutions(solutions.slice(50));
 }

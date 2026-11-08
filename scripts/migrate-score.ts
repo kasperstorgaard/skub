@@ -15,11 +15,11 @@
  * keeps a player's best and never takes a star back.
  */
 import { kv } from "#/db/kv.ts";
-import { awardScore } from "#/db/score.ts";
-import { updateSolution } from "#/db/solutions.ts";
+import { awardPastScore } from "#/db/score.ts";
+import { updateSolutions } from "#/db/solutions.ts";
 import type { Solution } from "#/db/types.ts";
 import { parsePuzzle } from "#/game/parser.ts";
-import { getPastScore, withFirstSolves } from "#/game/score.ts";
+import { getPastScore, type ScoreKind, withFirstSolves } from "#/game/score.ts";
 
 const isDryRun = Deno.args.includes("--dry-run");
 
@@ -48,9 +48,10 @@ for await (
   solvesBySlug.set(value.puzzleSlug, solves);
 }
 
-let awarded = 0;
-let marked = 0;
-let failed = 0;
+// Worked out in memory first, then written in parallel: one round trip at a
+// time to KV, far away over KV Connect, would take an hour.
+const toMark: Solution[] = [];
+const scoreByUser = new Map<string, Map<string, ScoreKind[]>>();
 const unknown: string[] = [];
 for (const [slug, solves] of solvesBySlug) {
   const minMoves = minMovesBySlug.get(slug);
@@ -62,37 +63,69 @@ for (const [slug, solves] of solvesBySlug) {
   // First over every solve; one with no user has no keys to mark or award.
   const firstSolves = withFirstSolves(solves);
   for (const [i, solve] of firstSolves.entries()) {
-    if (!solve.userId || !!solve.first === !!solves[i].first) continue;
-    if (isDryRun) {
-      marked++;
-      continue;
-    }
-    try {
-      await updateSolution(solve);
-      marked++;
-    } catch (err) {
-      failed++;
-      console.error(`${slug} ${solve.id}: ${(err as Error).message}`);
+    if (solve.userId && !!solve.first !== !!solves[i].first) {
+      toMark.push(solve);
     }
   }
 
-  const scoreByUser = getPastScore(
+  const pastScore = getPastScore(
     { minMoves },
     firstSolves.filter((solve) => solve.userId),
   );
-  for (const [userId, kinds] of scoreByUser) {
-    if (isDryRun) {
-      awarded += kinds.length;
-      continue;
-    }
+  for (const [userId, kinds] of pastScore) {
+    const byPuzzle = scoreByUser.get(userId) ?? new Map();
+    byPuzzle.set(slug, kinds);
+    scoreByUser.set(userId, byPuzzle);
+  }
+}
+
+/** Runs `run` over `items`, `limit` at a time. */
+async function inParallel<T>(
+  items: T[],
+  limit: number,
+  run: (item: T) => Promise<void>,
+) {
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: limit }, async () => {
+      while (next < items.length) await run(items[next++]);
+    }),
+  );
+}
+
+let awarded = 0;
+let marked = 0;
+let failed = 0;
+if (isDryRun) {
+  marked = toMark.length;
+  for (const byPuzzle of scoreByUser.values()) {
+    for (const kinds of byPuzzle.values()) awarded += kinds.length;
+  }
+} else {
+  const batches = Array.from(
+    { length: Math.ceil(toMark.length / 50) },
+    (_, i) => toMark.slice(i * 50, (i + 1) * 50),
+  );
+  await inParallel(batches, 10, async (batch) => {
     try {
-      awarded += (await awardScore(userId, slug, kinds)).length;
+      await updateSolutions(batch);
+      marked += batch.length;
+    } catch (err) {
+      failed += batch.length;
+      console.error(`marking ${batch.length}: ${(err as Error).message}`);
+    }
+  });
+
+  await inParallel([...scoreByUser], 20, async ([userId, byPuzzle]) => {
+    try {
+      // Awaited first: `awarded += await` would read it before the wait.
+      const added = await awardPastScore(userId, byPuzzle);
+      awarded += added;
     } catch (err) {
       failed++;
-      console.error(`${slug} ${userId}: ${(err as Error).message}`);
+      console.error(`${userId}: ${(err as Error).message}`);
     }
-  }
-  console.log(`${slug}: ${solves.length} solves, ${scoreByUser.size} players`);
+  });
 }
 
 console.log(

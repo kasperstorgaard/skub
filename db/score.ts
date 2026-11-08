@@ -83,3 +83,51 @@ export async function awardScore(
 
   throw new Error("Failed to award score after 5 attempts");
 }
+
+/**
+ * Awards a player's past solves on many puzzles in one commit, keeping the
+ * better of each puzzle's earned and past kinds. Checked against the user
+ * score, which every award writes, so a live award in between retries.
+ * Returns how many kinds it adds.
+ */
+export async function awardPastScore(
+  userId: string,
+  scoreByPuzzle: Map<string, ScoreKind[]>,
+): Promise<number> {
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    // The user score first: an award after it fails the check.
+    const userScoreEntry = await kv.get<UserScore>(userScoreKey(userId));
+    const earnedByPuzzle = new Map<string, ScoreKind[]>();
+    const iter = kv.list<ScoreKind[]>({
+      prefix: ["solution_score_by_user_puzzle", userId],
+    });
+    for await (const { key, value } of iter) {
+      earnedByPuzzle.set(key[2] as string, value);
+    }
+
+    const current = { ...emptyUserScore, ...userScoreEntry.value };
+    let updated = current;
+    let added = 0;
+    const atomic = kv.atomic().check(userScoreEntry);
+    for (const [puzzleSlug, kinds] of scoreByPuzzle) {
+      const earned = earnedByPuzzle.get(puzzleSlug) ?? [];
+      const gained = getNewScore(earned, kinds);
+      if (gained.length === 0) continue;
+      const updatedEarned = withEarned(earned, kinds);
+      updated = withScore(updated, earned, updatedEarned);
+      atomic.set(solutionScoreKey(userId, puzzleSlug), updatedEarned);
+      added += gained.length;
+    }
+    if (added === 0) return 0;
+
+    atomic.set(userScoreKey(userId), updated);
+    // Delete before set: with the same points it's the same key.
+    if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
+    atomic.set(getHighscoreKey(userId, updated), updated);
+
+    const result = await atomic.commit();
+    if (result.ok) return added;
+  }
+
+  throw new Error("Failed to award past score after 5 attempts");
+}
