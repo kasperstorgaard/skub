@@ -9,16 +9,14 @@ type ScoreBadgeProps = {
   href: Signal<string>;
   /** A fixed count instead of the URL's moves, see `MoveScore` */
   moves?: number | null;
-  /** Hide the shortest solution when the user hasn't solved this puzzle. */
+  /** "–" for the target until the player has solved the puzzle. */
   hideMinMoves?: boolean;
-  /**
-   * The player's best on the puzzle, in place of the shortest.
-   */
+  /** The player's best on the puzzle, in place of the shortest. */
   bestMoves?: number;
   className?: string;
 };
 
-/** While playing: moves played over the shortest solution. */
+/** While playing: moves played over your best, or the shortest. */
 export function ScoreBadge(
   { puzzle, href, moves, hideMinMoves, bestMoves, className }: ScoreBadgeProps,
 ) {

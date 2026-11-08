@@ -28,7 +28,7 @@ export function MoveScore(
       <span className="mx-[0.1em]">/</span>
       {/* The player's count leads; the target sits back */}
       <span className="opacity-50">
-        {hideMinMoves ? "–" : best ?? (minMoves || "—")}
+        {hideMinMoves ? "–" : best ?? (minMoves || "–")}
       </span>
     </span>
   );
