@@ -13,7 +13,6 @@ import { BadgeStars } from "#/components/stars.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { awardScore } from "#/db/score.ts";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
-import { incrementFlashSolveCount } from "#/db/stats.ts";
 import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
@@ -201,14 +200,12 @@ export const handler = define.handlers<PageData>({
         return [];
       });
 
-    // One user write, alongside the aggregates. A Flash solve only counts
-    // towards the Flash solves, apart from the leaderboard.
-    const [user, , , awarded] = await Promise.all([
+    // One user write, alongside the aggregates. A Flash solve isn't in them.
+    const [user, , awarded] = await Promise.all([
       Object.keys(patch).length > 0
         ? setUser(ctx.state.userId, patch)
         : ctx.state.user,
       !isFlash && isNew ? updateSolutionAggregates(solution) : undefined,
-      isFlash && isNew ? incrementFlashSolveCount(slug) : undefined,
       isNew ? awardSolveScore() : undefined,
     ]);
     ctx.state.user = user;

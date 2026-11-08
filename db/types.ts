@@ -1,6 +1,4 @@
-import { Move, PuzzleStats, SkillLevel } from "#/game/types.ts";
-
-export type { PuzzleStats };
+import { Move, SkillLevel } from "#/game/types.ts";
 
 export type User = {
   id: string;
