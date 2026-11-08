@@ -169,8 +169,9 @@ Decided so far (with Kasper, in chat):
 - Layer 5 next (`solutions/revamp`, based on `stars/highscore`).
 - Decided in layer 4: ties past points, first and perfect go by user id, and
   that's fine. A Flash solve is worth a solve's 50: missing perfect and first
-  is penalty enough. The star is called First in the UI. Home and profile show
-  streak, points and the stars (Solved, Perfect, First; Flash counts as
+  is penalty enough. The star is called Pioneer in the UI: several can open a
+  puzzle, one per path. Home and profile show
+  streak, points and the stars (Solved, Perfect, Pioneer; Flash counts as
   solved), and a High score button in home's panel once you have points.
   Rate is gone from the puzzle page (it's the candidates flow).
 - Nothing runs against production (backfill, reindex) until Kasper has

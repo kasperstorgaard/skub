@@ -9,7 +9,7 @@ import { formatNumber } from "#/lib/format.ts";
 const STAR_LABELS = {
   solve: "Solved",
   perfect: "Perfect",
-  first: "First",
+  first: "Pioneer",
 } as const;
 const STAT_KINDS = ["solve", "perfect", "first"] as const;
 

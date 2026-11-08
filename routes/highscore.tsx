@@ -265,7 +265,7 @@ function Name({ name, isViewer, className }: NameProps) {
 const BREAKDOWN = [
   { kind: "solve", label: "Solved" },
   { kind: "perfect", label: "Perfect" },
-  { kind: "first", label: "First" },
+  { kind: "first", label: "Pioneer" },
 ] as const;
 
 /** What a player's points are made of, on one line: "10 Solved 4 Perfect". */
