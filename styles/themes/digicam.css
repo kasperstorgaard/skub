@@ -75,10 +75,10 @@
     pointer-events: none;
     background-image:
       radial-gradient(
-        60% 50% at 100% 0%,
-        color-mix(in srgb, var(--color-brand) 14%, transparent),
-        transparent
-      ),
+      60% 50% at 100% 0%,
+      color-mix(in srgb, var(--color-brand) 14%, transparent),
+      transparent
+    ),
       radial-gradient(
       50% 40% at 0% 100%,
       color-mix(in srgb, var(--color-link) 8%, transparent),

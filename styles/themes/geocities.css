@@ -89,39 +89,7 @@
   /* Block text sitting on the sky gets a black box. Zero specificity, so
      every component rule wins; positioned and filled elements are left alone. */
   @media screen {
-    :where(
-      h1,
-      h2,
-      h3,
-      h4,
-      h5,
-      h6,
-      p,
-      dt,
-      dd,
-      figcaption,
-      legend,
-      .puzzle-card-tagline
-    ):where(
-      :not(
-        :where(
-          .panel,
-          dialog,
-          .cookie-banner,
-          .callout,
-          .btn,
-          .icon-btn,
-          .board,
-          .puzzle-card-thumb,
-          [class*="bg-"]
-        )
-          *,
-        [class*="bg-"],
-        [class*="absolute"],
-        [class*="fixed"],
-        .sr-only
-      )
-    ) {
+    :where(h1, h2, h3, h4, h5, h6, p, dt, dd, figcaption, legend, .puzzle-card-tagline):where(:not(:where(.panel, dialog, .cookie-banner, .callout, .btn, .icon-btn, .board, .puzzle-card-thumb, [class*="bg-"]) *, [class*="bg-"], [class*="absolute"], [class*="fixed"], .sr-only)) {
       background-color: #000000;
     }
   }

@@ -263,11 +263,11 @@
   .board-puck {
     background-image:
       radial-gradient(
-        circle,
-        var(--color-surface-1) 0 11%,
-        var(--disc-edge) 11% 15%,
-        transparent 15%
-      ),
+      circle,
+      var(--color-surface-1) 0 11%,
+      var(--disc-edge) 11% 15%,
+      transparent 15%
+    ),
       var(--disc-sheen);
     box-shadow: inset 0 0 0 1px rgb(29 33 38 / 0.35);
   }

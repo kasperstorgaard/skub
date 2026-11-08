@@ -420,10 +420,7 @@
   /* Grain over the surface, outside retro (own backdrops) and high contrast.
      Fixed layers on html, so body goes see-through. */
   @media screen {
-    :root:not(
-      [data-theme-section="retro"],
-      [data-theme-section="accessibility"]
-    ) {
+    :root:not([data-theme-section="retro"], [data-theme-section="accessibility"]) {
       body {
         background: transparent;
       }
@@ -456,13 +453,16 @@
   }
 
   /* App-scale headings — normalize defaults are editorial (h1=3.5rem), too large for a game UI */
-  h1, .h1 {
+  h1,
+  .h1 {
     font-size: var(--font-size-5);
   } /* 2rem   → 28px/32px */
-  h2, .h2 {
+  h2,
+  .h2 {
     font-size: var(--font-size-4);
   } /* 1.5rem → 21px/24px */
-  h3, .h3 {
+  h3,
+  .h3 {
     font-size: var(--font-size-3);
   } /* 1.25rem → 17.5px/20px */
 
@@ -547,7 +547,8 @@
 
 @layer base {
   /* Global link defaults */
-  a, .link {
+  a,
+  .link {
     color: var(--color-link);
     font-weight: var(--font-weight-5);
     font-size: var(--text-2);
@@ -679,7 +680,9 @@
   }
 
   @keyframes load-dot {
-    0%, 60%, 100% {
+    0%,
+    60%,
+    100% {
       opacity: 0.2;
     }
     30% {
@@ -699,9 +702,9 @@
     50% {
       transform: scale(1.02)
         translate(
-          calc(var(--ripple-tx, 0) * 4%),
-          calc(var(--ripple-ty, 0) * 4%)
-        );
+        calc(var(--ripple-tx, 0) * 4%),
+        calc(var(--ripple-ty, 0) * 4%)
+      );
       filter: brightness(1.5);
     }
     100% {

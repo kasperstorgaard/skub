@@ -62,10 +62,12 @@
 }
 
 @keyframes matrix-glitch {
-  0%, 49% {
+  0%,
+  49% {
     text-shadow: -1px 0 #00ff41, 1px 0 #ffffff;
   }
-  50%, 100% {
+  50%,
+  100% {
     text-shadow: 1px 0 #00ff41, -1px 0 #ffffff;
   }
 }
@@ -89,10 +91,10 @@
        for a 9% opacity, which would also dim the spill */
     background-image:
       radial-gradient(
-        70% 50% at 50% 0%,
-        color-mix(in srgb, var(--color-brand) 9%, transparent),
-        transparent
-      ),
+      70% 50% at 50% 0%,
+      color-mix(in srgb, var(--color-brand) 9%, transparent),
+      transparent
+    ),
       linear-gradient(rgb(10 12 10 / 0.91), rgb(10 12 10 / 0.91)),
       var(--matrix-rain);
     background-size: auto, auto, 480px 640px;
