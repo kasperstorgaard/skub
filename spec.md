@@ -139,7 +139,7 @@ Decided so far (with Kasper, in chat):
   over one fixed line, "Thanks for playing. What's next?", leading into the
   actions, for every solve: the stars carry the news, so the stats
   lines (first to solve, new path, percentiles, counts) and the loading state
-  are gone. The main action is "Keep playing".
+  are gone. The main action is "Next puzzle", the other "Start over".
   No-JS solves get no dialog for full solves (they go to
   the solutions page), so they don't show the payoff; the page's own badge
   stars update on the next load.
