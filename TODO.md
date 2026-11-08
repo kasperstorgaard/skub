@@ -120,6 +120,11 @@ PR finishes only part of an item, trim the item to what is left.
   Specs with budgets and order exist on the `perf/*` branches; the first one
   holds the measured baseline.
 
+- **The entry CSS fits in 15 KB again.** The stars stack pushed it to 15.0 KB
+  gzipped, and the budget in `scripts/check-css.ts` went up to 16 to let the
+  stack land. Trim what the rewrites left behind (unused utilities, one-off
+  arbitrary values) and put the budget back to 15.
+
 - **The next page should be ready before you tap it.** Prefetch likely
   destinations on hover or touch-down so the puzzle appears the moment the card
   is pressed. Comes after the server work above, so a prefetched page is cheap
