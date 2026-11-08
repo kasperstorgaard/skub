@@ -14,6 +14,9 @@ A stack of PRs, each based on the one before:
 7. `stars/highscore`: the high score page, its links, stars in the home footer
 8. `badge/your-best`: the score badge shows your best in place of the shortest
 9. `solutions/revamp`: the solutions page on the new design, with Flash
+10. `e2e/stars`: e2e for the stack's journeys: a solve puts you on the high
+    score, home leads there, a Flash solve lands on the Flash tab. Seeded
+    solves earn stars like played ones.
 
 ## Stars
 

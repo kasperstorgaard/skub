@@ -19,7 +19,7 @@ Deno.test("solution page — shows the puzzle name in the heading", async () => 
   }
 });
 
-Deno.test("solution page — shows who solved it", async () => {
+Deno.test("solution page — shows whose solution it is", async () => {
   const { page, asUser, addSolution, teardown } = await setup();
   try {
     await asUser({ name: "e2esme" });
@@ -28,7 +28,7 @@ Deno.test("solution page — shows who solved it", async () => {
       "karla",
       solution.id,
     );
-    await expect(solutionPage.solvedByText).toBeVisible();
+    await expect(solutionPage.solutionByText).toBeVisible();
   } finally {
     await teardown();
   }

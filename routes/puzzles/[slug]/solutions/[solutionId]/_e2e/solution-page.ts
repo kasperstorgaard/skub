@@ -16,8 +16,8 @@ export class SolutionPage {
     return this.page.getByRole("heading", { level: 1 });
   }
 
-  get solvedByText() {
-    return this.page.getByText("solved by");
+  get solutionByText() {
+    return this.page.getByText("Solution by");
   }
 
   get puck() {

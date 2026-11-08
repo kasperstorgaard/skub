@@ -1,6 +1,9 @@
 import { define } from "#/core.ts";
+import { awardScore } from "#/db/score.ts";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
 import type { Solution } from "#/db/types.ts";
+import { getPuzzle } from "#/game/loader.ts";
+import { getSolveScore } from "#/game/score.ts";
 import { isAuthorized } from "#/routes/api/e2e/_auth.ts";
 
 export const handler = define.handlers({
@@ -22,13 +25,26 @@ export const handler = define.handlers({
       });
     }
 
-    const { isNew, solution } = await saveSolution(body);
+    const [{ isNew, isNewPath, solution }, puzzle] = await Promise.all([
+      saveSolution(body),
+      getPuzzle(body.puzzleSlug),
+    ]);
 
+    if (!puzzle) return new Response("No such puzzle", { status: 404 });
     if (!isNew) {
       return new Response("Duplicate solution", { status: 409 });
     }
 
-    await updateSolutionAggregates(solution);
+    // Seeded solves earn stars like played ones.
+    const kinds = getSolveScore(puzzle, {
+      moves: solution.moves.length,
+      isNewPath,
+      flash: !!solution.flash,
+    });
+    await Promise.all([
+      updateSolutionAggregates(solution),
+      awardScore(solution.userId, solution.puzzleSlug, kinds),
+    ]);
 
     return Response.json(solution);
   },

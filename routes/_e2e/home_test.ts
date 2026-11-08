@@ -166,3 +166,20 @@ Deno.test("home — stats show the streak after solving several dailies", async 
     await teardown();
   }
 });
+
+Deno.test("home — a player with points opens the high score", async () => {
+  const { page, asUser, addSolution, teardown } = await setup();
+  try {
+    await asUser({ name: "e2ebba" });
+    await addSolution({
+      puzzleSlug: "karla",
+      moves: await solvePuzzle("karla"),
+    });
+    const home = await new HomePage(page).goto();
+
+    await home.highscoreLink.click();
+    await expect(page).toHaveURL(/\/highscore/);
+  } finally {
+    await teardown();
+  }
+});

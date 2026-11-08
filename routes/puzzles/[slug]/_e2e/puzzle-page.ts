@@ -57,7 +57,7 @@ export class PuzzlePage {
     };
   }
 
-  // The badge's lightning switch, beside the move count
+  // The Flash tool, last in the toolbar
   get flashSwitch() {
     return this.page.getByRole("switch", { name: "Flash" });
   }

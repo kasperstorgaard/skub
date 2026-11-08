@@ -30,3 +30,19 @@ Deno.test("without JavaScript — a player solves a puzzle with Flash", async ()
     await teardown();
   }
 });
+
+Deno.test("a Flash solver finds their solve on the Flash tab", async () => {
+  const { page, asUser, teardown } = await setup();
+  try {
+    await asUser({ name: "e2efie" });
+    const moves = await solveFlashPuzzle("alice");
+    const puzzlePage = await new PuzzlePage(page).goto("alice");
+    await puzzlePage.turnOnFlash();
+    await puzzlePage.solveByClicking(moves);
+    const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
+
+    await expect(solutionsPage.solveByName("e2efie")).toBeVisible();
+  } finally {
+    await teardown();
+  }
+});

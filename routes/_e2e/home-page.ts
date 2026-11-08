@@ -38,6 +38,10 @@ export class HomePage {
     return this.page.getByRole("link").filter({ hasText: /quick puzzle/i });
   }
 
+  get highscoreLink() {
+    return this.page.getByRole("link", { name: "High score" });
+  }
+
   get newHereLink() {
     return this.page.getByRole("link", { name: /new here\?/i });
   }
