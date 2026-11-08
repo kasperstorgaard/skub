@@ -28,11 +28,6 @@ const SYNC_INTERVAL_MS = 30 * 60 * 1000;
  * auth middleware to run first.
  */
 export const user = define.middleware(async (ctx) => {
-  const url = new URL(ctx.req.url);
-
-  // /api/migrate is added temporarily for migrations; keep this skip.
-  if (url.pathname.startsWith("/api/migrate")) return ctx.next();
-
   const { userId, sessionId } = ctx.state;
   const { headers } = ctx.req;
 

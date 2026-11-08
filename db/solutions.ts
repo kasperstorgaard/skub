@@ -58,9 +58,8 @@ export async function saveSolution(
   }
 
   const id = ulid().toLowerCase();
-  const solution = { ...payload, id };
   // A Flash solve isn't on the leaderboard, so it finds no new path on it.
-  const isNewPath = !payload.flash && existingGroup.value === null;
+  const claimsPath = !payload.flash && existingGroup.value === null;
 
   // simple key by slug for easy direct lookup
   const primaryKey = ["solutions_by_puzzle", puzzleSlug, id];
@@ -73,29 +72,52 @@ export async function saveSolution(
     id,
   ];
 
-  // publicly available keys
-  const atomic = kv.atomic()
-    .check({ key: primaryKey, versionstamp: null })
-    .check({ key: byCanonicalKey, versionstamp: null })
-    .set(primaryKey, solution)
-    .set(byCanonicalKey, solution);
+  const commit = (solution: Solution, claim: boolean) => {
+    // publicly available keys
+    const atomic = kv.atomic()
+      .check({ key: primaryKey, versionstamp: null })
+      .check({ key: byCanonicalKey, versionstamp: null })
+      .set(primaryKey, solution)
+      .set(byCanonicalKey, solution);
 
-  // user-scoped keys
-  const byUserKey = ["solutions_by_user", payload.userId, id];
-  const byUserPuzzleKey = [
-    "solutions_by_user_puzzle",
-    payload.userId,
-    puzzleSlug,
+    // user-scoped keys
+    const byUserKey = ["solutions_by_user", payload.userId, id];
+    const byUserPuzzleKey = [
+      "solutions_by_user_puzzle",
+      payload.userId,
+      puzzleSlug,
+      id,
+    ];
+
+    atomic
+      .check({ key: byUserKey, versionstamp: null })
+      .check({ key: byUserPuzzleKey, versionstamp: null })
+      .set(byUserKey, solution)
+      .set(byUserPuzzleKey, solution);
+
+    // The first solve of a path creates its group, so exactly one finds it new.
+    if (claim) {
+      atomic.check(existingGroup).set(groupKey, {
+        canonicalKey,
+        firstSolution: solution,
+        count: 1,
+      });
+    }
+    return atomic.commit();
+  };
+
+  // Someone else claimed the path in the meantime: save without the claim.
+  let solution: Solution = {
+    ...payload,
     id,
-  ];
-
-  atomic
-    .check({ key: byUserKey, versionstamp: null })
-    .check({ key: byUserPuzzleKey, versionstamp: null })
-    .set(byUserKey, solution)
-    .set(byUserPuzzleKey, solution);
-
-  await atomic.commit();
+    ...(claimsPath && { first: true }),
+  };
+  const result = await commit(solution, claimsPath);
+  if (!result.ok && claimsPath) {
+    solution = { ...payload, id };
+    await commit(solution, false);
+  }
+  const isNewPath = !!solution.first;
 
   return {
     isNew: true,
@@ -112,7 +134,10 @@ export async function updateSolutionAggregates(
   try {
     const [stats] = await Promise.all([
       updatePuzzleStats(puzzleSlug, moves.length, userId),
-      updateCanonicalGroup(puzzleSlug, moves, solution),
+      // A first solve created its group when it was saved.
+      solution.first
+        ? undefined
+        : updateCanonicalGroup(puzzleSlug, moves, solution),
     ]);
     return stats;
   } catch (err) {
@@ -296,4 +321,27 @@ async function getCanonicalUserSolution(
       s.flash === flash && getCanonicalMoveKey(s.moves) === canonicalKey
     ) ?? null
   );
+}
+
+/**
+ * Rewrites stored solutions under all four of their keys, 50 to a commit:
+ * four copies of a long solution add up, against KV's 800 KB a commit. For
+ * the migration, which marks the first solve of each path after the fact.
+ */
+export async function updateSolutions(solutions: Solution[]): Promise<void> {
+  const atomic = kv.atomic();
+  for (const solution of solutions.slice(0, 50)) {
+    const { puzzleSlug, userId, id } = solution;
+    const canonicalKey = getCanonicalMoveKey(solution.moves);
+    atomic
+      .set(["solutions_by_puzzle", puzzleSlug, id], solution)
+      .set(
+        ["solutions_by_puzzle_canonical", puzzleSlug, canonicalKey, id],
+        solution,
+      )
+      .set(["solutions_by_user", userId, id], solution)
+      .set(["solutions_by_user_puzzle", userId, puzzleSlug, id], solution);
+  }
+  await atomic.commit();
+  if (solutions.length > 50) await updateSolutions(solutions.slice(50));
 }

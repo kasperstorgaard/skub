@@ -1,5 +1,6 @@
 import { define } from "#/core.ts";
 import { kv } from "#/db/kv.ts";
+import { getHighscoreKey, getUserScore } from "#/db/score.ts";
 import type { Solution } from "#/db/types.ts";
 import { getUser } from "#/db/user.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
@@ -42,6 +43,15 @@ export const handler = define.handlers({
     }
 
     await kv.delete(["user", userId]);
+
+    // Score: the highscore entry is keyed by the user score it holds.
+    const userScore = await getUserScore(userId);
+    await kv.delete(getHighscoreKey(userId, userScore));
+    await kv.delete(["user_score", userId]);
+    const solutionScoreIter = kv.list({
+      prefix: ["solution_score_by_user_puzzle", userId],
+    });
+    for await (const entry of solutionScoreIter) await kv.delete(entry.key);
 
     // Delete global indexes for this user's solutions
     for (const solution of solutions) {
