@@ -13,6 +13,9 @@ node_modules/
 # Deno kv local database
 .sqlite/
 
+# KV backups hold player data
+*.jsonl
+
 # Screenshots
 screenshots/
 

@@ -99,4 +99,12 @@ function instrument(kv: Deno.Kv): Deno.Kv {
   });
 }
 
-export const kv = instrument(await Deno.openKv());
+/** Untraced, so a job can stream a whole prefix in batches. */
+export const rawKv = await Deno.openKv(Deno.env.get("SKUB_KV_URL"));
+
+/**
+ * The app's KV: Deploy's for the timeline it runs on, a local file otherwise.
+ * Scripts can point it at a hosted database over KV Connect with
+ * `SKUB_KV_URL` (its `.../connect` URL) and `DENO_KV_ACCESS_TOKEN`.
+ */
+export const kv = instrument(rawKv);
