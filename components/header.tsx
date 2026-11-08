@@ -35,7 +35,8 @@ export function Header({ back, hideProfile, hideHighscore }: Props) {
             href="/highscore"
             className={clsx(
               "inline-flex items-center justify-center min-w-[44px] min-h-[44px]",
-              "no-underline text-inherit text-5 hover:text-link",
+              // A step closer to profile: the gap is the tap boxes'
+              "-me-1 no-underline text-inherit text-5 hover:text-link",
             )}
             aria-label="High score"
             title="High score"
