@@ -325,7 +325,7 @@ async function getCanonicalUserSolution(
 
 /**
  * Rewrites a stored solution under all four of its keys, as one commit. For
- * the backfill, which marks the first solve of each path after the fact.
+ * the migration, which marks the first solve of each path after the fact.
  */
 export async function updateSolution(solution: Solution): Promise<void> {
   const { puzzleSlug, userId, id } = solution;

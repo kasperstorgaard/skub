@@ -188,7 +188,7 @@ export const handler = define.handlers<PageData>({
     }
 
     // Best effort, like the aggregates: a missed award is put right by
-    // re-running the backfill.
+    // re-running ./scripts/migrate-score.ts.
     const awardSolveScore = () =>
       withSpan("puzzle.award_score", async (span) => {
         const kinds = getSolveScore(puzzle, {
