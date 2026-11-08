@@ -261,6 +261,12 @@ function PathItem(
     isNewPath: !!path.claimer.first,
     flash: !!path.claimer.flash,
   });
+  // The same path in the same tab, less Pioneer: only the claimer has it.
+  const followerStars = getSolveScore({ minMoves }, {
+    moves: path.moves,
+    isNewPath: false,
+    flash: !!path.claimer.flash,
+  });
   const isFound = userCanonicalKeys.includes(path.canonicalKey);
   const isShown = [path.claimer, ...path.others].some((solution) =>
     solution.userId === userId
@@ -290,20 +296,25 @@ function PathItem(
           <Stars kinds={stars} className="shrink-0 text-2" />
         </span>
 
-        {/* Who found it after, one a line, then how many more */}
+        {/* Who found it after, one a line with their stars, then how many more */}
         {(path.others.length > 0 || showsYou) && (
           <ul className="m-0 p-0 list-none text-1 text-text-3">
             {path.others.map((solution) => (
-              <li key={solution.id} className="p-0">
+              <li key={solution.id} className="flex items-center gap-2 p-0">
                 <Name
                   name={solution.name}
                   isViewer={solution.userId === userId}
-                  className="block"
                   muted
                 />
+                <Stars kinds={followerStars} className="shrink-0" />
               </li>
             ))}
-            {showsYou && <li className="p-0 text-brand">you</li>}
+            {showsYou && (
+              <li className="flex items-center gap-2 p-0">
+                <span className="text-brand">you</span>
+                <Stars kinds={followerStars} className="shrink-0" />
+              </li>
+            )}
           </ul>
         )}
         {more > 0 && <span className="text-1 text-text-3">+ {more} more</span>}
