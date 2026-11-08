@@ -21,6 +21,8 @@ export function Header({ back, hideProfile, hideHighscore }: Props) {
           className={clsx(
             "inline-flex items-center justify-center min-w-[44px] min-h-[44px]",
             "text-5 no-underline text-inherit hover:text-link",
+            // Shifted out as the icons on the right, mirrored
+            "-translate-x-[calc((44px_-_1em)/2)]",
           )}
           aria-label={back.label ?? "Back"}
           title={back.label}
