@@ -41,17 +41,12 @@ export async function saveSolution(
     canonicalKey,
   ];
 
-  // Claimed by the first solve of a path, in the same commit, so exactly one
-  // solve finds it new. Paths solved before the claim existed have a group.
-  const pathKey = ["solution_paths_by_puzzle", puzzleSlug, canonicalKey];
-
   // User-level dedup: skip if this user already submitted this exact canonical path
-  const [existingSolution, existingGroup, existingPath] = await Promise.all([
+  const [existingSolution, existingGroup] = await Promise.all([
     payload.userId
       ? getCanonicalUserSolution(payload.userId, puzzleSlug, payload)
       : null,
     kv.get<CanonicalGroup>(groupKey),
-    kv.get<true>(pathKey),
   ]);
 
   if (existingSolution) {
@@ -64,8 +59,7 @@ export async function saveSolution(
 
   const id = ulid().toLowerCase();
   // A Flash solve isn't on the leaderboard, so it finds no new path on it.
-  const claimsPath = !payload.flash && existingGroup.value === null &&
-    existingPath.value === null;
+  const claimsPath = !payload.flash && existingGroup.value === null;
 
   // simple key by slug for easy direct lookup
   const primaryKey = ["solutions_by_puzzle", puzzleSlug, id];
@@ -101,7 +95,14 @@ export async function saveSolution(
       .set(byUserKey, solution)
       .set(byUserPuzzleKey, solution);
 
-    if (claim) atomic.check(existingPath).set(pathKey, true);
+    // The first solve of a path creates its group, so exactly one finds it new.
+    if (claim) {
+      atomic.check(existingGroup).set(groupKey, {
+        canonicalKey,
+        firstSolution: solution,
+        count: 1,
+      });
+    }
     return atomic.commit();
   };
 
@@ -133,7 +134,10 @@ export async function updateSolutionAggregates(
   try {
     const [stats] = await Promise.all([
       updatePuzzleStats(puzzleSlug, moves.length, userId),
-      updateCanonicalGroup(puzzleSlug, moves, solution),
+      // A first solve created its group when it was saved.
+      solution.first
+        ? undefined
+        : updateCanonicalGroup(puzzleSlug, moves, solution),
     ]);
     return stats;
   } catch (err) {

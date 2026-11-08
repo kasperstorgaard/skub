@@ -76,11 +76,6 @@ export const handler = define.handlers({
         solution.moves.length,
         canonicalKey,
       ]);
-      await kv.delete([
-        "solution_paths_by_puzzle",
-        solution.puzzleSlug,
-        canonicalKey,
-      ]);
     }
 
     return new Response("OK", { status: 200 });

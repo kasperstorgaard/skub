@@ -1,21 +1,18 @@
 /**
- * Awards the score past solves earned, so the high score isn't empty on day
- * one. First goes by solve order: solution ids are ULIDs, so a puzzle's
- * solutions list oldest first. Each first solve is marked `first` on the
- * solution too, so counts can come from the solutions alone.
+ * Migrates stored solves to stars: marks the first solve of each path, by
+ * solve order (solution ids are ULIDs, so a puzzle's solutions list oldest
+ * first), and awards the score past solves earned.
  *
  * Run from an up-to-date main: minimum moves come from the puzzle files here.
- * Locally: deno run -A ./scripts/backfill-score.ts [--dry-run]
+ * Locally: deno run -A ./scripts/migrate-score.ts [--dry-run]
  *
- * Against production, over KV Connect, after a snapshot with
- * ./scripts/export-kv.ts (`--tunnel` reaches the development database, not
- * production):
+ * Against production, over KV Connect, after ./scripts/backup-kv.ts (undo
+ * with ./scripts/restore-kv.ts):
  * SKUB_KV_URL=https://api.deno.com/v2/databases/<id>/connect \
- * DENO_KV_ACCESS_TOKEN=ddo_... deno run -A ./scripts/backfill-score.ts --dry-run
+ * DENO_KV_ACCESS_TOKEN=ddo_... deno run -A ./scripts/migrate-score.ts --dry-run
  *
- * `--dry-run` reads everything and writes nothing: it reports what it would
- * mark and award. Safe to run again: awarding keeps a player's best, so a
- * re-run only adds what a live award missed. It never takes a star back.
+ * `--dry-run` reads everything and writes nothing. Safe to run again: it
+ * keeps a player's best and never takes a star back.
  */
 import { kv } from "#/db/kv.ts";
 import { awardScore } from "#/db/score.ts";

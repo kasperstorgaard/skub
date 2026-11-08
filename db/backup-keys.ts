@@ -3,14 +3,17 @@ export const backupPrefixes = [
   "auth",
   "auth_session",
   "flash_solve_count",
+  "highscore",
   "oauth_state",
   "puzzle_solvers",
   "puzzle_stats",
   "solution_groups_by_puzzle",
+  "solution_score_by_user_puzzle",
   "solutions_by_puzzle",
   "solutions_by_puzzle_canonical",
   "solutions_by_user",
   "solutions_by_user_puzzle",
+  "user_score",
 ];
 
 /**
