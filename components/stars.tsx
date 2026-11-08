@@ -15,7 +15,7 @@ const STAR_ORDER: ScoreKind[] = ["solve", "flash", "perfect", "first"];
 const LABELS: Record<ScoreKind, string> = {
   solve: "Solved",
   perfect: "Perfect",
-  first: "First to find a path",
+  first: "Pioneer: first to find this path",
   flash: "Solved from the Flash start",
 };
 
