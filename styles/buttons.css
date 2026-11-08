@@ -90,10 +90,7 @@
 
   /* Pearl ring, outside retro and high contrast. A masked ::before, so the
      button stays see-through. */
-  :root:not(
-    [data-theme-section="retro"],
-    [data-theme-section="accessibility"]
-  ) {
+  :root:not([data-theme-section="retro"], [data-theme-section="accessibility"]) {
     :is(.btn, .icon-btn) {
       position: relative;
       border: 3px solid transparent;

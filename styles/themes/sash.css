@@ -82,11 +82,11 @@
     pointer-events: none;
     background-image:
       radial-gradient(
-        circle at 86% 9%,
-        rgb(255 255 255 / 0.55) 0,
-        rgb(190 220 255 / 0.18) 1.2%,
-        transparent 5%
-      ),
+      circle at 86% 9%,
+      rgb(255 255 255 / 0.55) 0,
+      rgb(190 220 255 / 0.18) 1.2%,
+      transparent 5%
+    ),
       radial-gradient(
       circle at 86% 9%,
       transparent 9%,
@@ -239,10 +239,10 @@
   .board-puck {
     background-image:
       radial-gradient(
-        circle at 34% 28%,
-        rgb(255 255 255 / 0.9) 0,
-        rgb(255 255 255 / 0) 38%
-      ),
+      circle at 34% 28%,
+      rgb(255 255 255 / 0.9) 0,
+      rgb(255 255 255 / 0) 38%
+    ),
       linear-gradient(180deg, transparent 55%, rgb(60 70 120 / 0.35));
   }
   .board-blocker {
