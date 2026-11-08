@@ -23,16 +23,16 @@ export class PuzzlePage {
   }
 
   // In the controls panel, not the celebration dialog
-  get seeSolvesLink() {
+  get seeSolutionsLink() {
     return this.page.getByRole("complementary")
-      .getByRole("link", { name: /See solves/i });
+      .getByRole("link", { name: /See solutions/i });
   }
 
   // Shown after a guest solves a puzzle
   get solutionDialog() {
     const page = this.page;
     return {
-      heading: page.getByRole("heading", { name: /Nice solve!/i }),
+      heading: page.getByRole("heading", { name: /Solved!/i }),
       usernameInput: page.getByRole("textbox", { name: /username/i }),
       submitName: async (name: string) => {
         await page.getByRole("textbox", { name: /username/i }).fill(name);
@@ -49,9 +49,9 @@ export class PuzzlePage {
     return {
       heading: dialog.getByRole("heading"),
       body: dialog.locator("p"),
-      seeSolvesLink: dialog.getByRole("link", { name: /See solves/i }),
-      clickSeeSolves: async () => {
-        await dialog.getByRole("link", { name: /See solves/i }).click();
+      seeSolutionsLink: dialog.getByRole("link", { name: /See solutions/i }),
+      clickSeeSolutions: async () => {
+        await dialog.getByRole("link", { name: /See solutions/i }).click();
         return new SolutionsPage(page);
       },
     };

@@ -13,7 +13,7 @@ Deno.test("a returning player who solves a puzzle sees the celebration dialog", 
     await puzzlePage.solveByClicking(moves);
 
     await expect(puzzlePage.celebrationDialog.heading).toBeVisible();
-    await expect(puzzlePage.celebrationDialog.seeSolvesLink).toBeVisible();
+    await expect(puzzlePage.celebrationDialog.seeSolutionsLink).toBeVisible();
   } finally {
     await teardown();
   }
@@ -59,7 +59,7 @@ Deno.test("a returning player sees the celebration dialog when submitting a dupl
     await puzzlePage.solveByClicking(moves);
 
     await expect(puzzlePage.celebrationDialog.heading).toBeVisible();
-    await expect(puzzlePage.celebrationDialog.seeSolvesLink).toBeVisible();
+    await expect(puzzlePage.celebrationDialog.seeSolutionsLink).toBeVisible();
   } finally {
     await teardown();
   }

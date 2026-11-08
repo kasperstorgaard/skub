@@ -12,14 +12,12 @@ type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
   savedName?: string | null;
-  /** A Flash solve is saved, but stays off the leaderboard */
-  isFlash?: boolean;
   /** Where "Not now" goes: the page's back link */
   backHref: string;
 };
 
 export function SolutionDialog(
-  { href, puzzle, savedName, isFlash, backHref }: Props,
+  { href, puzzle, savedName, backHref }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -52,18 +50,13 @@ export function SolutionDialog(
     <Dialog open={isOpen}>
       <div className="flex flex-col gap-fl-2 text-text-2">
         <h2 className="text-fl-2 font-semibold text-text-1">
-          Nice solve!
+          Solved!
         </h2>
 
-        <p>
-          {isFlash
-            ? savedName
-              ? "Save your Flash solve."
-              : "Pick a name and save your Flash solve."
-            : savedName
-            ? "Get your solve on the board."
-            : "Pick a name and get your solve on the board."}
-        </p>
+        {/* Filled in already: the name speaks for itself */}
+        {!savedName && (
+          <p>Pick a good name. Other players see it next to your solutions.</p>
+        )}
       </div>
 
       <form

@@ -35,7 +35,7 @@ export function StatsSummary({ stats, className }: Props) {
         <dd className="m-0 text-5 font-semibold tracking-wide leading-flat text-text-1">
           {stats.totalSolves}
         </dd>
-        <dt className="text-2 text-text-2">Solves</dt>
+        <dt className="text-2 text-text-2">Solutions</dt>
       </div>
 
       <div className="flex flex-col">
