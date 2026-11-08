@@ -43,8 +43,6 @@ const solvesBySlug = new Map<string, Solution[]>();
 for await (
   const { value } of kv.list<Solution>({ prefix: ["solutions_by_puzzle"] })
 ) {
-  // Ids were always ULIDs, but a solve with no user has no one to award.
-  if (!value.userId) continue;
   const solves = solvesBySlug.get(value.puzzleSlug) ?? [];
   solves.push(value);
   solvesBySlug.set(value.puzzleSlug, solves);
@@ -61,9 +59,10 @@ for (const [slug, solves] of solvesBySlug) {
     continue;
   }
 
+  // First over every solve; one with no user has no keys to mark or award.
   const firstSolves = withFirstSolves(solves);
   for (const [i, solve] of firstSolves.entries()) {
-    if (!!solve.first === !!solves[i].first) continue;
+    if (!solve.userId || !!solve.first === !!solves[i].first) continue;
     if (isDryRun) {
       marked++;
       continue;
@@ -77,7 +76,10 @@ for (const [slug, solves] of solvesBySlug) {
     }
   }
 
-  const scoreByUser = getPastScore({ minMoves }, firstSolves);
+  const scoreByUser = getPastScore(
+    { minMoves },
+    firstSolves.filter((solve) => solve.userId),
+  );
   for (const [userId, kinds] of scoreByUser) {
     if (isDryRun) {
       awarded += kinds.length;

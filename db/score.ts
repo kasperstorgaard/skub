@@ -62,7 +62,7 @@ export async function awardScore(
     const earned = solutionScoreEntry.value ?? [];
     const added = getNewScore(earned, kinds);
     if (added.length === 0) return [];
-    const updatedEarned = withEarned(earned, added);
+    const updatedEarned = withEarned(earned, kinds);
 
     // Spread over the empty score, so a kind added later starts at 0.
     const current = { ...emptyUserScore, ...userScoreEntry.value };
@@ -72,9 +72,10 @@ export async function awardScore(
       .check(solutionScoreEntry)
       .check(userScoreEntry)
       .set(solutionScoreKey(userId, puzzleSlug), updatedEarned)
-      .set(userScoreKey(userId), updated)
-      .set(getHighscoreKey(userId, updated), updated);
+      .set(userScoreKey(userId), updated);
+    // Delete before set: with the same points it's the same key.
     if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
+    atomic.set(getHighscoreKey(userId, updated), updated);
 
     const result = await atomic.commit();
     if (result.ok) return added;
