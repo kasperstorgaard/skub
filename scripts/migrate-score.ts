@@ -1,7 +1,8 @@
 /**
  * Migrates stored solves to stars: marks the first solve of each path, by
  * solve order (solution ids are ULIDs, so a puzzle's solutions list oldest
- * first), and awards the score past solves earned.
+ * first), awards the score past solves earned, and deletes the retired
+ * puzzle stats.
  *
  * Run from an up-to-date main: minimum moves come from the puzzle files here.
  * Locally: deno run -A ./scripts/migrate-score.ts [--dry-run]
@@ -128,10 +129,43 @@ if (isDryRun) {
   });
 }
 
+// Retired stats. The old code writes them until the deploy, so the run after
+// it clears them for good.
+const retiredPrefixes = ["puzzle_stats", "puzzle_solvers", "flash_solve_count"];
+const retiredKeys: Deno.KvKey[] = [];
+for (const prefix of retiredPrefixes) {
+  for await (const { key } of kv.list({ prefix: [prefix] })) {
+    retiredKeys.push(key);
+  }
+}
+let deleted = 0;
+if (!isDryRun) {
+  const batches = Array.from(
+    { length: Math.ceil(retiredKeys.length / 500) },
+    (_, i) => retiredKeys.slice(i * 500, (i + 1) * 500),
+  );
+  await inParallel(batches, 10, async (batch) => {
+    const atomic = kv.atomic();
+    for (const key of batch) atomic.delete(key);
+    try {
+      await atomic.commit();
+      deleted += batch.length;
+    } catch (err) {
+      failed += batch.length;
+      console.error(`deleting ${batch.length}: ${(err as Error).message}`);
+    }
+  });
+} else {
+  deleted = retiredKeys.length;
+}
+
 console.log(
   isDryRun
     ? `Dry run, nothing written: would award up to ${awarded} stars and mark ${marked} first solves.`
     : `Awarded ${awarded} stars, marked ${marked} first solves.`,
+);
+console.log(
+  `${isDryRun ? "Would delete" : "Deleted"} ${deleted} retired stats keys.`,
 );
 if (failed) console.log(`${failed} writes failed: run again to retry them.`);
 if (unknown.length) {

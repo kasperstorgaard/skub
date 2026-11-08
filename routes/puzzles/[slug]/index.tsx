@@ -13,11 +13,6 @@ import { BadgeStars } from "#/components/stars.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
 import { awardScore } from "#/db/score.ts";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
-import {
-  getFlashSolveCount,
-  getPuzzleStats,
-  incrementFlashSolveCount,
-} from "#/db/stats.ts";
 import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
@@ -32,7 +27,6 @@ import { isSolved, withSolve } from "#/game/progress.ts";
 import { getOnboardingLabel } from "#/game/recommendation.ts";
 import { getSolveScore, withSolutionScore } from "#/game/score.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
-import { defaultPuzzleStats } from "#/game/stats.ts";
 import { Move, Puzzle } from "#/game/types.ts";
 import { decodeState, encodeState, getPuzzleArchiveHref } from "#/game/url.ts";
 import { AutoPostSolution } from "#/islands/auto-post-solution.tsx";
@@ -140,24 +134,21 @@ export const handler = define.handlers<PageData>({
     const activeSpan = trace.getActiveSpan();
     activeSpan?.setAttribute("solution.moves", moves.length);
 
-    // The Flash count is read alongside the save, so it never includes this
-    // solve and costs no round trip of its own.
-    const [{ isNew, isNewPath, solution }, flashSolvesBefore] = await Promise
-      .all([
-        withSpan("puzzle.save_solution", async (span) => {
-          const result = await saveSolution({
-            puzzleSlug: slug,
-            name,
-            moves,
-            userId: ctx.state.userId,
-            ...(isFlash && { flash: true }),
-          });
-          span.setAttribute("solution.is_new", result.isNew);
-          span.setAttribute("solution.is_new_path", result.isNewPath);
-          return result;
-        }),
-        isFlash ? getFlashSolveCount(slug) : undefined,
-      ]);
+    const { isNew, isNewPath, solution } = await withSpan(
+      "puzzle.save_solution",
+      async (span) => {
+        const result = await saveSolution({
+          puzzleSlug: slug,
+          name,
+          moves,
+          userId: ctx.state.userId,
+          ...(isFlash && { flash: true }),
+        });
+        span.setAttribute("solution.is_new", result.isNew);
+        span.setAttribute("solution.is_new_path", result.isNewPath);
+        return result;
+      },
+    );
     // Your best is Regular's: Flash is a variant with its own shortest.
     if (!isFlash) {
       ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
@@ -209,18 +200,12 @@ export const handler = define.handlers<PageData>({
         return [];
       });
 
-    // One user write, alongside the aggregates. A Flash solve only counts
-    // towards the Flash solves, apart from the leaderboard.
-    const [user, puzzleStats, , awarded] = await Promise.all([
+    // One user write, alongside the aggregates. A Flash solve isn't in them.
+    const [user, , awarded] = await Promise.all([
       Object.keys(patch).length > 0
         ? setUser(ctx.state.userId, patch)
         : ctx.state.user,
-      isFlash
-        ? null
-        : isNew
-        ? updateSolutionAggregates(solution)
-        : getPuzzleStats(slug),
-      isFlash && isNew ? incrementFlashSolveCount(slug) : undefined,
+      !isFlash && isNew ? updateSolutionAggregates(solution) : undefined,
       isNew ? awardSolveScore() : undefined,
     ]);
     ctx.state.user = user;
@@ -228,17 +213,8 @@ export const handler = define.handlers<PageData>({
       ctx.state.score = withSolutionScore(ctx.state.score, slug, awarded);
     }
 
-    // This solve included, like the leaderboard's own count.
-    const flashSolves = flashSolvesBefore === undefined
-      ? undefined
-      : flashSolvesBefore + (isNew ? 1 : 0);
-
     if (isJson) {
-      const data: CelebrationData = {
-        isNewPath,
-        puzzleStats: puzzleStats ?? defaultPuzzleStats,
-        flashSolves,
-      };
+      const data: CelebrationData = { stars: ctx.state.score[slug] ?? [] };
       return Response.json(data);
     }
 
@@ -271,8 +247,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
     ? null
     : getPuzzleArchiveHref(props.data.puzzle);
   const back = archiveHref
-    ? { href: archiveHref, label: "Back to puzzles" }
-    : { href: "/", label: "Back to home" };
+    ? { href: archiveHref, label: "Go to puzzles" }
+    : { href: "/", label: "Go to home" };
 
   return (
     <>
@@ -374,6 +350,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           <CelebrationDialog
             href={href}
             puzzle={puzzle}
+            stars={props.state.score[props.data.puzzle.slug] ?? []}
             back={back}
             celebrationData={celebrationData}
             celebrationError={celebrationError}

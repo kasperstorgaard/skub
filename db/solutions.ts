@@ -1,8 +1,7 @@
 import { ulid } from "@std/ulid";
 
 import { kv } from "#/db/kv.ts";
-import { getPuzzleStats, updatePuzzleStats } from "#/db/stats.ts";
-import { CanonicalGroup, PuzzleStats, Solution } from "#/db/types.ts";
+import { CanonicalGroup, Solution } from "#/db/types.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import { Move } from "#/game/types.ts";
 
@@ -126,26 +125,17 @@ export async function saveSolution(
   };
 }
 
-/** Updates stats and the canonical group; on failure logs and reads stats as they are. */
-export async function updateSolutionAggregates(
-  solution: Solution,
-): Promise<PuzzleStats | null> {
-  const { puzzleSlug, moves, userId } = solution;
+/** Counts a solution in its path's group; on failure logs. */
+export async function updateSolutionAggregates(solution: Solution) {
+  // A first solve created its group when it was saved.
+  if (solution.first) return;
   try {
-    const [stats] = await Promise.all([
-      updatePuzzleStats(puzzleSlug, moves.length, userId),
-      // A first solve created its group when it was saved.
-      solution.first
-        ? undefined
-        : updateCanonicalGroup(puzzleSlug, moves, solution),
-    ]);
-    return stats;
+    await updateCanonicalGroup(solution.puzzleSlug, solution.moves, solution);
   } catch (err) {
     console.error(
       "Failed to update solution aggregates:",
       (err as Error).message,
     );
-    return await getPuzzleStats(puzzleSlug);
   }
 }
 

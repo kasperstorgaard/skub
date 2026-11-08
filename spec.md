@@ -2,12 +2,17 @@
 
 A stack of PRs, each based on the one before:
 
-1. `stars/rules`: score rules, storage and backfill
-2. `stars/display`: stars on the puzzle page, cards, replays and the solutions
+1. `fix/one-dialog`: one dialog at a time, solve dialogs give way to URL
+   dialogs
+2. `copy/solutions-wording`: solutions for what players saved, paths for the
+   routes, and the name dialog's copy
+3. `flash/toolbar`: the Flash switch moves from the score badge to the toolbar
+4. `stars/rules`: score rules, storage and backfill
+5. `stars/display`: stars on the puzzle page, cards, replays and the solutions
    page
-3. `stars/celebration`: earning stars is the celebration's payoff
-4. `stars/highscore`: the high score page, its links, stars in the home footer
-5. `solutions/revamp`: the solutions page on the new design, with Flash
+6. `stars/celebration`: earning stars is the celebration's payoff
+7. `stars/highscore`: the high score page, its links, stars in the home footer
+8. `solutions/revamp`: the solutions page on the new design, with Flash
 
 ## Stars
 
@@ -39,8 +44,8 @@ after the first cuts a gap out of the one behind in the background colour of
 where it sits; cards and the page differ, so that colour comes from the
 context (`--star-knockout`).
 
-Open: the badge's Flash switch already shows a bolt; whether that matters next
-to a Flash-coloured solve star.
+The Flash switch lives in the toolbar, not the badge, so the stars don't sit
+against its bolt.
 
 ## High score
 
@@ -56,9 +61,9 @@ the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
-Three tabs: Solves, Flash and Users.
+Three tabs: Solutions, Flash and Users.
 
-- **Solves**: as today, a table of rows grouped by solution (canonical path),
+- **Solutions**: as today, a table of rows grouped by solution (canonical path),
   shortest first, but each group lists its players, up to 10, instead of
   "+ x other users".
 - **Flash**: the same for Flash solves, compared by the moves played from the
@@ -83,10 +88,14 @@ The best (optimal) solutions unlock once you've earned stars on the puzzle.
 
 Decided so far (with Kasper, in chat):
 
-- Stack branches: `stars/rules` (base main), then `stars/display`,
+- Stack branches: `fix/one-dialog` (base main), then
+  `copy/solutions-wording`, `flash/toolbar`, `stars/rules`, `stars/display`,
   `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
   the one before and opened against it. Rebase the next onto main as each
-  merges.
+  merges. Generic side changes go at the bottom, so the layers above build on
+  them instead of conflicting with them.
+- Wording: a solution is what a player saved, a path is its route, and solve
+  is the verb. Matches the `/solutions` URL and the code.
 - Layer 1 built. Stars are the UI's word; code and KV say score, one point
   per kind, so the display can change without touching storage. Pure rules
   in `game/score.ts` (`getSolveScore` for the kinds a solve scores,
@@ -118,12 +127,24 @@ Decided so far (with Kasper, in chat):
 - The first solve of a path is marked `first: true` on the solution, claimed
   atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
   marks old ones by solve order.
-- Layer 3 next (`stars/celebration`, based on `stars/display`): earning stars
-  is the celebration's payoff. The solve POST already gets the newly awarded
-  kinds back from `awardScore`; return them in `CelebrationData` and show
-  them in the dialog, with no explainer of stars (non-goal).
-- Still open: the badge's Flash bolt next to a Flash-coloured solve star; how
-  many stars unlock the best solutions (ask before layer 5); highscore ties
+- Layer 3 built (`stars/celebration`): the solve POST returns the player's
+  stars on the puzzle after the solve as `stars` in `CelebrationData`, and
+  the dialog diffs them against the stars the page loaded with. All of them
+  show on the headline's row, at the headline's size; only the ones gained
+  (new, or solve replacing Flash) fly in one by one on a curve, fading in,
+  each from one of five starts evenly spaced on a 1em circle around 4em left
+  and 2em up of where it lands, drawn at random with no two the same
+  (motion-safe only). The existing stars show from the start, so nothing
+  shifts when the data lands. The headline is just "Solved!" or "Perfect!",
+  over one fixed line, "Thanks for playing. What's next?", leading into the
+  actions, for every solve: the stars carry the news, so the stats
+  lines (first to solve, new path, percentiles, counts) and the loading state
+  are gone. The main action is "Next puzzle", the other "Start over".
+  No-JS solves get no dialog for full solves (they go to
+  the solutions page), so they don't show the payoff; the page's own badge
+  stars update on the next load.
+- Layer 4 next (`stars/highscore`, based on `stars/celebration`).
+- Still open: how many stars unlock the best solutions (ask before layer 5); highscore ties
   past total, first and perfect are by user id (earliest-to-reach would need
   a timestamp in the key); the daily high score's points calculation.
 

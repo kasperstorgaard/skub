@@ -1,6 +1,5 @@
 import { HttpError } from "fresh";
 
-import { incrementHintUsageCount } from "#/db/stats.ts";
 import { isLooped, resolveMoves } from "#/game/board.ts";
 import { getFlashStart, getHintCount, setHintCount } from "#/game/cookies.ts";
 import { withFlashStart } from "#/game/flash.ts";
@@ -81,8 +80,6 @@ export const handler = define.handlers({
       url: ctx.req.url,
       cursor: state.cursor,
     });
-
-    await incrementHintUsageCount(slug);
 
     const headers = new Headers();
     setHintCount(headers, { path: `/puzzles/${slug}`, value: hintCount + 1 });

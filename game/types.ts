@@ -92,12 +92,3 @@ export type PaginatedData<T> = {
   items: T[];
   pagination: PaginationState;
 };
-
-// Aggregate stats for a puzzle, maintained as best-effort alongside solution writes
-export type PuzzleStats = {
-  totalSolutions: number;
-  solutionsHistogram: Record<number, number>; // moveCount → frequency
-  firstSolvedAt?: string; // ISO date, set on first solve
-  uniqueSolvers: number; // deduplicated by userId; anon sessions counted separately
-  hintUsageCount: number;
-};
