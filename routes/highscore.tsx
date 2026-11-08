@@ -4,6 +4,7 @@ import { page } from "fresh";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
+import { PillSwitch } from "#/components/pill-switch.tsx";
 import { define } from "#/core.ts";
 import { listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
@@ -109,90 +110,57 @@ export default define.page<typeof handler>(function HighscorePage(props) {
 
         <div className="flex items-center justify-between flex-wrap gap-fl-2">
           <h1 className="text-brand text-6 leading-flat">High score</h1>
-          <PeriodTabs period={period} />
+          <PillSwitch
+            label="Period"
+            items={[
+              {
+                label: "This week",
+                href: "/highscore",
+                isActive: period === "week",
+              },
+              {
+                label: "All time",
+                href: "/highscore?period=all",
+                isActive: period === "all",
+              },
+            ]}
+          />
         </div>
 
-        {rows.length === 0
-          ? (
-            <p className="text-3 text-text-2">
-              {period === "week"
-                ? "No stars on this week's puzzles yet."
-                : "No stars earned yet."}
-            </p>
-          )
-          : (
-            <div className="grid content-start">
-              {
-                /* The top three, bigger and with what their points are made
-                  of, a faint line between, a sibling step either side */
-              }
-              <ol className="grid m-0 p-0 list-none border-t border-text-3/10 divide-y divide-text-3/10">
-                {rows.slice(0, 3).map((row, index) => (
-                  <li
+        <div className="grid content-start gap-fl-4">
+          {rows.length === 0
+            ? (
+              <p className="text-3 text-text-2">
+                {period === "week"
+                  ? "– No stars on this week's puzzles yet –"
+                  : "– No stars earned yet –"}
+              </p>
+            )
+            : (
+              // One row per player, as the solutions list: a faint line
+              // between, a sibling step either side
+              <ol className="grid m-0 p-0 list-none divide-y divide-text-3/10">
+                {rows.map((row, index) => (
+                  <RowItem
                     key={row.userId}
-                    className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2"
-                  >
-                    {/* The spot centred on the row, the points on its bottom line */}
-                    <span className="self-center text-4 text-text-3 tabular-nums">
-                      {index + 1}
-                    </span>
-                    <div className="grid min-w-0">
-                      <Name
-                        name={row.name}
-                        isViewer={row.userId === userId}
-                        className="text-4 font-medium"
-                      />
-                      <Breakdown userScore={row.userScore} />
-                    </div>
-                    <Points
-                      userScore={row.userScore}
-                      className="self-end text-4 font-semibold leading-flat"
-                      showUnit
-                    />
-                  </li>
+                    row={row}
+                    rank={index + 1}
+                    isViewer={row.userId === userId}
+                  />
                 ))}
-              </ol>
 
-              {(rows.length > 3 || viewerRow) && (
-                <ol
-                  start={4}
-                  className="grid gap-1 m-0 p-0 pt-fl-2 list-none border-t border-text-3/10"
-                >
-                  {rows.slice(3).map((row, index) => (
-                    <li
-                      key={row.userId}
-                      className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 text-3"
-                    >
-                      <span className="text-text-3 tabular-nums">
-                        {index + 4}
-                      </span>
-                      <Name
-                        name={row.name}
-                        isViewer={row.userId === userId}
-                      />
-                      <Points userScore={row.userScore} />
+                {/* The viewer, past the top rows */}
+                {viewerRow && (
+                  <>
+                    <li className="p-0 py-fl-2 text-text-3" aria-hidden="true">
+                      …
                     </li>
-                  ))}
-
-                  {/* The viewer, past the top rows */}
-                  {viewerRow && (
-                    <>
-                      <li className="p-0 text-text-3" aria-hidden="true">
-                        …
-                      </li>
-                      <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 text-3">
-                        <span className="text-text-3 tabular-nums">
-                          {viewerRow.rank}
-                        </span>
-                        <Name name={viewerRow.name} isViewer />
-                        <Points userScore={viewerRow.userScore} />
-                      </li>
-                    </>
-                  )}
-                </ol>
-              )}
-            </div>
-          )}
+                    <RowItem row={viewerRow} rank={viewerRow.rank} isViewer />
+                  </>
+                )}
+              </ol>
+            )}
+        </div>
       </Main>
 
       <Panel />
@@ -200,46 +168,28 @@ export default define.page<typeof handler>(function HighscorePage(props) {
   );
 });
 
-const PERIODS: { period: Period; label: string; href: string }[] = [
-  { period: "week", label: "This week", href: "/highscore" },
-  { period: "all", label: "All time", href: "/highscore?period=all" },
-];
+type RowItemProps = {
+  row: Row;
+  /** Unknown past the top rows all time */
+  rank?: number;
+  isViewer: boolean;
+};
 
-/** This week or all time, a pill switch of links: the period lives in the URL. */
-function PeriodTabs({ period }: { period: Period }) {
+/** One player: their spot, name over what their points are made of, points. */
+function RowItem({ row, rank, isViewer }: RowItemProps) {
   return (
-    <nav
-      aria-label="Period"
-      className="inline-flex p-1 rounded-round bg-surface-2"
-    >
-      {PERIODS.map((tab) => {
-        const isActive = tab.period === period;
-        return (
-          <a
-            key={tab.period}
-            href={tab.href}
-            aria-current={isActive ? "page" : undefined}
-            // Active: an action button's ring and tint, sized down to a pill.
-            // The other keeps a clear border as wide, so it's as tall, and
-            // half the padding towards the active one.
-            className={clsx(
-              // Taller on mobile, for thumbs
-              "py-1 max-lg:py-2 rounded-round",
-              "text-1 no-underline whitespace-nowrap",
-              isActive
-                ? "btn px-3 min-h-0 min-w-0 font-normal tracking-normal"
-                : clsx(
-                  "first:pl-2 first:pr-1 last:pl-1 last:pr-2",
-                  "border-[3px] border-transparent",
-                  "text-text-2 hover:text-text-1",
-                ),
-            )}
-          >
-            {tab.label}
-          </a>
-        );
-      })}
-    </nav>
+    <li className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-x-fl-1 p-0 py-fl-2 first:pt-0 last:pb-0">
+      <span className="text-4 tabular-nums text-text-3">{rank}</span>
+      <div className="grid min-w-0">
+        <Name
+          name={row.name}
+          isViewer={isViewer}
+          className="text-4 font-medium"
+        />
+        <Breakdown userScore={row.userScore} />
+      </div>
+      <Points userScore={row.userScore} />
+    </li>
   );
 }
 
@@ -273,7 +223,7 @@ function Breakdown({ userScore }: { userScore: UserScore }) {
   const counts = { ...userScore, solve: userScore.solve + userScore.flash };
 
   return (
-    <dl className="flex flex-wrap gap-x-3 m-0 text-2">
+    <dl className="flex flex-wrap gap-x-3 m-0 text-1">
       {BREAKDOWN.filter(({ kind }) => counts[kind] > 0).map((
         { kind, label },
       ) => (
@@ -288,21 +238,15 @@ function Breakdown({ userScore }: { userScore: UserScore }) {
   );
 }
 
-type PointsProps = {
-  userScore: UserScore;
-  /** "pts" after the number: on the podium; the list below follows it */
-  showUnit?: boolean;
-  className?: string;
-};
+type PointsProps = { userScore: UserScore };
 
-function Points({ userScore, showUnit, className }: PointsProps) {
+/** On the name's line, as the solutions list's Watch. */
+function Points({ userScore }: PointsProps) {
   return (
-    <span className={clsx("text-text-1 tabular-nums text-right", className)}>
+    <span className="text-4 font-semibold text-text-1 tabular-nums text-right">
       {formatNumber(getTotalScore(userScore))}
       {/* The unit, quiet: the stats beside it are numbers too */}
-      {showUnit && (
-        <span className="ml-1 text-1 font-normal text-text-3">pts</span>
-      )}
+      <span className="ml-1 text-1 font-normal text-text-3">pts</span>
     </span>
   );
 }

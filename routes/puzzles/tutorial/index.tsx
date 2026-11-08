@@ -206,6 +206,7 @@ export default define.page<typeof handler>(function PuzzleTutorial(props) {
 
       <ActionsPanel
         slug={puzzle.value.slug}
+        hasSolved={puzzle.value.slug in props.state.progress}
       />
 
       <AutoPostSolution

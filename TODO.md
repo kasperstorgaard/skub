@@ -77,12 +77,14 @@ PR finishes only part of an item, trim the item to what is left.
   too, on a longer clock. Cloudflare's path is Workers and Durable Objects
   (self-hostable via workerd merged with Deno's celld).
 
-  Runtime target: [workerd](https://github.com/cloudflare/workerd). Open
-  question is the store. What skub relies on in Deno KV: atomic multi-key writes
-  with versionstamp checks (a solution under four index keys),
-  optimistic-concurrency retries on shared counters (puzzle stats), ordered
-  prefix scans (`listUserSolutions`, solutions by puzzle, canonical groups), and
-  read-after-write on the solve POST.
+  Runtime target: [workerd](https://github.com/cloudflare/workerd). Lean: host
+  on Cloudflare Workers and move the toolchain to Bun (tests, formatting,
+  linting, tasks), since Deno's development ends. Open question is the store.
+  What skub relies on in Deno KV: atomic multi-key writes with versionstamp
+  checks (a solution under four index keys), optimistic-concurrency retries on
+  shared counters (path groups), ordered prefix scans (`listUserSolutions`,
+  solutions by puzzle, canonical groups), and read-after-write on the solve
+  POST.
 
   The data migration leaves the bot `user` records behind: over a million
   default records from before GETs stopped writing to KV (#244), with no name,
@@ -102,6 +104,13 @@ PR finishes only part of an item, trim the item to what is left.
   Lean: Durable Objects — it's the model Ryan Dahl's celld is built around and
   what Cloudflare's self-hosting path centres on. D1 stays the fallback if the
   redesign proves too big.
+
+- **E2E runs start from clean data.** Today every preview deployment shares one
+  KV database (`{app-id}-preview`), so runs that overlap across a stack, and
+  runs cancelled before teardown, leave data the next run sees: a fixed test
+  name on a shared puzzle (`e2ellie` on karla) can show up twice, or drop out of
+  the solutions page's first six. On the next provider, each run gets a clean
+  database, either fresh from the start or cleaned by a script before it runs.
 
 ## Performance
 
@@ -124,11 +133,8 @@ PR finishes only part of an item, trim the item to what is left.
   tag. Retro themes still style the old pieces (`.move-counter`,
   `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
 
-- **The solutions page feels like part of the new look.** Revamp it to match the
-  puzzle page: the title with its lead line, the score badge, the type roles and
-  spacing levels, buttons, and the sidebar and mobile footer. The solve list
-  itself gets a visual pass too, so a solve reads at a glance (who, how many
-  moves, when).
+- **A solution says when it was found.** The solutions page shows who claimed
+  each path and how many moves it takes; it doesn't say when.
 
 - **On mobile, all puzzles are one feed to flick through.** A snap-scrolling
   feed of puzzle cards, newest first, that reads as one seamless list. The card
@@ -155,11 +161,10 @@ PR finishes only part of an item, trim the item to what is left.
   so "6/4" reads right from then on.
 
 - **The score badge reads at a glance.** It shows moves played over your best
-  (`3/9`), the best in the regular colour, even when perfect. Figure out whether
-  it reads better flipped, your best first and the live count on the right,
-  beside the stars you've earned. Flipped, the slash reads as a ratio, so it
-  likely needs another shape, e.g. a small "best 9" by the stars. The
-  celebration item's "6/4" example assumes the old badge.
+  (`3/9`). Figure out whether it reads better flipped, your best first and the
+  live count on the right, beside the stars you've earned. Flipped, the slash
+  reads as a ratio, so it likely needs another shape, e.g. a small "best 9" by
+  the stars. The celebration item's "6/4" example assumes the old badge.
 
 - **Smoother page changes.** View transitions between pages, opt-in per
   navigation. Going into a board page zones in, the page settling back around
@@ -198,32 +203,13 @@ PR finishes only part of an item, trim the item to what is left.
   the computed Flash start lands the puck on with a Flash icon, so the builder
   knows where Flash players begin while shaping the board.
 
-- **Flash solves get a leaderboard of their own.** Flash solves are already
-  stored with names, as regular solutions marked `flash`; the leaderboard skips
-  them because they never enter the aggregates. Give them a board beside the
-  normal one (a tab or filter on the solutions page) and stats of their own, so
-  the celebration can compare a Flash solve against other Flash solves.
+- **Flash solves get stats of their own.** The solutions page's Flash tab lists
+  them by path, worked out from the solves; they still have no stats, so the
+  celebration can't compare a Flash solve against other Flash solves.
 
-- **Players earn stars each day for what they achieve.** 1 star for a solve, 2
-  for a perfect, 1 for being first to find a solution, capped at 3 per puzzle
-  per day: a perfect, never-seen solution is 3 stars on its own, and three
-  separate solves are 1 each. Open: a Flash solve could earn a lower-tier star;
-  the Flash explainer already promises "smaller prizes", not none. Stars add up
-  into all-time leaderboards, and puzzle thumbnails show each puzzle's stars so
-  players can see what's left to earn. Open: should a solve only count within 2
-  moves of perfect? Leaning towards a tiered solutions page: suboptimal
-  solutions stay open to everyone, and the optimal ones unlock once you've
-  earned stars on the puzzle yourself. New players learn from the solutions
-  within reach; the best play is the reward. This fits the badge, which already
-  hides the shortest count until you've solved the puzzle. Separate solves earn
-  stars too, so players without a perfect have a route to the unlock. Open: how
-  many stars unlock it, 1 or 3? Simpler cousin, also open: should See solutions
-  stay closed until you've solved the puzzle at all? Puzzle cards show your
-  result where the difficulty tag used to sit (bottom right): your best score,
-  and your stars once they exist. Earning stars is the celebration's payoff:
-  they animate in as the moment of the solve. The first celebration a player
-  sees explains what stars are and how to earn them. The solutions page shows
-  the stars earned on the puzzle.
+- **A player's first stars come with an explainer.** The first celebration a
+  player sees says what stars are and how to earn them: one for a solution, two
+  for perfect or first, three for both.
 
 - **Players play without being asked for a name.** Today a new player's first
   solve asks for a name before anything else. Instead, every solve is saved and
@@ -248,17 +234,19 @@ PR finishes only part of an item, trim the item to what is left.
   today, and a permanent name makes a clash permanent too. Claim names
   atomically when picked, so one name is one player.
 
-- **Players can replay solutions as good as theirs, never better.** On a
-  puzzle's solutions, you can watch any solution as long as or longer than your
-  own best; shorter ones stay closed until you beat your best. A perfect opens
-  them all. No solve yet, nothing to watch. A candidate answer to how many stars
-  unlock the best solutions (layer 5 of the stars stack): your own best is the
-  key, not a star count.
-
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of
   behind the highscore page where few find them. Stands on its own; the tiered
   unlock in the stars item can layer on later.
+
+- **Playing keeps working offline.** Solves and progress save to the device
+  (IndexedDB) and sync to the server once back online, so a dropped connection
+  never loses a solve. Not Linear's model as is: IndexedDB is client-only, and
+  the game has to work without JS, so it needs a model of its own where the
+  server path (cookies and KV, as today) and the IndexedDB path are easy to swap
+  behind one shape, JS adding the local copy on top. The server stays the source
+  of truth, since the browser can evict IndexedDB at any time, and reading it
+  may be too slow per move, so the copy might load into memory on page load.
 
 ## Login
 

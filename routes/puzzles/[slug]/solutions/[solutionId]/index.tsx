@@ -1,15 +1,15 @@
 import { useSignal } from "@preact/signals";
-import clsx from "clsx/lite";
 import { HttpError, page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import { Icon, Play } from "#/components/icons.tsx";
+import { Icon, Play, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { BadgeStars } from "#/components/stars.tsx";
 import { getPuzzleSolution } from "#/db/solutions.ts";
 import { Solution } from "#/db/types.ts";
+import { getSolveScore } from "#/game/score.ts";
 import { Puzzle } from "#/game/types.ts";
 import { encodeState } from "#/game/url.ts";
 import Board from "#/islands/board.tsx";
@@ -50,7 +50,10 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
   const puzzle = useSignal(props.data.puzzle);
   const href = useSignal(props.url.href);
   const mode = useSignal<"replay">("replay");
-  const backHref = `/puzzles/${props.data.puzzle.slug}/solutions`;
+  // Back to the tab the solution is listed on.
+  const backHref = `/puzzles/${props.data.puzzle.slug}/solutions${
+    props.data.solution.flash ? "?tab=flash" : ""
+  }`;
 
   return (
     <>
@@ -63,31 +66,44 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           <h1 className="text-text-1">
             <PuzzleName
               puzzle={props.data.puzzle}
-              lead={`Solved by ${props.data.solution.name}`}
+              lead={`Solution by ${props.data.solution.name}`}
             />
           </h1>
 
-          <BadgeStars kinds={props.state.score[props.data.puzzle.slug]}>
-            <ScoreBadge puzzle={puzzle} href={href} />
+          {/* This solution's moves against the shortest, and its stars */}
+          <BadgeStars
+            kinds={getSolveScore(props.data.puzzle, {
+              moves: props.data.solution.moves.length,
+              isNewPath: !!props.data.solution.first,
+              flash: !!props.data.solution.flash,
+            })}
+          >
+            <ScoreBadge
+              puzzle={puzzle}
+              href={href}
+              moves={props.data.solution.moves.length}
+            />
           </BadgeStars>
         </div>
 
-        <Board puzzle={puzzle} href={href} mode={mode} />
+        <div className="grid gap-fl-2">
+          <Board puzzle={puzzle} href={href} mode={mode} />
+
+          {/* The page's main action, under the board, not in the footer */}
+          <div className="flex flex-col items-center gap-2 place-self-center">
+            <p className="m-0 text-2 text-text-2">Didn't catch it?</p>
+            <a href={props.url.href} className="btn">
+              <Icon icon={Play} />
+              Watch again
+            </a>
+          </div>
+        </div>
       </Main>
 
       <Panel>
-        <div
-          className={clsx(
-            "col-[2/3] flex items-start justify-center gap-fl-1 flex-wrap",
-            "lg:col-auto lg:row-start-3 lg:flex-col lg:self-end lg:justify-start",
-          )}
-        >
-          <a
-            href={props.url.href}
-            className="btn"
-          >
-            <Icon icon={Play} />
-            Watch again
+        <div className="col-[2/3] flex items-start lg:col-auto lg:row-start-3">
+          <a href="/highscore" className="btn">
+            <Icon icon={Trophy} /> High score
           </a>
         </div>
       </Panel>

@@ -17,42 +17,44 @@ A stack of PRs, each based on the one before:
 
 ## Stars
 
-Three stars per puzzle at most, one rounded star with a slim outline, drawn
-three ways:
+Stars belong to a solution, three at most, one rounded star with a slim
+outline, the same for every kind; the count tells them apart:
 
-- **Solve**: any solve of the puzzle. An outline.
-- **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
-  star. Filled, with tiny rays between the arms.
-- **First**: being first to find a solution path no one had found before, in
-  at most two moves more than the minimum, or any detour would find one. The
-  outline in thirteen even dashes that don't line up with the tips.
+- **One**: any solution.
+- **Two**: a solution in the puzzle's minimum moves (perfect), or the first to
+  find a path no one had found before, in at most two moves more than the
+  minimum, or any detour would find one (first).
+- **Three**: both, a new perfect path. Rare by design: a puzzle has few
+  optimal paths, and they're claimed early.
 
-A Flash solve earns the solve star in the pearl (`--pearl`, Flash mode's own
-look), the only star that changes colour. A later full solve turns it into the regular
-solve star, moving the point from Flash to solve; perfect and first need a
-full solve.
+A Flash solve earns a single star in the pearl (`--pearl`, Flash mode's own
+look), the only star that changes colour; perfect and first need a full
+solve.
 
-Stars are per puzzle, for all time, and each kind is earned once: any puzzle
-counts, archive included.
+A player's stars on a puzzle are their best single solution's, for all time,
+any puzzle, archive included: solves don't add up. A better solution
+replaces them (more stars, or a full solve over a Flash one); on a tie the
+earlier stays.
 
 Only earned stars show: no placeholder for unearned ones, and no hint of
-what's left to earn anywhere. The stars are a vocabulary players learn. They
-float left of the score badge, no background; on cards, alone in the top right
-(no move count). The theme's puck colour (`--color-ui-2`): shape and count
-tell the kinds apart.
+what's left to earn anywhere. They float left of the score badge, no
+background; on cards, alone in the top right (no move count); on the
+solutions page, beside each path's claimer. The theme's puck colour
+(`--color-ui-2`).
 
-Stars stack with a 0.3em overlap, like an avatar stack, to save space. Each
-after the first cuts a gap out of the one behind in the background colour of
-where it sits; cards and the page differ, so that colour comes from the
-context (`--star-knockout`).
+Stars stack with a 0.3em overlap, like an avatar stack, to save space, the
+left one on top, so a star flying in from the left settles in behind the ones
+already there. Each cuts a gap out of the one to its right in the background
+colour of where it sits; cards and the page differ, so that colour comes from
+the context (`--star-knockout`).
 
 The Flash switch lives in the toolbar, not the badge, so the stars don't sit
 against its bolt.
 
 ## High score
 
-Players rank by points: 50 for a solve (or a Flash solve), 50 for first and
-100 for perfect, so 200 at most per puzzle. Ties are broken by the rarer kinds:
+Players rank by points: 50 a star, so 150 at most per puzzle. Stars alone
+would make a week's best 21; 1,050 reads like the high score it is. Ties are broken by the rarer kinds:
 first, then perfect. Totals per kind live in KV per user, with a ranking index kept in step
 on every star earned.
 
@@ -64,31 +66,31 @@ only the stars on the week's dailies (Monday to Sunday), so everyone races on
 the same boards; archive play moves only all time. It is worked out from those
 puzzles' stored solutions when shown, not stored.
 
-The puzzle page links to its solutions once the player has a star on it.
-
 Links to the high score page: a quiet trophy beside the profile icon in every
-page's header, for when you go looking for it, and buttons in the puzzle page's
-sidebar and footer, the solutions page and the profile's stats (once you have
+page's header, for when you go looking for it, and buttons on a solution's
+replay page, the solutions page and the profile's stats (once you have
 points). The stats' numbers aren't links.
 
 ## Solutions page
 
-Three tabs: Solutions, Flash and Users.
+Two tabs, Regular and Flash, the high score's pill switch, in the URL
+(`?tab=flash`) so they work without JS and survive a share or reload. The
+switch sits beside the title, on its bottom line, where the score badge and
+stars were: the page is about the paths, not your score. A replay's badge
+shows the solution's moves against the shortest, with the stars that
+solution earned beside it. Flash
+solves start part way in, so they're shorter and get a list of their own.
 
-- **Solutions**: as today, a table of rows grouped by solution (canonical path),
-  shortest first, but each group lists its players, up to 10, instead of
-  "+ x other users".
-- **Flash**: the same for Flash solves, compared by the moves played from the
-  Flash start. A Flash solve lands here (today it goes back to the solved
-  board).
-- **Users**: the daily high score, one row per user: points for the solve,
-  roughly 50–300, worked out from the stored solutions when shown, not stored.
-  How it's worked out is still open.
+Each tab lists paths, shortest first. A path shows, podium style, the player
+who claimed it (found it first) with its move count, and under them the next
+five players who found it, each with the stars their solution earned (one
+less than the claimer's, Pioneer), then how many more. Flash paths are counted from
+the Flash start. A Flash solve lands on the Flash tab.
 
-Each tab is deep linkable: it lives in the URL, so it works without JS and
-survives a share or reload.
-
-The best (optimal) solutions unlock once you've earned stars on the puzzle.
+Every path has a Watch button. The way in is the gate: the puzzle page links
+to its solutions once you've solved it, any solve, Flash included (to the
+Flash tab while Flash is on), and nothing inside the page or the replays
+checks again. Copying a better path is open, for now.
 
 ## Non-goals
 
@@ -117,7 +119,7 @@ Decided so far (with Kasper, in chat):
   the aggregate per kind (`user_score`), and the highscore, keyed
   `[total, first, perfect, userId]` and read reversed (`highscore`), all in
   one atomic commit with retries; awarded best effort in the solve POST for new
-  solves; `scripts/backfill-score.ts` is safe to re-run. This is solution
+  solves; `scripts/migrate-score.ts` is safe to re-run. This is solution
   score, what solves earn; `game/scoring.ts` is puzzle score, how good a
   board is.
 - Layer 2 built: the progress cookie is v2, two bytes per puzzle (best
@@ -137,8 +139,12 @@ Decided so far (with Kasper, in chat):
   the solve star in the pearl; a full solve swaps it for `solve`
   (`withEarned`), moving the point, so three stars at most per puzzle.
 - The first solve of a path is marked `first: true` on the solution, claimed
-  atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
-  marks old ones by solve order.
+  atomically in `saveSolution`: the first solve creates the path's group
+  (`solution_groups_by_puzzle`) in its own commit. The migration marks old
+  ones by solve order.
+- The puzzle stats are gone (`puzzle_stats`, `puzzle_solvers`,
+  `flash_solve_count`): nothing read them after the celebration lost its
+  stats lines, and the hint limit is the cookie.
 - Layer 3 built (`stars/celebration`): the solve POST returns the player's
   stars on the puzzle after the solve as `stars` in `CelebrationData`, and
   the dialog diffs them against the stars the page loaded with. All of them
@@ -163,27 +169,53 @@ Decided so far (with Kasper, in chat):
   footer's Stars stat (total and split, after the streak) links there, as do
   "High score" buttons in the puzzle page's panel (its sidebar on desktop,
   its footer on mobile), the solutions page's panel and the archive's.
-- High score since: the top three as a podium (bigger, with their stars), the
-  rest a plain numbered list; a pill switch on the right picks this week
+- High score since: laid out as the solutions list, every row alike: the
+  rank, the name over what the points are made of (solved, perfect, pioneer,
+  each number then its label), the points on the name's line, faint lines
+  between; a pill switch on the right picks this week
   (`/highscore`) or all time (`?period=all`). This week is worked out per
   request from the week's dailies (`getWeekHighscore`, `getHighscore`), so the
   viewer's rank is known there even past the top 50; all time reads the
   stored index.
-- Layer 5 next (`solutions/revamp`, based on `stars/highscore`).
+- Layer 5 built (`solutions/revamp`, on `badge/your-best`).
 - Decided in layer 4: ties past points, first and perfect go by user id, and
   that's fine. A Flash solve is worth a solve's 50: missing perfect and first
   is penalty enough. The star is called Pioneer in the UI: several can open a
-  puzzle, one per path. Home and profile show
-  streak, points and the stars (Solved, Perfect, Pioneer; Flash counts as
-  solved), and a trophy in the header links to the high score.
+  puzzle, one per path. Home and profile show streak, points, then solved,
+  perfect and pioneer, each a number over its label and no stars (Flash counts
+  as solved).
   Rate is gone from the puzzle page (it's the candidates flow).
-- Nothing runs against production (backfill, reindex) until Kasper has
+- Nothing runs against production (the migration) until Kasper has
   cleaned up and tested the stack.
-- For layer 5: the puzzle page's See solutions shows once you have a star on
-  the puzzle, with the unlock of the best solutions. Pulled out of layer 4 so
-  who can reach the solutions page is decided in one place.
-- Still open: how many stars unlock the best solutions (ask before layer 5);
-  the daily high score's points calculation.
+- Production migration, over KV Connect (`SKUB_KV_URL` = the database's
+  `.../connect` URL, `DENO_KV_ACCESS_TOKEN` = an org or personal token; the
+  database ID is in the console's Databases table, by timeline). `--tunnel`
+  reaches the development database, never production.
+  Three scripts: `backup-kv.ts`, `restore-kv.ts` and `migrate-score.ts`
+  (marks first solves, awards past stars, rebuilds the high score, deletes
+  the retired stats; `--dry-run` writes nothing; safe to re-run).
+  0. Rehearse on the preview database: delete its score prefixes
+     (`solution_score_by_user_puzzle`, `user_score`, `highscore`), restore a
+     production backup onto it, run the steps below against it, check the
+     pages on the stack's preview deployment.
+  1. Back up production at a quiet moment: `scripts/backup-kv.ts <file>`.
+  2. `scripts/migrate-score.ts --dry-run`, then for real, from merged code.
+     The old code ignores the new keys.
+  3. Deploy. Cookies then build from KV that already has the stars.
+  4. Migrate again: catches solves between 2 and 3, and clears the retired
+     stats the old code kept writing until the deploy.
+  Undo: `scripts/restore-kv.ts <file> --confirm` restores what was there, and
+  deleting the score prefixes removes what the migration added.
+- Layer 5 plan (`solutions/revamp`, on `badge/your-best`), with Kasper:
+  one solutions page, no Users tab (the high score page covers ranking), Flash
+  as its own tab. Replays open after any solve, and only the links in check
+  it: stricter rules (only as good as your best) were weighed and dropped as
+  too harsh. Defaults picked:
+  - The pill switch moves out of the high score into a shared component.
+  - Players per path from `solutions_by_puzzle_canonical` (the claimer plus
+    five); Flash paths from the puzzle's Flash solves, by the canonical key of
+    the moves after the Flash start, worked out per request.
+  - Rows take the high score's plain list look: no cards.
 
 Environment (cloud sandbox):
 
