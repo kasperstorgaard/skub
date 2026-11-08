@@ -127,6 +127,11 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## UI
 
+- **The hint dialog reads as tight as the rest.** Its wording grew per state and
+  drifted: "You've gone a bit off track" grades the play, "(optimal is N)" reads
+  like a score, full stops come and go, and "Found it" isn't bold like the other
+  headings. One voice, facts only, as short as the Flash dialog.
+
 - **Retro themes follow the new layout.** The main look moved on: play controls
   are a toolbar beside the board, the score badge replaced the difficulty badge
   and move counter, the sidebar has a footer, and cards lost their difficulty
