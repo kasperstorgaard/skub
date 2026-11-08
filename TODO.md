@@ -65,11 +65,6 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## Hosting
 
-- **Production data has a backup.** Today production KV has none of its own: no
-  snapshot, no continuous S3 backup. Take snapshots with `scripts/export-kv.ts`
-  over KV Connect (it only reads), and consider Deploy's continuous S3 backup
-  for point-in-time history, which also helps moving off Deno Deploy.
-
 - **Skub keeps running after Deno Deploy shuts down.** Deno joined Cloudflare
   (announced 2026-10-09): Deno Deploy shuts down in about six months, and the
   Deno runtime gets bug-fix and security releases for a year, then development
@@ -84,11 +79,12 @@ PR finishes only part of an item, trim the item to what is left.
 
   Runtime target: [workerd](https://github.com/cloudflare/workerd). Lean: host
   on Cloudflare Workers and move the toolchain to Bun (tests, formatting,
-  linting, tasks), since Deno's development ends. Open question is the store. What skub relies on in Deno KV: atomic multi-key writes
-  with versionstamp checks (a solution under four index keys),
-  optimistic-concurrency retries on shared counters (puzzle stats), ordered
-  prefix scans (`listUserSolutions`, solutions by puzzle, canonical groups), and
-  read-after-write on the solve POST.
+  linting, tasks), since Deno's development ends. Open question is the store.
+  What skub relies on in Deno KV: atomic multi-key writes with versionstamp
+  checks (a solution under four index keys), optimistic-concurrency retries on
+  shared counters (path groups), ordered prefix scans (`listUserSolutions`,
+  solutions by puzzle, canonical groups), and read-after-write on the solve
+  POST.
 
   The data migration leaves the bot `user` records behind: over a million
   default records from before GETs stopped writing to KV (#244), with no name,
@@ -109,13 +105,12 @@ PR finishes only part of an item, trim the item to what is left.
   what Cloudflare's self-hosting path centres on. D1 stays the fallback if the
   redesign proves too big.
 
-- **E2E runs start from clean data.** Today every preview deployment shares
-  one KV database (`{app-id}-preview`), so runs that overlap across a stack,
-  and runs cancelled before teardown, leave data the next run sees: a fixed
-  test name on a shared puzzle (`e2ellie` on karla) can show up twice, or
-  drop out of the solutions page's first six. On the next provider, each run
-  gets a clean database, either fresh from the start or cleaned by a script
-  before it runs.
+- **E2E runs start from clean data.** Today every preview deployment shares one
+  KV database (`{app-id}-preview`), so runs that overlap across a stack, and
+  runs cancelled before teardown, leave data the next run sees: a fixed test
+  name on a shared puzzle (`e2ellie` on karla) can show up twice, or drop out of
+  the solutions page's first six. On the next provider, each run gets a clean
+  database, either fresh from the start or cleaned by a script before it runs.
 
 ## Performance
 
@@ -249,10 +244,9 @@ PR finishes only part of an item, trim the item to what is left.
   never loses a solve. Not Linear's model as is: IndexedDB is client-only, and
   the game has to work without JS, so it needs a model of its own where the
   server path (cookies and KV, as today) and the IndexedDB path are easy to swap
-  behind one shape, JS adding the local copy on top. The server stays the
-  source of truth, since the browser can evict IndexedDB at any time, and
-  reading it may be too slow per move, so the copy might load into memory on
-  page load.
+  behind one shape, JS adding the local copy on top. The server stays the source
+  of truth, since the browser can evict IndexedDB at any time, and reading it
+  may be too slow per move, so the copy might load into memory on page load.
 
 ## Login
 

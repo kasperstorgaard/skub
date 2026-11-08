@@ -117,7 +117,7 @@ Decided so far (with Kasper, in chat):
   the aggregate per kind (`user_score`), and the highscore, keyed
   `[total, first, perfect, userId]` and read reversed (`highscore`), all in
   one atomic commit with retries; awarded best effort in the solve POST for new
-  solves; `scripts/backfill-score.ts` is safe to re-run. This is solution
+  solves; `scripts/migrate-score.ts` is safe to re-run. This is solution
   score, what solves earn; `game/scoring.ts` is puzzle score, how good a
   board is.
 - Layer 2 built: the progress cookie is v2, two bytes per puzzle (best
@@ -137,8 +137,12 @@ Decided so far (with Kasper, in chat):
   the solve star in the pearl; a full solve swaps it for `solve`
   (`withEarned`), moving the point, so three stars at most per puzzle.
 - The first solve of a path is marked `first: true` on the solution, claimed
-  atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
-  marks old ones by solve order.
+  atomically in `saveSolution`: the first solve creates the path's group
+  (`solution_groups_by_puzzle`) in its own commit. The migration marks old
+  ones by solve order.
+- The puzzle stats are gone (`puzzle_stats`, `puzzle_solvers`,
+  `flash_solve_count`): nothing read them after the celebration lost its
+  stats lines, and the hint limit is the cookie.
 - Layer 3 built (`stars/celebration`): the solve POST returns the player's
   stars on the puzzle after the solve as `stars` in `CelebrationData`, and
   the dialog diffs them against the stars the page loaded with. All of them
@@ -171,31 +175,34 @@ Decided so far (with Kasper, in chat):
   request from the week's dailies (`getWeekHighscore`, `getHighscore`), so the
   viewer's rank is known there even past the top 50; all time reads the
   stored index.
-- Layer 5 next (`solutions/revamp`, based on `stars/highscore`).
+- Layer 5 built (`solutions/revamp`, on `badge/your-best`).
 - Decided in layer 4: ties past points, first and perfect go by user id, and
   that's fine. A Flash solve is worth a solve's 50: missing perfect and first
   is penalty enough. The star is called First in the UI. Home and profile show
   streak, points, then solved, perfect and first, each a number over its
   label and no stars (Flash counts as solved), and a High score button in home's panel once you have points.
   Rate is gone from the puzzle page (it's the candidates flow).
-- Nothing runs against production (backfill, reindex) until Kasper has
+- Nothing runs against production (the migration) until Kasper has
   cleaned up and tested the stack.
 - Production migration, over KV Connect (`SKUB_KV_URL` = the database's
   `.../connect` URL, `DENO_KV_ACCESS_TOKEN` = an org or personal token; the
   database ID is in the console's Databases table, by timeline). `--tunnel`
   reaches the development database, never production.
-  0. Rehearse on the preview database: snapshot it, import a local export
-     without the score keys (`--exclude solution_score_by_user_puzzle
-     --exclude user_score --exclude highscore --exclude
-     solution_paths_by_puzzle`), run the steps below against it, check the
+  Three scripts: `backup-kv.ts`, `restore-kv.ts` and `migrate-score.ts`
+  (marks first solves, awards past stars, rebuilds the high score, deletes
+  the retired stats; `--dry-run` writes nothing; safe to re-run).
+  0. Rehearse on the preview database: delete its score prefixes
+     (`solution_score_by_user_puzzle`, `user_score`, `highscore`), restore a
+     production backup onto it, run the steps below against it, check the
      pages on the stack's preview deployment.
-  1. Snapshot production at a quiet moment: `scripts/export-kv.ts <file>`.
-  2. `scripts/backfill-score.ts --dry-run`, then for real, from merged code.
+  1. Back up production at a quiet moment: `scripts/backup-kv.ts <file>`.
+  2. `scripts/migrate-score.ts --dry-run`, then for real, from merged code.
      The old code ignores the new keys.
   3. Deploy. Cookies then build from KV that already has the stars.
-  4. Backfill again: catches solves between 2 and 3; a no-op otherwise.
-  Undo: `scripts/import-kv.ts <file> --confirm` restores what was there, and
-  deleting the score prefixes removes what the backfill added.
+  4. Migrate again: catches solves between 2 and 3, and clears the retired
+     stats the old code kept writing until the deploy.
+  Undo: `scripts/restore-kv.ts <file> --confirm` restores what was there, and
+  deleting the score prefixes removes what the migration added.
 - Layer 5 plan (`solutions/revamp`, on `badge/your-best`), with Kasper:
   one solutions page, no Users tab (the high score page covers ranking), Flash
   as its own tab. Replays open after any solve, and only the links in check
