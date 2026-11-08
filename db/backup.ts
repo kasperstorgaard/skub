@@ -1,6 +1,9 @@
 import { getPlayerIds, playerPrefixes } from "#/db/backup-keys.ts";
 import { rawKv } from "#/db/kv.ts";
 import { encodeEntry } from "#/lib/kv-json.ts";
+import { withSpan } from "#/lib/tracing.ts";
+
+const bucket = "skub-kv-backups";
 
 // getMany takes at most 10 keys.
 const getManySize = 10;
@@ -44,4 +47,28 @@ export async function getPlayersBackup() {
     players: playerIds.length,
     entries: lines.length,
   };
+}
+
+/**
+ * Uploads every player's data to the backup bucket, named by the hour. Runs
+ * only where the GCP cloud connection is (production).
+ */
+export function backupPlayers() {
+  if (!Deno.env.has("GCP_SERVICE_ACCOUNT_EMAIL")) return;
+
+  return withSpan("backup.players", async (span) => {
+    const { body, players, entries } = await getPlayersBackup();
+    const name = `players/${new Date().toISOString().slice(0, 13)}.jsonl`;
+
+    // Loaded here, so the SDK stays out of every request's cold start.
+    const { Storage } = await import("@google-cloud/storage");
+    await new Storage().bucket(bucket).file(name).save(body, {
+      contentType: "application/x-ndjson",
+      resumable: false,
+    });
+
+    span.setAttribute("players.count", players);
+    span.setAttribute("entries.count", entries);
+    span.setAttribute("backup.bytes", body.length);
+  });
 }
