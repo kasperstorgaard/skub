@@ -79,6 +79,11 @@ PR finishes only part of an item, trim the item to what is left.
   prefix scans (`listUserSolutions`, solutions by puzzle, canonical groups), and
   read-after-write on the solve POST.
 
+  The data migration leaves the bot `user` records behind: over a million
+  default records from before GETs stopped writing to KV (#244), with no name,
+  theme or skill level, no solution and no login. The hourly backup's file is
+  the natural source for the move; after it, the backup reads `user` whole.
+
   - **Workers KV:** eventually consistent (~60 s), no atomics — breaks the solve
     flow and stats. Fine only for cache-like data such as the manifest.
   - **D1 (SQLite):** the most direct port. Index keys become one table with

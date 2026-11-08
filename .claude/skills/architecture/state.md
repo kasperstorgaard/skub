@@ -64,6 +64,9 @@ Anything that needs to be shared between users. Given we don't have sign in,
 this data is not guaranteed unique or anything. fx: "The same user can create
 multiple solutions with different names? fine"
 
+A new key prefix goes in `db/backup-keys.ts`, backed up by default; a test fails
+until it's there.
+
 ## Preact Signals
 
 The big client side progressive enhancement, is that each interaction with the

@@ -1,5 +1,6 @@
 {
   "unstable": [
+    "cron",
     "kv",
     "temporal"
   ],
@@ -48,6 +49,7 @@
     "@annervisser/slug": "jsr:@annervisser/slug@^1.2.1",
     "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.1",
     "@deno/esbuild-plugin": "jsr:@deno/esbuild-plugin@^1.2.1",
+    "@google-cloud/storage": "npm:@google-cloud/storage@^8.4.0",
     "@fresh/plugin-vite": "jsr:@fresh/plugin-vite@^1.1.2",
     "@phosphor-icons/core": "npm:@phosphor-icons/core@^2.1.1",
     "@preact/signals": "npm:@preact/signals@^2.9.0",
