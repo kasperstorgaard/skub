@@ -247,8 +247,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
     ? null
     : getPuzzleArchiveHref(props.data.puzzle);
   const back = archiveHref
-    ? { href: archiveHref, label: "Back to puzzles" }
-    : { href: "/", label: "Back to home" };
+    ? { href: archiveHref, label: "Go to puzzles" }
+    : { href: "/", label: "Go to home" };
 
   return (
     <>
