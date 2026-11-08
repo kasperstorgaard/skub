@@ -132,12 +132,31 @@ if (isDryRun) {
 // Retired stats. The old code writes them until the deploy, so the run after
 // it clears them for good.
 const retiredPrefixes = ["puzzle_stats", "puzzle_solvers", "flash_solve_count"];
-let deleted = 0;
+const retiredKeys: Deno.KvKey[] = [];
 for (const prefix of retiredPrefixes) {
   for await (const { key } of kv.list({ prefix: [prefix] })) {
-    if (!isDryRun) await kv.delete(key);
-    deleted++;
+    retiredKeys.push(key);
   }
+}
+let deleted = 0;
+if (!isDryRun) {
+  const batches = Array.from(
+    { length: Math.ceil(retiredKeys.length / 500) },
+    (_, i) => retiredKeys.slice(i * 500, (i + 1) * 500),
+  );
+  await inParallel(batches, 10, async (batch) => {
+    const atomic = kv.atomic();
+    for (const key of batch) atomic.delete(key);
+    try {
+      await atomic.commit();
+      deleted += batch.length;
+    } catch (err) {
+      failed += batch.length;
+      console.error(`deleting ${batch.length}: ${(err as Error).message}`);
+    }
+  });
+} else {
+  deleted = retiredKeys.length;
 }
 
 console.log(
