@@ -1,15 +1,23 @@
-/**
- * Prefixes backed up whole: each solution under its four keys, the paths the
- * solutions page lists, and logins.
- */
+/** Every prefix the app writes, but `user`: backed up whole. */
 export const backupPrefixes = [
+  "auth",
+  "auth_session",
+  "flash_solve_count",
+  "oauth_state",
+  "puzzle_solvers",
+  "puzzle_stats",
+  "solution_groups_by_puzzle",
   "solutions_by_puzzle",
   "solutions_by_puzzle_canonical",
   "solutions_by_user",
   "solutions_by_user_puzzle",
-  "solution_groups_by_puzzle",
-  "auth",
 ];
+
+/**
+ * Read per player instead: old bot rows make the whole prefix too big to
+ * scan. Backed up whole once hosting moves and leaves them behind.
+ */
+export const perPlayerPrefixes = ["user"];
 
 /**
  * The player an entry belongs to: whoever has a solution or a login. Read

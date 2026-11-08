@@ -11,22 +11,20 @@ login links. Old-timers have months of solves; losing those loses them.
 
 ## Approach
 
-Back up the players and nothing else: every hour by cron, to Google Cloud
+Back up everything but the bot rows: every hour by cron, to Google Cloud
 Storage, or by hand to a file. Restore either into any database.
 
-- **Who's a player:** everyone with a solution (the user ids under
-  `solutions_by_user`) and everyone with a login (`["auth", sub, "userId"]`).
-  The `user` prefix itself is never scanned, so bot rows cost nothing.
-- **What's kept per player:** their `user` entries (the record and their puzzle
-  draft), every solution under all four of its index keys
-  (`solutions_by_puzzle`, `solutions_by_puzzle_canonical`, `solutions_by_user`,
-  `solutions_by_user_puzzle`), the paths the solutions page lists
-  (`solution_groups_by_puzzle`) and their `auth` link. Once the stars stack is
-  in, their score too (`solution_score_by_user_puzzle`, `user_score`). Index
-  keys are read, not worked out, so the file is exactly what was stored.
-- **Each backup is a full copy of that set,** not a diff: small enough to redo
-  every hour, and any one file restores on its own. Production's first: 1,241
-  players, 76,163 entries, 42 MB, in 76 s from a laptop.
+- **Every prefix whole,** derived ones too (`puzzle_stats`, `puzzle_solvers`,
+  `flash_solve_count`, sessions), so nothing counts on a rebuild script.
+- **But `user`, per player:** the honeypot left over a million default records
+  from before GETs stopped writing to KV (#244), so the prefix is too big to
+  scan. Instead the records (and puzzle drafts) of everyone who ever solved or
+  logged in are read by key, found through `solutions_by_user` and `auth`.
+  Visitors who only did the tutorial or saved a theme are the gap; the old
+  rows stay behind when hosting moves, and then `user` is backed up whole.
+- **Each backup is a full copy,** not a diff: small enough to redo every hour,
+  and any one file restores on its own. Production today: 1,241 players,
+  95,662 entries, 50 MB, in 20 s from a laptop.
 - **Not a snapshot:** prefixes are read moments apart, so a solve landing
   mid-backup can be under some of its keys and not others. The next hour's
   file has it whole.
@@ -37,10 +35,9 @@ Storage, or by hand to a file. Restore either into any database.
   local KV or, with `SKUB_KV_URL`, a hosted database, e.g. production onto
   preview.
 - **Restore:** `scripts/restore-kv.ts <file> --confirm` writes every entry over
-  what's there, 100 to a commit, and leaves the rest alone (and, with the
-  stars stack in, `scripts/reindex-highscore.ts` rebuilds the high score).
-  Into an empty database, puzzle stats start from zero. Tested: production's
-  backup restored onto preview, every entry back with the same value.
+  what's there, 100 to a commit, and leaves the rest alone. Tested:
+  production's backup restored onto preview, every entry back with the same
+  value.
 - **Where:** `gs://skub-kv-backups` (project `skub-app`, `us-east4`, next to
   KV), written through Deploy's GCP cloud connection with
   `@google-cloud/storage`; no keys anywhere. The service account can create
@@ -58,6 +55,20 @@ Storage, or by hand to a file. Restore either into any database.
 - **Failures:** a few retries with backoff; Deploy skips a run while the last
   one is still going. One span per run with the player, entry and byte counts.
 
+## An evolving procedure
+
+The backup follows the app, not the other way round:
+
+- `db/backup-keys.ts` lists every prefix the app writes. A new one is backed
+  up by default, and a test reading `db/` fails until it's listed, so no
+  feature adds data the backup silently misses.
+- The stars stack hits that test when it rebases (its score, highscore and
+  path keys); it backs them up first, and after it lands, what turned out
+  derived can be trimmed.
+- A restore drill now and then, and before any migration: production onto
+  preview, then the pages clicked through. That's how the solutions page's
+  path groups were found missing.
+
 Branch agnostic: off main, not part of the stars stack, and it lands first,
 so production has a backup before the stack's migration runs. It brings
 `lib/kv-json.ts` along from `stars/rules`; the stack drops the duplicate when
@@ -65,11 +76,9 @@ it rebases onto main.
 
 ## Non-goals
 
-- Puzzle stats and other derived data: `puzzle_stats`, `puzzle_solvers`,
-  `flash_solve_count`, path claims, the `highscore` index. Counts no page
-  depends on once the stars stack is in, or rebuilt by its backfill.
 - A full dump of the database: the stars stack keeps its export for the
   migration's snapshot.
 - Incremental backups from a change log on every write (if an hour turns out
   too coarse).
-- Cleaning out the bot `user` rows: its own decision, deleting from production.
+- Deleting the old bot `user` rows from production: they stay behind when
+  hosting moves (in TODO.md's hosting item).
