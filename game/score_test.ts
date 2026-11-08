@@ -75,11 +75,17 @@ Deno.test("getNewScore() gives nothing for a solve no better than the best one",
   assertEquals(getNewScore(["solve", "first"], ["solve", "perfect"]), []);
 });
 
-Deno.test("withEarned() keeps the earlier solution on a tie", () => {
+Deno.test("withEarned() keeps a first solution over a perfect one", () => {
   assertEquals(
     withEarned(["solve", "first"], ["solve", "perfect"]),
     ["solve", "first"],
   );
+});
+
+Deno.test("getNewScore() gives first to a solve that beats a perfect one with it", () => {
+  assertEquals(getNewScore(["solve", "perfect"], ["solve", "first"]), [
+    "first",
+  ]);
 });
 
 Deno.test("getNewScore() gives a repeat perfect solve nothing", () => {

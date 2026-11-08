@@ -51,15 +51,19 @@ export function getSolveScore(
   return kinds;
 }
 
-/** How a solution's kinds compare: more is better, and Flash ranks below a solve. */
+/**
+ * How a solution's kinds compare: more is better, Flash ranks below a solve,
+ * and on as many stars first wins, as on the highscore.
+ */
 function getScoreRank(kinds: ScoreKind[]): number {
-  return kinds.length - (kinds.includes("flash") ? 0.5 : 0);
+  return kinds.length - (kinds.includes("flash") ? 0.5 : 0) +
+    (kinds.includes("first") ? 0.25 : 0);
 }
 
 /**
  * The kinds a solve adds over the best solution so far, in display order:
- * none unless it's better, more kinds or a full solve over a Flash one. On a
- * tie the earlier solution stays.
+ * none unless it's better: more kinds, first over perfect, or a full solve over
+ * a Flash one. On a tie the earlier solution stays.
  */
 export function getNewScore(
   earned: ScoreKind[],
