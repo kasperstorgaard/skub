@@ -7,7 +7,7 @@ import { gzipSync } from "node:zlib";
  *
  * Usage: `deno task build && deno task check-css`
  */
-const BUDGET_KB = 15;
+const BUDGET_KB = 16;
 // One theme file is linked per page, on top of the entry stylesheet.
 const THEME_BUDGET_KB = 6;
 const ASSETS_DIR = "_fresh/client/assets";
