@@ -34,7 +34,7 @@ export const handler = define.handlers<PageData>({
 
     if (!dailyPuzzle) throw new HttpError(500, "Unable to get daily puzzle");
 
-    const userStats = computeUserStats(entries, bestMoves);
+    const userStats = computeUserStats(entries, bestMoves, ctx.state.score);
 
     return page({
       dailyPuzzle,

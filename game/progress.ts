@@ -21,12 +21,16 @@ const RESERVED_NUMBERS: Record<string, number> = {
 // Move counts are stored in one byte, 0 meaning unsolved.
 const MAX_MOVES = 255;
 
-/** Best move count per puzzle from a list of solutions. */
+/**
+ * Best move count per puzzle from a list of solutions. Regular solves only:
+ * Flash is a variant of its own, with its own shortest.
+ */
 export function getProgress(
-  solutions: { puzzleSlug: string; moves: unknown[] }[],
+  solutions: { puzzleSlug: string; moves: unknown[]; flash?: boolean }[],
 ): Progress {
   const progress: Progress = {};
-  for (const { puzzleSlug, moves } of solutions) {
+  for (const { puzzleSlug, moves, flash } of solutions) {
+    if (flash) continue;
     const best = progress[puzzleSlug];
     if (best === undefined || moves.length < best) {
       progress[puzzleSlug] = moves.length;
@@ -102,4 +106,12 @@ export function decodeProgress(
   }
 
   return { progress, score };
+}
+
+/** Whether a puzzle is solved in either variant: a best, or any star. */
+export function isSolved(
+  slug: string,
+  { progress, score }: { progress: Progress; score: ScoreProgress },
+) {
+  return slug in progress || (score[slug]?.length ?? 0) > 0;
 }

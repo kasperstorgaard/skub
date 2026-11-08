@@ -18,7 +18,11 @@ type PageData = {
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const entries = await getAvailableEntries();
-    const stats = computeUserStats(entries, ctx.state.progress);
+    const stats = computeUserStats(
+      entries,
+      ctx.state.progress,
+      ctx.state.score,
+    );
     return page({
       userStats: stats.totalSolves > 0 ? stats : null,
     });

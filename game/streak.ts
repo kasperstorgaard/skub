@@ -1,4 +1,5 @@
-import type { Progress } from "#/game/progress.ts";
+import { isSolved, type Progress } from "#/game/progress.ts";
+import type { ScoreProgress } from "#/game/score.ts";
 import type { PuzzleManifestEntry } from "#/game/types.ts";
 
 // TODO: replace perfect % with a player score (e.g. points per solve,
@@ -26,9 +27,15 @@ type StatsEntry = Pick<PuzzleManifestEntry, "slug" | "minMoves"> & {
 export function computeUserStats(
   allEntries: StatsEntry[],
   progress: Progress,
+  score: ScoreProgress = {},
 ): UserStats {
   const entries = allEntries.filter((entry) => !entry.isFuture);
-  const solvedSlugs = new Set(Object.keys(progress));
+  // Solved in either variant: a Flash solve counts, but sets no best.
+  const solvedSlugs = new Set(
+    [...Object.keys(progress), ...Object.keys(score)].filter((slug) =>
+      isSolved(slug, { progress, score })
+    ),
+  );
 
   // totalSolves: unique puzzle slugs solved
   const totalSolves = solvedSlugs.size;

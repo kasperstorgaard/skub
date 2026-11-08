@@ -37,6 +37,15 @@ function solution(puzzleSlug: string, moveCount: number) {
 
 // getProgress
 
+Deno.test("getProgress() leaves a Flash solve out of the best", () => {
+  const solutions = [
+    solution("daily-4", 9),
+    { ...solution("daily-4", 6), flash: true },
+  ];
+
+  assertEquals(getProgress(solutions), { "daily-4": 9 });
+});
+
 Deno.test("getProgress() keeps the fewest moves across attempts", () => {
   const solutions = [
     solution("daily-4", 9),

@@ -28,7 +28,7 @@ import {
 } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
 import { withFlashStart } from "#/game/flash.ts";
-import { withSolve } from "#/game/progress.ts";
+import { isSolved, withSolve } from "#/game/progress.ts";
 import { getOnboardingLabel } from "#/game/recommendation.ts";
 import { getSolveScore, withSolutionScore } from "#/game/score.ts";
 import { assessSkillLevel } from "#/game/skill.ts";
@@ -78,7 +78,7 @@ export const handler = define.handlers<PageData>({
       ? withFlashStart(ctx.state.puzzle, flashStart)
       : ctx.state.puzzle;
 
-    const hasSolved = slug in ctx.state.progress;
+    const hasSolved = isSolved(slug, ctx.state);
 
     const { moves } = decodeState(ctx.url);
 
@@ -158,7 +158,10 @@ export const handler = define.handlers<PageData>({
         }),
         isFlash ? getFlashSolveCount(slug) : undefined,
       ]);
-    ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
+    // Your best is Regular's: Flash is a variant with its own shortest.
+    if (!isFlash) {
+      ctx.state.progress = withSolve(ctx.state.progress, slug, moves.length);
+    }
 
     const patch: Partial<Omit<User, "id">> = {};
     if (name !== ctx.state.user.name) patch.name = name;

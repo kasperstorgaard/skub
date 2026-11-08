@@ -60,19 +60,22 @@ export function CalendarGrid({
 
         const isActive = selectedDate.day === day;
         const bestForDay = entry ? bestMoves[entry.slug] : undefined;
-        const isSolved = bestForDay !== undefined;
         // Kinds come stored per puzzle, not worked out from the moves.
         const kinds = score[entry.slug] ?? [];
+        // A Flash solve counts as solved, but sets no best.
+        const isSolved = bestForDay !== undefined || kinds.length > 0;
         const isOptimal = kinds.includes("perfect");
 
         return (
           <a
             key={day}
             href={buildDayHref(href.value, selectedDate, day)}
-            aria-label={isSolved
+            aria-label={bestForDay !== undefined
               ? `${entry?.name}, solved in ${bestForDay} moves${
                 isOptimal ? " (optimal)" : ""
               }`
+              : isSolved
+              ? `${entry?.name}, solved from the Flash start`
               : `${entry?.name}, unsolved`}
             aria-current={isActive || undefined}
             autoFocus={isActive}
