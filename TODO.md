@@ -189,6 +189,13 @@ PR finishes only part of an item, trim the item to what is left.
 
 ## Play
 
+- **Flash makes a puzzle noticeably easier.** Flash plays a fixed share of the
+  opening (`getFlashStartLength`: 1 move from 5, 2 from 8, 3 from 10), and on
+  many puzzles that barely helps: the hard part is often later, so a few moves
+  off the front changes little. Check how much easier Flash boards actually are,
+  for example by scoring the board from the Flash start, and play more of the
+  solution where it doesn't help.
+
 - **Every player can rate a puzzle.** A Rate action opens a dialog for
   difficulty, fun and a line of feedback, so ratings come from players, not only
   from Kasper's local rating flow. It's offered where a player has just played
