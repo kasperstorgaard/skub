@@ -9,6 +9,29 @@ export async function getUser(userId: string): Promise<User | null> {
   return { ...res.value, id: userId };
 }
 
+/** Names by user id, for the users that picked one. */
+export async function getUserNames(
+  userIds: string[],
+): Promise<Map<string, string>> {
+  // getMany takes ten keys at most.
+  const batches = [];
+  for (let i = 0; i < userIds.length; i += 10) {
+    batches.push(
+      kv.getMany<User[]>(
+        userIds.slice(i, i + 10).map((userId) => ["user", userId]),
+      ),
+    );
+  }
+
+  const names = new Map<string, string>();
+  for (const entries of await Promise.all(batches)) {
+    for (const { key, value } of entries) {
+      if (value?.name) names.set(key[1] as string, value.name);
+    }
+  }
+  return names;
+}
+
 /** Defaults for a visitor with no record. Not stored until the first write. */
 export function newUser(userId: string): User {
   return { id: userId, skillLevel: null, theme: "skub" };

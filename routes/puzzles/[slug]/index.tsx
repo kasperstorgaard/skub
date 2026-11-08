@@ -311,7 +311,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
 
       <ActionsPanel
         slug={props.data.puzzle.slug}
-        isDev={isDev}
         showEdit={props.data.showEdit}
         isFlash={isFlashOn}
         className="print:hidden"

@@ -1,8 +1,9 @@
 /**
  * Migrates stored solves to stars: marks the first solve of each path, by
  * solve order (solution ids are ULIDs, so a puzzle's solutions list oldest
- * first), awards the score past solves earned, and deletes the retired
- * puzzle stats.
+ * first), awards the score past solves earned, rebuilds the high score
+ * from the user scores (an award only moves the key its rank would have
+ * today) and deletes the retired puzzle stats.
  *
  * Run from an up-to-date main: minimum moves come from the puzzle files here.
  * Locally: deno run -A ./scripts/migrate-score.ts [--dry-run]
@@ -16,11 +17,17 @@
  * keeps a player's best and never takes a star back.
  */
 import { kv } from "#/db/kv.ts";
-import { awardPastScore } from "#/db/score.ts";
+import { awardPastScore, getHighscoreKey } from "#/db/score.ts";
 import { updateSolutions } from "#/db/solutions.ts";
 import type { Solution } from "#/db/types.ts";
 import { parsePuzzle } from "#/game/parser.ts";
-import { getPastScore, type ScoreKind, withFirstSolves } from "#/game/score.ts";
+import {
+  emptyUserScore,
+  getPastScore,
+  type ScoreKind,
+  type UserScore,
+  withFirstSolves,
+} from "#/game/score.ts";
 
 const isDryRun = Deno.args.includes("--dry-run");
 
@@ -129,6 +136,69 @@ if (isDryRun) {
   });
 }
 
+// The high score from the user scores: an award only moves the key its rank
+// would have today, so keys from an older rank stay behind. Only wrong keys
+// go, each player's with a check on their user score, so a live award fails
+// the batch instead of being undone.
+const userScores: Deno.KvEntry<UserScore>[] = [];
+for await (const entry of kv.list<UserScore>({ prefix: ["user_score"] })) {
+  userScores.push(entry);
+}
+const highscoreKeysByUser = new Map<string, Deno.KvKey[]>();
+for await (const { key } of kv.list({ prefix: ["highscore"] })) {
+  const userId = String(key.at(-1));
+  highscoreKeysByUser.set(userId, [
+    ...highscoreKeysByUser.get(userId) ?? [],
+    key,
+  ]);
+}
+
+const isSameKey = (a: Deno.KvKey, b: Deno.KvKey) =>
+  JSON.stringify(a) === JSON.stringify(b);
+const reindex = userScores.flatMap((entry) => {
+  const userId = entry.key[1] as string;
+  const userScore = { ...emptyUserScore, ...entry.value };
+  const key = getHighscoreKey(userId, userScore);
+  const keys = highscoreKeysByUser.get(userId) ?? [];
+  highscoreKeysByUser.delete(userId);
+  const stale = keys.filter((existing) => !isSameKey(existing, key));
+  const isListed = keys.some((existing) => isSameKey(existing, key));
+  return stale.length || !isListed ? [{ entry, key, userScore, stale }] : [];
+});
+// Rows for players with no user score at all.
+const orphaned = [...highscoreKeysByUser.values()].flat();
+
+let reindexed = 0;
+if (isDryRun) {
+  reindexed = reindex.length;
+} else {
+  const batches = Array.from(
+    { length: Math.ceil(reindex.length / 100) },
+    (_, i) => reindex.slice(i * 100, (i + 1) * 100),
+  );
+  await inParallel(batches, 10, async (batch) => {
+    const atomic = kv.atomic();
+    for (const { entry, key, userScore, stale } of batch) {
+      atomic.check(entry);
+      for (const staleKey of stale) atomic.delete(staleKey);
+      atomic.set(key, userScore);
+    }
+    try {
+      const result = await atomic.commit();
+      if (!result.ok) throw new Error("a user score changed meanwhile");
+      reindexed += batch.length;
+    } catch (err) {
+      failed += batch.length;
+      console.error(`ranking ${batch.length}: ${(err as Error).message}`);
+    }
+  });
+  for (let i = 0; i < orphaned.length; i += 500) {
+    const atomic = kv.atomic();
+    for (const key of orphaned.slice(i, i + 500)) atomic.delete(key);
+    await atomic.commit();
+  }
+}
+
 // Retired stats. The old code writes them until the deploy, so the run after
 // it clears them for good.
 const retiredPrefixes = ["puzzle_stats", "puzzle_solvers", "flash_solve_count"];
@@ -163,6 +233,11 @@ console.log(
   isDryRun
     ? `Dry run, nothing written: would award up to ${awarded} stars and mark ${marked} first solves.`
     : `Awarded ${awarded} stars, marked ${marked} first solves.`,
+);
+console.log(
+  isDryRun
+    ? `Would fix ${reindexed} players' high score rows and delete ${orphaned.length} with no player, before awarding.`
+    : `Fixed ${reindexed} players' high score rows, deleted ${orphaned.length} with no player.`,
 );
 console.log(
   `${isDryRun ? "Would delete" : "Deleted"} ${deleted} retired stats keys.`,

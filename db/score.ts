@@ -3,6 +3,7 @@ import {
   emptyUserScore,
   getHighscoreRank,
   getNewScore,
+  type HighscoreEntry,
   SCORE_KINDS,
   type ScoreKind,
   type ScoreProgress,
@@ -60,6 +61,24 @@ export async function listSolutionScores(
 export async function getUserScore(userId: string): Promise<UserScore> {
   const res = await kv.get<UserScore>(userScoreKey(userId));
   return { ...emptyUserScore, ...res.value };
+}
+
+/** The top of the highscore, in rank order. */
+export async function listHighscore(
+  { limit = 50 }: { limit?: number } = {},
+): Promise<HighscoreEntry[]> {
+  const entries: HighscoreEntry[] = [];
+  const iter = kv.list<UserScore>({ prefix: ["highscore"] }, {
+    reverse: true,
+    limit,
+  });
+  for await (const { key, value } of iter) {
+    entries.push({
+      userId: key[4] as string,
+      userScore: { ...emptyUserScore, ...value },
+    });
+  }
+  return entries;
 }
 
 /**

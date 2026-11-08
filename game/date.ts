@@ -41,3 +41,15 @@ export function isTodaysPuzzle(puzzle: Pick<Puzzle, "number">): boolean {
   return puzzle.number !== undefined &&
     puzzle.number === getTodaysPuzzleNumber();
 }
+
+/**
+ * The puzzle numbers of the week a date falls in, Monday to Sunday, both ends
+ * included.
+ */
+export function getWeekPuzzleNumbers(
+  date: Date | Temporal.PlainDate = new Date(),
+): { from: number; to: number } {
+  const day = toPlainDate(date);
+  const from = getPuzzleNumber(day.subtract({ days: day.dayOfWeek - 1 }));
+  return { from, to: from + 6 };
+}

@@ -4,9 +4,11 @@ import {
   decodeScoreKinds,
   emptyUserScore,
   encodeScoreKinds,
+  getHighscore,
   getHighscoreRank,
   getNewScore,
   getPastScore,
+  getProgressScore,
   getSolveScore,
   getTotalScore,
   withEarned,
@@ -125,21 +127,21 @@ Deno.test("withEarned() swaps Flash for solve, keeping three kinds at most", () 
   );
 });
 
-Deno.test("getTotalScore() counts every kind alike", () => {
+Deno.test("getTotalScore() gives 50 points a star", () => {
   assertEquals(
     getTotalScore({ solve: 12, perfect: 4, first: 1, flash: 2 }),
-    19,
+    950,
   );
 });
 
-Deno.test("getHighscoreRank() puts a tie on count behind the player with more firsts", () => {
-  // Both on 10 points: one first beats three perfects.
+Deno.test("getHighscoreRank() puts a tie on points behind the player with more firsts", () => {
+  // Both on 400 points: two firsts beat two perfects.
   const ranks = [
-    getHighscoreRank({ ...emptyUserScore, solve: 7, perfect: 3 }),
-    getHighscoreRank({ ...emptyUserScore, solve: 9, first: 1 }),
+    getHighscoreRank({ ...emptyUserScore, solve: 6, perfect: 2 }),
+    getHighscoreRank({ ...emptyUserScore, solve: 6, first: 2 }),
   ].sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
 
-  assertEquals(ranks, [[10, 0, 3], [10, 1, 0]]);
+  assertEquals(ranks, [[400, 0, 2], [400, 2, 0]]);
 });
 
 // An open board with the puck top left and the destination bottom right: two
@@ -257,4 +259,43 @@ Deno.test("withSolutionScore() leaves the score as it was for a repeat solve", (
     withSolutionScore(score, "daily-1", ["solve", "perfect"]),
     score,
   );
+});
+
+Deno.test("getProgressScore() counts each kind across puzzles", () => {
+  assertEquals(
+    getProgressScore({
+      boxy: ["solve", "perfect"],
+      lone: ["solve", "first"],
+      loke: ["flash"],
+    }),
+    { solve: 2, perfect: 1, first: 1, flash: 1 },
+  );
+});
+
+Deno.test("getHighscore() adds each player's kinds across puzzles", () => {
+  const highscore = getHighscore([
+    new Map([["ane", ["solve", "perfect"]]]),
+    new Map([["ane", ["solve"]]]),
+  ]);
+
+  assertEquals(highscore, [
+    { userId: "ane", userScore: { ...emptyUserScore, solve: 2, perfect: 1 } },
+  ]);
+});
+
+Deno.test("getHighscore() ranks players by points", () => {
+  const highscore = getHighscore([
+    new Map([["ane", ["solve"]], ["bo", ["solve", "perfect"]]]),
+  ]);
+
+  assertEquals(highscore.map((entry) => entry.userId), ["bo", "ane"]);
+});
+
+Deno.test("getHighscore() ranks a tie on points by firsts", () => {
+  // 100 each: a first beats a perfect.
+  const highscore = getHighscore([
+    new Map([["ane", ["solve", "perfect"]], ["bo", ["solve", "first"]]]),
+  ]);
+
+  assertEquals(highscore.map((entry) => entry.userId), ["bo", "ane"]);
 });

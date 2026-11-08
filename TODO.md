@@ -58,6 +58,11 @@ PR finishes only part of an item, trim the item to what is left.
   were fit to a one-directional `too-easy` bias that the board/route tag split
   has since corrected.
 
+- **Pioneer stays within reach as players grow.** Today only the first to find a
+  path is its pioneer; with more players the paths get claimed early and the
+  star stops being earnable. Make it the first X on a path, X growing with the
+  player count.
+
 ## Hosting
 
 - **Skub keeps running after Deno Deploy shuts down.** Deno joined Cloudflare
@@ -234,9 +239,12 @@ PR finishes only part of an item, trim the item to what is left.
   today, and a permanent name makes a clash permanent too. Claim names
   atomically when picked, so one name is one player.
 
-- **Players can see who has the most stars.** A high score page ranks players by
-  all-time stars, linked from home's sidebar, the archive and the solutions
-  page. Builds on the stars item above.
+- **Players can replay solutions as good as theirs, never better.** On a
+  puzzle's solutions, you can watch any solution as long as or longer than your
+  own best; shorter ones stay closed until you beat your best. A perfect opens
+  them all. No solve yet, nothing to watch. A candidate answer to how many stars
+  unlock the best solutions (layer 5 of the stars stack): your own best is the
+  key, not a star count.
 
 - **Every player sees how others solved a puzzle.** Showcase other people's
   solutions where players already are, for new and old players alike, instead of

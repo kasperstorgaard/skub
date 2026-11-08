@@ -13,6 +13,7 @@ import {
   getOnboardingLabel,
   pickRecommendedPuzzle,
 } from "#/game/recommendation.ts";
+import { getProgressScore } from "#/game/score.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -51,6 +52,7 @@ export default define.page<typeof handler>(function Home(ctx) {
     userStats,
   } = ctx.data;
   const { user, score } = ctx.state;
+  const userScore = getProgressScore(score);
 
   return (
     <>
@@ -153,11 +155,15 @@ export default define.page<typeof handler>(function Home(ctx) {
         {userStats && (
           <div
             className={clsx(
-              "col-[2/3] flex flex-col items-start text-2 text-text-2",
+              "col-[2/3] flex flex-col items-start gap-fl-2 text-2 text-text-2",
               "lg:col-auto lg:row-start-3 lg:self-stretch",
             )}
           >
-            <StatsSummary stats={userStats} className="lg:w-full" />
+            <StatsSummary
+              stats={userStats}
+              userScore={userScore}
+              className="lg:w-full"
+            />
           </div>
         )}
       </Panel>

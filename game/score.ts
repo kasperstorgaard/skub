@@ -101,12 +101,27 @@ export function withScore(
   return result;
 }
 
+/**
+ * Points per star: 150 at most per puzzle. Stars alone would make a week's
+ * best 21; 1,050 reads like the high score it is.
+ */
+export const SCORE_POINTS: UserScore = {
+  solve: 50,
+  perfect: 50,
+  first: 50,
+  flash: 50,
+};
+
+/** A player's points, across all puzzles. */
 export function getTotalScore(userScore: UserScore): number {
-  return SCORE_KINDS.reduce((count, kind) => count + userScore[kind], 0);
+  return SCORE_KINDS.reduce(
+    (points, kind) => points + userScore[kind] * SCORE_POINTS[kind],
+    0,
+  );
 }
 
 /**
- * Sorts the highscore by total score, ties broken by first, then perfect. Compares
+ * Sorts the highscore by points, ties broken by first, then perfect. Compares
  * as a KV key part, so a reversed list reads in rank order.
  */
 export function getHighscoreRank(
@@ -155,8 +170,47 @@ export function getPastScore(
   return earnedByUser;
 }
 
+/** A player and their points per kind, on a highscore. */
+export type HighscoreEntry = { userId: string; userScore: UserScore };
+
+/**
+ * Players ranked by their solution scores on some puzzles, one map of player
+ * to kinds per puzzle. Ties past the rank go by user id, highest first, as the
+ * stored highscore reads.
+ */
+export function getHighscore(
+  scores: Map<string, ScoreKind[]>[],
+): HighscoreEntry[] {
+  const byUser = new Map<string, UserScore>();
+  for (const score of scores) {
+    for (const [userId, kinds] of score) {
+      const userScore = byUser.get(userId) ?? { ...emptyUserScore };
+      for (const kind of kinds) userScore[kind]++;
+      byUser.set(userId, userScore);
+    }
+  }
+
+  return [...byUser]
+    .map(([userId, userScore]) => ({ userId, userScore }))
+    .sort((a, b) => {
+      const rankA = getHighscoreRank(a.userScore);
+      const rankB = getHighscoreRank(b.userScore);
+      return rankB[0] - rankA[0] || rankB[1] - rankA[1] ||
+        rankB[2] - rankA[2] || (a.userId < b.userId ? 1 : -1);
+    });
+}
+
 /** A player's solution score per puzzle, by slug, each in display order. */
 export type ScoreProgress = Record<string, ScoreKind[]>;
+
+/** A player's points per kind, from their solution score on each puzzle. */
+export function getProgressScore(score: ScoreProgress): UserScore {
+  const userScore = { ...emptyUserScore };
+  for (const kinds of Object.values(score)) {
+    for (const kind of kinds) userScore[kind]++;
+  }
+  return userScore;
+}
 
 /** Kinds as bits, one per kind in {@link SCORE_KINDS} order, for the cookie. */
 export function encodeScoreKinds(kinds: ScoreKind[]): number {
