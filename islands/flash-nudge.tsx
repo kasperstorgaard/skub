@@ -17,7 +17,7 @@ type FlashNudgeProps = {
 /**
  * Offers Flash once a player looks stuck, in the tutorial nudge's spot. Counts
  * moves and times back (undo, starting over) as the URL changes, so it only
- * shows with JS; the badge is the way in without it.
+ * shows with JS; the toolbar is the way in without it.
  */
 export function FlashNudge({ puzzle, href, className }: FlashNudgeProps) {
   const play = useRef({ moves: 0, reversals: 0, cursor: 0 });
