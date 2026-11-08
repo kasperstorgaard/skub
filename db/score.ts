@@ -3,7 +3,9 @@ import {
   emptyUserScore,
   getHighscoreRank,
   getNewScore,
+  SCORE_KINDS,
   type ScoreKind,
+  type ScoreProgress,
   type UserScore,
   withEarned,
   withScore,
@@ -37,6 +39,22 @@ export async function getSolutionScore(
 ): Promise<ScoreKind[]> {
   const res = await kv.get<ScoreKind[]>(solutionScoreKey(userId, puzzleSlug));
   return res.value ?? [];
+}
+
+/** A player's solution score on every puzzle, each in display order. */
+export async function listSolutionScores(
+  userId: string,
+): Promise<ScoreProgress> {
+  const score: ScoreProgress = {};
+  const iter = kv.list<ScoreKind[]>({
+    prefix: ["solution_score_by_user_puzzle", userId],
+  });
+  for await (const { key, value } of iter) {
+    score[key[2] as string] = SCORE_KINDS.filter((kind) =>
+      value.includes(kind)
+    );
+  }
+  return score;
 }
 
 export async function getUserScore(userId: string): Promise<UserScore> {

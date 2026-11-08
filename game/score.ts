@@ -154,3 +154,30 @@ export function getPastScore(
 
   return earnedByUser;
 }
+
+/** A player's solution score per puzzle, by slug, each in display order. */
+export type ScoreProgress = Record<string, ScoreKind[]>;
+
+/** Kinds as bits, one per kind in {@link SCORE_KINDS} order, for the cookie. */
+export function encodeScoreKinds(kinds: ScoreKind[]): number {
+  return SCORE_KINDS.reduce(
+    (bits, kind, i) => kinds.includes(kind) ? bits | (1 << i) : bits,
+    0,
+  );
+}
+
+/** Kinds from {@link encodeScoreKinds} bits, in display order. */
+export function decodeScoreKinds(bits: number): ScoreKind[] {
+  return SCORE_KINDS.filter((_, i) => bits & (1 << i));
+}
+
+/** Score progress with an award added, or the same object when it adds nothing. */
+export function withSolutionScore(
+  score: ScoreProgress,
+  slug: string,
+  kinds: ScoreKind[],
+): ScoreProgress {
+  const earned = score[slug] ?? [];
+  if (getNewScore(earned, kinds).length === 0) return score;
+  return { ...score, [slug]: withEarned(earned, kinds) };
+}

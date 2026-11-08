@@ -11,39 +11,36 @@ A stack of PRs, each based on the one before:
 
 ## Stars
 
-Four kinds, each shown as an icon (no new colours): check for solve, trophy
-for perfect, a path for first, the bolt for Flash.
+Three stars per puzzle at most, one rounded star with a slim outline, drawn
+three ways:
 
-- **Solve**: any solve of the puzzle.
-- **Perfect**: a solve in the puzzle's minimum moves. Comes on top of the solve
-  star, so a perfect is two stars.
-- **First**: being first to find a solution path no one had found before.
-- **Flash**: a solve from the Flash start. It takes the solve star's place: a
-  later full solve still earns the solve star, and perfect and first need a
-  full solve.
+- **Solve**: any solve of the puzzle. An outline.
+- **Perfect**: a solve in the puzzle's minimum moves, on top of the solve
+  star. Filled, with tiny rays between the arms.
+- **First**: being first to find a solution path no one had found before. The
+  outline in thirteen even dashes that don't line up with the tips.
+
+A Flash solve earns the solve star in the pearl (`--pearl`, Flash mode's own
+look), the only star that changes colour. A later full solve turns it into the regular
+solve star, moving the point from Flash to solve; perfect and first need a
+full solve.
 
 Stars are per puzzle, for all time, and each kind is earned once: any puzzle
-counts, archive included, so at most solve, perfect, first and Flash on one
-puzzle.
+counts, archive included.
 
 Only earned stars show: no placeholder for unearned ones, and no hint of
-what's left to earn anywhere. The stars are a vocabulary players learn. They float left of
-the score badge, no background; on cards, left of the best-moves chip in the
-top right, in its colours (teal solved, yellow perfect).
+what's left to earn anywhere. The stars are a vocabulary players learn. They
+float left of the score badge, no background; on cards, alone in the top right
+(no move count). The theme's puck colour (`--color-ui-2`): shape and count
+tell the kinds apart.
 
-Stars stack with an overlap, like an avatar stack, to save space. Each has a
-double outline in the background colour of where it sits, which blocks out
-part of the star behind it; cards and the page differ, so that colour comes
-from the context. A perfect over its solve star then reads as two.
+Stars stack with a 0.3em overlap, like an avatar stack, to save space. Each
+after the first cuts a gap out of the one behind in the background colour of
+where it sits; cards and the page differ, so that colour comes from the
+context (`--star-knockout`).
 
-Open: the badge's Flash switch already shows a bolt; whether the earned Flash
-star merges with it or sits with the others.
-
-Open: variants of one star icon instead of four icons, so the shape says star
-and the variant says the kind: outline for solve, rays between the arms for
-perfect (🌟), sparkles for first, a dashed border for Flash. The overlap hides
-edges, where rays, sparkles and dashes live, so it stays small enough to keep
-each variant readable.
+Open: the badge's Flash switch already shows a bolt; whether that matters next
+to a Flash-coloured solve star.
 
 ## High score
 
@@ -59,9 +56,22 @@ the puzzle page's sidebar and footer, the solutions page and the archive.
 
 ## Solutions page
 
-Regular and Flash solves as tabs. Arriving from a Flash solve opens the Flash
-tab; Flash solves are compared by the moves played from the Flash start. The
-best (optimal) solutions unlock once you've earned stars on the puzzle.
+Three tabs: Solves, Flash and Users.
+
+- **Solves**: as today, a table of rows grouped by solution (canonical path),
+  shortest first, but each group lists its players, up to 10, instead of
+  "+ x other users".
+- **Flash**: the same for Flash solves, compared by the moves played from the
+  Flash start. A Flash solve lands here (today it goes back to the solved
+  board).
+- **Users**: the daily high score, one row per user: points for the solve,
+  roughly 50–300, worked out from the stored solutions when shown, not stored.
+  How it's worked out is still open.
+
+Each tab is deep linkable: it lives in the URL, so it works without JS and
+survives a share or reload.
+
+The best (optimal) solutions unlock once you've earned stars on the puzzle.
 
 ## Non-goals
 
@@ -73,7 +83,7 @@ best (optimal) solutions unlock once you've earned stars on the puzzle.
 
 Decided so far (with Kasper, in chat):
 
-- Stack branches: `stars/rules` (this one, base main), then `stars/display`,
+- Stack branches: `stars/rules` (base main), then `stars/display`,
   `stars/celebration`, `stars/highscore`, `solutions/revamp`, each based on
   the one before and opened against it. Rebase the next onto main as each
   merges.
@@ -89,11 +99,33 @@ Decided so far (with Kasper, in chat):
   solves; `scripts/backfill-score.ts` is safe to re-run. This is solution
   score, what solves earn; `game/scoring.ts` is puzzle score, how good a
   board is.
-- Cards are server-rendered from the progress cookie (one byte of best moves
-  per puzzle, `game/progress.ts`). Solve and perfect follow from it; first and
-  Flash need extra bits, a layer 2 concern.
-- Still open: Flash bolt (merge with the badge's switch or not), how many
-  stars unlock the best solutions (ask before layer 5).
+- Layer 2 built: the progress cookie is v2, two bytes per puzzle (best
+  moves, then the solution score as bits), so each device rebuilds it from KV
+  once; `ctx.state.score` carries it, updated on award. `components/stars.tsx`
+  draws the stars as above. On the puzzle page, solutions page and replays:
+  the viewer's own stars beside the badge. On cards they replace the
+  check/trophy chip and the move count; the archive calendar's cells show
+  them too. Kinds always come from the stored score per puzzle, never worked
+  out from best moves against minimum moves.
+- All-time per user is an updated aggregate, not computed: each puzzle
+  counts up to a max, so the total is a sum of per-puzzle bests, and a
+  better solve only adds its gain over the old best. Stored per user beside
+  the per-puzzle best, in the award's commit. Built with the points
+  calculation (layers 4/5).
+- Flash is not a star of its own: a Flash solve scores `flash`, which shows as
+  the solve star in the pearl; a full solve swaps it for `solve`
+  (`withEarned`), moving the point, so three stars at most per puzzle.
+- The first solve of a path is marked `first: true` on the solution, claimed
+  atomically in `saveSolution` (`solution_paths_by_puzzle`); the backfill
+  marks old ones by solve order.
+- Layer 3 next (`stars/celebration`, based on `stars/display`): earning stars
+  is the celebration's payoff. The solve POST already gets the newly awarded
+  kinds back from `awardScore`; return them in `CelebrationData` and show
+  them in the dialog, with no explainer of stars (non-goal).
+- Still open: the badge's Flash bolt next to a Flash-coloured solve star; how
+  many stars unlock the best solutions (ask before layer 5); highscore ties
+  past total, first and perfect are by user id (earliest-to-reach would need
+  a timestamp in the key); the daily high score's points calculation.
 
 Environment (cloud sandbox):
 
@@ -105,5 +137,12 @@ Environment (cloud sandbox):
   points `@std/assert` at a local stand-in and `#/` at the repo.
 - See pages with the render harness (Kasper's artifact "Skub render harness":
   three scripts plus steps). Renders components and islands, not routes.
+  `deno install` with Deno 2.7.11 fetches the npm side (Tailwind) despite the
+  JSR errors. Run `shot.mjs` with `NODE_PATH=$(npm root -g)`. `css.mjs` only
+  adds the skub theme; append another theme's CSS (fonts rewritten to
+  `file://`) to compare themes.
+- `deno check` on single components works with the repo config (no JSR in
+  their graph); routes and middleware can't be checked here.
+- Force pushes need asking first; a rebased stack branch needs one.
 - Commit as Kasper with the Claude co-author trailer; e2e tests aren't wanted
   for every change, and negative assertions aren't wanted at all.

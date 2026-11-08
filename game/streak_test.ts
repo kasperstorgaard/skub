@@ -62,6 +62,17 @@ Deno.test("currentStreak — a future puzzle doesn't break the streak", () => {
   );
 });
 
+Deno.test("currentStreak — a Flash solve counts toward the streak", () => {
+  const entries = [entry("c"), entry("b")];
+  const solutions = [solution("b", 3)];
+
+  assertEquals(
+    computeUserStats(entries, getProgress(solutions), { c: ["flash"] })
+      .currentStreak,
+    2,
+  );
+});
+
 Deno.test("currentStreak — no solves returns 0", () => {
   const entries = [entry("b"), entry("a")];
 

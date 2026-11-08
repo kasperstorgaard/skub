@@ -2,6 +2,7 @@ import { createDefine } from "fresh";
 
 import type { User } from "#/db/types.ts";
 import type { Progress } from "#/game/progress.ts";
+import type { ScoreProgress } from "#/game/score.ts";
 
 /**
  * Shared state passed through ctx.state in middlewares, layouts, and routes.
@@ -22,6 +23,8 @@ export type State = {
   user: User;
   // Best moves per solved puzzle (populated by middleware/user.ts)
   progress: Progress;
+  // Solution score per puzzle, kept with progress (middleware/user.ts)
+  score: ScoreProgress;
 };
 
 export const define = createDefine<State>();

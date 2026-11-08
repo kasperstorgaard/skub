@@ -18,7 +18,8 @@ type FlashSwitchProps = {
 
 /**
  * The Flash tool. Off, it opens the Flash dialog the first time and turns
- * Flash on after that; on, it stays on for the day, lit in the pearl.
+ * Flash on after that; on, it stays on for the day, lit in the pearl, and
+ * opens the dialog again to explain it.
  */
 export function FlashSwitch(
   { href, isOn, isExplained, className, iconClassName }: FlashSwitchProps,
@@ -33,22 +34,21 @@ export function FlashSwitch(
 
   if (isOn) {
     return (
-      <span
-        role="switch"
-        aria-checked="true"
-        // Read-only, not disabled: disabled tools fade
-        aria-readonly="true"
-        aria-label="Flash"
-        title="Flash mode: activated"
+      <a
+        href={dialogHref}
+        data-router
+        aria-label="Flash mode: on"
+        title="Flash mode: on for this puzzle today"
         className={clsx(
           className,
+          "cursor-pointer",
           // On: faint pearl fill, slow glow
           "bg-(image:--pearl-border-faint) border-transparent text-text-1",
           "motion-safe:flash-pulse",
         )}
       >
         <Icon icon={LightningFill} className={iconClassName} />
-      </span>
+      </a>
     );
   }
 
@@ -56,7 +56,7 @@ export function FlashSwitch(
     role: "switch",
     "aria-checked": "false",
     "aria-label": "Flash",
-    title: "Flash mode: same board, shorter puzzle, smaller prizes",
+    title: "Flash mode: same board, shorter puzzle, fewer stars",
     className: clsx(className, "cursor-pointer"),
   } as const;
   const icon = <Icon icon={LightningFill} className={iconClassName} />;

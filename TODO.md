@@ -138,11 +138,6 @@ PR finishes only part of an item, trim the item to what is left.
   a slow trickle of particles. Subtle, never distracting, and off under reduced
   motion.
 
-- **Players can look up Flash while it's on.** Pressing the Flash tool while
-  Flash is already on opens a dialog that explains Flash mode again, and that it
-  stays on for that puzzle for the rest of the day. Today the lit tool does
-  nothing when pressed.
-
 - **Undo and redo are easy to hit with a mouse.** Check whether the desktop
   toolbar's buttons, sized like the editor's, are too small for quick undo/redo,
   and size them up if so.
