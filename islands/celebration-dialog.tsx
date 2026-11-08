@@ -170,7 +170,7 @@ export function CelebrationDialog(
           className="btn"
           autoFocus
         >
-          Next puzzle <Icon icon={ArrowRight} />
+          Play one more <Icon icon={ArrowRight} />
         </a>
       </DialogActions>
     </Dialog>
