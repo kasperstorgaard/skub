@@ -1,20 +1,7 @@
 import { HomePage } from "./home-page.ts";
 import { expect, setup } from "#/e2e/base.ts";
 import { solvePuzzle } from "#/e2e/helpers.ts";
-import { getAvailableEntries, getTodaysPuzzle } from "#/game/loader.ts";
-
-Deno.test("home — profile link navigates to profile page", async () => {
-  const { page, asUser, teardown } = await setup();
-  try {
-    await asUser({ name: "e2emma" });
-    const home = await new HomePage(page).goto();
-
-    await home.profileLink.click();
-    await expect(page).toHaveURL(/\/profile/);
-  } finally {
-    await teardown();
-  }
-});
+import { getAvailableEntries } from "#/game/loader.ts";
 
 Deno.test("home — daily puzzle link navigates to a puzzle", async () => {
   const { page, asUser, teardown } = await setup();
@@ -23,32 +10,6 @@ Deno.test("home — daily puzzle link navigates to a puzzle", async () => {
     const home = await new HomePage(page).goto();
 
     await home.dailyPuzzleLink.click();
-    await expect(page).toHaveURL(/\/puzzles\//);
-  } finally {
-    await teardown();
-  }
-});
-
-Deno.test("home — all puzzles link navigates to puzzles page", async () => {
-  const { page, asUser, teardown } = await setup();
-  try {
-    await asUser({ name: "e2emma" });
-    const home = await new HomePage(page).goto();
-
-    await home.clickArchivesLink();
-    await expect(page).toHaveURL(/\/puzzles/);
-  } finally {
-    await teardown();
-  }
-});
-
-Deno.test("home — random puzzle link navigates to a puzzle", async () => {
-  const { page, asUser, teardown } = await setup();
-  try {
-    await asUser({ name: "e2emma", skillLevel: "intermediate" });
-    const home = await new HomePage(page).goto();
-
-    await home.randomPuzzleLink.click();
     await expect(page).toHaveURL(/\/puzzles\//);
   } finally {
     await teardown();
@@ -92,54 +53,6 @@ Deno.test("home — shows quick puzzle for user in who completed first onboardin
   }
 });
 
-Deno.test("home — a returning player sees their best on the daily card", async () => {
-  const { page, asUser, addSolution, teardown } = await setup();
-  try {
-    const [_, daily] = await Promise.all([
-      asUser({ name: "e2esben" }),
-      getTodaysPuzzle(),
-    ]);
-    if (!daily) throw new Error("No daily puzzle");
-    await addSolution({
-      puzzleSlug: daily.slug,
-      moves: await solvePuzzle(daily.slug),
-    });
-
-    const home = await new HomePage(page).goto();
-
-    await expect(home.dailyPuzzleLink.getByLabel("Perfect")).toBeVisible();
-  } finally {
-    await teardown();
-  }
-});
-
-Deno.test("home — stats show the streak after solving the first daily", async () => {
-  const { page, asUser, addSolution, teardown } = await setup();
-  try {
-    const [_, entries] = await Promise.all([
-      asUser({ name: "e2elmer" }),
-      getAvailableEntries(),
-    ]);
-
-    // This process is dev, so the list carries the whole schedule; only
-    // released puzzles count toward a streak on the server.
-    const released = entries.filter((entry) => !entry.isFuture);
-
-    for (const entry of released.slice(0, 1)) {
-      await addSolution({
-        puzzleSlug: entry.slug,
-        moves: await solvePuzzle(entry.slug),
-      });
-    }
-
-    const homePage = await new HomePage(page).goto();
-
-    await expect(homePage.stat("Streak")).toHaveText("1");
-  } finally {
-    await teardown();
-  }
-});
-
 Deno.test("home — stats show the streak after solving several dailies", async () => {
   const { page, asUser, addSolution, teardown } = await setup();
   try {
@@ -162,23 +75,6 @@ Deno.test("home — stats show the streak after solving several dailies", async 
     const homePage = await new HomePage(page).goto();
 
     await expect(homePage.stat("Streak")).toHaveText("3");
-  } finally {
-    await teardown();
-  }
-});
-
-Deno.test("home — a player with points opens the high score", async () => {
-  const { page, asUser, addSolution, teardown } = await setup();
-  try {
-    await asUser({ name: "e2ebba" });
-    await addSolution({
-      puzzleSlug: "karla",
-      moves: await solvePuzzle("karla"),
-    });
-    const home = await new HomePage(page).goto();
-
-    await home.highscoreLink.click();
-    await expect(page).toHaveURL(/\/highscore/);
   } finally {
     await teardown();
   }

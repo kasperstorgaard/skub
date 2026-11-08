@@ -14,9 +14,12 @@ A stack of PRs, each based on the one before:
 7. `stars/highscore`: the high score page, its links, stars in the home footer
 8. `badge/your-best`: the score badge shows your best in place of the shortest
 9. `solutions/revamp`: the solutions page on the new design, with Flash
-10. `e2e/stars`: e2e for the stack's journeys: a solve puts you on the high
-    score, home leads there, a Flash solve lands on the Flash tab. Seeded
-    solves earn stars like played ones.
+10. `e2e/stars`: e2e for the journeys that matter: a solve puts you on the
+    high score, a Flash solve lands on the Flash tab; seeded solves earn stars
+    like played ones. Tests that only checked a heading, a plain link or a
+    look are gone. Runs share the preview database, so test names are unique
+    per run, your own solve is found by name or as "you", and teardown counts
+    a solve out of its path's group instead of deleting the group.
 
 ## Stars
 

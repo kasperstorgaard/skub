@@ -207,6 +207,11 @@ PR finishes only part of an item, trim the item to what is left.
   them by path, worked out from the solves; they still have no stats, so the
   celebration can't compare a Flash solve against other Flash solves.
 
+- **The Flash tab lists every Flash solve.** It groups the puzzle's solutions
+  read oldest first, up to 1,000, so once a puzzle has more, new Flash solves
+  never show. Flash solves need an index of their own, or a group like full
+  solves have.
+
 - **A player's first stars come with an explainer.** The first celebration a
   player sees says what stars are and how to earn them: one for a solution, two
   for perfect or first, three for both.

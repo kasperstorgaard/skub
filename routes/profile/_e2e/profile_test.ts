@@ -6,10 +6,6 @@ import { BASE_URL, clearTestUser, getTestUser } from "#/e2e/helpers.ts";
 class ProfilePage {
   constructor(private page: Page) {}
 
-  get heading() {
-    return this.page.getByRole("heading", { name: /Profile/i });
-  }
-
   get usernameInput() {
     return this.page.getByRole("textbox", { name: /username/i });
   }
@@ -23,17 +19,6 @@ class ProfilePage {
     return this;
   }
 }
-
-Deno.test("profile page — renders with heading", async () => {
-  const { page, teardown } = await setup();
-  try {
-    const profilePage = await new ProfilePage(page).goto();
-
-    await expect(profilePage.heading).toBeVisible();
-  } finally {
-    await teardown();
-  }
-});
 
 Deno.test("a signed-in player who visits their profile sees their saved username", async () => {
   const { page, asUser, teardown } = await setup();

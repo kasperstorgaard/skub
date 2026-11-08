@@ -16,8 +16,11 @@ export class SolutionsPage {
     return this.page.getByRole("link", { name: "Back", exact: true });
   }
 
-  solveByName(name: string) {
-    return this.page.getByRole("main").getByText(name, { exact: true });
+  // By name, or as "you" once a path has more players than it names
+  ownSolve(name: string) {
+    const main = this.page.getByRole("main");
+    return main.getByText(name, { exact: true })
+      .or(main.getByText("you", { exact: true }));
   }
 
   async clickWatchFirst() {
