@@ -64,8 +64,12 @@ export function backupPlayers() {
     const { body, players, entries } = await getPlayersBackup();
     const name = `players/${new Date().toISOString().slice(0, 13)}.jsonl`;
 
-    // Loaded here, so the SDK stays out of every request's cold start.
-    const { Storage } = await import("@google-cloud/storage");
+    // Loaded here, so the SDK stays out of every request's cold start, and
+    // by Deno, not bundled: its CommonJS dependencies break in the bundle.
+    const sdk = "@google-cloud/storage";
+    const { Storage }: typeof import("@google-cloud/storage") = await import(
+      /* @vite-ignore */ sdk
+    );
     await new Storage().bucket(bucket).file(name).save(body, {
       contentType: "application/x-ndjson",
       resumable: false,
