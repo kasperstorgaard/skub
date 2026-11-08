@@ -39,8 +39,8 @@ solve.
 
 A player's stars on a puzzle are their best single solution's, for all time,
 any puzzle, archive included: solves don't add up. A better solution
-replaces them (more stars, or a full solve over a Flash one); on a tie the
-earlier stays.
+replaces them (more stars, First over Perfect on as many, or a full solve
+over a Flash one); on a tie the earlier stays.
 
 Only earned stars show: no placeholder for unearned ones, and no hint of
 what's left to earn anywhere. They float left of the score badge, no
