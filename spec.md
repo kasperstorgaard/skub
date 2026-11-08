@@ -65,8 +65,9 @@ puzzles' stored solutions when shown, not stored.
 
 The puzzle page links to its solutions once the player has a star on it.
 
-Links to the high score page: the home footer's star split (next to the streak),
-the puzzle page's sidebar and footer, the solutions page and the archive.
+Links to the high score page, as buttons: home's panel and the profile's stats
+once you have points, the puzzle page's sidebar and footer, and the solutions
+page. The stats' numbers aren't links. Not the archive.
 
 ## Solutions page
 

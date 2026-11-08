@@ -2,14 +2,14 @@ import clsx from "clsx/lite";
 import { page } from "fresh";
 
 import { Header } from "#/components/header.tsx";
-import { EnvelopeSimple, Icon } from "#/components/icons.tsx";
+import { EnvelopeSimple, Icon, Trophy } from "#/components/icons.tsx";
 import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { StatsSummary } from "#/components/stats-summary.tsx";
 import { define } from "#/core.ts";
 import { setUser } from "#/db/user.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
-import { getProgressScore } from "#/game/score.ts";
+import { getProgressScore, getTotalScore } from "#/game/score.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
 import { resolveTheme, type Theme, THEMES } from "#/lib/themes.ts";
 
@@ -57,6 +57,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
   const inSection = (section: Theme["section"]) =>
     THEMES.filter((theme) => theme.section === section);
   const activeTheme = resolveTheme(user.theme);
+  const userScore = getProgressScore(props.state.score);
 
   return (
     <>
@@ -139,8 +140,14 @@ export default define.page<typeof handler>(function ProfilePage(props) {
 
                 <StatsSummary
                   stats={userStats}
-                  userScore={getProgressScore(props.state.score)}
+                  userScore={userScore}
                 />
+
+                {getTotalScore(userScore) > 0 && (
+                  <a href="/highscore" className="btn place-self-start">
+                    <Icon icon={Trophy} /> High score
+                  </a>
+                )}
               </section>
             </>
           )}

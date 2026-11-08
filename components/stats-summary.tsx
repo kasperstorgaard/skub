@@ -44,17 +44,8 @@ export function StatsSummary({ stats, userScore, className }: Props) {
       </dl>
 
       <dl className="flex flex-col m-0">
-        <dd className="m-0">
-          {
-            /* Sized on the link, a block so its leading is the line's: links
-            default to body size */
-          }
-          <a
-            href="/highscore"
-            className="block text-4 lg:text-5 font-semibold tracking-wide leading-flat no-underline text-text-1 hover:text-link"
-          >
-            {formatNumber(points)}
-          </a>
+        <dd className="m-0 text-4 lg:text-5 font-semibold tracking-wide leading-flat text-text-1">
+          {formatNumber(points)}
         </dd>
         <dt className="text-2 text-text-2">Points</dt>
       </dl>
