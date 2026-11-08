@@ -40,7 +40,8 @@ export function Header({ back, hideProfile, hideHighscore }: Props) {
             aria-label="High score"
             title="High score"
           >
-            <Icon icon={Trophy} />
+            {/* A touch smaller: Phosphor's trophy fills more of its box */}
+            <Icon icon={Trophy} className="text-[0.875em]" />
           </a>
         )}
         {!hideProfile && (
