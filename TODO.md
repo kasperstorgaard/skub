@@ -82,8 +82,9 @@ PR finishes only part of an item, trim the item to what is left.
   too, on a longer clock. Cloudflare's path is Workers and Durable Objects
   (self-hostable via workerd merged with Deno's celld).
 
-  Runtime target: [workerd](https://github.com/cloudflare/workerd). Open
-  question is the store. What skub relies on in Deno KV: atomic multi-key writes
+  Runtime target: [workerd](https://github.com/cloudflare/workerd). Lean: host
+  on Cloudflare Workers and move the toolchain to Bun (tests, formatting,
+  linting, tasks), since Deno's development ends. Open question is the store. What skub relies on in Deno KV: atomic multi-key writes
   with versionstamp checks (a solution under four index keys),
   optimistic-concurrency retries on shared counters (puzzle stats), ordered
   prefix scans (`listUserSolutions`, solutions by puzzle, canonical groups), and
@@ -242,6 +243,16 @@ PR finishes only part of an item, trim the item to what is left.
   solutions where players already are, for new and old players alike, instead of
   behind the highscore page where few find them. Stands on its own; the tiered
   unlock in the stars item can layer on later.
+
+- **Playing keeps working offline.** Solves and progress save to the device
+  (IndexedDB) and sync to the server once back online, so a dropped connection
+  never loses a solve. Not Linear's model as is: IndexedDB is client-only, and
+  the game has to work without JS, so it needs a model of its own where the
+  server path (cookies and KV, as today) and the IndexedDB path are easy to swap
+  behind one shape, JS adding the local copy on top. The server stays the
+  source of truth, since the browser can evict IndexedDB at any time, and
+  reading it may be too slow per move, so the copy might load into memory on
+  page load.
 
 ## Login
 
