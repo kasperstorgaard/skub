@@ -170,6 +170,14 @@ PR finishes only part of an item, trim the item to what is left.
   played (JSON field, hidden form input), and the server should build and check
   the moves from that, using the puzzle's own Flash start.
 
+- **Reloading a solved board shows the celebration.** Any GET with a solved
+  board redirects to `?dialog=solution`, the no-JS name form, since the server
+  can't tell JS from no JS. So a named player who reloads, misses the
+  back/forward cache, or opens a shared solved URL gets "Solved!" with a name
+  field and Post instead of the celebration. With JS and a saved name, the name
+  dialog should step aside (drop `dialog=solution` on replace, `js:hidden` until
+  then) and let auto-post and the celebration run; without JS it stays as is.
+
 - **Undo and redo are easy to hit with a mouse.** Check whether the desktop
   toolbar's buttons, sized like the editor's, are too small for quick undo/redo,
   and size them up if so.
