@@ -25,7 +25,8 @@ Deno.test("a Flash solver finds their solve on the Flash tab", async () => {
     const puzzlePage = await new PuzzlePage(page).goto("alice");
     await puzzlePage.turnOnFlash();
     await puzzlePage.solveByClicking(moves);
-    const solutionsPage = await puzzlePage.celebrationDialog.clickSeeSolves();
+    const solutionsPage = await puzzlePage.celebrationDialog
+      .clickSeeSolutions();
 
     await expect(solutionsPage.ownSolve(user.name)).toBeVisible();
   } finally {
