@@ -26,7 +26,7 @@ export function PillSwitch({ label, items, className }: PillSwitchProps) {
           className={clsx(
             "px-3 py-1 rounded-round text-1 no-underline whitespace-nowrap",
             item.isActive
-              ? "bg-surface-4 text-text-1"
+              ? "bg-surface-3 text-text-1"
               : "text-text-2 hover:text-text-1",
           )}
         >
