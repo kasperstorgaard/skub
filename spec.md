@@ -38,9 +38,13 @@ contains that date and defaults to today. The current week stops at today
   `js:` the sentinel takes `grid-column: span var(--span)`, so it is exactly as
   wide as those cards, gaps included, and the scroll width is fixed from the
   first paint. Without JS it is a one-column prev/next link.
-- **They look like skeleton cards.** A repeating background draws faint
-  card-shaped outlines across the span, so a fast flick reads as "loading"
-  rather than empty. It's one element, not one per day.
+- **They look like skeleton cards.** The span is painted with a tiled SVG: a
+  rounded-square outline for the thumbnail and two short bars for the caption.
+  The SVG is applied as a `mask-image` over a token `background-color`
+  (`surface-2`), so it follows the theme without one data URI per colour.
+  `mask-size` is one column plus one gap, using the same CSS variables as
+  the grid, so each outline lines up with where its card will land. It's
+  one element, not one per day.
 - **Growing the edge.** When a sentinel nears view, the island inserts the
   fetched cards next to it and lowers its span by the number of inserted
   `[data-date]` items. Count them rather than assuming 21, because a batch is
