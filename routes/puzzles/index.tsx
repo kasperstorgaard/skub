@@ -52,10 +52,11 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           className={clsx(
             "@container grid gap-fl-2 w-dvw ml-[calc(50%_-_50dvw)]",
             "[timeline-scope:--archive-row]",
-            "[--cards:3] [--gap:var(--size-3)] [--pad:var(--size-fluid-3)]",
-            "[--col:calc((100cqw_-_var(--pad)_-_var(--cards)_*_var(--gap))_/_(var(--cards)_+_0.1))]",
+            // Home's card size: two to the content column, capped at its width
+            "[--cards:2] [--gap:var(--size-fluid-4)] [--pad:var(--size-fluid-3)]",
+            "[--col:min((100cqw_-_2_*_var(--pad)_-_var(--gap))_/_2,(32rem_-_var(--gap))_/_2)]",
             "lg:w-[calc(100dvw_-_16rem)] lg:ml-[calc(50%_-_(100dvw_-_16rem)_/_2)]",
-            "lg:[--cards:6] lg:[--pad:max(var(--size-fluid-3),calc(50cqw_-_24rem))]",
+            "lg:[--cards:4] lg:[--pad:max(var(--size-fluid-3),calc(50cqw_-_24rem))]",
           )}
         >
           <div className="grid gap-1 px-(--pad)">

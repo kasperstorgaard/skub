@@ -38,7 +38,6 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
                   puzzle={puzzle}
                   score={score[puzzle.slug]}
                   tagline={tagline}
-                  className="[&_.type-title]:text-3"
                 />
               )
               : (
