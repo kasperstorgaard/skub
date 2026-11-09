@@ -125,7 +125,8 @@ function MonthLink({ month, direction, onClick }: MonthLinkProps) {
     <a
       href={`?date=${month.date}#${month.date}`}
       aria-label={`${isPrevious ? "Previous" : "Next"} month, ${month.name}`}
-      className="flex items-center gap-1 text-3 text-text-2 no-underline hover:text-text-1"
+      className="btn"
+      data-variant="quiet"
       onClick={(event) => onClick(event, month)}
     >
       {isPrevious && <Icon icon={CaretLeft} />}

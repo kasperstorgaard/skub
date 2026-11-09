@@ -97,7 +97,8 @@ contains that date and defaults to today. The current week stops at today
   with the year as the lead-in above it. On mobile with JS, the island updates them as the
   row scrolls. "Puzzles" as a title is gone.
 - Below the title, **month links** name their months ("‹ October", "December
-  ›"). Without JS they go to `?date=<month>-01`. On mobile with JS they scroll
+  ›"). They're `.btn` with a new `data-variant="quiet"`: a neutral ring, no
+  pearl or purple fill, lifting to `surface-2` on hover. Without JS they go to `?date=<month>-01`. On mobile with JS they scroll
   the row to that month's first day, which loads that block in place.
 - **Desktop is a day details page by design**, hence the date as title.
   Mobile uses the same title, as a trial.
