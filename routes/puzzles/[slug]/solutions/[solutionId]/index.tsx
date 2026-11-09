@@ -11,8 +11,8 @@ import { getPuzzleSolution } from "#/db/solutions.ts";
 import { Solution } from "#/db/types.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { getSolveScore } from "#/game/score.ts";
-import { encodeMoves } from "#/game/strings.ts";
 import { Move, Puzzle } from "#/game/types.ts";
+import { encodeState } from "#/game/url.ts";
 import Board from "#/islands/board.tsx";
 import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
@@ -43,11 +43,9 @@ export const handler = define.handlers<Data>({
     const skip = solution.flash ? puzzle.flashStart?.length ?? 0 : 0;
     const moves = solution.moves.slice(skip);
 
-    // Also fixes old links that carry the Flash start in their moves.
     const url = new URL(req.url);
-    const encoded = encodeMoves(moves);
-    if (url.searchParams.get("moves") !== encoded) {
-      url.searchParams.set("moves", encoded);
+    if (!url.searchParams.has("moves")) {
+      url.search = encodeState({ moves });
       return Response.redirect(url, 303);
     }
 
