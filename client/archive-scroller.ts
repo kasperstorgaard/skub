@@ -172,6 +172,14 @@ export function attachArchiveScroller(
     });
   }
 
+  let centred: HTMLElement | null = null;
+  function markCentred(card: HTMLElement | null) {
+    if (card === centred) return;
+    centred?.removeAttribute("data-centred");
+    card?.setAttribute("data-centred", "");
+    centred = card;
+  }
+
   let frame = 0;
   function onScroll() {
     isScrolling = true;
@@ -179,6 +187,7 @@ export function attachArchiveScroller(
     frame = requestAnimationFrame(() => {
       frame = 0;
       const card = centreCard();
+      markCentred(card);
       if (card) onCentre(card);
     });
   }

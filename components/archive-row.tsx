@@ -28,7 +28,13 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
             data-number={number}
             data-month={getMonthName(date)}
             data-year={date.year}
-            className="snap-center min-w-0 list-none pl-0"
+            className={clsx(
+              "snap-center min-w-0 list-none pl-0",
+              // Purple frames only on the centred card; all of them without JS
+              "[--frame:var(--color-link)] js:[--frame:var(--color-surface-3)]",
+              "data-centred:[--frame:var(--color-link)]",
+              "[&_.puzzle-card-thumb]:border-(--frame)",
+            )}
           >
             {puzzle
               ? (

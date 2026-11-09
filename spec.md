@@ -108,6 +108,11 @@ contains that date and defaults to today. The current week stops at today
 
 ### Cards
 
+On mobile only the centred card gets the purple `link` frame. The rest are
+`surface-3`, so a row of them isn't a wall of purple. The island moves a
+`data-centred` attribute as the row scrolls; it changes colour only, never
+layout. Without JS every frame stays purple.
+
 Each card reuses `PuzzleCard` at a smaller size. The tagline is the short
 weekday and date (e.g. "Mon 9") plus the puzzle number. A day without a puzzle
 renders a muted placeholder of the same size, so the grid rhythm holds.
