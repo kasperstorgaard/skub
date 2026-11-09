@@ -127,6 +127,7 @@ export function attachArchiveScroller(
       const from = Math.max(bounds.from, slot - Math.floor(BATCH / 2));
       const to = Math.min(bounds.to, from + BATCH - 1);
       const days = await fetchDays(from, to);
+      await whenSettled();
       if (ticket !== generation) return;
       // The old block collapses into the spans; total width is unchanged
       while (before.nextElementSibling !== after) {
@@ -146,13 +147,14 @@ export function attachArchiveScroller(
     check();
   }
 
-  /**
-   * Loads the edges near the view. Scrolling never lands past them: mandatory
-   * snapping only stops on loaded cards.
-   */
+  /** Loads what the view needs: the edges near it, or a block where it is. */
   function check() {
     if (pending.jump) return;
     const centre = Math.floor(centreSlot());
+    if (centre < range.from - BUFFER || centre > range.to + BUFFER) {
+      goTo(centre);
+      return;
+    }
     if (centre - range.from < BUFFER) loadBefore();
     if (range.to - centre < BUFFER) loadAfter();
   }

@@ -10,7 +10,7 @@ and doesn't feel like a stream of puzzles.
 
 On mobile, one horizontal row of puzzle cards in calendar order, oldest on
 the left and today on the right. Large cards (`PuzzleCard size="lg"`, number
-only as the lead-in) snap (mandatory) to the centre, with 0.2 of a card showing on each
+only as the lead-in) snap to the centre, with 0.2 of a card showing on each
 side, so the row overflows both ways on any screen. Cards are capped
 at 24rem. The row runs full width and scrolls inside its own container
 (`grid-flow-col`, `auto-cols-*`, `overflow-x-auto`, `snap-x`), with the
@@ -53,17 +53,19 @@ contains that date and defaults to today. The current week stops at today
   fetched cards next to it and lowers its span by the number of inserted
   `[data-date]` items. Count them rather than assuming 21, because a batch is
   short at today or at the first puzzle.
-- **Scrolling only grows the edges.** Snapping is mandatory, so a fling
-  always ends on a loaded card and never lands in a sentinel. Proximity
-  snapping, and loading wherever a fling landed, made touch scrolling
-  inconsistent: the block could be swapped while momentum was still running.
+- **Proximity snapping.** Mandatory snapping was tried and dropped: it only
+  stops on loaded cards, so the loaded edge became a wall that long flicks
+  stopped at. With proximity snapping a fling can land in a sentinel. Once
+  scrolling settles, the island loads a block where it landed and swaps it
+  in, the same way a month link does.
 - **Batches wait for the scroll to settle.** Inserting cards mid-fling cut
   momentum short on touch, so the same flick threw different distances. A
   fetched batch is held until scrolling has been idle for 150ms, while the
   skeletons cover the gap. Layout metrics are cached per size rather than
   read on every scroll frame.
-- **Month links replace the block.** A jump to a day that isn't loaded fetches
-  around it, then swaps out the whole block and scrolls to the day in the
+- **Far landings and month links replace the block.** A jump to a day that
+  isn't loaded fetches around it, waits for scrolling to settle, then swaps
+  out the whole block and scrolls to the day in the
   same task. The old cards collapse back into the two spans and both spans
   are reset, so the total width is unchanged. There are always exactly two
   sentinels and one block.
