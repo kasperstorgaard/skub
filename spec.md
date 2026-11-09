@@ -91,6 +91,8 @@ contains that date and defaults to today. The current week stops at today
   the row to that month's first day, which loads that block in place. The
   selected or centred day ("Monday 9") sits centred between them, whether or
   not both links are there.
+- **Desktop is a day details page by design**, so its title carries the date
+  ("November 9"), with the weekday between the month links.
 - **Desktop keeps the calendar.** The calendar grid from before, renamed
   `DesktopCalendar`, with fixed-height day cells, beside the selected day's
   card. The month pills are replaced by the heading's prev/next month links.
