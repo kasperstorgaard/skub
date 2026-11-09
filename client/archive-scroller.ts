@@ -194,23 +194,29 @@ export function attachArchiveScroller(
     });
   }
 
+  function onSettled() {
+    clearTimeout(settle);
+    isScrolling = false;
+    const resolves = waiting;
+    waiting = [];
+    resolves.forEach((resolve) => resolve());
+    check();
+    // So back and reload return here
+    const card = centreCard();
+    if (!card) return;
+    const url = new URL(location.href);
+    url.searchParams.set("date", card.id);
+    url.hash = "";
+    history.replaceState(history.state, "", url);
+  }
+
+  // `scrollend` fires once momentum and snapping are done; a timer otherwise
+  const hasScrollEnd = "onscrollend" in row;
   let settle: ReturnType<typeof setTimeout> | undefined;
   function onScrollSettled() {
+    if (hasScrollEnd) return;
     clearTimeout(settle);
-    settle = setTimeout(() => {
-      isScrolling = false;
-      const resolves = waiting;
-      waiting = [];
-      resolves.forEach((resolve) => resolve());
-      check();
-      // So back and reload return here
-      const card = centreCard();
-      if (!card) return;
-      const url = new URL(location.href);
-      url.searchParams.set("date", card.id);
-      url.hash = "";
-      history.replaceState(history.state, "", url);
-    }, 150);
+    settle = setTimeout(onSettled, 150);
   }
 
   const observer = new IntersectionObserver(check, {
@@ -223,6 +229,7 @@ export function attachArchiveScroller(
   addEventListener("resize", onResize);
   row.addEventListener("scroll", onScroll, { passive: true });
   row.addEventListener("scroll", onScrollSettled, { passive: true });
+  row.addEventListener("scrollend", onSettled);
 
   // A fragment already placed the day; otherwise centre it
   if (!location.hash) scrollToSlot(current);
@@ -234,6 +241,7 @@ export function attachArchiveScroller(
     removeEventListener("resize", onResize);
     row.removeEventListener("scroll", onScroll);
     row.removeEventListener("scroll", onScrollSettled);
+    row.removeEventListener("scrollend", onSettled);
     cancelAnimationFrame(frame);
     clearTimeout(settle);
   }

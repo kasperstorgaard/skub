@@ -58,6 +58,11 @@ contains that date and defaults to today. The current week stops at today
   stopped at. With proximity snapping a fling can land in a sentinel. Once
   scrolling settles, the island loads a block where it landed and swaps it
   in, the same way a month link does.
+- **Rendering and settling use the platform.** Cards have
+  `content-visibility: auto` with a `contain-intrinsic-size` from the column
+  width, so off-screen thumbnails skip rendering. "Settled" means the
+  `scrollend` event, which fires once momentum and snapping are done; browsers
+  without it fall back to 150ms of idle scrolling.
 - **Batches wait for the scroll to settle.** Inserting cards mid-fling cut
   momentum short on touch, so the same flick threw different distances. A
   fetched batch is held until scrolling has been idle for 150ms, while the
