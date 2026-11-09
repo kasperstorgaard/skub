@@ -37,7 +37,7 @@ contains that date and defaults to today. The current week stops at today
   response. That response contains those weeks' cards plus its own prev/next
   link, so loading keeps going in both directions.
 - **Prefetch deep for fast flicks.** On mount, the island immediately loads 3
-  weeks in each direction that has a sentinel. After that, each fetch takes
+  weeks in each direction that has a sentinel: both, when linked into a past week; older only on the current week. After that, each fetch takes
   `&weeks=3` (one round trip, ~21 cards). The sentinel's `rootMargin` is about
   2 weeks of card width, so the next batch has landed before the buffer runs
   out. Only one fetch per direction is in flight at a time: a sentinel that
