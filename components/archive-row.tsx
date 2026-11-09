@@ -67,6 +67,9 @@ const SKELETON_SVG =
   `<rect x="0" y="106" width="36" height="6" rx="3"/>` +
   `<rect x="0" y="117" width="70" height="9" rx="4.5"/>` +
   `</svg>`;
+const SKELETON_MASK = `url("data:image/svg+xml,${
+  encodeURIComponent(SKELETON_SVG)
+}")`;
 
 type ArchiveSentinelProps = {
   side: "before" | "after";
@@ -116,11 +119,7 @@ export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
 
       <div
         aria-hidden="true"
-        style={{
-          maskImage: `url("data:image/svg+xml,${
-            encodeURIComponent(SKELETON_SVG)
-          }")`,
-        }}
+        style={{ maskImage: SKELETON_MASK, WebkitMaskImage: SKELETON_MASK }}
         className={clsx(
           "hidden absolute inset-0",
           "js:block",
