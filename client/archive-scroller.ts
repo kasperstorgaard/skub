@@ -14,16 +14,17 @@ type Options = {
   /** The slots rendered by the server. */
   range: SlotRange;
   current: number;
-  onMonth: (label: string) => void;
+  /** The centred day's card, as the row scrolls. */
+  onCentre: (card: HTMLElement) => void;
 };
 
 /**
  * Keeps the archive row loaded around what's in view: two sentinels stand in
  * for the unloaded days at full width, and shrink as cards replace them. A
- * landing far from the loaded cards replaces them instead. Returns a cleanup.
+ * landing far from the loaded cards replaces them instead.
  */
 export function attachArchiveScroller(
-  { row, bounds, range: initial, current, onMonth }: Options,
+  { row, bounds, range: initial, current, onCentre }: Options,
 ) {
   const before = query(row, "[data-sentinel=before]");
   const after = query(row, "[data-sentinel=after]");
@@ -158,7 +159,7 @@ export function attachArchiveScroller(
     frame = requestAnimationFrame(() => {
       frame = 0;
       const card = centreCard();
-      if (card?.dataset.month) onMonth(card.dataset.month);
+      if (card) onCentre(card);
     });
   }
 
@@ -192,13 +193,15 @@ export function attachArchiveScroller(
   onScroll();
   check();
 
-  return () => {
+  function detach() {
     observer.disconnect();
     row.removeEventListener("scroll", onScroll);
     row.removeEventListener("scroll", onScrollSettled);
     cancelAnimationFrame(frame);
     clearTimeout(settle);
-  };
+  }
+
+  return { detach, scrollToSlot };
 }
 
 function query(root: HTMLElement, selector: string) {

@@ -1,5 +1,6 @@
 import { clsx } from "clsx/lite";
 
+import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
 import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
 import { getPuzzleDate } from "#/game/date.ts";
 import type { ArchiveDay } from "#/game/loader.ts";
@@ -29,7 +30,9 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
             key={number}
             id={date.toString()}
             data-number={number}
-            data-month={getMonthLabel(date)}
+            data-month={getMonthName(date)}
+            data-year={date.year}
+            data-week={date.weekOfYear}
             className="snap-start min-w-0 list-none pl-0"
           >
             {puzzle
@@ -55,9 +58,9 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
   );
 }
 
-/** "November 2026": what the month label shows while a day is centred. */
-export function getMonthLabel(date: Temporal.PlainDate) {
-  return date.toLocaleString(undefined, { month: "long", year: "numeric" });
+/** "November": the heading's month while a day is centred. */
+export function getMonthName(date: Temporal.PlainDate) {
+  return date.toLocaleString("en", { month: "long" });
 }
 
 // A thumbnail outline over two caption bars, masked onto a token colour
@@ -77,8 +80,8 @@ type ArchiveSentinelProps = {
 };
 
 /**
- * Stands in for the unloaded days on one side. Without JS, a prev/next link
- * one column wide; with JS, as wide as the days it covers, painted as
+ * Stands in for the unloaded days on one side. Without JS and on desktop, a
+ * prev/next week link one column wide; with JS on mobile, as wide as the days it covers, painted as
  * skeleton cards, and watched to load them.
  */
 export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
@@ -90,19 +93,30 @@ export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
       aria-hidden={span === 0 || undefined}
       className={clsx(
         "relative list-none pl-0",
-        "js:[grid-column:span_var(--span)]",
-        "data-[span=0]:hidden",
+        "max-lg:js:[grid-column:span_var(--span)]",
+        "max-lg:data-[span=0]:hidden",
+        // Desktop keeps the arrow columns, empty or not
+        "lg:data-[span=0]:invisible",
       )}
     >
       {href && (
         <a
           href={href}
           className={clsx(
-            "js:hidden",
-            "grid place-content-center aspect-square text-2 text-link border-2 border-surface-3 rounded-1",
+            "max-lg:js:hidden",
+            "grid place-content-center gap-1 aspect-square text-center",
+            "lg:aspect-auto lg:h-full lg:px-1",
+            "text-2 text-link no-underline border-2 border-surface-3 rounded-1",
+            "hover:bg-surface-2",
           )}
         >
-          {side === "before" ? "Previous week" : "Next week"}
+          <Icon
+            icon={side === "before" ? CaretLeft : CaretRight}
+            className="place-self-center text-4"
+          />
+          <span className="lg:sr-only">
+            {side === "before" ? "Previous week" : "Next week"}
+          </span>
         </a>
       )}
 
@@ -115,7 +129,7 @@ export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
         }}
         className={clsx(
           "hidden absolute inset-0",
-          "js:block",
+          "max-lg:js:block",
           "[mask-repeat:repeat-x] [mask-size:calc(var(--col)_+_var(--gap))_calc(var(--col)_*_1.3)]",
           "bg-surface-3",
         )}

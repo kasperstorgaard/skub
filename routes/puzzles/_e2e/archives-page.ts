@@ -7,8 +7,9 @@ import { BASE_URL } from "#/e2e/helpers.ts";
 export class ArchivesPage {
   constructor(private page: Page) {}
 
+  /** The month in view is the page's title. */
   get heading() {
-    return this.page.getByRole("heading", { name: "Puzzles", exact: true });
+    return this.page.getByRole("heading", { level: 1 });
   }
 
   /** The puzzle cards in the row. */

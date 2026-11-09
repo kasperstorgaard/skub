@@ -80,6 +80,18 @@ contains that date and defaults to today. The current week stops at today
 - The row itself is a static component. The island attaches to it by id and
   never owns that DOM, so Preact's vdom and the injected HTML don't conflict.
 
+### Heading and desktop
+
+- The page title is the centred day's **month** (`h1`). The year and ISO week
+  number lead in above it. On mobile with JS, the island updates them as the
+  row scrolls. "Puzzles" as a title is gone.
+- Below the title, **month links** name their months ("‹ October", "December
+  ›"). Without JS they go to `?date=<month>-01`. On mobile with JS they scroll
+  the row to that month's first day, which loads that block in place.
+- **Desktop doesn't scroll.** It shows the week in one row of 7, with a
+  prev/next week arrow column either side: the no-JS layout. The island only
+  attaches below `lg`.
+
 ### Cards
 
 Each card reuses `PuzzleCard` at a smaller size. The tagline is the short
