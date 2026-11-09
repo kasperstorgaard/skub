@@ -55,6 +55,11 @@ contains that date and defaults to today. The current week stops at today
   always ends on a loaded card and never lands in a sentinel. Proximity
   snapping, and loading wherever a fling landed, made touch scrolling
   inconsistent: the block could be swapped while momentum was still running.
+- **Batches wait for the scroll to settle.** Inserting cards mid-fling cut
+  momentum short on touch, so the same flick threw different distances. A
+  fetched batch is held until scrolling has been idle for 150ms, while the
+  skeletons cover the gap. Layout metrics are cached per size rather than
+  read on every scroll frame.
 - **Month links replace the block.** A jump to a day that isn't loaded fetches
   around it, then swaps out the whole block and scrolls to the day in the
   same task. The old cards collapse back into the two spans and both spans

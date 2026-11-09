@@ -34,11 +34,24 @@ export function attachArchiveScroller(
   let generation = 0;
   const pending = { before: false, after: false, jump: false };
 
+  // Read once per size, not on every scroll frame
+  let cached: { col: number; pitch: number; origin: number } | null = null;
   function metrics() {
+    if (cached) return cached;
     const style = getComputedStyle(row);
     const col = parseFloat(style.gridAutoColumns);
     const pitch = col + parseFloat(style.columnGap);
-    return { col, pitch, origin: parseFloat(style.paddingLeft) };
+    cached = { col, pitch, origin: parseFloat(style.paddingLeft) };
+    return cached;
+  }
+  const onResize = () => cached = null;
+
+  // Inserting cards mid-fling cuts momentum short on touch, so batches wait
+  let isScrolling = false;
+  let waiting: (() => void)[] = [];
+  function whenSettled() {
+    if (!isScrolling) return Promise.resolve();
+    return new Promise<void>((resolve) => waiting.push(resolve));
   }
 
   /** The slot under the row's centre, fractional. */
@@ -68,6 +81,7 @@ export function attachArchiveScroller(
     try {
       const to = range.from - 1;
       const days = await fetchDays(Math.max(bounds.from, to - BATCH + 1), to);
+      await whenSettled();
       if (ticket !== generation) return;
       // One task: the cards take exactly the columns the span gives up
       before.after(...days);
@@ -89,6 +103,7 @@ export function attachArchiveScroller(
     try {
       const from = range.to + 1;
       const days = await fetchDays(from, Math.min(bounds.to, from + BATCH - 1));
+      await whenSettled();
       if (ticket !== generation) return;
       after.before(...days);
       range.to += days.length;
@@ -159,6 +174,7 @@ export function attachArchiveScroller(
 
   let frame = 0;
   function onScroll() {
+    isScrolling = true;
     if (frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
@@ -171,6 +187,10 @@ export function attachArchiveScroller(
   function onScrollSettled() {
     clearTimeout(settle);
     settle = setTimeout(() => {
+      isScrolling = false;
+      const resolves = waiting;
+      waiting = [];
+      resolves.forEach((resolve) => resolve());
       check();
       // So back and reload return here
       const card = centreCard();
@@ -189,6 +209,7 @@ export function attachArchiveScroller(
   observer.observe(before);
   observer.observe(after);
 
+  addEventListener("resize", onResize);
   row.addEventListener("scroll", onScroll, { passive: true });
   row.addEventListener("scroll", onScrollSettled, { passive: true });
 
@@ -199,6 +220,7 @@ export function attachArchiveScroller(
 
   function detach() {
     observer.disconnect();
+    removeEventListener("resize", onResize);
     row.removeEventListener("scroll", onScroll);
     row.removeEventListener("scroll", onScrollSettled);
     cancelAnimationFrame(frame);
