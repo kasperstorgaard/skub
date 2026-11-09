@@ -1,5 +1,4 @@
 import { useSignal } from "@preact/signals";
-import { clsx } from "clsx/lite";
 import { useEffect, useRef } from "preact/hooks";
 
 import { attachArchiveScroller } from "#/client/archive-scroller.ts";
@@ -8,8 +7,6 @@ import type { SlotRange } from "#/game/date.ts";
 
 export type ArchiveHeadingDay = {
   date: string;
-  /** "Monday" */
-  weekday: string;
   month: string;
   year: number;
 };
@@ -34,8 +31,8 @@ type Props = {
 };
 
 /**
- * The page's title: the centred day's month with its year leading in, then
- * the day between the month links. On mobile it also drives the row below,
+ * The page's title: the centred day's date with its year leading in, over
+ * the month links. On mobile it also drives the row below,
  * by id: the row's DOM stays the server's.
  */
 export function ArchiveHeading(
@@ -64,7 +61,6 @@ export function ArchiveHeading(
         if (card.id === day.value.date) return;
         day.value = {
           date: card.id,
-          weekday: card.dataset.weekday ?? "",
           month: card.dataset.month ?? "",
           year: Number(card.dataset.year),
         };
@@ -86,36 +82,23 @@ export function ArchiveHeading(
 
   return (
     <div className="grid gap-fl-2">
-      {/* The month is the page's title; the year leads in */}
+      {/* The date is the page's title; the year leads in */}
       <hgroup className="flex flex-col">
         <p className="text-3 tabular-nums text-text-2">
           {day.value.year}
         </p>
-        {/* Desktop's title carries the date; mobile's day is below */}
         <h1 className="text-brand text-7 leading-flat">
           {day.value.month}
-          <span className="max-lg:hidden ml-[0.25em]">{dayOfMonth}</span>
+          <span className="ml-[0.25em]">{dayOfMonth}</span>
         </h1>
       </hgroup>
 
-      {/* The day stays centred, with or without a link either side */}
-      <nav
-        aria-label="Months"
-        className="grid grid-cols-[1fr_auto_1fr] items-center gap-fl-2"
-      >
+      <nav aria-label="Months" className="flex justify-between gap-fl-2">
         <MonthLink
           month={months[index - 1]}
           direction="previous"
           onClick={onMonthClick}
         />
-        {
-          /* Mobile only: desktop's title has the date. Invisible keeps the
-            month links at the ends */
-        }
-        <p className="text-4 font-3 leading-flat text-text-2 lg:invisible">
-          {day.value.weekday}
-          <span className="ml-[0.25em]">{dayOfMonth}</span>
-        </p>
         <MonthLink
           month={months[index + 1]}
           direction="next"
@@ -142,11 +125,7 @@ function MonthLink({ month, direction, onClick }: MonthLinkProps) {
     <a
       href={`?date=${month.date}#${month.date}`}
       aria-label={`${isPrevious ? "Previous" : "Next"} month, ${month.name}`}
-      className={clsx(
-        "flex items-center gap-1",
-        isPrevious ? "justify-self-start" : "justify-self-end",
-        "text-3 text-link no-underline hover:underline",
-      )}
+      className="flex items-center gap-1 text-3 text-link no-underline hover:underline"
       onClick={(event) => onClick(event, month)}
     >
       {isPrevious && <Icon icon={CaretLeft} />}

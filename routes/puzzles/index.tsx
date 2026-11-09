@@ -6,7 +6,6 @@ import {
   ArchiveDays,
   ArchiveSentinel,
   getMonthName,
-  getWeekdayName,
 } from "#/components/archive-row.tsx";
 import { DesktopCalendar } from "#/components/desktop-calendar.tsx";
 import { Header } from "#/components/header.tsx";
@@ -70,7 +69,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           current={current}
           day={{
             date: date.toString(),
-            weekday: getWeekdayName(date),
             month: getMonthName(date),
             year: date.year,
           }}

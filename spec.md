@@ -83,16 +83,14 @@ contains that date and defaults to today. The current week stops at today
 
 ### Heading and desktop
 
-- The page title is the centred day's **month** (`h1`), with the year as the
-  lead-in above it. On mobile with JS, the island updates them as the
+- The page title is the centred or selected **date** (`h1`, "November 9"),
+  with the year as the lead-in above it. On mobile with JS, the island updates them as the
   row scrolls. "Puzzles" as a title is gone.
 - Below the title, **month links** name their months ("‹ October", "December
   ›"). Without JS they go to `?date=<month>-01`. On mobile with JS they scroll
-  the row to that month's first day, which loads that block in place. The
-  selected or centred day ("Monday 9") sits centred between them, whether or
-  not both links are there.
-- **Desktop is a day details page by design**, so its title carries the date
-  ("November 9"), and there's no weekday between the month links.
+  the row to that month's first day, which loads that block in place.
+- **Desktop is a day details page by design**, hence the date as title.
+  Mobile uses the same title, as a trial.
 - **Desktop keeps the calendar.** The calendar grid from before, renamed
   `DesktopCalendar`, with fixed-height day cells, beside the selected day's
   card. The month pills are replaced by the heading's prev/next month links.
