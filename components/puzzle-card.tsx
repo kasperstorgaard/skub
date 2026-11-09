@@ -83,7 +83,7 @@ export function PuzzleCard({
       >
         <span
           className={size === "lg"
-            ? "text-5 font-3 leading-tight"
+            ? "text-5 font-3 leading-flat"
             : "type-title"}
         >
           {puzzle.name}
