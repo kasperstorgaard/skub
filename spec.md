@@ -30,24 +30,34 @@ contains that date and defaults to today. The current week stops at today
 
 ### With JS
 
-- **The prev/next links are the sentinels.** One island observes them with an
-  `IntersectionObserver` whose root is the scroller, with a horizontal
-  `rootMargin` of about one viewport. When a link nears view, the island
-  fetches `GET /api/puzzles/weeks?date=…` and replaces the link with the
-  response. That response contains those weeks' cards plus its own prev/next
-  link, so loading keeps going in both directions.
+- **Full-size sentinels, no shifting.** Each end of the row has one sentinel
+  element, and it is the `IntersectionObserver` target. The server knows how
+  many days lie before and after the rendered week (from the manifest) and
+  puts that count on the sentinel as `--span`. Under the `js:` variant the
+  sentinel takes `grid-column: span var(--span)`, so it is exactly as wide as
+  the cards it stands in for, gaps included. That fixes the scroll width from
+  the first paint. Without JS it is an ordinary one-column item: the prev/next
+  link.
+- Loading a batch inserts the cards next to the sentinel and lowers its span
+  by the same number of days, all in one frame. Nothing before the viewport
+  changes width, so neither direction ever needs a scroll correction.
+- The unloaded span draws faint card-shaped outlines with a repeating
+  background, so a fast flick past loaded cards shows "still loading" instead
+  of empty space.
 - **Prefetch deep for fast flicks.** On mount, the island immediately loads 3
-  weeks in each direction that has a sentinel: both, when linked into a past week; older only on the current week. After that, each fetch takes
-  `&weeks=3` (one round trip, ~21 cards). The sentinel's `rootMargin` is about
-  2 weeks of card width, so the next batch has landed before the buffer runs
-  out. Only one fetch per direction is in flight at a time: a sentinel that
-  intersects again while its fetch is pending is ignored.
+  weeks in each direction that has a sentinel. That is both directions on a
+  link into a past week, and only older weeks on the current one. Each fetch
+  is `GET /api/puzzles/weeks?date=…&weeks=3`: one round trip, about 21 cards.
+  The `rootMargin` is about 2 weeks of card width, so the next batch lands
+  before the loaded cards run out. Each direction has at most one fetch in
+  flight. A sentinel that intersects again while its fetch is pending is
+  ignored, and checked once more after the insert.
 - The API returns an **HTML fragment**: the same `WeekCards` component rendered
-  with `preact-render-to-string`. Thumbnail SVG and the card stay
-  server-only, with no JSON-to-card duplication on the client. It reads only
-  the score cookie, so a GET makes no KV calls.
-- When an older week is prepended, the island adds the inserted width to
-  `scrollLeft` so the view doesn't jump.
+  with `preact-render-to-string`. Thumbnail SVG and the card stay server-only,
+  with no JSON-to-card duplication on the client. It reads only the score
+  cookie, so a GET makes no KV calls.
+- Grid caps implicit tracks (around 1000 in Chromium), which is roughly 2.7
+  years of days. That is enough for now; noted for later.
 - The same island renders the **month label**. It tracks the leftmost card that
   is fully in view (`data-date` on each card) and updates the month as you
   scroll. It also does `replaceState(?date=…)` so a reload or back navigation
