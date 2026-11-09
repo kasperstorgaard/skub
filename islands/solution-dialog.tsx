@@ -1,5 +1,6 @@
 import { type Signal } from "@preact/signals";
-import { useMemo, useState } from "preact/hooks";
+import { IS_BROWSER } from "fresh/runtime";
+import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { Icon, Spinner } from "#/components/icons.tsx";
@@ -7,6 +8,7 @@ import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
+import { useRouter } from "#/islands/router.tsx";
 
 type Props = {
   href: Signal<string>;
@@ -20,6 +22,7 @@ export function SolutionDialog(
   { href, puzzle, savedName, backHref }: Props,
 ) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { updateLocation } = useRouter();
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -40,11 +43,22 @@ export function SolutionDialog(
     [href.value],
   );
 
+  // With JS, a named player's solve saves itself: no form needed.
+  const isSelfSaving = IS_BROWSER && !!savedName;
+
   // Opens on the JS path (anonymous user solves in browser) or the no-JS path
   // (server detects solve and redirects here with dialog=solution). Gives way
   // to any other dialog named in the URL.
-  const isOpen = dialog === "solution" ||
+  const isOpen = (dialog === "solution" && !isSelfSaving) ||
     (!dialog && hasSolution && !savedName);
+
+  // A reload of a solve lands on the no-JS redirect: hand over to auto-post.
+  useEffect(() => {
+    if (dialog !== "solution" || !isSelfSaving) return;
+    const url = new URL(href.value);
+    url.searchParams.delete("dialog");
+    updateLocation(url.href, { replace: true });
+  }, [dialog, isSelfSaving]);
 
   return (
     <Dialog open={isOpen}>
