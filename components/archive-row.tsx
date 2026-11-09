@@ -33,7 +33,6 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
             data-month={getMonthName(date)}
             data-day={getDayName(date)}
             data-year={date.year}
-            data-week={date.weekOfYear}
             className="snap-start min-w-0 list-none pl-0"
           >
             {puzzle

@@ -73,7 +73,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             day: getDayName(date),
             month: getMonthName(date),
             year: date.year,
-            week: date.weekOfYear ?? 0,
           }}
           months={getMonths(bounds)}
         />

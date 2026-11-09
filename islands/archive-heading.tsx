@@ -12,7 +12,6 @@ export type ArchiveHeadingDay = {
   day: string;
   month: string;
   year: number;
-  week: number;
 };
 
 export type ArchiveMonth = {
@@ -35,9 +34,9 @@ type Props = {
 };
 
 /**
- * The page's title: the centred day's month, its year and week leading in,
- * with month arrows. On mobile it
- * also drives the row below it, by id: the row's DOM stays the server's.
+ * The page's title: the centred day's month with its year leading in, then
+ * the day between the month links. On mobile it also drives the row below,
+ * by id: the row's DOM stays the server's.
  */
 export function ArchiveHeading(
   { bounds, range, current, day: initial, months }: Props,
@@ -51,7 +50,7 @@ export function ArchiveHeading(
   const scroller = useRef<ReturnType<typeof attachArchiveScroller>>();
 
   useEffect(() => {
-    // Desktop pages by week instead
+    // Desktop keeps the calendar
     if (matchMedia("(min-width: 64rem)").matches) return;
     const row = document.getElementById("archive-row");
     if (!row) return;
@@ -68,7 +67,6 @@ export function ArchiveHeading(
           day: card.dataset.day ?? "",
           month: card.dataset.month ?? "",
           year: Number(card.dataset.year),
-          week: Number(card.dataset.week),
         };
       },
     });
@@ -91,7 +89,6 @@ export function ArchiveHeading(
       <hgroup className="flex flex-col">
         <p className="text-3 tabular-nums text-text-2">
           {day.value.year}
-          <span className="ml-2 text-text-3">Week {day.value.week}</span>
         </p>
         <h1 className="text-brand text-7 leading-flat">{day.value.month}</h1>
       </hgroup>
