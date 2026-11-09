@@ -33,9 +33,15 @@ contains that date and defaults to today. The current week stops at today
 - **The prev/next links are the sentinels.** One island observes them with an
   `IntersectionObserver` whose root is the scroller, with a horizontal
   `rootMargin` of about one viewport. When a link nears view, the island
-  fetches `GET /api/puzzles/week?date=…` and replaces the link with the
-  response. That response contains the week's cards plus its own prev/next
+  fetches `GET /api/puzzles/weeks?date=…` and replaces the link with the
+  response. That response contains those weeks' cards plus its own prev/next
   link, so loading keeps going in both directions.
+- **Prefetch deep for fast flicks.** On mount, the island immediately loads 3
+  weeks in each direction that has a sentinel. After that, each fetch takes
+  `&weeks=3` (one round trip, ~21 cards). The sentinel's `rootMargin` is about
+  2 weeks of card width, so the next batch has landed before the buffer runs
+  out. Only one fetch per direction is in flight at a time: a sentinel that
+  intersects again while its fetch is pending is ignored.
 - The API returns an **HTML fragment**: the same `WeekCards` component rendered
   with `preact-render-to-string`. Thumbnail SVG and the card stay
   server-only, with no JSON-to-card duplication on the client. It reads only
