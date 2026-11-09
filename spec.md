@@ -39,8 +39,19 @@ contains that date and defaults to today. The current week stops at today
   the first paint. Without JS it is an ordinary one-column item: the prev/next
   link.
 - Loading a batch inserts the cards next to the sentinel and lowers its span
-  by the same number of days, all in one frame. Nothing before the viewport
-  changes width, so neither direction ever needs a scroll correction.
+  by the same number of days. Nothing before the viewport changes width, so
+  neither direction ever needs a scroll correction. Rules that keep it
+  jump-free:
+  - **Synchronous swap.** Parse the fragment off-DOM into a `<template>`
+    first. Then, in one synchronous block with no `await` and no layout reads,
+    insert the cards and set the new `--span`. The browser can't paint between
+    the two.
+  - **Count what landed.** Lower the span by the number of inserted
+    `[data-date]` items, not by an assumed 21: a batch can be short at today or
+    at the first puzzle.
+  - **Fixed card size.** Each column has a fixed track width and the
+    thumbnails are inline SVG with `aspect-square`, so nothing resizes after
+    insertion.
 - The unloaded span draws faint card-shaped outlines with a repeating
   background, so a fast flick past loaded cards shows "still loading" instead
   of empty space.
