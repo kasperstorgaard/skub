@@ -40,6 +40,11 @@ export function ArchiveHeading(
   { bounds, range, current, day: initial, months }: Props,
 ) {
   const day = useSignal(initial);
+
+  // A client navigation brings a new day
+  useEffect(() => {
+    day.value = initial;
+  }, [initial.date]);
   const scroller = useRef<ReturnType<typeof attachArchiveScroller>>();
 
   useEffect(() => {
@@ -87,7 +92,10 @@ export function ArchiveHeading(
         <h1 className="text-brand text-7 leading-flat">{day.value.month}</h1>
       </hgroup>
 
-      <nav aria-label="Months" className="flex justify-between gap-fl-2">
+      <nav
+        aria-label="Months"
+        className="flex justify-between gap-fl-2"
+      >
         <MonthLink
           month={months[index - 1]}
           direction="previous"

@@ -44,8 +44,8 @@ Deno.test("without js - a returning user plays an archived puzzle and submits th
     const archivesPage = await home.clickArchivesLink();
     await expect(archivesPage.heading).toBeVisible();
 
-    // Navigate to the first available month so we're guaranteed a non-today puzzle.
-    await archivesPage.clickMonth("Jan");
+    // The 1st of last month is never today's puzzle.
+    await archivesPage.clickPreviousMonth();
     await archivesPage.clickDay(1);
 
     const puzzlePage = await archivesPage.clickSelectedPuzzle();

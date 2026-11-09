@@ -12,30 +12,49 @@ export class ArchivesPage {
     return this.page.getByRole("heading", { level: 1 });
   }
 
-  /** The puzzle cards in the row. */
-  get puzzleCards() {
-    return this.page.locator("#archive-row a[href^='/puzzles/']");
+  /** The calendar grid container. */
+  get grid() {
+    return this.page.locator(".grid-cols-7").first();
   }
 
-  /** The days rendered in the row, puzzle or not. */
-  get days() {
-    return this.page.locator("#archive-row [data-number]");
+  /** Days that have a puzzle (interactive day links). */
+  get puzzleDays() {
+    return this.grid.locator("a");
   }
 
-  get previousWeekLink() {
-    return this.page.getByRole("link", { name: "Previous week" });
+  /** The puzzle card link shown in the detail panel after selecting a day. */
+  get selectedPuzzleLink() {
+    return this.page.locator(
+      "section a[href^='/puzzles/'], section a[href='/']",
+    ).first();
   }
 
-  async goto(
-    search = "",
-    opts?: Parameters<typeof this.page.goto>[1],
-  ) {
-    await this.page.goto(`${BASE_URL}/puzzles${search}`, opts);
+  async goto(opts?: Parameters<typeof this.page.goto>[1]) {
+    await this.page.goto(`${BASE_URL}/puzzles`, opts);
     return this;
   }
 
-  async clickPuzzleCard() {
-    await this.puzzleCards.last().click();
+  /** A day cell in the calendar by its day-of-month number. */
+  day(day: number) {
+    return this.grid.locator("a", { hasText: new RegExp(`^${day}$`) })
+      .first();
+  }
+
+  /** Clicks a day cell in the calendar by its day-of-month number. */
+  async clickDay(day: number) {
+    await this.day(day).click();
+    return this;
+  }
+
+  /** Clicks the selected-day detail panel to navigate to the puzzle. */
+  async clickSelectedPuzzle() {
+    await this.selectedPuzzleLink.click();
     return new PuzzlePage(this.page);
+  }
+
+  /** Goes to the month before the one shown. */
+  async clickPreviousMonth() {
+    await this.page.getByRole("link", { name: /^Previous month/ }).click();
+    return this;
   }
 }

@@ -88,9 +88,10 @@ contains that date and defaults to today. The current week stops at today
 - Below the title, **month links** name their months ("‹ October", "December
   ›"). Without JS they go to `?date=<month>-01`. On mobile with JS they scroll
   the row to that month's first day, which loads that block in place.
-- **Desktop doesn't scroll.** It shows the week in one row of 7, with a
-  prev/next week arrow column either side: the no-JS layout. The island only
-  attaches below `lg`.
+- **Desktop keeps the calendar.** The calendar grid from before, renamed
+  `DesktopCalendar`, with fixed-height day cells, beside the selected day's
+  card. The month pills are replaced by the heading's prev/next month links.
+  The scroller is mobile only; the island attaches only below `lg`.
 
 ### Cards
 
@@ -100,8 +101,9 @@ renders a muted placeholder of the same size, so the grid rhythm holds.
 
 ### Removed
 
-`CalendarGrid`, the selected-day card, and the total-puzzles `Panel`.
-`MonthStrip` is removed. A minimap month strip was tried and dropped: too
+The total-puzzles `Panel`. On mobile, `CalendarGrid` and the selected-day
+card; desktop keeps them (see above).
+`MonthStrip` is removed on both. A minimap month strip was tried and dropped: too
 much going on.
 
 ## Tests

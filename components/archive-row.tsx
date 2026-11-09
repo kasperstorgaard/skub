@@ -80,8 +80,8 @@ type ArchiveSentinelProps = {
 };
 
 /**
- * Stands in for the unloaded days on one side. Without JS and on desktop, a
- * prev/next week link one column wide; with JS on mobile, as wide as the days it covers, painted as
+ * Stands in for the unloaded days on one side. Without JS, a prev/next week
+ * link one column wide; with JS, as wide as the days it covers, painted as
  * skeleton cards, and watched to load them.
  */
 export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
@@ -93,19 +93,16 @@ export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
       aria-hidden={span === 0 || undefined}
       className={clsx(
         "relative list-none pl-0",
-        "max-lg:js:[grid-column:span_var(--span)]",
-        "max-lg:data-[span=0]:hidden",
-        // Desktop keeps the arrow columns, empty or not
-        "lg:data-[span=0]:invisible",
+        "js:[grid-column:span_var(--span)]",
+        "data-[span=0]:hidden",
       )}
     >
       {href && (
         <a
           href={href}
           className={clsx(
-            "max-lg:js:hidden",
+            "js:hidden",
             "grid place-content-center gap-1 aspect-square text-center",
-            "lg:aspect-auto lg:h-full lg:px-1",
             "text-2 text-link no-underline border-2 border-surface-3 rounded-1",
             "hover:bg-surface-2",
           )}
@@ -114,7 +111,7 @@ export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
             icon={side === "before" ? CaretLeft : CaretRight}
             className="place-self-center text-4"
           />
-          <span className="lg:sr-only">
+          <span>
             {side === "before" ? "Previous week" : "Next week"}
           </span>
         </a>
@@ -129,7 +126,7 @@ export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
         }}
         className={clsx(
           "hidden absolute inset-0",
-          "max-lg:js:block",
+          "js:block",
           "[mask-repeat:repeat-x] [mask-size:calc(var(--col)_+_var(--gap))_calc(var(--col)_*_1.3)]",
           "bg-surface-3",
         )}
