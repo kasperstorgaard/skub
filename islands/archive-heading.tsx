@@ -8,8 +8,8 @@ import type { SlotRange } from "#/game/date.ts";
 
 export type ArchiveHeadingDay = {
   date: string;
-  /** "Monday 9" */
-  day: string;
+  /** "Monday" */
+  weekday: string;
   month: string;
   year: number;
 };
@@ -64,7 +64,7 @@ export function ArchiveHeading(
         if (card.id === day.value.date) return;
         day.value = {
           date: card.id,
-          day: card.dataset.day ?? "",
+          weekday: card.dataset.weekday ?? "",
           month: card.dataset.month ?? "",
           year: Number(card.dataset.year),
         };
@@ -73,6 +73,7 @@ export function ArchiveHeading(
     return () => scroller.current?.detach();
   }, []);
 
+  const dayOfMonth = Number(day.value.date.slice(8));
   const index = months.findIndex(({ key }) =>
     key === day.value.date.slice(0, 7)
   );
@@ -90,7 +91,11 @@ export function ArchiveHeading(
         <p className="text-3 tabular-nums text-text-2">
           {day.value.year}
         </p>
-        <h1 className="text-brand text-7 leading-flat">{day.value.month}</h1>
+        {/* Desktop's title carries the date; mobile's day is below */}
+        <h1 className="text-brand text-7 leading-flat">
+          {day.value.month}
+          <span className="max-lg:hidden ml-[0.25em]">{dayOfMonth}</span>
+        </h1>
       </hgroup>
 
       {/* The day stays centred, with or without a link either side */}
@@ -104,7 +109,8 @@ export function ArchiveHeading(
           onClick={onMonthClick}
         />
         <p className="text-4 font-3 leading-flat text-text-2">
-          {day.value.day}
+          {day.value.weekday}
+          <span className="lg:hidden ml-[0.25em]">{dayOfMonth}</span>
         </p>
         <MonthLink
           month={months[index + 1]}
