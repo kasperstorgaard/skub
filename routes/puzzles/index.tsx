@@ -1,7 +1,6 @@
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
-import { ArchiveMinimap } from "#/components/archive-minimap.tsx";
 import {
   ArchiveDays,
   ArchiveSentinel,
@@ -51,23 +50,21 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           aria-label="Puzzles by day"
           className={clsx(
             "@container grid gap-fl-2 w-dvw ml-[calc(50%_-_50dvw)]",
-            "[timeline-scope:--archive-row]",
             // 2.2 cards past the inset, so the row always overflows; never
             // larger than home's cards
-            "[--cards:2.2] [--gap:var(--size-fluid-4)] [--pad:var(--size-fluid-3)]",
+            "[--gap:var(--size-fluid-4)] [--pad:var(--size-fluid-3)]",
             "[--col:min((100cqw_-_var(--pad)_-_2_*_var(--gap))_/_2.2,(32rem_-_var(--gap))_/_2)]",
             "lg:w-[calc(100dvw_-_16rem)] lg:ml-[calc(50%_-_(100dvw_-_16rem)_/_2)]",
-            "lg:[--cards:4] lg:[--pad:max(var(--size-fluid-3),calc(50cqw_-_24rem))]",
+            "lg:[--pad:max(var(--size-fluid-3),calc(50cqw_-_24rem))]",
           )}
         >
-          <div className="grid gap-1 px-(--pad)">
+          <div className="px-(--pad)">
             <ArchiveScroller
               bounds={bounds}
               range={range}
               current={current}
               month={getMonthLabel(getPuzzleDate(current))}
             />
-            <ArchiveMinimap bounds={bounds} current={current} />
           </div>
 
           <ol
@@ -75,7 +72,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             className={clsx(
               "relative grid grid-flow-col auto-cols-(--col) gap-(--gap) m-0 py-2 px-(--pad)",
               "overflow-x-auto overscroll-x-contain snap-x snap-proximity scroll-px-(--pad)",
-              "[scroll-timeline:--archive-row_x]",
             )}
           >
             <ArchiveSentinel

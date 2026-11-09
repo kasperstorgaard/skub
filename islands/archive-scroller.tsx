@@ -13,20 +13,18 @@ type Props = {
 };
 
 /**
- * The month of the centred day. Also drives the row and minimap it sits
- * above, by id: their DOM stays the server's.
+ * The month of the centred day. Also drives the row it sits above, by id:
+ * its DOM stays the server's.
  */
 export function ArchiveScroller({ bounds, range, current, month }: Props) {
   const label = useSignal(month);
 
   useEffect(() => {
     const row = document.getElementById("archive-row");
-    const minimap = document.getElementById("archive-minimap");
-    if (!row || !minimap) return;
+    if (!row) return;
 
     return attachArchiveScroller({
       row,
-      minimap,
       bounds,
       range,
       current,
@@ -34,5 +32,5 @@ export function ArchiveScroller({ bounds, range, current, month }: Props) {
     });
   }, []);
 
-  return <p className="type-meta text-text-2 text-center">{label}</p>;
+  return <p className="type-meta text-text-2">{label}</p>;
 }

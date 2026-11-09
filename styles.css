@@ -669,16 +669,6 @@
   }
 }
 
-/* The archive minimap, run on the row's scroll timeline */
-@keyframes minimap {
-  from {
-    translate: var(--minimap-from);
-  }
-  to {
-    translate: var(--minimap-to);
-  }
-}
-
 @utility jiggle {
   animation: var(--animation-shake-z);
   animation-iteration-count: infinite;

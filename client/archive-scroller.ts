@@ -6,12 +6,9 @@ import type { SlotRange } from "#/game/date.ts";
 const BUFFER = 21;
 /** Days per fetch. */
 const BATCH = 21;
-/** Minimap jumps past this many days are instant, not smooth. */
-const SMOOTH_DAYS = 14;
 
 type Options = {
   row: HTMLElement;
-  minimap: HTMLElement;
   /** Every slot the row spans. */
   bounds: SlotRange;
   /** The slots rendered by the server. */
@@ -26,12 +23,10 @@ type Options = {
  * landing far from the loaded cards replaces them instead. Returns a cleanup.
  */
 export function attachArchiveScroller(
-  { row, minimap, bounds, range: initial, current, onMonth }: Options,
+  { row, bounds, range: initial, current, onMonth }: Options,
 ) {
   const before = query(row, "[data-sentinel=before]");
   const after = query(row, "[data-sentinel=after]");
-  const track = query(minimap, "[data-minimap-track]");
-  const hasTimeline = CSS.supports("animation-timeline: scroll()");
 
   let range = { ...initial };
   // Bumped on a jump, so batches for the old block are dropped
@@ -149,12 +144,11 @@ export function attachArchiveScroller(
     return row.querySelector<HTMLElement>(`[data-number="${slot}"]`);
   }
 
-  function scrollToSlot(slot: number, behavior?: ScrollBehavior) {
+  function scrollToSlot(slot: number) {
     const { pitch, origin } = metrics();
-    const distance = Math.abs(slot - centreSlot());
     row.scrollTo({
       left: origin + (slot - bounds.from + 0.5) * pitch - row.clientWidth / 2,
-      behavior: behavior ?? (distance > SMOOTH_DAYS ? "instant" : "smooth"),
+      behavior: "instant",
     });
   }
 
@@ -165,11 +159,6 @@ export function attachArchiveScroller(
       frame = 0;
       const card = centreCard();
       if (card?.dataset.month) onMonth(card.dataset.month);
-      if (!hasTimeline) {
-        const day = parseFloat(getComputedStyle(track).getPropertyValue("--d"));
-        const offset = (centreSlot() - bounds.from) * day;
-        track.style.translate = `${minimap.clientWidth / 2 - offset}px`;
-      }
     });
   }
 
@@ -188,19 +177,6 @@ export function attachArchiveScroller(
     }, 150);
   }
 
-  function onMinimapClick(event: MouseEvent) {
-    const link = (event.target as HTMLElement).closest<HTMLElement>(
-      "a[data-number]",
-    );
-    event.preventDefault();
-    if (link) return scrollToSlot(Number(link.dataset.number));
-
-    const rect = minimap.getBoundingClientRect();
-    const day = parseFloat(getComputedStyle(track).getPropertyValue("--d"));
-    const offset = (event.clientX - rect.left - rect.width / 2) / day;
-    scrollToSlot(Math.floor(centreSlot() + offset));
-  }
-
   const observer = new IntersectionObserver(check, {
     root: row,
     rootMargin: `0px ${BUFFER * metrics().pitch}px`,
@@ -210,10 +186,9 @@ export function attachArchiveScroller(
 
   row.addEventListener("scroll", onScroll, { passive: true });
   row.addEventListener("scroll", onScrollSettled, { passive: true });
-  minimap.addEventListener("click", onMinimapClick);
 
   // A fragment already placed the day; otherwise centre it
-  if (!location.hash) scrollToSlot(current, "instant");
+  if (!location.hash) scrollToSlot(current);
   onScroll();
   check();
 
@@ -221,7 +196,6 @@ export function attachArchiveScroller(
     observer.disconnect();
     row.removeEventListener("scroll", onScroll);
     row.removeEventListener("scroll", onScrollSettled);
-    minimap.removeEventListener("click", onMinimapClick);
     cancelAnimationFrame(frame);
     clearTimeout(settle);
   };
