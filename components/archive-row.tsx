@@ -20,10 +20,6 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
     <>
       {days.map(({ number, puzzle }) => {
         const date = getPuzzleDate(number);
-        const tagline = date.toLocaleString(undefined, {
-          weekday: "short",
-          day: "numeric",
-        });
 
         return (
           <li
@@ -32,21 +28,20 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
             data-number={number}
             data-month={getMonthName(date)}
             data-year={date.year}
-            className="snap-start min-w-0 list-none pl-0"
+            className="snap-center min-w-0 list-none pl-0"
           >
             {puzzle
               ? (
                 <PuzzleCard
                   puzzle={puzzle}
                   score={score[puzzle.slug]}
-                  tagline={tagline}
                   size="lg"
                 />
               )
               : (
                 <div className="flex flex-col gap-2 text-text-3">
                   <div className="aspect-square border-2 border-surface-3 rounded-1" />
-                  <PuzzleCardCaption tagline={tagline} size="lg">
+                  <PuzzleCardCaption size="lg">
                     <span className="text-5 font-3 leading-flat">
                       No puzzle
                     </span>

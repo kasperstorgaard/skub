@@ -9,8 +9,9 @@ and doesn't feel like a stream of puzzles.
 ## Approach
 
 On mobile, one horizontal row of puzzle cards in calendar order, oldest on
-the left and today on the right. 1.4 large cards (`PuzzleCard size="lg"`)
-fit past the left inset, so the row overflows on any screen. Cards are capped
+the left and today on the right. Large cards (`PuzzleCard size="lg"`, number
+only as the lead-in) snap to the centre, with 0.2 of a card showing on each
+side, so the row overflows both ways on any screen. Cards are capped
 at 24rem. The row runs full width and scrolls inside its own container
 (`grid-flow-col`, `auto-cols-*`, `overflow-x-auto`, `snap-x`), with the
 scrollbar hidden. Desktop keeps a calendar (see

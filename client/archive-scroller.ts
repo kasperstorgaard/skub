@@ -36,9 +36,9 @@ export function attachArchiveScroller(
 
   function metrics() {
     const style = getComputedStyle(row);
-    const pitch = parseFloat(style.gridAutoColumns) +
-      parseFloat(style.columnGap);
-    return { pitch, origin: parseFloat(style.paddingLeft) };
+    const col = parseFloat(style.gridAutoColumns);
+    const pitch = col + parseFloat(style.columnGap);
+    return { col, pitch, origin: parseFloat(style.paddingLeft) };
   }
 
   /** The slot under the row's centre, fractional. */
@@ -146,9 +146,10 @@ export function attachArchiveScroller(
   }
 
   function scrollToSlot(slot: number) {
-    const { pitch, origin } = metrics();
+    const { col, pitch, origin } = metrics();
     row.scrollTo({
-      left: origin + (slot - bounds.from + 0.5) * pitch - row.clientWidth / 2,
+      left: origin + (slot - bounds.from) * pitch + col / 2 -
+        row.clientWidth / 2,
       behavior: "instant",
     });
   }
