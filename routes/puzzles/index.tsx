@@ -127,7 +127,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
                 <PuzzleCard
                   puzzle={puzzle}
                   score={props.state.score[puzzle.slug]}
-                  tagline="Daily puzzle"
                   showPlay
                   size="lg"
                 />
