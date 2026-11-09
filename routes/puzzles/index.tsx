@@ -116,17 +116,18 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             today={today}
           />
 
-          <div className="self-start">
+          <div className="self-start grid gap-fl-1">
+            {/* The day sits over the card; the month is the page's title */}
+            <p className="text-4 font-3 text-text-2 leading-flat">
+              {date.toLocaleString("en", { weekday: "long", day: "numeric" })}
+            </p>
+
             {puzzle
               ? (
                 <PuzzleCard
                   puzzle={puzzle}
                   score={props.state.score[puzzle.slug]}
-                  tagline={date.toLocaleString(undefined, {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                  })}
+                  tagline="Daily puzzle"
                   showPlay
                   size="lg"
                 />
