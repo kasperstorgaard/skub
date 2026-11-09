@@ -40,8 +40,8 @@ export const handler = define.handlers<Data>({
     }
 
     // A Flash solve replays from its Flash start, as it was played.
-    const skip = solution.flash ? puzzle.flashStart?.length ?? 0 : 0;
-    const moves = solution.moves.slice(skip);
+    const flashStart = solution.flash ? puzzle.flashStart : undefined;
+    const moves = solution.moves.slice(flashStart?.length ?? 0);
 
     const url = new URL(req.url);
     if (!url.searchParams.has("moves")) {
@@ -50,9 +50,7 @@ export const handler = define.handlers<Data>({
     }
 
     return page({
-      puzzle: skip
-        ? withFlashStart(puzzle, solution.moves.slice(0, skip))
-        : puzzle,
+      puzzle: flashStart ? withFlashStart(puzzle, flashStart) : puzzle,
       solution,
       moves,
       userId: ctx.state.userId,
