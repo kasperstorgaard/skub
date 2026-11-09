@@ -128,6 +128,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
                     month: "long",
                   })}
                   showPlay
+                  size="lg"
                 />
               )
               : (

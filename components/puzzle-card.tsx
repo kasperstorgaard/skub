@@ -15,6 +15,8 @@ export type PuzzleCardProps =
     score?: ScoreKind[];
     tagline?: string;
     showPlay?: boolean;
+    /** `lg` for a card standing on its own, e.g. the calendar's selected day. */
+    size?: "md" | "lg";
   };
 
 /**
@@ -30,6 +32,7 @@ export function PuzzleCard({
   score = [],
   tagline,
   showPlay,
+  size = "md",
   className,
   ...rest
 }: PuzzleCardProps) {
@@ -64,7 +67,10 @@ export function PuzzleCard({
 
         <Stars
           kinds={score}
-          className="absolute top-0 right-0 p-2 py-2.5 text-4"
+          className={clsx(
+            "absolute top-0 right-0 p-2 py-2.5",
+            size === "lg" ? "text-5" : "text-4",
+          )}
         />
       </div>
 
@@ -73,8 +79,11 @@ export function PuzzleCard({
         tagline={[tagline, puzzle.number && `#${puzzle.number}`]
           .filter(Boolean)
           .join(" ")}
+        size={size}
       >
-        <span className="type-title">{puzzle.name}</span>
+        <span className={size === "lg" ? "type-title-lg" : "type-title"}>
+          {puzzle.name}
+        </span>
       </PuzzleCardCaption>
     </a>
   );
@@ -82,19 +91,21 @@ export function PuzzleCard({
 
 type PuzzleCardCaptionProps = {
   tagline?: string;
+  size?: "md" | "lg";
   children: preact.ComponentChildren;
 };
 
 /** The lead and title under a card's thumbnail. */
 export function PuzzleCardCaption(
-  { tagline, children }: PuzzleCardCaptionProps,
+  { tagline, size = "md", children }: PuzzleCardCaptionProps,
 ) {
   return (
     <div className="flex flex-col">
       {tagline && (
         <span
           className={clsx(
-            "puzzle-card-tagline type-meta [font-weight:300] leading-tight text-text-2",
+            "puzzle-card-tagline [font-weight:300] leading-tight text-text-2",
+            size === "lg" ? "text-3" : "type-meta",
             "group-hover:text-current",
           )}
         >

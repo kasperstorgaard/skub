@@ -30,7 +30,7 @@ export function DesktopCalendar({
   );
 
   return (
-    <div className="grid grid-cols-7 auto-rows-[3.75rem] text-center lg:gap-1">
+    <div className="grid grid-cols-7 auto-rows-[4.5rem] text-center lg:gap-1">
       {Array.from({ length: firstOfMonth.dayOfWeek }).map((_, i) => (
         <div key={`empty-${i}`} />
       ))}
