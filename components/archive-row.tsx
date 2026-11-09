@@ -121,9 +121,15 @@ export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
         aria-hidden="true"
         style={{ maskImage: SKELETON_MASK, WebkitMaskImage: SKELETON_MASK }}
         className={clsx(
-          "hidden absolute inset-0",
+          // Only the stretch by the loaded cards: a mask as wide as months of
+          // days is past the GPU's texture limit and draws nothing
+          "hidden absolute inset-y-0 w-[min(100%,300vw)]",
           "js:block",
           "[mask-repeat:repeat-x] [mask-size:calc(var(--col)_+_var(--gap))_calc(var(--col)_*_1.3)]",
+          // Tiles run from the loaded side, so outlines sit on the columns
+          side === "before"
+            ? "right-0 [mask-position:right_calc(-1_*_var(--gap))_top]"
+            : "left-0 [mask-position:left_top]",
           "bg-surface-3",
         )}
       />

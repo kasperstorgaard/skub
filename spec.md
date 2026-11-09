@@ -43,10 +43,12 @@ contains that date and defaults to today. The current week stops at today
 - **They look like skeleton cards.** The span is painted with a tiled SVG: a
   rounded-square outline for the thumbnail and two short bars for the caption.
   The SVG is applied as a `mask-image` over a token `background-color`
-  (`surface-2`), so it follows the theme without one data URI per colour.
+  (`surface-3`), so it follows the theme without one data URI per colour.
   `mask-size` is one column plus one gap, using the same CSS variables as
   the grid, so each outline lines up with where its card will land. It's
-  one element, not one per day.
+  one element, not one per day. It covers at most 300vw next to the loaded
+  cards and tiles from that side: a mask as wide as the whole span (tens of
+  thousands of pixels) is past the GPU's texture limit and draws nothing.
 - **Growing the edge.** When a sentinel nears view, the island inserts the
   fetched cards next to it and lowers its span by the number of inserted
   `[data-date]` items. Count them rather than assuming 21, because a batch is
