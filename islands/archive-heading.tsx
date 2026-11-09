@@ -108,9 +108,13 @@ export function ArchiveHeading(
           direction="previous"
           onClick={onMonthClick}
         />
-        <p className="text-4 font-3 leading-flat text-text-2">
+        {
+          /* Mobile only: desktop's title has the date. Invisible keeps the
+            month links at the ends */
+        }
+        <p className="text-4 font-3 leading-flat text-text-2 lg:invisible">
           {day.value.weekday}
-          <span className="lg:hidden ml-[0.25em]">{dayOfMonth}</span>
+          <span className="ml-[0.25em]">{dayOfMonth}</span>
         </p>
         <MonthLink
           month={months[index + 1]}
