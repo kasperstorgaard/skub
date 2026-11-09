@@ -26,7 +26,8 @@ contains that date and defaults to today. The current week stops at today
   current week.
 - The fragment scrolls the target card into view. On a plain `/puzzles` landing
   the card for today gets `scroll-initial-target` where the browser supports it.
-- The month label above the row is the month of `?date`.
+- The month label above the row is the month of `?date`. The minimap (below)
+  renders at that position, and its months are links to `?date=<month>-01`.
 
 ### With JS
 
@@ -55,6 +56,13 @@ contains that date and defaults to today. The current week stops at today
 - The unloaded span draws faint card-shaped outlines with a repeating
   background, so a fast flick past loaded cards shows "still loading" instead
   of empty space.
+- **Gaps, not two sentinels.** Any run of unloaded days is a gap element with
+  `data-from`/`data-to` and its own `--span`. A page starts with at most two
+  gaps, one on each side. When a gap intersects, the island works out the date
+  under the viewport from `scrollLeft` and the fixed column width, then loads
+  around that date. Next to loaded cards that means growing the edge. Deep
+  inside a gap, after a hard flick or a minimap jump, it splits the gap in two
+  around the new cards. Both cases use the same swap.
 - **Prefetch deep for fast flicks.** On mount, the island immediately loads 3
   weeks in each direction that has a sentinel. That is both directions on a
   link into a past week, and only older weeks on the current one. Each fetch
@@ -77,6 +85,32 @@ contains that date and defaults to today. The current week stops at today
 - The row itself is a static component. The island attaches to it by id and
   never owns that DOM, so Preact's vdom and the injected HTML don't conflict.
 
+### Minimap (month strip)
+
+A horizontal strip above the row: month labels with a tick per day,
+proportional to the whole row, under a fixed arrow-like indicator in the
+middle. Its ends fade out with a `mask-image` gradient. It is a scaled-down
+mirror of the scroller, and the part currently in view sits under the
+indicator.
+
+- **Following the scroll:** a CSS scroll-driven animation. The scroller sets
+  `scroll-timeline: --row x`, a shared ancestor sets `timeline-scope: --row`,
+  and the strip animates `translate` on that timeline. That's compositor-only
+  with no JS per frame. Where scroll timelines aren't supported (Firefox), the
+  island sets the same value as a CSS variable from a rAF-throttled scroll
+  listener.
+- **Clicking:** a click anywhere on the strip maps its x position to a day and
+  scrolls the row there, so the day you clicked ends up under the indicator. A
+  jump of up to about 2 weeks scrolls smoothly; longer jumps are instant, so
+  you don't watch months of placeholder outlines slide by. The threshold is
+  one constant, tuned once we see it in practice. The gap at the landing spot
+  loads around that date.
+- **Without JS:** the server places the strip for `?date`, and each month
+  label is a plain link.
+- **Accessibility:** the month labels are the focusable links. Clicking
+  between labels is a pointer convenience on top.
+- The month label island from "With JS" sits in the strip's indicator.
+
 ### Cards
 
 Each card reuses `PuzzleCard` at a smaller size. The tagline is the short
@@ -85,9 +119,8 @@ renders a muted placeholder of the same size, so the grid rhythm holds.
 
 ### Removed
 
-`CalendarGrid`, the selected-day card, and the total-puzzles `Panel`. The
-`MonthStrip` is removed in this layer and comes back reworked in the next one
-(below).
+`CalendarGrid`, the selected-day card, and the total-puzzles `Panel`.
+`MonthStrip` is replaced by the minimap.
 
 ## Tests
 
@@ -99,7 +132,5 @@ renders a muted placeholder of the same size, so the grid rhythm holds.
 
 ## Non-goals
 
-- Month navigation. A month strip that moves with the scroll and jumps to a
-  month on click is the **next stacked PR**.
 - Filtering, search, or difficulty grouping.
 - Virtualising or unloading weeks that have scrolled far out of view.
