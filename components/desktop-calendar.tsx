@@ -30,7 +30,7 @@ export function DesktopCalendar({
   );
 
   return (
-    <div className="grid grid-cols-7 text-center lg:gap-1">
+    <div className="grid grid-cols-7 auto-rows-[3.75rem] text-center lg:gap-1">
       {Array.from({ length: firstOfMonth.dayOfWeek }).map((_, i) => (
         <div key={`empty-${i}`} />
       ))}
@@ -46,7 +46,7 @@ export function DesktopCalendar({
             <div
               key={dayOfYear}
               className={clsx(
-                "flex flex-col items-center h-14 py-2 rounded-1",
+                "flex flex-col items-center justify-center rounded-1",
                 "border-1 border-surface-2 text-3 text-text-2 leading-none",
                 "slashed cursor-not-allowed",
               )}
@@ -54,6 +54,8 @@ export function DesktopCalendar({
               <span className="flex items-center justify-center w-7 h-7 rounded-round font-medium leading-none">
                 {day}
               </span>
+              {/* The stars' row, so numbers line up with solved days */}
+              <span className="h-[1em] text-2" aria-hidden="true" />
             </div>
           );
         }
@@ -80,7 +82,7 @@ export function DesktopCalendar({
             aria-current={isActive || undefined}
             autoFocus={isActive}
             className={clsx(
-              "flex flex-col items-center justify-center h-14 py-2",
+              "flex flex-col items-center justify-center",
               "no-underline text-3 leading-none text-text-1 border-1 border-surface-2 transition-colors",
               "lg:rounded-1",
               // The stars cut their gaps in the cell's own background.
