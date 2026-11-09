@@ -1,4 +1,4 @@
-import { getPuzzleNumber, getTodaysPuzzleNumber } from "#/game/date.ts";
+import { getTodaysPuzzleNumber, type SlotRange } from "#/game/date.ts";
 import { parsePuzzle } from "#/game/parser.ts";
 import { boardCanonicalHash } from "#/game/scoring.ts";
 import {
@@ -233,22 +233,6 @@ export async function getTodaysPuzzle() {
 }
 
 /**
- * Gets a puzzle by date
- */
-export async function getPuzzleByDate(
-  date: Temporal.PlainDate | Date,
-): Promise<Puzzle | null> {
-  const entries = await getAvailableEntries();
-
-  // A date maps to the slot that falls on it.
-  const slot = getPuzzleNumber(date);
-  const entry = entries.find((puzzle) => puzzle.number === slot);
-  if (!entry) return null;
-
-  return getPuzzle(entry.slug);
-}
-
-/**
  * Gets the tutorial puzzle.
  */
 export async function getTutorialPuzzle() {
@@ -256,4 +240,36 @@ export async function getTutorialPuzzle() {
 
   const entry = manifest.find((entry) => entry.onboardingLevel === 1);
   return entry ? getPuzzle(entry.slug) : null;
+}
+
+/**
+ * The slots the archive spans: slot 1 to today, or to the last queued puzzle
+ * locally, where the schedule doesn't apply.
+ */
+export async function getArchiveBounds(): Promise<SlotRange> {
+  const entries = await getAvailableEntries();
+  const last = Math.max(
+    getTodaysPuzzleNumber(),
+    ...entries.map((entry) => entry.number ?? 0),
+  );
+  return { from: 1, to: last };
+}
+
+/** One archive day: its slot, and the puzzle on it if there is one. */
+export type ArchiveDay = { number: number; puzzle: Puzzle | null };
+
+/** The archive days in a run of slots, in order. */
+export async function listArchiveDays(
+  range: SlotRange,
+): Promise<ArchiveDay[]> {
+  const entries = await getAvailableEntries();
+  const slugs = new Map(entries.map((entry) => [entry.number, entry.slug]));
+
+  return Promise.all(
+    Array.from({ length: range.to - range.from + 1 }, async (_, i) => {
+      const number = range.from + i;
+      const slug = slugs.get(number);
+      return { number, puzzle: slug ? await getPuzzle(slug) : null };
+    }),
+  );
 }

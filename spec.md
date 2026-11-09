@@ -62,13 +62,13 @@ contains that date and defaults to today. The current week stops at today
   with no `await` and no layout reads in between. Columns have a fixed track
   width and the thumbnails are inline SVG with `aspect-square`, so nothing
   resizes after a swap.
-- **Prefetch deep for fast flicks.** On mount, the island loads 3 weeks in
-  each direction that has a span: both on a link into a past week, older only
-  on the current one. Each fetch is `GET /api/puzzles/weeks?date=…&weeks=3`.
-  Each sentinel has at most one fetch in flight. If it intersects again while
-  that fetch is pending, it's checked once more after the insert.
-- **Grid track cap.** Grid allows about 1000 implicit tracks in Chromium,
-  roughly 2.7 years of days. That's enough for now; noted for later.
+- **Prefetch deep for fast flicks.** The island keeps 3 weeks (21 days)
+  loaded on each side of the centred day. On mount, that loads both
+  directions when linked into a past week, and only older weeks on the
+  current one. Each fetch is `GET /api/puzzles/days?from=<slot>&to=<slot>`
+  for 21 days, capped at 42 days per request. Each side has at most one fetch
+  in flight. A far jump drops any batches still in flight for the block it
+  replaces.
 - The API returns an **HTML fragment**: the same `WeekCards` component rendered
   with `preact-render-to-string`. Thumbnail SVG and the card stay server-only,
   with no JSON-to-card duplication on the client. It reads only the score

@@ -11,59 +11,30 @@ export class ArchivesPage {
     return this.page.getByRole("heading", { name: "Puzzles", exact: true });
   }
 
-  /** The calendar grid container. */
-  get grid() {
-    return this.page.locator(".grid-cols-7").first();
+  /** The puzzle cards in the row. */
+  get puzzleCards() {
+    return this.page.locator("#archive-row a[href^='/puzzles/']");
   }
 
-  /** Days that have a puzzle (interactive day links). */
-  get puzzleDays() {
-    return this.grid.locator("a");
+  /** The days rendered in the row, puzzle or not. */
+  get days() {
+    return this.page.locator("#archive-row [data-number]");
   }
 
-  /** The puzzle card link shown in the detail panel after selecting a day. */
-  get selectedPuzzleLink() {
-    return this.page.locator(
-      "section a[href^='/puzzles/'], section a[href='/']",
-    ).first();
+  get previousWeekLink() {
+    return this.page.getByRole("link", { name: "Previous week" });
   }
 
-  async goto(opts?: Parameters<typeof this.page.goto>[1]) {
-    await this.page.goto(`${BASE_URL}/puzzles`, opts);
+  async goto(
+    search = "",
+    opts?: Parameters<typeof this.page.goto>[1],
+  ) {
+    await this.page.goto(`${BASE_URL}/puzzles${search}`, opts);
     return this;
   }
 
-  /** A day cell in the calendar by its day-of-month number. */
-  day(day: number) {
-    return this.grid.locator("a", { hasText: new RegExp(`^${day}$`) })
-      .first();
-  }
-
-  /** Clicks a day cell in the calendar by its day-of-month number. */
-  async clickDay(day: number) {
-    await this.day(day).click();
-    return this;
-  }
-
-  /** Clicks the selected-day detail panel to navigate to the puzzle. */
-  async clickSelectedPuzzle() {
-    await this.selectedPuzzleLink.click();
+  async clickPuzzleCard() {
+    await this.puzzleCards.last().click();
     return new PuzzlePage(this.page);
-  }
-
-  /** Clicks a month pill in the strip by its short label (e.g. "Mar"). */
-  async clickMonth(label: string) {
-    await this.page.getByRole("link", { name: new RegExp(`^${label}\\b`) })
-      .first()
-      .click();
-    return this;
-  }
-
-  /** Clicks the first month pill in the strip (oldest available month). */
-  async clickFirstMonth() {
-    await this.page.locator("nav[aria-label='Months with puzzles'] a")
-      .first()
-      .click();
-    return this;
   }
 }

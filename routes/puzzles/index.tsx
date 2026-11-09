@@ -1,82 +1,38 @@
-import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
-import { HttpError, page } from "fresh";
+import { page } from "fresh";
 
-import { CalendarGrid } from "#/components/calendar-grid.tsx";
+import { ArchiveMinimap } from "#/components/archive-minimap.tsx";
+import {
+  ArchiveDays,
+  ArchiveSentinel,
+  getMonthLabel,
+} from "#/components/archive-row.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
-import { MonthStrip } from "#/components/month-strip.tsx";
 import { Panel } from "#/components/panel.tsx";
-import { PuzzleCard } from "#/components/puzzle-card.tsx";
 import { define } from "#/core.ts";
-import { getAvailableEntries, getPuzzleByDate } from "#/game/loader.ts";
-import { Puzzle, PuzzleManifestEntry } from "#/game/types.ts";
+import { getPuzzleDate, getPuzzleNumber, getWeekRange } from "#/game/date.ts";
+import { getArchiveBounds, listArchiveDays } from "#/game/loader.ts";
 import { getArchiveDate } from "#/game/url.ts";
-import { isDev } from "#/lib/env.ts";
+import { ArchiveScroller } from "#/islands/archive-scroller.tsx";
 
-type PageData = {
-  today: Temporal.PlainDate;
-  selectedDate: Temporal.PlainDate;
-  selectedPuzzle: Puzzle;
-  bestMoves: Record<string, number>;
-  totalPuzzles: number;
-  entries: PuzzleManifestEntry[];
-};
-
-export const handler = define.handlers<PageData>({
+export const handler = define.handlers({
   async GET(ctx) {
-    const url = ctx.url;
-    const now = new Date(Date.now());
-
-    const today = new Temporal.PlainDate(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      now.getDate(),
+    const bounds = await getArchiveBounds();
+    const date = getArchiveDate(ctx.url) ?? Temporal.Now.plainDateISO();
+    const current = Math.min(
+      bounds.to,
+      Math.max(bounds.from, getPuzzleNumber(date)),
     );
+    const range = getWeekRange(getPuzzleDate(current), bounds);
+    const days = await listArchiveDays(range);
 
-    const selectedDate = getArchiveDate(url) ?? today;
-
-    const entries = await getAvailableEntries();
-    const bestMoves = ctx.state.progress;
-
-    const totalPuzzles = entries.length;
-    const selectedPuzzle = await getPuzzleByDate(selectedDate);
-
-    if (!selectedPuzzle) {
-      throw new HttpError(500, "Unable to get puzzle for selected date");
-    }
-
-    return page({
-      today,
-      selectedDate,
-      selectedPuzzle,
-      bestMoves,
-      totalPuzzles,
-      entries,
-    });
+    return page({ bounds, range, current, days });
   },
 });
 
 export default define.page<typeof handler>(function PuzzlesPage(props) {
-  const {
-    today,
-    selectedDate,
-    selectedPuzzle,
-    bestMoves,
-    totalPuzzles,
-    entries,
-  } = props.data;
-
-  const href = useSignal(props.url.href);
-
-  const dateLabel = new Date(
-    selectedDate.year,
-    selectedDate.month - 1,
-    selectedDate.day,
-  ).toLocaleDateString(
-    undefined,
-    { weekday: "long", day: "numeric", month: "long" },
-  );
+  const { bounds, range, current, days } = props.data;
 
   return (
     <>
@@ -88,67 +44,61 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
       >
         <Header back={{ href: "/" }} />
 
-        <div className="flex flex-col gap-0">
-          <span className="text-3 text-text-2">{selectedDate.year}</span>
-          <h1 className="text-brand text-6 leading-flat">Puzzles</h1>
-        </div>
+        <h1 className="text-brand text-6 leading-flat">Puzzles</h1>
 
+        {/* Full bleed: the row runs past the content column to the edges */}
         <section
-          f-client-nav
-          className="grid gap-fl-3 content-start lg:grid-cols-2"
+          aria-label="Puzzles by day"
+          className={clsx(
+            "@container grid gap-fl-2 w-dvw ml-[calc(50%_-_50dvw)]",
+            "[timeline-scope:--archive-row]",
+            "[--cards:3] [--gap:var(--size-3)] [--pad:var(--size-fluid-3)]",
+            "[--col:calc((100cqw_-_var(--pad)_-_var(--cards)_*_var(--gap))_/_(var(--cards)_+_0.1))]",
+            "lg:w-[calc(100dvw_-_16rem)] lg:ml-[calc(50%_-_(100dvw_-_16rem)_/_2)]",
+            "lg:[--cards:6] lg:[--pad:max(var(--size-fluid-3),calc(50cqw_-_24rem))]",
+          )}
         >
-          <div className="grid grid-cols-subgrid place-content-start items-start gap-fl-2">
-            <MonthStrip
-              href={href}
-              selectedDate={selectedDate}
-              today={today}
-              showFuture={isDev}
+          <div className="grid gap-1 px-(--pad)">
+            <ArchiveScroller
+              bounds={bounds}
+              range={range}
+              current={current}
+              month={getMonthLabel(getPuzzleDate(current))}
             />
-
-            <CalendarGrid
-              href={href}
-              bestMoves={bestMoves}
-              score={props.state.score}
-              selectedDate={selectedDate}
-              entries={entries}
-              today={today}
-            />
+            <ArchiveMinimap bounds={bounds} current={current} />
           </div>
 
-          <div className="lg:self-start">
-            {selectedPuzzle
-              ? (
-                <PuzzleCard
-                  puzzle={selectedPuzzle}
-                  score={props.state.score[selectedPuzzle.slug]}
-                  tagline={dateLabel}
-                  showPlay
-                />
-              )
-              : (
-                <div className="border-1 border-surface-2 rounded-2 p-fl-2 text-text-2 text-3 grid place-content-center min-h-40 text-center">
-                  No puzzle on this day.
-                </div>
-              )}
-          </div>
+          <ol
+            id="archive-row"
+            className={clsx(
+              "relative grid grid-flow-col auto-cols-(--col) gap-(--gap) m-0 py-2 px-(--pad)",
+              "overflow-x-auto overscroll-x-contain snap-x snap-proximity scroll-px-(--pad)",
+              "[scroll-timeline:--archive-row_x]",
+            )}
+          >
+            <ArchiveSentinel
+              side="before"
+              span={range.from - bounds.from}
+              href={getWeekHref(range.from - 1, bounds)}
+            />
+            <ArchiveDays days={days} score={props.state.score} />
+            <ArchiveSentinel
+              side="after"
+              span={bounds.to - range.to}
+              href={getWeekHref(range.to + 1, bounds)}
+            />
+          </ol>
         </section>
       </Main>
 
-      <Panel>
-        <div
-          className={clsx(
-            "col-[2/3] flex flex-col gap-fl-2 items-start",
-            "lg:col-auto lg:row-start-3",
-          )}
-        >
-          <div className="flex flex-col gap-0">
-            <span className="text-6 text-text-1 leading-flat font-medium tracking-wide">
-              {totalPuzzles}
-            </span>
-            <span className="text-3 text-text-2">Puzzles</span>
-          </div>
-        </div>
-      </Panel>
+      <Panel />
     </>
   );
 });
+
+/** The week a slot falls in, landing on that day; none past the bounds. */
+function getWeekHref(number: number, bounds: { from: number; to: number }) {
+  if (number < bounds.from || number > bounds.to) return undefined;
+  const date = getPuzzleDate(number).toString();
+  return `?date=${date}#${date}`;
+}
