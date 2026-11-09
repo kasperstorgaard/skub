@@ -69,7 +69,7 @@ export function PuzzleCard({
           kinds={score}
           className={clsx(
             "absolute top-0 right-0 p-2 py-2.5",
-            size === "lg" ? "text-6" : "text-4",
+            size === "lg" ? "text-5" : "text-4",
           )}
         />
       </div>
