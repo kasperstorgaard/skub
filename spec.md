@@ -8,11 +8,12 @@ and doesn't feel like a stream of puzzles.
 
 ## Approach
 
-One horizontal row of puzzle cards in calendar order, oldest on the left and
-today on the right. Mobile first: about 3 cards in view, with roughly 10% of the
-next card peeking in so it's clear the row scrolls. Desktop shows 5–7. The
-row is wider than the content column and scrolls inside its own container
-(`grid-flow-col`, `auto-cols-*`, `overflow-x-auto`, `snap-x`).
+On mobile, one horizontal row of puzzle cards in calendar order, oldest on
+the left and today on the right. 2.2 cards fit past the left inset, so the row
+overflows on any screen, and cards are never larger than home's. The row runs
+full width and scrolls inside its own container (`grid-flow-col`,
+`auto-cols-*`, `overflow-x-auto`, `snap-x`). Desktop keeps a calendar (see
+"Heading and desktop").
 
 **Page unit = one ISO week (Mon–Sun).** `?date=YYYY-MM-DD` picks the week that
 contains that date and defaults to today. The current week stops at today
