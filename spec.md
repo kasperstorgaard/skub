@@ -10,7 +10,7 @@ and doesn't feel like a stream of puzzles.
 
 On mobile, one horizontal row of puzzle cards in calendar order, oldest on
 the left and today on the right. Large cards (`PuzzleCard size="lg"`, number
-only as the lead-in) snap to the centre, with 0.2 of a card showing on each
+only as the lead-in) snap (mandatory) to the centre, with 0.2 of a card showing on each
 side, so the row overflows both ways on any screen. Cards are capped
 at 24rem. The row runs full width and scrolls inside its own container
 (`grid-flow-col`, `auto-cols-*`, `overflow-x-auto`, `snap-x`), with the
@@ -51,14 +51,15 @@ contains that date and defaults to today. The current week stops at today
   fetched cards next to it and lowers its span by the number of inserted
   `[data-date]` items. Count them rather than assuming 21, because a batch is
   short at today or at the first puzzle.
-- **Far jumps replace the block.** If you land deep inside a sentinel (a hard
-  flick), the island computes the date under the viewport
-  from `scrollLeft` and the fixed column width. It fetches around that date
-  and swaps out the whole block: the old cards collapse back into the two
-  spans, the new block goes in, and both spans are set for its position. The
-  total width is unchanged. There are always exactly two sentinels and one
-  block, so the DOM stays bounded however far you scroll. Going back reloads
-  those weeks with one cacheable request.
+- **Scrolling only grows the edges.** Snapping is mandatory, so a fling
+  always ends on a loaded card and never lands in a sentinel. Proximity
+  snapping, and loading wherever a fling landed, made touch scrolling
+  inconsistent: the block could be swapped while momentum was still running.
+- **Month links replace the block.** A jump to a day that isn't loaded fetches
+  around it, then swaps out the whole block and scrolls to the day in the
+  same task. The old cards collapse back into the two spans and both spans
+  are reset, so the total width is unchanged. There are always exactly two
+  sentinels and one block.
 - **Jump-free swaps.** Parse the fragment off-DOM into a `<template>` first.
   Then insert or replace the cards and set the spans in one synchronous block,
   with no `await` and no layout reads in between. Columns have a fixed track

@@ -21,7 +21,7 @@ type Options = {
 /**
  * Keeps the archive row loaded around what's in view: two sentinels stand in
  * for the unloaded days at full width, and shrink as cards replace them. A
- * landing far from the loaded cards replaces them instead.
+ * jump to a far day replaces the loaded cards instead.
  */
 export function attachArchiveScroller(
   { row, bounds, range: initial, current, onCentre }: Options,
@@ -101,13 +101,15 @@ export function attachArchiveScroller(
     check();
   }
 
-  async function jump(centre: number) {
+  /** Scrolls to a day, first replacing the block if it isn't loaded. */
+  async function goTo(slot: number) {
+    if (slot >= range.from && slot <= range.to) return scrollToSlot(slot);
     if (pending.jump) return;
     const ticket = ++generation;
     pending.before = pending.after = false;
     pending.jump = true;
     try {
-      const from = Math.max(bounds.from, centre - Math.floor(BATCH / 2));
+      const from = Math.max(bounds.from, slot - Math.floor(BATCH / 2));
       const to = Math.min(bounds.to, from + BATCH - 1);
       const days = await fetchDays(from, to);
       if (ticket !== generation) return;
@@ -119,6 +121,8 @@ export function attachArchiveScroller(
       range = { from, to: from + days.length - 1 };
       setSpan(before, range.from - bounds.from);
       setSpan(after, bounds.to - range.to);
+      // Same task as the swap, so the old spot never paints as skeletons
+      scrollToSlot(slot);
     } catch {
       return;
     } finally {
@@ -127,14 +131,13 @@ export function attachArchiveScroller(
     check();
   }
 
-  /** Loads what the view needs: the edges near it, or a block where it is. */
+  /**
+   * Loads the edges near the view. Scrolling never lands past them: mandatory
+   * snapping only stops on loaded cards.
+   */
   function check() {
     if (pending.jump) return;
     const centre = Math.floor(centreSlot());
-    if (centre < range.from - BUFFER || centre > range.to + BUFFER) {
-      jump(centre);
-      return;
-    }
     if (centre - range.from < BUFFER) loadBefore();
     if (range.to - centre < BUFFER) loadAfter();
   }
@@ -202,7 +205,7 @@ export function attachArchiveScroller(
     clearTimeout(settle);
   }
 
-  return { detach, scrollToSlot };
+  return { detach, goTo };
 }
 
 function query(root: HTMLElement, selector: string) {

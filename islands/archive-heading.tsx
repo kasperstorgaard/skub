@@ -77,7 +77,7 @@ export function ArchiveHeading(
   function onMonthClick(event: MouseEvent, month: ArchiveMonth) {
     if (!scroller.current) return;
     event.preventDefault();
-    scroller.current.scrollToSlot(month.number);
+    scroller.current.goTo(month.number);
   }
 
   return (
