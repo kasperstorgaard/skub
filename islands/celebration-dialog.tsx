@@ -5,7 +5,7 @@ import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
-import type { ScoreKind } from "#/game/score.ts";
+import { getSolveScore, type ScoreKind } from "#/game/score.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
 import { Dialog } from "#/islands/dialog.tsx";
@@ -24,15 +24,13 @@ const FLY_STARTS = [0, 1, 2, 3, 4].map((i) => {
 });
 
 export type CelebrationData = {
-  /** The player's stars on the puzzle after this solve. */
+  /** This solve's stars, first included. */
   stars: ScoreKind[];
 };
 
 type Props = {
   href: Signal<string>;
   puzzle: Signal<Puzzle>;
-  /** The player's stars on the puzzle before this solve. */
-  stars: ScoreKind[];
   back: { href: string; label: string };
   celebrationData: Signal<CelebrationData | null>;
   celebrationError: Signal<boolean>;
@@ -44,7 +42,6 @@ export function CelebrationDialog(
   {
     href,
     puzzle,
-    stars,
     back,
     celebrationData,
     celebrationError,
@@ -93,15 +90,19 @@ export function CelebrationDialog(
 
   const data = celebrationData.value;
   const isPerfect = moves.length === puzzle.value.minMoves;
-  const headline = isPerfect ? "Perfect!" : "Solved!";
   const flyStarts = useMemo(() => pickFlyStarts(), []);
-  // Shown as they stand until the solve lands; only the new ones fly in.
-  const shown = data?.stars ?? stars;
-  // A solve after a Flash solve turns the Flash star, rather than adding one.
-  const isUpgrade = stars.includes("flash") && shown.includes("solve");
-  const added = shown.filter((kind) =>
-    !stars.includes(kind) && !(isUpgrade && kind === "solve")
-  );
+  // This solve's stars; first is only known once the solve lands.
+  const stars = data?.stars ??
+    getSolveScore(puzzle.value, {
+      moves: moves.length,
+      isNewPath: false,
+      flash: !!isFlash,
+    });
+  const headline = !isPerfect
+    ? "Solved!"
+    : stars.includes("first")
+    ? "Amazing!"
+    : "Perfect!";
 
   return (
     <Dialog open={isOpen} className="w-full overflow-visible">
@@ -114,21 +115,18 @@ export function CelebrationDialog(
           </h2>
 
           <Stars
-            kinds={shown}
+            kinds={stars}
             className="shrink-0 text-[calc(var(--text-fl-2)*1.25)]"
             getStarProps={(kind) => {
-              if (isUpgrade && kind === "solve") {
-                return { className: "star-upgrade", fromFlash: true };
-              }
-              const i = added.indexOf(kind);
-              if (i === -1) return;
+              // Right to left, so each lands on top of the one before.
+              const i = stars.length - 1 - stars.indexOf(kind);
               const [x, y] = flyStarts[i];
               return {
                 className: "star-fly",
                 style: {
                   "--fly-x": `${x.toFixed(2)}em`,
                   "--fly-y": `${y.toFixed(2)}em`,
-                  "--fly-delay": `${i * 350}ms`,
+                  "--fly-delay": `${i * 400}ms`,
                 },
               };
             }}

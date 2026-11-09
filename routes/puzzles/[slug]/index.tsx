@@ -184,13 +184,13 @@ export const handler = define.handlers<PageData>({
 
     // Best effort, like the aggregates: a missed award is put right by
     // re-running ./scripts/migrate-score.ts.
+    const kinds = getSolveScore(puzzle, {
+      moves: moves.length,
+      isNewPath,
+      flash: isFlash,
+    });
     const awardSolveScore = () =>
       withSpan("puzzle.award_score", async (span) => {
-        const kinds = getSolveScore(puzzle, {
-          moves: moves.length,
-          isNewPath,
-          flash: isFlash,
-        });
         const added = await awardScore(ctx.state.userId, slug, kinds);
         span.setAttribute("score.earned", added.length);
         // The whole solve's kinds: the cookie replaces its stars with them.
@@ -214,7 +214,7 @@ export const handler = define.handlers<PageData>({
     }
 
     if (isJson) {
-      const data: CelebrationData = { stars: ctx.state.score[slug] ?? [] };
+      const data: CelebrationData = { stars: kinds };
       return Response.json(data);
     }
 
@@ -345,7 +345,6 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           <CelebrationDialog
             href={href}
             puzzle={puzzle}
-            stars={props.state.score[props.data.puzzle.slug] ?? []}
             back={back}
             celebrationData={celebrationData}
             celebrationError={celebrationError}

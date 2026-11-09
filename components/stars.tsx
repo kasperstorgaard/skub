@@ -28,17 +28,12 @@ type StarsProps = {
   kinds: ScoreKind[];
   className?: string;
   /** Per-star class and style, e.g. to animate some of them. */
-  /**
-   * Per-star class and style, e.g. to animate some of them. `fromFlash` draws
-   * the solve star under the Flash one, for an upgrade to fade between them.
-   */
   getStarProps?: (
     kind: ScoreKind,
   ) =>
     | {
       className?: string;
       style?: Record<string, string>;
-      fromFlash?: boolean;
     }
     | undefined;
 };
@@ -99,11 +94,6 @@ export function Stars({ kinds, className, getStarProps }: StarsProps) {
               stroke-width={STROKE + KNOCKOUT}
             />
             <StarPath kind={kind} id={id} />
-            {starProps?.fromFlash && (
-              <g className="star-unflash">
-                <StarPath kind="flash" id={id} />
-              </g>
-            )}
           </svg>
         );
       })}
