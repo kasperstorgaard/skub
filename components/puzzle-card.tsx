@@ -81,7 +81,11 @@ export function PuzzleCard({
           .join(" ")}
         size={size}
       >
-        <span className={size === "lg" ? "type-title-lg font-3" : "type-title"}>
+        <span
+          className={size === "lg"
+            ? "text-5 font-3 leading-tight"
+            : "type-title"}
+        >
           {puzzle.name}
         </span>
       </PuzzleCardCaption>
