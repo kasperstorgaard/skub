@@ -9,9 +9,10 @@ import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { BadgeStars } from "#/components/stars.tsx";
 import { getPuzzleSolution } from "#/db/solutions.ts";
 import { Solution } from "#/db/types.ts";
+import { withFlashStart } from "#/game/flash.ts";
 import { getSolveScore } from "#/game/score.ts";
-import { Puzzle } from "#/game/types.ts";
-import { encodeState } from "#/game/url.ts";
+import { encodeMoves } from "#/game/strings.ts";
+import { Move, Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { ScoreBadge } from "#/islands/score-badge.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
@@ -19,6 +20,8 @@ import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 type Data = {
   puzzle: Puzzle;
   solution: Solution;
+  /** The moves replayed: a Flash solve's come after its Flash start. */
+  moves: Move[];
   userId: string;
 };
 
@@ -36,13 +39,26 @@ export const handler = define.handlers<Data>({
       );
     }
 
+    // A Flash solve replays from its Flash start, as it was played.
+    const skip = solution.flash ? puzzle.flashStart?.length ?? 0 : 0;
+    const moves = solution.moves.slice(skip);
+
+    // Also fixes old links that carry the Flash start in their moves.
     const url = new URL(req.url);
-    if (!url.searchParams.has("moves")) {
-      url.search = encodeState(solution);
+    const encoded = encodeMoves(moves);
+    if (url.searchParams.get("moves") !== encoded) {
+      url.searchParams.set("moves", encoded);
       return Response.redirect(url, 303);
     }
 
-    return page({ puzzle, solution, userId: ctx.state.userId });
+    return page({
+      puzzle: skip
+        ? withFlashStart(puzzle, solution.moves.slice(0, skip))
+        : puzzle,
+      solution,
+      moves,
+      userId: ctx.state.userId,
+    });
   },
 });
 
@@ -73,7 +89,7 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
           {/* This solution's moves against the shortest, and its stars */}
           <BadgeStars
             kinds={getSolveScore(props.data.puzzle, {
-              moves: props.data.solution.moves.length,
+              moves: props.data.moves.length,
               isNewPath: !!props.data.solution.first,
               flash: !!props.data.solution.flash,
             })}
@@ -81,7 +97,7 @@ export default define.page<typeof handler>(function SolutionReplayPage(props) {
             <ScoreBadge
               puzzle={puzzle}
               href={href}
-              moves={props.data.solution.moves.length}
+              moves={props.data.moves.length}
             />
           </BadgeStars>
         </div>
