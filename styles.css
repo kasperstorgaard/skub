@@ -676,8 +676,8 @@
 }
 
 @layer components {
-  /* A star flying in from the top left on a curve: down first, then across,
-     fading in. Its start and delay come as --fly-x / --fly-y / --fly-delay. */
+  /* A star flying in from the top left in a straight line, fading in. Its
+     start and delay come as --fly-x / --fly-y / --fly-delay. */
   @media (prefers-reduced-motion: no-preference) {
     .star-fly {
       animation: star-fly 800ms ease-out var(--fly-delay, 0ms) both;
@@ -685,17 +685,9 @@
   }
 
   @keyframes star-fly {
-    0% {
+    from {
       opacity: 0;
       transform: translate(var(--fly-x), var(--fly-y)) scale(0.6);
-    }
-    40% {
-      opacity: 1;
-      transform: translate(calc(var(--fly-x) * 0.5), calc(var(--fly-y) * 0.15))
-        scale(0.9);
-    }
-    100% {
-      transform: translate(0, 0) scale(1);
     }
   }
 

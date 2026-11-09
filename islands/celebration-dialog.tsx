@@ -12,8 +12,8 @@ import { Dialog } from "#/islands/dialog.tsx";
 import { getBoardRippleDuration } from "#/lib/board-ripple.ts";
 
 // Where a star starts its fly-in, in em from where it lands: five spots evenly
-// spaced on a 1em circle around 2 right, 3 up, outside the dialog.
-const FLY_BASE = [2, -3];
+// spaced on a 1em circle around 4 left, 2 up, outside the dialog.
+const FLY_BASE = [-4, -2];
 const FLY_RADIUS = 1;
 const FLY_STARTS = [0, 1, 2, 3, 4].map((i) => {
   const radians = (i * 2 * Math.PI) / 5;
