@@ -118,7 +118,8 @@ export function CelebrationDialog(
             kinds={stars}
             className="shrink-0 text-[calc(var(--text-fl-2)*1.25)]"
             getStarProps={(kind) => {
-              // Rightmost lands first, so each lands on top of the one before.
+              // Left to right movement, landing the rightmost star first, so
+              // each lands on top of the one before.
               const i = stars.length - 1 - stars.indexOf(kind);
               const [x, y] = flyStarts[i];
               return {
