@@ -40,13 +40,16 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
                   puzzle={puzzle}
                   score={score[puzzle.slug]}
                   tagline={tagline}
+                  size="lg"
                 />
               )
               : (
                 <div className="flex flex-col gap-2 text-text-3">
                   <div className="aspect-square border-2 border-surface-3 rounded-1" />
-                  <PuzzleCardCaption tagline={tagline}>
-                    <span className="text-3">No puzzle</span>
+                  <PuzzleCardCaption tagline={tagline} size="lg">
+                    <span className="text-5 font-3 leading-flat">
+                      No puzzle
+                    </span>
                   </PuzzleCardCaption>
                 </div>
               )}

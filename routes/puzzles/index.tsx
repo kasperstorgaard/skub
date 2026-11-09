@@ -79,12 +79,12 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           id="archive-row"
           aria-label="Puzzles by day"
           className={clsx(
-            // Full bleed, 2.2 cards past the inset so it always overflows,
-            // never larger than home's cards
+            // Full bleed, 1.4 cards past the inset so it always overflows,
+            // capped for wide phones and tablets
             "relative grid grid-flow-col auto-cols-(--col) gap-(--gap) w-dvw ml-[calc(50%_-_50dvw)] m-0 py-2 px-(--pad)",
-            "overflow-x-auto overscroll-x-contain snap-x snap-proximity scroll-px-(--pad)",
+            "overflow-x-auto overscroll-x-contain snap-x snap-proximity scroll-px-(--pad) no-scrollbar",
             "[--gap:var(--size-fluid-4)] [--pad:var(--size-fluid-3)]",
-            "[--col:min((100dvw_-_var(--pad)_-_2_*_var(--gap))_/_2.2,(32rem_-_var(--gap))_/_2)]",
+            "[--col:min((100dvw_-_var(--pad)_-_var(--gap))_/_1.4,24rem)]",
             "lg:hidden",
           )}
         >

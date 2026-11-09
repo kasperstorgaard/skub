@@ -9,10 +9,11 @@ and doesn't feel like a stream of puzzles.
 ## Approach
 
 On mobile, one horizontal row of puzzle cards in calendar order, oldest on
-the left and today on the right. 2.2 cards fit past the left inset, so the row
-overflows on any screen, and cards are never larger than home's. The row runs
-full width and scrolls inside its own container (`grid-flow-col`,
-`auto-cols-*`, `overflow-x-auto`, `snap-x`). Desktop keeps a calendar (see
+the left and today on the right. 1.4 large cards (`PuzzleCard size="lg"`)
+fit past the left inset, so the row overflows on any screen. Cards are capped
+at 24rem. The row runs full width and scrolls inside its own container
+(`grid-flow-col`, `auto-cols-*`, `overflow-x-auto`, `snap-x`), with the
+scrollbar hidden. Desktop keeps a calendar (see
 "Heading and desktop").
 
 **Page unit = one ISO week (Mon–Sun).** `?date=YYYY-MM-DD` picks the week that
