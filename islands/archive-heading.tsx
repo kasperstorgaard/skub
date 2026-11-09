@@ -1,4 +1,5 @@
 import { useSignal } from "@preact/signals";
+import { clsx } from "clsx/lite";
 import { useEffect, useRef } from "preact/hooks";
 
 import { attachArchiveScroller } from "#/client/archive-scroller.ts";
@@ -7,6 +8,8 @@ import type { SlotRange } from "#/game/date.ts";
 
 export type ArchiveHeadingDay = {
   date: string;
+  /** "Monday 9" */
+  day: string;
   month: string;
   year: number;
   week: number;
@@ -62,6 +65,7 @@ export function ArchiveHeading(
         if (card.id === day.value.date) return;
         day.value = {
           date: card.id,
+          day: card.dataset.day ?? "",
           month: card.dataset.month ?? "",
           year: Number(card.dataset.year),
           week: Number(card.dataset.week),
@@ -92,15 +96,19 @@ export function ArchiveHeading(
         <h1 className="text-brand text-7 leading-flat">{day.value.month}</h1>
       </hgroup>
 
+      {/* The day stays centred, with or without a link either side */}
       <nav
         aria-label="Months"
-        className="flex justify-between gap-fl-2"
+        className="grid grid-cols-[1fr_auto_1fr] items-center gap-fl-2"
       >
         <MonthLink
           month={months[index - 1]}
           direction="previous"
           onClick={onMonthClick}
         />
+        <p className="text-4 font-3 leading-flat text-text-2">
+          {day.value.day}
+        </p>
         <MonthLink
           month={months[index + 1]}
           direction="next"
@@ -127,7 +135,11 @@ function MonthLink({ month, direction, onClick }: MonthLinkProps) {
     <a
       href={`?date=${month.date}#${month.date}`}
       aria-label={`${isPrevious ? "Previous" : "Next"} month, ${month.name}`}
-      className="flex items-center gap-1 text-3 text-link no-underline hover:underline"
+      className={clsx(
+        "flex items-center gap-1",
+        isPrevious ? "justify-self-start" : "justify-self-end",
+        "text-3 text-link no-underline hover:underline",
+      )}
       onClick={(event) => onClick(event, month)}
     >
       {isPrevious && <Icon icon={CaretLeft} />}

@@ -31,6 +31,7 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
             id={date.toString()}
             data-number={number}
             data-month={getMonthName(date)}
+            data-day={getDayName(date)}
             data-year={date.year}
             data-week={date.weekOfYear}
             className="snap-start min-w-0 list-none pl-0"
@@ -56,6 +57,11 @@ export function ArchiveDays({ days, score }: ArchiveDaysProps) {
       })}
     </>
   );
+}
+
+/** "Monday 9": the heading's day while it's centred. */
+export function getDayName(date: Temporal.PlainDate) {
+  return date.toLocaleString("en", { weekday: "long", day: "numeric" });
 }
 
 /** "November": the heading's month while a day is centred. */

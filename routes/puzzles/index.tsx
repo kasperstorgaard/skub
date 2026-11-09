@@ -5,6 +5,7 @@ import { page } from "fresh";
 import {
   ArchiveDays,
   ArchiveSentinel,
+  getDayName,
   getMonthName,
 } from "#/components/archive-row.tsx";
 import { DesktopCalendar } from "#/components/desktop-calendar.tsx";
@@ -69,6 +70,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           current={current}
           day={{
             date: date.toString(),
+            day: getDayName(date),
             month: getMonthName(date),
             year: date.year,
             week: date.weekOfYear ?? 0,
@@ -116,12 +118,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             today={today}
           />
 
-          <div className="self-start grid gap-fl-1">
-            {/* The day sits over the card; the month is the page's title */}
-            <p className="text-4 font-3 text-text-2 leading-flat">
-              {date.toLocaleString("en", { weekday: "long", day: "numeric" })}
-            </p>
-
+          <div className="self-start">
             {puzzle
               ? (
                 <PuzzleCard
