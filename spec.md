@@ -31,35 +31,40 @@ contains that date and defaults to today. The current week stops at today
 
 ### With JS
 
-- **A skeleton card for every day.** The server renders one light skeleton
-  per day outside the current week: an empty outline the size of a card,
-  carrying `data-date`. The full row exists from the first paint, so the scroll
-  width is fixed and the minimap has a real element to scroll to. Skeletons are
-  `noscript:hidden`, and hidden grid items take no column, so the no-JS page is
-  still just the week. The prev/next links are `js:hidden`.
-- **Skeletons are the sentinels.** The island observes them with an
-  `IntersectionObserver` whose root is the scroller and whose `rootMargin` is
-  about 2 weeks of card width. When a skeleton comes near view, the island
-  loads its week. A week loads wherever it is: at the edge of loaded cards, or
-  deep in the row after a hard flick or a minimap jump. There's no gap
-  splitting and no span math.
-- **Swap 1:1, no shifting.** Each fetched card replaces the skeleton with the
-  same `data-date`, same column, same width. Nothing changes size, so no
-  scroll correction is ever needed. Rules that keep it jump-free:
-  - **Synchronous swap.** Parse the fragment off-DOM into a `<template>`
-    first. Then replace the skeletons in one synchronous block, with no
-    `await` and no layout reads in between.
-  - **Fixed card size.** Columns have a fixed track width and the thumbnails
-    are inline SVG with `aspect-square`, so nothing resizes after the swap.
-- **Prefetch deep for fast flicks.** On mount, the island loads 3 weeks either
-  side of the rendered week, using `GET /api/puzzles/weeks?date=…&weeks=3`
-  (one round trip, about 21 cards). After that, intersecting skeletons are
-  batched into weeks. A week that is already in flight is never requested
-  twice.
-- **Budget.** About 365 skeletons per year of puzzles, each an empty element.
-  That is cheap for both the DOM and the observer. Grid caps implicit tracks
-  at around 1000 in Chromium, about 2.7 years, which is enough for now and
-  noted for later.
+- **Two full-size sentinels around one loaded block.** One sentinel sits at
+  each end of the row and is the `IntersectionObserver` target (root = the
+  scroller, `rootMargin` about 2 weeks of card width). The server sets `--span`
+  on each to the number of days it stands in for (from the manifest). Under
+  `js:` the sentinel takes `grid-column: span var(--span)`, so it is exactly as
+  wide as those cards, gaps included, and the scroll width is fixed from the
+  first paint. Without JS it is a one-column prev/next link.
+- **They look like skeleton cards.** A repeating background draws faint
+  card-shaped outlines across the span, so a fast flick reads as "loading"
+  rather than empty. It's one element, not one per day.
+- **Growing the edge.** When a sentinel nears view, the island inserts the
+  fetched cards next to it and lowers its span by the number of inserted
+  `[data-date]` items. Count them rather than assuming 21, because a batch is
+  short at today or at the first puzzle.
+- **Far jumps replace the block.** If you land deep inside a sentinel (a hard
+  flick or a minimap click), the island computes the date under the viewport
+  from `scrollLeft` and the fixed column width. It fetches around that date
+  and swaps out the whole block: the old cards collapse back into the two
+  spans, the new block goes in, and both spans are set for its position. The
+  total width is unchanged. There are always exactly two sentinels and one
+  block, so the DOM stays bounded however far you scroll. Going back reloads
+  those weeks with one cacheable request.
+- **Jump-free swaps.** Parse the fragment off-DOM into a `<template>` first.
+  Then insert or replace the cards and set the spans in one synchronous block,
+  with no `await` and no layout reads in between. Columns have a fixed track
+  width and the thumbnails are inline SVG with `aspect-square`, so nothing
+  resizes after a swap.
+- **Prefetch deep for fast flicks.** On mount, the island loads 3 weeks in
+  each direction that has a span: both on a link into a past week, older only
+  on the current one. Each fetch is `GET /api/puzzles/weeks?date=…&weeks=3`.
+  Each sentinel has at most one fetch in flight. If it intersects again while
+  that fetch is pending, it's checked once more after the insert.
+- **Grid track cap.** Grid allows about 1000 implicit tracks in Chromium,
+  roughly 2.7 years of days. That's enough for now; noted for later.
 - The API returns an **HTML fragment**: the same `WeekCards` component rendered
   with `preact-render-to-string`. Thumbnail SVG and the card stay server-only,
   with no JSON-to-card duplication on the client. It reads only the score
@@ -90,8 +95,8 @@ indicator.
   scrolls the row there, so the day you clicked ends up under the indicator. A
   jump of up to about 2 weeks scrolls smoothly; longer jumps are instant, so
   you don't watch months of placeholder outlines slide by. The threshold is
-  one constant, tuned once we see it in practice. The skeletons at the landing
-  spot load as usual.
+  one constant, tuned once we see it in practice. Landing far away replaces
+  the loaded block, as described under "With JS".
 - **Without JS:** the server places the strip for `?date`, and each month
   label is a plain link.
 - **Accessibility:** the month labels are the focusable links. Clicking
@@ -120,4 +125,5 @@ renders a muted placeholder of the same size, so the grid rhythm holds.
 ## Non-goals
 
 - Filtering, search, or difficulty grouping.
-- Virtualising or unloading weeks that have scrolled far out of view.
+- Unloading cards while you scroll continuously. Far jumps drop the old block
+  anyway; a long continuous scroll keeps everything it has loaded.
