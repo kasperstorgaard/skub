@@ -109,23 +109,32 @@ export default define.page<typeof handler>(function HighscorePage(props) {
       <Main className="max-lg:row-span-full justify-stretch content-start">
         <Header back={{ href: "/", label: "Back to home" }} hideHighscore />
 
-        <div className="flex items-center justify-between flex-wrap gap-fl-2">
-          <h1 className="text-brand text-6 leading-flat">High score</h1>
-          <PillSwitch
-            label="Period"
-            items={[
-              {
-                label: "This week",
-                href: "/highscore",
-                isActive: period === "week",
-              },
-              {
-                label: "All time",
-                href: "/highscore?period=all",
-                isActive: period === "all",
-              },
-            ]}
-          />
+        {/* The title, and how points are made under it */}
+        <div className="flex flex-col gap-fl-1">
+          <div className="flex items-center justify-between flex-wrap gap-fl-2">
+            <h1 className="text-brand text-6 leading-flat">High score</h1>
+            <PillSwitch
+              label="Period"
+              items={[
+                {
+                  label: "This week",
+                  href: "/highscore",
+                  isActive: period === "week",
+                },
+                {
+                  label: "All time",
+                  href: "/highscore?period=all",
+                  isActive: period === "all",
+                },
+              ]}
+            />
+          </div>
+
+          <p className="m-0 text-2 text-text-2">
+            {formatNumber(SCORE_POINTS.solve)} pts per star. {period === "week"
+              ? "Your best solve on each day's puzzle counts."
+              : "Your best solve on each puzzle counts."}
+          </p>
         </div>
 
         <div className="grid content-start gap-fl-4">
@@ -164,24 +173,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
         </div>
       </Main>
 
-      <Panel>
-        {/* How points are made, under the period the list is for */}
-        <div
-          className={clsx(
-            "col-[2/3] flex flex-col gap-fl-1 text-2 text-text-2",
-            "lg:col-auto lg:row-start-3",
-          )}
-        >
-          <h2 className="text-4 text-text-1">Points</h2>
-          <p className="m-0">
-            {formatNumber(SCORE_POINTS.solve)} pts per star.
-            <br />
-            {period === "week"
-              ? "Your best solve on each day's puzzle counts."
-              : "Your best solve on each puzzle counts."}
-          </p>
-        </div>
-      </Panel>
+      <Panel />
     </>
   );
 });
