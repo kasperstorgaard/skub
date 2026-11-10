@@ -17,6 +17,7 @@ import {
   getProgressScore,
   getTotalScore,
   type HighscoreEntry,
+  SCORE_POINTS,
   type ScoreKind,
   type UserScore,
 } from "#/game/score.ts";
@@ -163,7 +164,24 @@ export default define.page<typeof handler>(function HighscorePage(props) {
         </div>
       </Main>
 
-      <Panel />
+      <Panel>
+        {/* How points are made, under the period the list is for */}
+        <div
+          className={clsx(
+            "col-[2/3] flex flex-col gap-fl-1 text-2 text-text-2",
+            "lg:col-auto lg:row-start-3",
+          )}
+        >
+          <h2 className="text-4 text-text-1">Points</h2>
+          <p className="m-0">
+            {formatNumber(SCORE_POINTS.solve)} pts per star.
+            <br />
+            {period === "week"
+              ? "Your best solve on each day's puzzle counts."
+              : "Your best solve on each puzzle counts."}
+          </p>
+        </div>
+      </Panel>
     </>
   );
 });

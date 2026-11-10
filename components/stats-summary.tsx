@@ -16,9 +16,13 @@ const STAT_KINDS = ["solve", "perfect", "first"] as const;
 type Props = {
   stats: UserStats;
   userScore: UserScore;
+  /** Drop the points, leaving the stars they're made of */
+  hidePoints?: boolean;
 } & HTMLAttributes<HTMLElement>;
 
-export function StatsSummary({ stats, userScore, className }: Props) {
+export function StatsSummary(
+  { stats, userScore, hidePoints, className }: Props,
+) {
   const points = getTotalScore(userScore);
   const counts = { ...userScore, solve: userScore.solve + userScore.flash };
 
@@ -43,12 +47,14 @@ export function StatsSummary({ stats, userScore, className }: Props) {
         <dt className="text-2 text-text-2">Streak</dt>
       </dl>
 
-      <dl className="flex flex-col m-0">
-        <dd className="m-0 text-4 lg:text-5 font-semibold tracking-wide leading-flat text-text-1">
-          {formatNumber(points)}
-        </dd>
-        <dt className="text-2 text-text-2">Points</dt>
-      </dl>
+      {!hidePoints && (
+        <dl className="flex flex-col m-0">
+          <dd className="m-0 text-4 lg:text-5 font-semibold tracking-wide leading-flat text-text-1">
+            {formatNumber(points)}
+          </dd>
+          <dt className="text-2 text-text-2">Points</dt>
+        </dl>
+      )}
 
       {stars.length > 0 && (
         <dl className="flex gap-fl-2 m-0 max-lg:items-end lg:flex-col lg:gap-2">
