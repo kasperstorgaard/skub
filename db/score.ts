@@ -3,6 +3,7 @@ import {
   emptyUserScore,
   getHighscoreRank,
   getNewScore,
+  getTotalScore,
   type HighscoreEntry,
   SCORE_KINDS,
   type ScoreKind,
@@ -79,6 +80,27 @@ export async function listHighscore(
     });
   }
   return entries;
+}
+
+/**
+ * Where a player ranks all time, 1 for the top, by counting who's above them;
+ * none until they've scored. Reads keys from theirs up, so it costs as many
+ * reads as players ahead.
+ */
+export async function getHighscorePlacement(
+  userId: string,
+): Promise<{ rank: number; userScore: UserScore } | null> {
+  const userScore = await getUserScore(userId);
+  if (getTotalScore(userScore) === 0) return null;
+
+  // From their own key to the end: them, and everyone ranked above.
+  const iter = kv.list({
+    prefix: ["highscore"],
+    start: getHighscoreKey(userId, userScore),
+  });
+  let rank = 0;
+  for await (const _ of iter) rank++;
+  return { rank, userScore };
 }
 
 /**

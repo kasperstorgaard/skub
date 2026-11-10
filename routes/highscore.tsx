@@ -6,7 +6,7 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { define } from "#/core.ts";
-import { listHighscore } from "#/db/score.ts";
+import { getHighscorePlacement, listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
 import { getUserNames } from "#/db/user.ts";
 import { getWeekPuzzleNumbers } from "#/game/date.ts";
@@ -14,7 +14,6 @@ import { getAvailableEntries, getPuzzle } from "#/game/loader.ts";
 import {
   getHighscore,
   getPastScore,
-  getProgressScore,
   getTotalScore,
   type HighscoreEntry,
   type ScoreKind,
@@ -30,11 +29,8 @@ type Row = HighscoreEntry & { name: string };
 type PageData = {
   period: Period;
   rows: Row[];
-  /**
-   * The viewer's own row, when they have stars but aren't in the top rows.
-   * Ranked only where it's known: this week, not all time.
-   */
-  viewerRow: (Row & { rank?: number }) | null;
+  /** The viewer's own row, when they have stars but aren't in the top rows. */
+  viewerRow: (Row & { rank: number }) | null;
 };
 
 /**
@@ -65,13 +61,13 @@ async function getWeekHighscore(): Promise<HighscoreEntry[]> {
 
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
-    const { userId, user, score } = ctx.state;
+    const { userId, user } = ctx.state;
     const period: Period = ctx.url.searchParams.get("period") === "all"
       ? "all"
       : "week";
 
     let entries: HighscoreEntry[];
-    let viewer: (HighscoreEntry & { rank?: number }) | null = null;
+    let viewer: (HighscoreEntry & { rank: number }) | null = null;
 
     if (period === "week") {
       const highscore = await getWeekHighscore();
@@ -80,12 +76,10 @@ export const handler = define.handlers<PageData>({
       if (index >= LIMIT) viewer = { ...highscore[index], rank: index + 1 };
     } else {
       entries = await listHighscore({ limit: LIMIT });
-      // Past the top rows, from the cookie: where they rank isn't known.
-      const userScore = getProgressScore(score);
+      // Past the top rows, ranked by counting who's above them.
       const isListed = entries.some((entry) => entry.userId === userId);
-      if (!isListed && getTotalScore(userScore) > 0) {
-        viewer = { userId, userScore };
-      }
+      const placement = isListed ? null : await getHighscorePlacement(userId);
+      if (placement) viewer = { userId, ...placement };
     }
 
     const names = await getUserNames(entries.map((entry) => entry.userId));
@@ -170,8 +164,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
 
 type RowItemProps = {
   row: Row;
-  /** Unknown past the top rows all time */
-  rank?: number;
+  rank: number;
   isViewer: boolean;
 };
 
