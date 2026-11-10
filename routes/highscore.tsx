@@ -76,7 +76,7 @@ export const handler = define.handlers<PageData>({
       if (index >= LIMIT) viewer = { ...highscore[index], rank: index + 1 };
     } else {
       entries = await listHighscore({ limit: LIMIT });
-      // Past the top rows, ranked by counting who's above them.
+      // Past the top rows, ranked from the counts of the scores above.
       const isListed = entries.some((entry) => entry.userId === userId);
       const placement = isListed ? null : await getHighscorePlacement(userId);
       if (placement) viewer = { userId, ...placement };

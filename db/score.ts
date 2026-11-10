@@ -20,6 +20,10 @@ import {
  * - the highscore, keyed `[total, first, perfect, userId]`, so a reversed list
  *   reads in rank order. Its value is the user score, so a list needs no
  *   lookups.
+ * - highscore counts: players per `[total, first, perfect]`, so a rank is a
+ *   sum over the scores above, not a walk over the players. A counted flag
+ *   per player says they're in them: only a counted player's old score loses
+ *   one, so a count never goes below what's there.
  */
 const solutionScoreKey = (userId: string, puzzleSlug: string) => [
   "solution_score_by_user_puzzle",
@@ -27,6 +31,12 @@ const solutionScoreKey = (userId: string, puzzleSlug: string) => [
   puzzleSlug,
 ];
 const userScoreKey = (userId: string) => ["user_score", userId];
+const highscoreCountKey = (userScore: UserScore) => [
+  "highscore_count",
+  ...getHighscoreRank(userScore),
+];
+const highscoreCountedKey = (userId: string) => ["highscore_counted", userId];
+
 /** Where a user sits on the highscore, given their user score. */
 export const getHighscoreKey = (userId: string, userScore: UserScore) => [
   "highscore",
@@ -83,9 +93,9 @@ export async function listHighscore(
 }
 
 /**
- * Where a player ranks all time, 1 for the top, by counting who's above them;
- * none until they've scored. Reads keys from theirs up, so it costs as many
- * reads as players ahead.
+ * Where a player ranks all time, 1 for the top, from the counts of every score
+ * above theirs: as many reads as there are such scores, not players. Players
+ * on the same score share a rank. None until they've scored.
  */
 export async function getHighscorePlacement(
   userId: string,
@@ -93,14 +103,41 @@ export async function getHighscorePlacement(
   const userScore = await getUserScore(userId);
   if (getTotalScore(userScore) === 0) return null;
 
-  // From their own key to the end: them, and everyone ranked above.
-  const iter = kv.list({
-    prefix: ["highscore"],
-    start: getHighscoreKey(userId, userScore),
+  // Starts just past their own score's key: longer keys sort after it.
+  const iter = kv.list<Deno.KvU64>({
+    prefix: ["highscore_count"],
+    start: [...highscoreCountKey(userScore), ""],
   });
-  let rank = 0;
-  for await (const _ of iter) rank++;
-  return { rank, userScore };
+  let above = 0n;
+  for await (const { value } of iter) above += value.value;
+  return { rank: Number(above) + 1, userScore };
+}
+
+// `sum` wraps at 2^64, so adding its max takes one off.
+const MINUS_ONE = 0xffff_ffff_ffff_ffffn;
+
+/**
+ * Moves a player's count from their old score to their new one, and marks
+ * them counted. Uncounted, their old score never had them, so only the new one
+ * gains.
+ */
+function withHighscoreCount(
+  atomic: Deno.AtomicOperation,
+  userId: string,
+  { current, updated, isCounted }: {
+    current: UserScore;
+    updated: UserScore;
+    isCounted: boolean;
+  },
+) {
+  const from = highscoreCountKey(current);
+  const to = highscoreCountKey(updated);
+  // A Flash giving way to a solve can leave the rank as it was.
+  if (isCounted && from.join() === to.join()) return;
+
+  if (isCounted) atomic.sum(from, MINUS_ONE);
+  atomic.sum(to, 1n);
+  atomic.set(highscoreCountedKey(userId), true);
 }
 
 /**
@@ -114,9 +151,12 @@ export async function awardScore(
   kinds: ScoreKind[],
 ): Promise<ScoreKind[]> {
   for (let attempt = 1; attempt <= 5; attempt++) {
-    const [solutionScoreEntry, userScoreEntry] = await kv.getMany<
-      [ScoreKind[], UserScore]
-    >([solutionScoreKey(userId, puzzleSlug), userScoreKey(userId)]);
+    const [solutionScoreEntry, userScoreEntry, countedEntry] = await kv
+      .getMany<[ScoreKind[], UserScore, true]>([
+        solutionScoreKey(userId, puzzleSlug),
+        userScoreKey(userId),
+        highscoreCountedKey(userId),
+      ]);
 
     const earned = solutionScoreEntry.value ?? [];
     const added = getNewScore(earned, kinds);
@@ -130,11 +170,17 @@ export async function awardScore(
     const atomic = kv.atomic()
       .check(solutionScoreEntry)
       .check(userScoreEntry)
+      .check(countedEntry)
       .set(solutionScoreKey(userId, puzzleSlug), updatedEarned)
       .set(userScoreKey(userId), updated);
     // Delete before set: with the same points it's the same key.
     if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
     atomic.set(getHighscoreKey(userId, updated), updated);
+    withHighscoreCount(atomic, userId, {
+      current,
+      updated,
+      isCounted: !!countedEntry.value,
+    });
 
     const result = await atomic.commit();
     if (result.ok) return added;
@@ -155,7 +201,9 @@ export async function awardPastScore(
 ): Promise<number> {
   for (let attempt = 1; attempt <= 5; attempt++) {
     // The user score first: an award after it fails the check.
-    const userScoreEntry = await kv.get<UserScore>(userScoreKey(userId));
+    const [userScoreEntry, countedEntry] = await kv.getMany<
+      [UserScore, true]
+    >([userScoreKey(userId), highscoreCountedKey(userId)]);
     const earnedByPuzzle = new Map<string, ScoreKind[]>();
     const iter = kv.list<ScoreKind[]>({
       prefix: ["solution_score_by_user_puzzle", userId],
@@ -167,7 +215,7 @@ export async function awardPastScore(
     const current = { ...emptyUserScore, ...userScoreEntry.value };
     let updated = current;
     let added = 0;
-    const atomic = kv.atomic().check(userScoreEntry);
+    const atomic = kv.atomic().check(userScoreEntry).check(countedEntry);
     for (const [puzzleSlug, kinds] of scoreByPuzzle) {
       const earned = earnedByPuzzle.get(puzzleSlug) ?? [];
       const gained = getNewScore(earned, kinds);
@@ -183,6 +231,11 @@ export async function awardPastScore(
     // Delete before set: with the same points it's the same key.
     if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
     atomic.set(getHighscoreKey(userId, updated), updated);
+    withHighscoreCount(atomic, userId, {
+      current,
+      updated,
+      isCounted: !!countedEntry.value,
+    });
 
     const result = await atomic.commit();
     if (result.ok) return added;
