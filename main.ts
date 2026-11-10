@@ -2,6 +2,7 @@ import { App, staticFiles } from "fresh";
 
 import { State } from "#/core.ts";
 import { backupPlayers } from "#/db/backup.ts";
+import { backfillHighscoreCounts } from "#/db/score.ts";
 import { posthogProxy } from "#/middleware/posthog-proxy.ts";
 import { telemetry } from "#/middleware/telemetry.ts";
 
@@ -9,6 +10,11 @@ import { telemetry } from "#/middleware/telemetry.ts";
 Deno.cron("kv_backup", "0 * * * *", {
   backoffSchedule: [60_000, 300_000, 900_000],
 }, backupPlayers);
+
+// Once done, a single read an hour: it skips itself after its first full run.
+Deno.cron("highscore_counts_backfill", "15 * * * *", async () => {
+  await backfillHighscoreCounts();
+});
 
 export const app = new App<State>();
 

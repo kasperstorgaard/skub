@@ -1,4 +1,4 @@
-import { kv } from "#/db/kv.ts";
+import { kv, rawKv } from "#/db/kv.ts";
 import {
   emptyUserScore,
   getHighscoreRank,
@@ -111,6 +111,42 @@ export async function getHighscorePlacement(
   let above = 0n;
   for await (const { value } of iter) above += value.value;
   return { rank: Number(above) + 1, userScore };
+}
+
+const highscoreCountsDoneKey = ["highscore_counts_done"];
+
+/**
+ * Counts the players on the highscore from before there were counts, once:
+ * a marker skips it after. Each player in their own commit, checked against
+ * their flag and their highscore entry, so an award in between wins and this
+ * skips them, and runs that overlap count each player once. Returns how many
+ * it counted.
+ */
+export async function backfillHighscoreCounts(): Promise<number> {
+  const done = await rawKv.get(highscoreCountsDoneKey);
+  if (done.value) return 0;
+
+  let counted = 0;
+  const iter = rawKv.list<UserScore>({ prefix: ["highscore"] }, {
+    batchSize: 500,
+  });
+  for await (const entry of iter) {
+    const userId = entry.key[4] as string;
+    const countedEntry = await rawKv.get(highscoreCountedKey(userId));
+    if (countedEntry.value) continue;
+
+    const userScore = { ...emptyUserScore, ...entry.value };
+    const result = await rawKv.atomic()
+      .check(entry)
+      .check(countedEntry)
+      .sum(highscoreCountKey(userScore), 1n)
+      .set(highscoreCountedKey(userId), true)
+      .commit();
+    if (result.ok) counted++;
+  }
+
+  await rawKv.set(highscoreCountsDoneKey, true);
+  return counted;
 }
 
 // `sum` wraps at 2^64, so adding its max takes one off.
