@@ -131,9 +131,8 @@ export default define.page<typeof handler>(function HighscorePage(props) {
           </div>
 
           <p className="m-0 text-2 text-text-2">
-            {formatNumber(SCORE_POINTS.solve)} pts per star. {period === "week"
-              ? "Your best solve on each day's puzzle counts."
-              : "Your best solve on each puzzle counts."}
+            {formatNumber(SCORE_POINTS.solve)}{" "}
+            pts per star. Your best solve on each day's puzzle counts.
           </p>
         </div>
 
