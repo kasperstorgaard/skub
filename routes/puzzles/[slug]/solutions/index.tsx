@@ -173,7 +173,8 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
       <Main className="justify-stretch content-start min-h-96">
         <Header back={{ href: `/puzzles/${slug}` }} />
 
-        <div className="flex items-end justify-between flex-wrap gap-fl-2">
+        {/* As far from the list as the high score's title and explainer */}
+        <div className="flex items-end justify-between flex-wrap gap-fl-2 mb-fl-4">
           <h1 className="text-text-1">
             <PuzzleName puzzle={props.data.puzzle} lead="Solutions" />
           </h1>
