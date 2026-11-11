@@ -1,7 +1,7 @@
 import clsx from "clsx/lite";
 import { HTMLAttributes } from "preact";
 
-import { getTotalScore, type UserScore } from "#/game/score.ts";
+import type { UserScore } from "#/game/score.ts";
 import type { UserStats } from "#/game/streak.ts";
 import { formatNumber } from "#/lib/format.ts";
 
@@ -16,21 +16,16 @@ const STAT_KINDS = ["solve", "perfect", "first"] as const;
 type Props = {
   stats: UserStats;
   userScore: UserScore;
-  /** Drop the points, leaving the stars they're made of */
-  hidePoints?: boolean;
 } & HTMLAttributes<HTMLElement>;
 
-export function StatsSummary(
-  { stats, userScore, hidePoints, className }: Props,
-) {
-  const points = getTotalScore(userScore);
+export function StatsSummary({ stats, userScore, className }: Props) {
   const counts = { ...userScore, solve: userScore.solve + userScore.flash };
 
   const stars = STAT_KINDS.filter((kind) => counts[kind] > 0);
 
-  // Streak, points and what they're made of as three groups, each a number
-  // over its label; the kinds close together within theirs. A dl each: a div
-  // can only wrap a single term in one.
+  // Streak and the stars as two groups, each a number over its label; the
+  // kinds close together within theirs. A dl each: a div can only wrap a
+  // single term in one.
   return (
     <div
       className={clsx(
@@ -46,15 +41,6 @@ export function StatsSummary(
         </dd>
         <dt className="text-2 text-text-2">Streak</dt>
       </dl>
-
-      {!hidePoints && (
-        <dl className="flex flex-col m-0">
-          <dd className="m-0 text-4 lg:text-5 font-semibold tracking-wide leading-flat text-text-1">
-            {formatNumber(points)}
-          </dd>
-          <dt className="text-2 text-text-2">Points</dt>
-        </dl>
-      )}
 
       {stars.length > 0 && (
         <dl className="flex gap-fl-2 m-0 max-lg:items-end lg:flex-col lg:gap-2">

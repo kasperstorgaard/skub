@@ -162,7 +162,6 @@ export default define.page<typeof handler>(function Home(ctx) {
             <StatsSummary
               stats={userStats}
               userScore={userScore}
-              hidePoints
               className="lg:w-full"
             />
           </div>
