@@ -89,16 +89,15 @@ export default define.page<typeof handler>(function EditorPage(props) {
             )}
           />
 
-          {/* The puzzle page's nudge spot: empty until the board can be sent */}
-          {submissionsEnabled && (
-            <div className="max-w-2xs mx-auto mt-fl-2 empty:hidden print:hidden">
-              <EditorNudge
-                puzzle={puzzle}
-                href={href}
-                solveState={solveState}
-              />
-            </div>
-          )}
+          {/* The puzzle page's nudge spot: empty until the board has a solution */}
+          <div className="max-w-2xs mx-auto mt-fl-2 empty:hidden print:hidden">
+            <EditorNudge
+              puzzle={puzzle}
+              href={href}
+              solveState={solveState}
+              canSend={submissionsEnabled}
+            />
+          </div>
         </div>
       </Main>
       <EditorPanel puzzle={puzzle} href={href} isDev={isDev} />

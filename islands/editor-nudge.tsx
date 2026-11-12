@@ -1,7 +1,7 @@
 import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 
-import { Icon, PaperPlaneTilt } from "#/components/icons.tsx";
+import { Eye, Icon, PaperPlaneTilt } from "#/components/icons.tsx";
 import type { SolveState } from "#/game/solver.ts";
 import type { Puzzle } from "#/game/types.ts";
 import { canSubmit } from "#/islands/submit-dialog.tsx";
@@ -10,12 +10,17 @@ type EditorNudgeProps = {
   puzzle: Signal<Puzzle>;
   href: Signal<string>;
   solveState: Signal<SolveState | undefined>;
+  /** Submissions are on: preview leads on to sending it in */
+  canSend?: boolean;
   className?: string;
 };
 
-/** Under the toolbar: sending the puzzle in, once the board can be sent. */
+/**
+ * Under the toolbar, once the board has a solution: the next steps after
+ * building, preview then send it in.
+ */
 export function EditorNudge(
-  { puzzle, href, solveState, className }: EditorNudgeProps,
+  { puzzle, href, solveState, canSend, className }: EditorNudgeProps,
 ) {
   if (!canSubmit(puzzle.value, solveState.value)) return null;
 
@@ -35,10 +40,20 @@ export function EditorNudge(
         Happy with it?
       </p>
 
-      <a href={url.href} data-router className="btn">
-        <Icon icon={PaperPlaneTilt} />
-        Send it in
-      </a>
+      <div className="flex flex-wrap justify-center gap-2">
+        {/* Its own tab: the build stays put */}
+        <a href="/puzzles/preview" target="_blank" className="btn">
+          <Icon icon={Eye} />
+          Preview
+        </a>
+
+        {canSend && (
+          <a href={url.href} data-router className="btn">
+            <Icon icon={PaperPlaneTilt} />
+            Send it in
+          </a>
+        )}
+      </div>
     </aside>
   );
 }
