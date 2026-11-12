@@ -1,4 +1,4 @@
-import { kv, rawKv } from "#/db/kv.ts";
+import { kv } from "#/db/kv.ts";
 import {
   emptyUserScore,
   getHighscoreRank,
@@ -20,10 +20,6 @@ import {
  * - the highscore, keyed `[total, first, perfect, userId]`, so a reversed list
  *   reads in rank order. Its value is the user score, so a list needs no
  *   lookups.
- *
- * Apart from those, a snapshot ranks players past the top rows: per score,
- * keyed `[total, first, perfect]`, how many players are on it or above,
- * rebuilt from the highscore by a cron.
  */
 const solutionScoreKey = (userId: string, puzzleSlug: string) => [
   "solution_score_by_user_puzzle",
@@ -31,11 +27,6 @@ const solutionScoreKey = (userId: string, puzzleSlug: string) => [
   puzzleSlug,
 ];
 const userScoreKey = (userId: string) => ["user_score", userId];
-const highscoreAboveKey = (rank: Deno.KvKeyPart[]) => [
-  "highscore_above",
-  ...rank,
-];
-
 /** Where a user sits on the highscore, given their user score. */
 export const getHighscoreKey = (userId: string, userScore: UserScore) => [
   "highscore",
@@ -92,10 +83,9 @@ export async function listHighscore(
 }
 
 /**
- * Where a player ranks all time, 1 for the top: one past everyone on the
- * lowest score above theirs or higher, in the snapshot. Read by their score
- * now, so their own points count at once; everyone else's as of the last
- * rebuild. Players on the same score share a rank. None until they've scored.
+ * Where a player ranks all time, 1 for the top, by counting who's above them:
+ * a walk from their key up, so as many reads as players ahead. Fine at a few
+ * thousand players; past that, keep a count per score instead.
  */
 export async function getHighscorePlacement(
   userId: string,
@@ -103,63 +93,14 @@ export async function getHighscorePlacement(
   const userScore = await getUserScore(userId);
   if (getTotalScore(userScore) === 0) return null;
 
-  // Starts just past their own score's key: longer keys sort after it.
-  const iter = kv.list<number>({
-    prefix: ["highscore_above"],
-    start: [...highscoreAboveKey(getHighscoreRank(userScore)), ""],
-  }, { limit: 1 });
-  let above = 0;
-  for await (const { value } of iter) above = value;
-  return { rank: above + 1, userScore };
-}
-
-/**
- * Rebuilds the snapshot from the highscore: a walk over every player, top
- * down, then writes only the scores whose count changed, and deletes the
- * scores no one is on. Not one commit: a read meanwhile may see a mix, set
- * right on the next run.
- */
-export async function rebuildHighscoreAbove(): Promise<void> {
-  // Players on each score or above, top down.
-  const atOrAbove = new Map<
-    string,
-    { rank: Deno.KvKeyPart[]; count: number }
-  >();
-  let count = 0;
-  const iter = rawKv.list({ prefix: ["highscore"] }, {
-    reverse: true,
-    batchSize: 1000,
-  });
-  for await (const { key } of iter) {
-    const rank = key.slice(1, 4);
-    count++;
-    atOrAbove.set(JSON.stringify(rank), { rank, count });
-  }
-
-  const existing = new Map<string, number>();
-  for await (
-    const { key, value } of rawKv.list<number>({ prefix: ["highscore_above"] })
-  ) {
-    existing.set(JSON.stringify(key.slice(1)), value);
-  }
-
-  const mutations: ((atomic: Deno.AtomicOperation) => void)[] = [];
-  for (const [id, { rank, count }] of atOrAbove) {
-    if (existing.get(id) !== count) {
-      mutations.push((atomic) => atomic.set(highscoreAboveKey(rank), count));
-    }
-    existing.delete(id);
-  }
-  for (const id of existing.keys()) {
-    const rank = JSON.parse(id) as Deno.KvKeyPart[];
-    mutations.push((atomic) => atomic.delete(highscoreAboveKey(rank)));
-  }
-
-  for (let i = 0; i < mutations.length; i += 500) {
-    const atomic = rawKv.atomic();
-    for (const mutate of mutations.slice(i, i + 500)) mutate(atomic);
-    await atomic.commit();
-  }
+  // From their own key to the end: them, and everyone ranked above.
+  const iter = kv.list({
+    prefix: ["highscore"],
+    start: getHighscoreKey(userId, userScore),
+  }, { batchSize: 1000 });
+  let rank = 0;
+  for await (const _ of iter) rank++;
+  return { rank, userScore };
 }
 
 /**
