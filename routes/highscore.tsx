@@ -6,7 +6,7 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { define } from "#/core.ts";
-import { listHighscore } from "#/db/score.ts";
+import { getUserScore, listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
 import { getUserNames } from "#/db/user.ts";
 import { getWeekPuzzleNumbers } from "#/game/date.ts";
@@ -19,6 +19,7 @@ import {
   SCORE_POINTS,
   type ScoreKind,
   type UserScore,
+  withHighscoreEntry,
 } from "#/game/score.ts";
 import { formatNumber } from "#/lib/format.ts";
 
@@ -60,6 +61,20 @@ async function getWeekHighscore(): Promise<HighscoreEntry[]> {
   return getHighscore(scores);
 }
 
+/**
+ * All time's highscore: the cached one, maybe a few minutes stale, with the
+ * viewer's own score put in their place, so theirs never is.
+ */
+async function getAllTimeHighscore(
+  userId: string,
+): Promise<HighscoreEntry[]> {
+  const [highscore, userScore] = await Promise.all([
+    listHighscore(),
+    getUserScore(userId),
+  ]);
+  return withHighscoreEntry(highscore, { userId, userScore });
+}
+
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
     const { userId, user } = ctx.state;
@@ -67,10 +82,9 @@ export const handler = define.handlers<PageData>({
       ? "all"
       : "week";
 
-    // Both in rank order: this week's worked out, all time's cached.
     const highscore = period === "week"
       ? await getWeekHighscore()
-      : await listHighscore();
+      : await getAllTimeHighscore(userId);
     const entries = highscore.slice(0, LIMIT);
     const index = highscore.findIndex((entry) => entry.userId === userId);
     const viewer = index >= LIMIT

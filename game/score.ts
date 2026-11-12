@@ -209,6 +209,19 @@ export function compareHighscoreEntries(
     rankB[2] - rankA[2] || (a.userId < b.userId ? 1 : -1);
 }
 
+/**
+ * A highscore with one player's entry put in their place: any old one goes,
+ * and none stays when they have no points.
+ */
+export function withHighscoreEntry(
+  highscore: HighscoreEntry[],
+  entry: HighscoreEntry,
+): HighscoreEntry[] {
+  const others = highscore.filter(({ userId }) => userId !== entry.userId);
+  if (getTotalScore(entry.userScore) === 0) return others;
+  return [...others, entry].sort(compareHighscoreEntries);
+}
+
 /** A player's solution score per puzzle, by slug, each in display order. */
 export type ScoreProgress = Record<string, ScoreKind[]>;
 

@@ -1,6 +1,5 @@
 import { kv } from "#/db/kv.ts";
 import {
-  compareHighscoreEntries,
   emptyUserScore,
   getHighscoreRank,
   getNewScore,
@@ -10,6 +9,7 @@ import {
   type ScoreProgress,
   type UserScore,
   withEarned,
+  withHighscoreEntry,
   withScore,
 } from "#/game/score.ts";
 
@@ -102,12 +102,13 @@ export function listHighscore(): Promise<HighscoreEntry[]> {
 
 /** Puts a player's new score on this isolate's highscore, if it has one. */
 function setCachedHighscore(userId: string, userScore: UserScore) {
-  highscoreCache?.entries.then((entries) => {
-    const index = entries.findIndex((entry) => entry.userId === userId);
-    if (index >= 0) entries.splice(index, 1);
-    entries.push({ userId, userScore });
-    entries.sort(compareHighscoreEntries);
-  }).catch(() => {});
+  if (!highscoreCache) return;
+  const entries = highscoreCache.entries.then((entries) =>
+    withHighscoreEntry(entries, { userId, userScore })
+  );
+  // A failed walk isn't kept: the next request tries again.
+  entries.catch(() => highscoreCache = null);
+  highscoreCache.entries = entries;
 }
 
 /**
