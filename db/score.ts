@@ -82,48 +82,49 @@ export async function listHighscore(
   return entries;
 }
 
-/** A highscore key past its prefix: `[total, first, perfect, userId]`. */
-type HighscoreRankKey = [number, number, number, string];
-
-/** As KV orders the keys: by number, then the user id. */
-function compareRankKeys(a: HighscoreRankKey, b: HighscoreRankKey): number {
-  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2] ||
-    (a[3] < b[3] ? -1 : a[3] > b[3] ? 1 : 0);
-}
-
 /** How long an isolate keeps the board before walking it again. */
 const HIGHSCORE_CACHE_MS = 5 * 60_000;
+
+/** Each player's highscore rank, `[total, first, perfect]`, by user id. */
+type HighscoreBoard = Map<string, [number, number, number]>;
 let highscoreCache:
-  | { keys: Promise<HighscoreRankKey[]>; expiresAt: number }
+  | { board: Promise<HighscoreBoard>; expiresAt: number }
   | null = null;
 
 /**
- * Every highscore key, low to high, as of the last walk: one walk per isolate
- * per few minutes, shared by every viewer it ranks. The promise is cached, so
- * viewers arriving mid-walk wait on the same one.
+ * The whole highscore, from one walk per isolate per few minutes, shared by
+ * every viewer it ranks; awards in this isolate write through. The promise is
+ * cached, so viewers arriving mid-walk wait on the same one.
  */
-function getHighscoreRankKeys(): Promise<HighscoreRankKey[]> {
+function getHighscoreBoard(): Promise<HighscoreBoard> {
   if (highscoreCache && highscoreCache.expiresAt > Date.now()) {
-    return highscoreCache.keys;
+    return highscoreCache.board;
   }
 
-  const keys = (async () => {
-    const keys: HighscoreRankKey[] = [];
+  const board = (async () => {
+    const board: HighscoreBoard = new Map();
     for await (const { key } of kv.list({ prefix: ["highscore"] })) {
-      keys.push(key.slice(1) as HighscoreRankKey);
+      board.set(key[4] as string, key.slice(1, 4) as [number, number, number]);
     }
-    return keys;
+    return board;
   })();
-  highscoreCache = { keys, expiresAt: Date.now() + HIGHSCORE_CACHE_MS };
+  highscoreCache = { board, expiresAt: Date.now() + HIGHSCORE_CACHE_MS };
   // A failed walk isn't kept: the next viewer tries again.
-  keys.catch(() => highscoreCache = null);
-  return keys;
+  board.catch(() => highscoreCache = null);
+  return board;
+}
+
+/** Puts a player's new score on this isolate's board, if it has one. */
+function setCachedHighscore(userId: string, userScore: UserScore) {
+  highscoreCache?.board.then((board) =>
+    board.set(userId, getHighscoreRank(userScore))
+  ).catch(() => {});
 }
 
 /**
  * Where a player ranks all time, 1 for the top: one past everyone above their
  * score now, on the cached board. Their own points count at once, everyone
- * else's as of the last walk.
+ * else's as of the last walk or award here. Ties go by user id, as the list.
  */
 export async function getHighscorePlacement(
   userId: string,
@@ -131,18 +132,13 @@ export async function getHighscorePlacement(
   const userScore = await getUserScore(userId);
   if (getTotalScore(userScore) === 0) return null;
 
-  const keys = await getHighscoreRankKeys();
-  const own: HighscoreRankKey = [...getHighscoreRank(userScore), userId];
-
-  // The first key above theirs; everything from it on ranks higher.
-  let low = 0;
-  let high = keys.length;
-  while (low < high) {
-    const mid = (low + high) >> 1;
-    if (compareRankKeys(keys[mid], own) <= 0) low = mid + 1;
-    else high = mid;
+  const own = getHighscoreRank(userScore);
+  let above = 0;
+  for (const [otherId, rank] of await getHighscoreBoard()) {
+    const diff = rank[0] - own[0] || rank[1] - own[1] || rank[2] - own[2];
+    if (diff > 0 || (diff === 0 && otherId > userId)) above++;
   }
-  return { rank: keys.length - low + 1, userScore };
+  return { rank: above + 1, userScore };
 }
 
 /**
@@ -179,7 +175,10 @@ export async function awardScore(
     atomic.set(getHighscoreKey(userId, updated), updated);
 
     const result = await atomic.commit();
-    if (result.ok) return added;
+    if (result.ok) {
+      setCachedHighscore(userId, updated);
+      return added;
+    }
   }
 
   throw new Error("Failed to award score after 5 attempts");
@@ -227,7 +226,10 @@ export async function awardPastScore(
     atomic.set(getHighscoreKey(userId, updated), updated);
 
     const result = await atomic.commit();
-    if (result.ok) return added;
+    if (result.ok) {
+      setCachedHighscore(userId, updated);
+      return added;
+    }
   }
 
   throw new Error("Failed to award past score after 5 attempts");
