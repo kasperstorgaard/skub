@@ -65,6 +65,9 @@ solutionTags:
     - interesting
     - unique
 promotedAs: hekla
+rating: 5
+reasons:
+  - pretty
 ---
 
 ```
