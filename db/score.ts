@@ -82,10 +82,48 @@ export async function listHighscore(
   return entries;
 }
 
+/** A highscore key past its prefix: `[total, first, perfect, userId]`. */
+type HighscoreRankKey = [number, number, number, string];
+
+/** As KV orders the keys: by number, then the user id. */
+function compareRankKeys(a: HighscoreRankKey, b: HighscoreRankKey): number {
+  return a[0] - b[0] || a[1] - b[1] || a[2] - b[2] ||
+    (a[3] < b[3] ? -1 : a[3] > b[3] ? 1 : 0);
+}
+
+/** How long an isolate keeps the board before walking it again. */
+const HIGHSCORE_CACHE_MS = 5 * 60_000;
+let highscoreCache:
+  | { keys: Promise<HighscoreRankKey[]>; expiresAt: number }
+  | null = null;
+
 /**
- * Where a player ranks all time, 1 for the top, by counting who's above them:
- * a walk from their key up, so as many reads as players ahead. Fine at a few
- * thousand players; past that, keep a count per score instead.
+ * Every highscore key, low to high, as of the last walk: one walk per isolate
+ * per few minutes, shared by every viewer it ranks. The promise is cached, so
+ * viewers arriving mid-walk wait on the same one.
+ */
+function getHighscoreRankKeys(): Promise<HighscoreRankKey[]> {
+  if (highscoreCache && highscoreCache.expiresAt > Date.now()) {
+    return highscoreCache.keys;
+  }
+
+  const keys = (async () => {
+    const keys: HighscoreRankKey[] = [];
+    for await (const { key } of kv.list({ prefix: ["highscore"] })) {
+      keys.push(key.slice(1) as HighscoreRankKey);
+    }
+    return keys;
+  })();
+  highscoreCache = { keys, expiresAt: Date.now() + HIGHSCORE_CACHE_MS };
+  // A failed walk isn't kept: the next viewer tries again.
+  keys.catch(() => highscoreCache = null);
+  return keys;
+}
+
+/**
+ * Where a player ranks all time, 1 for the top: one past everyone above their
+ * score now, on the cached board. Their own points count at once, everyone
+ * else's as of the last walk.
  */
 export async function getHighscorePlacement(
   userId: string,
@@ -93,14 +131,18 @@ export async function getHighscorePlacement(
   const userScore = await getUserScore(userId);
   if (getTotalScore(userScore) === 0) return null;
 
-  // From their own key to the end: them, and everyone ranked above.
-  const iter = kv.list({
-    prefix: ["highscore"],
-    start: getHighscoreKey(userId, userScore),
-  }, { batchSize: 1000 });
-  let rank = 0;
-  for await (const _ of iter) rank++;
-  return { rank, userScore };
+  const keys = await getHighscoreRankKeys();
+  const own: HighscoreRankKey = [...getHighscoreRank(userScore), userId];
+
+  // The first key above theirs; everything from it on ranks higher.
+  let low = 0;
+  let high = keys.length;
+  while (low < high) {
+    const mid = (low + high) >> 1;
+    if (compareRankKeys(keys[mid], own) <= 0) low = mid + 1;
+    else high = mid;
+  }
+  return { rank: keys.length - low + 1, userScore };
 }
 
 /**
