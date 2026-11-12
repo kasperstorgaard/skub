@@ -1,9 +1,9 @@
 import { kv } from "#/db/kv.ts";
 import {
+  compareHighscoreEntries,
   emptyUserScore,
   getHighscoreRank,
   getNewScore,
-  getTotalScore,
   type HighscoreEntry,
   SCORE_KINDS,
   type ScoreKind,
@@ -64,81 +64,50 @@ export async function getUserScore(userId: string): Promise<UserScore> {
   return { ...emptyUserScore, ...res.value };
 }
 
-/** The top of the highscore, in rank order. */
-export async function listHighscore(
-  { limit = 50 }: { limit?: number } = {},
-): Promise<HighscoreEntry[]> {
-  const entries: HighscoreEntry[] = [];
-  const iter = kv.list<UserScore>({ prefix: ["highscore"] }, {
-    reverse: true,
-    limit,
-  });
-  for await (const { key, value } of iter) {
-    entries.push({
-      userId: key[4] as string,
-      userScore: { ...emptyUserScore, ...value },
-    });
-  }
-  return entries;
-}
-
-/** How long an isolate keeps the board before walking it again. */
+/** How long an isolate keeps the highscore before walking it again. */
 const HIGHSCORE_CACHE_MS = 5 * 60_000;
-
-/** Each player's highscore rank, `[total, first, perfect]`, by user id. */
-type HighscoreBoard = Map<string, [number, number, number]>;
 let highscoreCache:
-  | { board: Promise<HighscoreBoard>; expiresAt: number }
+  | { entries: Promise<HighscoreEntry[]>; expiresAt: number }
   | null = null;
 
 /**
- * The whole highscore, from one walk per isolate per few minutes, shared by
- * every viewer it ranks; awards in this isolate write through. The promise is
- * cached, so viewers arriving mid-walk wait on the same one.
+ * The whole highscore, in rank order: one walk per isolate per few minutes,
+ * shared by every request, with this isolate's awards written through. Others'
+ * awards land on the next walk. The promise is cached, so requests arriving
+ * mid-walk wait on the same one.
  */
-function getHighscoreBoard(): Promise<HighscoreBoard> {
+export function listHighscore(): Promise<HighscoreEntry[]> {
   if (highscoreCache && highscoreCache.expiresAt > Date.now()) {
-    return highscoreCache.board;
+    return highscoreCache.entries;
   }
 
-  const board = (async () => {
-    const board: HighscoreBoard = new Map();
-    for await (const { key } of kv.list({ prefix: ["highscore"] })) {
-      board.set(key[4] as string, key.slice(1, 4) as [number, number, number]);
+  const entries = (async () => {
+    const entries: HighscoreEntry[] = [];
+    const iter = kv.list<UserScore>({ prefix: ["highscore"] }, {
+      reverse: true,
+    });
+    for await (const { key, value } of iter) {
+      entries.push({
+        userId: key[4] as string,
+        userScore: { ...emptyUserScore, ...value },
+      });
     }
-    return board;
+    return entries;
   })();
-  highscoreCache = { board, expiresAt: Date.now() + HIGHSCORE_CACHE_MS };
-  // A failed walk isn't kept: the next viewer tries again.
-  board.catch(() => highscoreCache = null);
-  return board;
+  highscoreCache = { entries, expiresAt: Date.now() + HIGHSCORE_CACHE_MS };
+  // A failed walk isn't kept: the next request tries again.
+  entries.catch(() => highscoreCache = null);
+  return entries;
 }
 
-/** Puts a player's new score on this isolate's board, if it has one. */
+/** Puts a player's new score on this isolate's highscore, if it has one. */
 function setCachedHighscore(userId: string, userScore: UserScore) {
-  highscoreCache?.board.then((board) =>
-    board.set(userId, getHighscoreRank(userScore))
-  ).catch(() => {});
-}
-
-/**
- * Where a player ranks all time, 1 for the top: one past everyone above their
- * score now, on the cached board. Their own points count at once, everyone
- * else's as of the last walk or award here. Ties go by user id, as the list.
- */
-export async function getHighscorePlacement(
-  userId: string,
-): Promise<{ rank: number; userScore: UserScore } | null> {
-  const userScore = await getUserScore(userId);
-  if (getTotalScore(userScore) === 0) return null;
-
-  const own = getHighscoreRank(userScore);
-  let above = 0;
-  for (const [otherId, rank] of await getHighscoreBoard()) {
-    const diff = rank[0] - own[0] || rank[1] - own[1] || rank[2] - own[2];
-    if (diff > 0 || (diff === 0 && otherId > userId)) above++;
-  }
-  return { rank: above + 1, userScore };
+  highscoreCache?.entries.then((entries) => {
+    const index = entries.findIndex((entry) => entry.userId === userId);
+    if (index >= 0) entries.splice(index, 1);
+    entries.push({ userId, userScore });
+    entries.sort(compareHighscoreEntries);
+  }).catch(() => {});
 }
 
 /**

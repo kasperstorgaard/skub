@@ -6,7 +6,7 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { define } from "#/core.ts";
-import { getHighscorePlacement, listHighscore } from "#/db/score.ts";
+import { listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
 import { getUserNames } from "#/db/user.ts";
 import { getWeekPuzzleNumbers } from "#/game/date.ts";
@@ -67,21 +67,15 @@ export const handler = define.handlers<PageData>({
       ? "all"
       : "week";
 
-    let entries: HighscoreEntry[];
-    let viewer: (HighscoreEntry & { rank: number }) | null = null;
-
-    if (period === "week") {
-      const highscore = await getWeekHighscore();
-      entries = highscore.slice(0, LIMIT);
-      const index = highscore.findIndex((entry) => entry.userId === userId);
-      if (index >= LIMIT) viewer = { ...highscore[index], rank: index + 1 };
-    } else {
-      entries = await listHighscore({ limit: LIMIT });
-      // Past the top rows, ranked by counting who's above them.
-      const isListed = entries.some((entry) => entry.userId === userId);
-      const placement = isListed ? null : await getHighscorePlacement(userId);
-      if (placement) viewer = { userId, ...placement };
-    }
+    // Both in rank order: this week's worked out, all time's cached.
+    const highscore = period === "week"
+      ? await getWeekHighscore()
+      : await listHighscore();
+    const entries = highscore.slice(0, LIMIT);
+    const index = highscore.findIndex((entry) => entry.userId === userId);
+    const viewer = index >= LIMIT
+      ? { ...highscore[index], rank: index + 1 }
+      : null;
 
     const names = await getUserNames(entries.map((entry) => entry.userId));
     const rows = entries.map((entry) => ({

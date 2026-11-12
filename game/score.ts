@@ -192,12 +192,21 @@ export function getHighscore(
 
   return [...byUser]
     .map(([userId, userScore]) => ({ userId, userScore }))
-    .sort((a, b) => {
-      const rankA = getHighscoreRank(a.userScore);
-      const rankB = getHighscoreRank(b.userScore);
-      return rankB[0] - rankA[0] || rankB[1] - rankA[1] ||
-        rankB[2] - rankA[2] || (a.userId < b.userId ? 1 : -1);
-    });
+    .sort(compareHighscoreEntries);
+}
+
+/**
+ * Highscore order: rank first, ties by user id, highest first, as the stored
+ * highscore reads in reverse.
+ */
+export function compareHighscoreEntries(
+  a: HighscoreEntry,
+  b: HighscoreEntry,
+): number {
+  const rankA = getHighscoreRank(a.userScore);
+  const rankB = getHighscoreRank(b.userScore);
+  return rankB[0] - rankA[0] || rankB[1] - rankA[1] ||
+    rankB[2] - rankA[2] || (a.userId < b.userId ? 1 : -1);
 }
 
 /** A player's solution score per puzzle, by slug, each in display order. */
