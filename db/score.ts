@@ -1,4 +1,4 @@
-import { kv } from "#/db/kv.ts";
+import { kv, rawKv } from "#/db/kv.ts";
 import {
   emptyUserScore,
   getHighscoreRank,
@@ -20,10 +20,10 @@ import {
  * - the highscore, keyed `[total, first, perfect, userId]`, so a reversed list
  *   reads in rank order. Its value is the user score, so a list needs no
  *   lookups.
- * - highscore counts: players per `[total, first, perfect]`, so a rank is a
- *   sum over the scores above, not a walk over the players. A counted flag
- *   per player says they're in them: only a counted player's old score loses
- *   one, so a count never goes below what's there.
+ *
+ * Apart from those, a snapshot ranks players past the top rows: per score,
+ * keyed `[total, first, perfect]`, how many players are on it or above,
+ * rebuilt from the highscore by a cron.
  */
 const solutionScoreKey = (userId: string, puzzleSlug: string) => [
   "solution_score_by_user_puzzle",
@@ -31,11 +31,10 @@ const solutionScoreKey = (userId: string, puzzleSlug: string) => [
   puzzleSlug,
 ];
 const userScoreKey = (userId: string) => ["user_score", userId];
-const highscoreCountKey = (userScore: UserScore) => [
-  "highscore_count",
-  ...getHighscoreRank(userScore),
+const highscoreAboveKey = (rank: Deno.KvKeyPart[]) => [
+  "highscore_above",
+  ...rank,
 ];
-const highscoreCountedKey = (userId: string) => ["highscore_counted", userId];
 
 /** Where a user sits on the highscore, given their user score. */
 export const getHighscoreKey = (userId: string, userScore: UserScore) => [
@@ -93,9 +92,10 @@ export async function listHighscore(
 }
 
 /**
- * Where a player ranks all time, 1 for the top, from the counts of every score
- * above theirs: as many reads as there are such scores, not players. Players
- * on the same score share a rank. None until they've scored.
+ * Where a player ranks all time, 1 for the top: one past everyone on the
+ * lowest score above theirs or higher, in the snapshot. Read by their score
+ * now, so their own points count at once; everyone else's as of the last
+ * rebuild. Players on the same score share a rank. None until they've scored.
  */
 export async function getHighscorePlacement(
   userId: string,
@@ -104,40 +104,62 @@ export async function getHighscorePlacement(
   if (getTotalScore(userScore) === 0) return null;
 
   // Starts just past their own score's key: longer keys sort after it.
-  const iter = kv.list<Deno.KvU64>({
-    prefix: ["highscore_count"],
-    start: [...highscoreCountKey(userScore), ""],
-  });
-  let above = 0n;
-  for await (const { value } of iter) above += value.value;
-  return { rank: Number(above) + 1, userScore };
+  const iter = kv.list<number>({
+    prefix: ["highscore_above"],
+    start: [...highscoreAboveKey(getHighscoreRank(userScore)), ""],
+  }, { limit: 1 });
+  let above = 0;
+  for await (const { value } of iter) above = value;
+  return { rank: above + 1, userScore };
 }
 
-// `sum` wraps at 2^64, so adding its max takes one off.
-const MINUS_ONE = 0xffff_ffff_ffff_ffffn;
-
 /**
- * Moves a player's count from their old score to their new one, and marks
- * them counted. Uncounted, their old score never had them, so only the new one
- * gains.
+ * Rebuilds the snapshot from the highscore: a walk over every player, top
+ * down, then writes only the scores whose count changed, and deletes the
+ * scores no one is on. Not one commit: a read meanwhile may see a mix, set
+ * right on the next run.
  */
-function withHighscoreCount(
-  atomic: Deno.AtomicOperation,
-  userId: string,
-  { current, updated, isCounted }: {
-    current: UserScore;
-    updated: UserScore;
-    isCounted: boolean;
-  },
-) {
-  const from = highscoreCountKey(current);
-  const to = highscoreCountKey(updated);
-  // A Flash giving way to a solve can leave the rank as it was.
-  if (isCounted && from.join() === to.join()) return;
+export async function rebuildHighscoreAbove(): Promise<void> {
+  // Players on each score or above, top down.
+  const atOrAbove = new Map<
+    string,
+    { rank: Deno.KvKeyPart[]; count: number }
+  >();
+  let count = 0;
+  const iter = rawKv.list({ prefix: ["highscore"] }, {
+    reverse: true,
+    batchSize: 1000,
+  });
+  for await (const { key } of iter) {
+    const rank = key.slice(1, 4);
+    count++;
+    atOrAbove.set(JSON.stringify(rank), { rank, count });
+  }
 
-  if (isCounted) atomic.sum(from, MINUS_ONE);
-  atomic.sum(to, 1n);
-  atomic.set(highscoreCountedKey(userId), true);
+  const existing = new Map<string, number>();
+  for await (
+    const { key, value } of rawKv.list<number>({ prefix: ["highscore_above"] })
+  ) {
+    existing.set(JSON.stringify(key.slice(1)), value);
+  }
+
+  const mutations: ((atomic: Deno.AtomicOperation) => void)[] = [];
+  for (const [id, { rank, count }] of atOrAbove) {
+    if (existing.get(id) !== count) {
+      mutations.push((atomic) => atomic.set(highscoreAboveKey(rank), count));
+    }
+    existing.delete(id);
+  }
+  for (const id of existing.keys()) {
+    const rank = JSON.parse(id) as Deno.KvKeyPart[];
+    mutations.push((atomic) => atomic.delete(highscoreAboveKey(rank)));
+  }
+
+  for (let i = 0; i < mutations.length; i += 500) {
+    const atomic = rawKv.atomic();
+    for (const mutate of mutations.slice(i, i + 500)) mutate(atomic);
+    await atomic.commit();
+  }
 }
 
 /**
@@ -151,12 +173,9 @@ export async function awardScore(
   kinds: ScoreKind[],
 ): Promise<ScoreKind[]> {
   for (let attempt = 1; attempt <= 5; attempt++) {
-    const [solutionScoreEntry, userScoreEntry, countedEntry] = await kv
-      .getMany<[ScoreKind[], UserScore, true]>([
-        solutionScoreKey(userId, puzzleSlug),
-        userScoreKey(userId),
-        highscoreCountedKey(userId),
-      ]);
+    const [solutionScoreEntry, userScoreEntry] = await kv.getMany<
+      [ScoreKind[], UserScore]
+    >([solutionScoreKey(userId, puzzleSlug), userScoreKey(userId)]);
 
     const earned = solutionScoreEntry.value ?? [];
     const added = getNewScore(earned, kinds);
@@ -170,17 +189,11 @@ export async function awardScore(
     const atomic = kv.atomic()
       .check(solutionScoreEntry)
       .check(userScoreEntry)
-      .check(countedEntry)
       .set(solutionScoreKey(userId, puzzleSlug), updatedEarned)
       .set(userScoreKey(userId), updated);
     // Delete before set: with the same points it's the same key.
     if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
     atomic.set(getHighscoreKey(userId, updated), updated);
-    withHighscoreCount(atomic, userId, {
-      current,
-      updated,
-      isCounted: !!countedEntry.value,
-    });
 
     const result = await atomic.commit();
     if (result.ok) return added;
@@ -201,9 +214,7 @@ export async function awardPastScore(
 ): Promise<number> {
   for (let attempt = 1; attempt <= 5; attempt++) {
     // The user score first: an award after it fails the check.
-    const [userScoreEntry, countedEntry] = await kv.getMany<
-      [UserScore, true]
-    >([userScoreKey(userId), highscoreCountedKey(userId)]);
+    const userScoreEntry = await kv.get<UserScore>(userScoreKey(userId));
     const earnedByPuzzle = new Map<string, ScoreKind[]>();
     const iter = kv.list<ScoreKind[]>({
       prefix: ["solution_score_by_user_puzzle", userId],
@@ -215,7 +226,7 @@ export async function awardPastScore(
     const current = { ...emptyUserScore, ...userScoreEntry.value };
     let updated = current;
     let added = 0;
-    const atomic = kv.atomic().check(userScoreEntry).check(countedEntry);
+    const atomic = kv.atomic().check(userScoreEntry);
     for (const [puzzleSlug, kinds] of scoreByPuzzle) {
       const earned = earnedByPuzzle.get(puzzleSlug) ?? [];
       const gained = getNewScore(earned, kinds);
@@ -231,11 +242,6 @@ export async function awardPastScore(
     // Delete before set: with the same points it's the same key.
     if (userScoreEntry.value) atomic.delete(getHighscoreKey(userId, current));
     atomic.set(getHighscoreKey(userId, updated), updated);
-    withHighscoreCount(atomic, userId, {
-      current,
-      updated,
-      isCounted: !!countedEntry.value,
-    });
 
     const result = await atomic.commit();
     if (result.ok) return added;
