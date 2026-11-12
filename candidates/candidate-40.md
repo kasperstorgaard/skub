@@ -60,6 +60,9 @@ scoring:
         isolationGap: 1
         nearMissCount: 3
   calibrationVersion: 5.0.0
+solutionTags:
+  E4E6-C1E5-E6B6-B7-F7C7-E3-E4-D4:
+    - interesting
 ---
 
 ```

@@ -85,6 +85,11 @@ scoring:
         isolationGap: 1
         nearMissCount: 2
   calibrationVersion: 5.0.0
+rating: 3
+reasons: []
+solutionTags:
+  G7G2-H4C4-B5H5-E7E5-G5-G2G4-D4:
+    - boring
 ---
 
 ```

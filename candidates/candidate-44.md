@@ -110,6 +110,13 @@ scoring:
         isolationGap: 0
         nearMissCount: 0
   calibrationVersion: 5.0.0
+solutionTags:
+  H3B3-A3A8-G5H5-G4G8-C8B8-B4-G8B8-B5-D5:
+    - interesting
+  G4H4-H8-H3B3-A3A8-C8B8-B4-H8B8-B5-D5:
+    - interesting
+rating: 3.5
+reasons: []
 ---
 
 ```

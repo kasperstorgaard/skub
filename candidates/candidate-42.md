@@ -110,6 +110,12 @@ scoring:
         isolationGap: 2
         nearMissCount: 0
   calibrationVersion: 5.0.0
+rating: 3.5
+reasons: []
+solutionTags:
+  F2C2-A7H3-H1-H8H2-D2-C2C6-D6-D2D5:
+    - unique
+    - interesting
 ---
 
 ```

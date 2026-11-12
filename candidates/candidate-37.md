@@ -60,6 +60,9 @@ scoring:
         isolationGap: 1
         nearMissCount: 5
   calibrationVersion: 5.0.0
+rating: 3.5
+reasons:
+  - ugly
 ---
 
 ```

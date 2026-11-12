@@ -60,6 +60,12 @@ scoring:
         isolationGap: 2
         nearMissCount: 0
   calibrationVersion: 5.0.0
+rating: 3
+reasons: []
+solutionTags:
+  F8H8-F4F1-C5F2-F1H1-H8H2-F2A2-H2B2:
+    - boring
+    - interesting
 ---
 
 ```
