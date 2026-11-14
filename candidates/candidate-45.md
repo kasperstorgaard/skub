@@ -60,6 +60,9 @@ scoring:
         isolationGap: 1
         nearMissCount: 1
   calibrationVersion: 5.0.0
+solutionTags:
+  H1E1-E3-C1D1-D7-E3D3-D6-H6-H8:
+    - too-easy
 ---
 
 ```

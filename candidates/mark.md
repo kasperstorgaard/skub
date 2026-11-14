@@ -85,6 +85,15 @@ scoring:
         isolationGap: 2
         nearMissCount: 0
   calibrationVersion: 5.0.0
+solutionTags:
+  H6H3-H2H1-A1-A5H5-H3H4-F4-F1-B1-B2:
+    - unique
+    - interesting
+  H2H1-A1-A5H5-H3-H6H4-F4-F1-B1-B2:
+    - boring
+    - interesting
+rating: 3.5
+reasons: []
 ---
 
 ```
