@@ -53,3 +53,23 @@ export function getWeekPuzzleNumbers(
   const from = getPuzzleNumber(day.subtract({ days: day.dayOfWeek - 1 }));
   return { from, to: from + 6 };
 }
+
+/** The date a schedule slot falls on: the inverse of {@link getPuzzleNumber}. */
+export function getPuzzleDate(number: number): Temporal.PlainDate {
+  return FIRST_PUZZLE_DATE.add({ days: number - 1 });
+}
+
+/** A run of schedule slots, both ends included. */
+export type SlotRange = { from: number; to: number };
+
+/** The slots of the week a date falls in, clamped to the schedule's bounds. */
+export function getWeekRange(
+  date: Temporal.PlainDate,
+  bounds: SlotRange,
+): SlotRange {
+  const week = getWeekPuzzleNumbers(date);
+  return {
+    from: Math.max(week.from, bounds.from),
+    to: Math.min(week.to, bounds.to),
+  };
+}

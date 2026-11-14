@@ -1,0 +1,146 @@
+import { clsx } from "clsx/lite";
+
+import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
+import { PuzzleCard, PuzzleCardCaption } from "#/components/puzzle-card.tsx";
+import { getPuzzleDate } from "#/game/date.ts";
+import type { ArchiveDay } from "#/game/loader.ts";
+import type { ScoreProgress } from "#/game/score.ts";
+
+type ArchiveDaysProps = {
+  days: ArchiveDay[];
+  score: ScoreProgress;
+};
+
+/**
+ * One grid item per day: its puzzle, or a muted stand-in. Also the API's
+ * fragment, so the server renders every card.
+ */
+export function ArchiveDays({ days, score }: ArchiveDaysProps) {
+  return (
+    <>
+      {days.map(({ number, puzzle }) => {
+        const date = getPuzzleDate(number);
+
+        return (
+          <li
+            key={number}
+            id={date.toString()}
+            data-number={number}
+            data-month={getMonthName(date)}
+            data-year={date.year}
+            className={clsx(
+              "snap-center min-w-0 list-none pl-0",
+              // Off-screen cards skip rendering; their size is known
+              "[content-visibility:auto] [contain-intrinsic-size:auto_var(--col)_auto_calc(var(--col)_*_1.35)]",
+              // Purple frames only on the centred card; all of them without JS
+              "[--frame:var(--color-link)] js:[--frame:var(--color-surface-3)]",
+              "data-centred:[--frame:var(--color-link)]",
+              "[&_.puzzle-card-thumb]:border-(--frame)",
+            )}
+          >
+            {puzzle
+              ? (
+                <PuzzleCard
+                  puzzle={puzzle}
+                  score={score[puzzle.slug]}
+                  size="lg"
+                />
+              )
+              : (
+                <div className="flex flex-col gap-2 text-text-3">
+                  <div className="aspect-square border-2 border-surface-3 rounded-1" />
+                  <PuzzleCardCaption size="lg">
+                    <span className="text-5 font-3 leading-flat">
+                      No puzzle
+                    </span>
+                  </PuzzleCardCaption>
+                </div>
+              )}
+          </li>
+        );
+      })}
+    </>
+  );
+}
+
+/** "November": the heading's month while a day is centred. */
+export function getMonthName(date: Temporal.PlainDate) {
+  return date.toLocaleString("en", { month: "long" });
+}
+
+// A thumbnail outline over two caption bars, masked onto a token colour
+const SKELETON_SVG =
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 130" preserveAspectRatio="xMinYMin meet">` +
+  `<rect x="1.5" y="1.5" width="97" height="97" rx="4" fill="none" stroke="black" stroke-width="3"/>` +
+  `<rect x="0" y="106" width="36" height="6" rx="3"/>` +
+  `<rect x="0" y="117" width="70" height="9" rx="4.5"/>` +
+  `</svg>`;
+const SKELETON_MASK = `url("data:image/svg+xml,${
+  encodeURIComponent(SKELETON_SVG)
+}")`;
+
+type ArchiveSentinelProps = {
+  side: "before" | "after";
+  /** Days it stands in for. */
+  span: number;
+  /** The neighbouring week, for the link without JS. */
+  href?: string;
+};
+
+/**
+ * Stands in for the unloaded days on one side. Without JS, a prev/next week
+ * link one column wide; with JS, as wide as the days it covers, painted as
+ * skeleton cards, and watched to load them.
+ */
+export function ArchiveSentinel({ side, span, href }: ArchiveSentinelProps) {
+  return (
+    <li
+      data-sentinel={side}
+      data-span={span}
+      style={{ "--span": span }}
+      aria-hidden={span === 0 || undefined}
+      className={clsx(
+        "relative list-none pl-0",
+        "js:[grid-column:span_var(--span)]",
+        "data-[span=0]:hidden",
+      )}
+    >
+      {href && (
+        <a
+          href={href}
+          className={clsx(
+            "js:hidden",
+            "grid place-content-center gap-1 aspect-square text-center",
+            "text-2 text-link no-underline border-2 border-surface-3 rounded-1",
+            "hover:bg-surface-2",
+          )}
+        >
+          <Icon
+            icon={side === "before" ? CaretLeft : CaretRight}
+            className="place-self-center text-4"
+          />
+          <span>
+            {side === "before" ? "Previous week" : "Next week"}
+          </span>
+        </a>
+      )}
+
+      <div
+        aria-hidden="true"
+        style={{ maskImage: SKELETON_MASK, WebkitMaskImage: SKELETON_MASK }}
+        className={clsx(
+          // Only the stretch by the loaded cards: a mask as wide as months of
+          // days is past the GPU's texture limit and draws nothing
+          "hidden absolute inset-y-0 w-[min(100%,300vw)]",
+          "js:block",
+          "[mask-repeat:repeat-x] [mask-size:calc(var(--col)_+_var(--gap))_calc(var(--col)_*_1.3)]",
+          // Tiles run from the loaded side, so outlines sit on the columns
+          side === "before"
+            ? "right-0 [mask-position:right_calc(-1_*_var(--gap))_top]"
+            : "left-0 [mask-position:left_top]",
+          "bg-surface-3",
+        )}
+      />
+    </li>
+  );
+}

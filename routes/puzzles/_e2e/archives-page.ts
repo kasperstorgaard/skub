@@ -7,8 +7,9 @@ import { BASE_URL } from "#/e2e/helpers.ts";
 export class ArchivesPage {
   constructor(private page: Page) {}
 
+  /** The month in view is the page's title. */
   get heading() {
-    return this.page.getByRole("heading", { name: "Puzzles", exact: true });
+    return this.page.getByRole("heading", { level: 1 });
   }
 
   /** The calendar grid container. */
@@ -51,19 +52,9 @@ export class ArchivesPage {
     return new PuzzlePage(this.page);
   }
 
-  /** Clicks a month pill in the strip by its short label (e.g. "Mar"). */
-  async clickMonth(label: string) {
-    await this.page.getByRole("link", { name: new RegExp(`^${label}\\b`) })
-      .first()
-      .click();
-    return this;
-  }
-
-  /** Clicks the first month pill in the strip (oldest available month). */
-  async clickFirstMonth() {
-    await this.page.locator("nav[aria-label='Months with puzzles'] a")
-      .first()
-      .click();
+  /** Goes to the month before the one shown. */
+  async clickPreviousMonth() {
+    await this.page.getByRole("link", { name: /^Previous month/ }).click();
     return this;
   }
 }
