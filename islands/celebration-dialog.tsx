@@ -54,6 +54,10 @@ export function CelebrationDialog(
     [destination?.x, destination?.y],
   );
   const [minElapsed, setMinElapsed] = useState(false);
+  // One solve in three points at the builder instead of another puzzle.
+  // Rolled after mount, so the server render and hydration agree.
+  const [suggestBuild, setSuggestBuild] = useState(false);
+  useEffect(() => setSuggestBuild(Math.random() < 1 / 3), []);
 
   const state = useMemo(() => decodeState(href.value), [href.value]);
 
@@ -165,13 +169,27 @@ export function CelebrationDialog(
           <Icon icon={Ranking} /> See solutions
         </a>
 
-        <a
-          href="/puzzles/recommended"
-          className="btn"
-          autoFocus
-        >
-          Play one more <Icon icon={ArrowRight} />
-        </a>
+        {suggestBuild
+          ? (
+            <a
+              href="/puzzles/new"
+              // Full navigation: /puzzles/new redirects, which client nav drops
+              f-client-nav={false}
+              className="btn"
+              autoFocus
+            >
+              Build your own <Icon icon={ArrowRight} />
+            </a>
+          )
+          : (
+            <a
+              href="/puzzles/recommended"
+              className="btn"
+              autoFocus
+            >
+              Play one more <Icon icon={ArrowRight} />
+            </a>
+          )}
       </DialogActions>
     </Dialog>
   );
