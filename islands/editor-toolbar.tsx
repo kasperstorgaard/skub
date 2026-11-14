@@ -10,7 +10,7 @@ import {
   FlipHorizontal,
   FlipVertical,
   Icon,
-  Play,
+  Joystick,
   Trash,
   X,
 } from "#/components/icons.tsx";
@@ -18,6 +18,7 @@ import { KeyHint } from "#/components/key-hint.tsx";
 import { PortalRings } from "#/components/portal-rings.tsx";
 import { TOOL_BUTTON, Toolbar } from "#/components/toolbar.tsx";
 import { flipBoard, rotateBoard } from "#/game/board.ts";
+import { formatPuzzle } from "#/game/formatter.ts";
 import type { Board, Puzzle } from "#/game/types.ts";
 import { decodeState } from "#/game/url.ts";
 
@@ -109,7 +110,6 @@ export function EditorToolbar(
           )}
         >
           {/* Slides pad both ends, so the arrow never covers a button */}
-          {/* Play set apart: further along the row, its own group in the column */}
           <div
             className={clsx(
               "flex items-center justify-center gap-10 max-lg:px-7 max-lg:snap-start",
@@ -119,7 +119,13 @@ export function EditorToolbar(
           >
             {/* No keys: the button column, not flowing into the hints' */}
             {/* TODO: add a shake/shuffle button that does something random to the board */}
-            <Toolbar>
+            {/* Four tools, the gap, then Play; on desktop Play and the gap go first */}
+            <Toolbar
+              className={clsx(
+                "max-lg:grid-cols-[repeat(4,minmax(0,3rem))_0_minmax(0,3rem)]",
+                "lg:grid-rows-[2.5rem_0.5rem_repeat(4,2.5rem)]",
+              )}
+            >
               <button
                 type="button"
                 className={clsx(TOOL_BUTTON, "lg:col-1")}
@@ -170,18 +176,33 @@ export function EditorToolbar(
               >
                 <Icon icon={Trash} className="text-[1.25rem]" />
               </button>
-            </Toolbar>
 
-            <Toolbar>
-              <a
-                href="/puzzles/preview"
-                target="_blank"
-                className={clsx(TOOL_BUTTON, "lg:col-1")}
-                aria-label="Play"
-                title="Play the puzzle"
+              {/* Set apart like Flash: top of the column, end of the row */}
+              <span aria-hidden="true" className="lg:col-span-2 lg:-order-1" />
+              {/* Saves first: autosave may not have caught the last change */}
+              <form
+                method="post"
+                action="/puzzles/build/play"
+                className="contents"
               >
-                <Icon icon={Play} className="text-[1.25rem]" />
-              </a>
+                <input
+                  type="hidden"
+                  name="markdown"
+                  value={formatPuzzle(puzzle.value)}
+                />
+                <button
+                  type="submit"
+                  className={clsx(
+                    TOOL_BUTTON,
+                    "lg:col-1 lg:-order-2",
+                    "bg-(image:--pearl-border-faint) border-transparent",
+                  )}
+                  aria-label="Play"
+                  title="Play the puzzle"
+                >
+                  <Icon icon={Joystick} className="text-[1.25rem]" />
+                </button>
+              </form>
             </Toolbar>
           </div>
 

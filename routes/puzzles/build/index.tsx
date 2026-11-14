@@ -18,7 +18,7 @@ import { type EditorSolution, EditorSolver } from "#/islands/editor-solver.tsx";
 import { EditorToolbar } from "#/islands/editor-toolbar.tsx";
 import { SolutionBadge } from "#/islands/solution-badge.tsx";
 import { SubmitDialog } from "#/islands/submit-dialog.tsx";
-import { canSendEmail } from "#/lib/email.ts";
+import { canSubmitPuzzles } from "#/lib/email.ts";
 import { isDev } from "#/lib/env.ts";
 
 export const handler = define.handlers<Puzzle>({
@@ -37,8 +37,6 @@ export default define.page<typeof handler>(function EditorPage(props) {
   const solveState = useSignal<SolveState | undefined>(undefined);
   const solution = useSignal<EditorSolution | null>(null);
   const showSolution = useSignal(false);
-  // Submissions are emailed, so sending needs somewhere to send them.
-  const submissionsEnabled = canSendEmail && Deno.env.has("SUBMISSIONS_EMAIL");
 
   return (
     <>
@@ -89,8 +87,8 @@ export default define.page<typeof handler>(function EditorPage(props) {
             )}
           />
 
-          {/* The puzzle page's nudge spot: empty until the board can be sent */}
-          {submissionsEnabled && (
+          {/* The puzzle page's nudge spot: Send it in, enabled once the board solves */}
+          {canSubmitPuzzles && (
             <div className="max-w-2xs mx-auto mt-fl-2 empty:hidden print:hidden">
               <EditorNudge
                 puzzle={puzzle}

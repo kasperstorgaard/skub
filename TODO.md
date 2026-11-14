@@ -206,6 +206,20 @@ PR finishes only part of an item, trim the item to what is left.
   board, one element morphing into the other. The thumbnail may need to be
   higher quality than today's, so the hand-off doesn't show a jump in detail.
 
+- **Styling speaks the design system.** Sizes are design-system tokens (the
+  `fl-*` spacing, type and radius scales), not loose rems and ems in arbitrary
+  values (`text-[1.25rem]`, `auto-rows-[2.5rem]`, `min-w-[16ch]`; ~60 across 17
+  files) or in the CSS. Repeated patterns become atom-level components instead
+  of copied class strings: the tool button and its pearl variant (Flash, the
+  editor's Play, the preview's Edit), the set-apart gap with its hand-written
+  grid tracks per toolbar, and the nudge under the board (tutorial, Flash,
+  editor, preview — already drifting).
+
+  A ratchet keeps it from coming back: a CI check (beside `check-css`) counts
+  the loose rem/em values and fails when the count goes up, and lowering the
+  stored baseline is part of any PR that removes some. New code can't add debt;
+  the cleanup can land piece by piece.
+
 ## Play
 
 - **Flash makes a puzzle noticeably easier.** Flash plays a fixed share of the
