@@ -119,7 +119,13 @@ export function EditorToolbar(
           >
             {/* No keys: the button column, not flowing into the hints' */}
             {/* TODO: add a shake/shuffle button that does something random to the board */}
-            <Toolbar>
+            {/* Four tools, the gap, then Play; on desktop Play and the gap go first */}
+            <Toolbar
+              className={clsx(
+                "max-lg:grid-cols-[repeat(4,minmax(0,3rem))_0_minmax(0,3rem)]",
+                "lg:grid-rows-[2.5rem_0.5rem_repeat(4,2.5rem)]",
+              )}
+            >
               <button
                 type="button"
                 className={clsx(TOOL_BUTTON, "lg:col-1")}

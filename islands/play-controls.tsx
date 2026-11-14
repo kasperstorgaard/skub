@@ -141,6 +141,10 @@ export function PlayControls(
         flash &&
           "max-lg:grid-cols-[repeat(4,minmax(0,3.5rem))_0_minmax(0,3.5rem)]",
         flash && "lg:grid-rows-[2.5rem_0.5rem_repeat(4,2.5rem)]",
+        // Preview: three tools (no hint), the gap, then Edit, the same way
+        isPreview &&
+          "max-lg:grid-cols-[repeat(3,minmax(0,3.5rem))_0_minmax(0,3.5rem)]",
+        isPreview && "lg:grid-rows-[2.5rem_0.5rem_repeat(3,2.5rem)]",
         className,
       )}
     >
