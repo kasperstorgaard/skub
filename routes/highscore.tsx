@@ -6,7 +6,7 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { define } from "#/core.ts";
-import { listHighscore } from "#/db/score.ts";
+import { getUserScore, listHighscore } from "#/db/score.ts";
 import { listPuzzleSolutions } from "#/db/solutions.ts";
 import { getUserNames } from "#/db/user.ts";
 import { getWeekPuzzleNumbers } from "#/game/date.ts";
@@ -14,12 +14,12 @@ import { getAvailableEntries, getPuzzle } from "#/game/loader.ts";
 import {
   getHighscore,
   getPastScore,
-  getProgressScore,
   getTotalScore,
   type HighscoreEntry,
   SCORE_POINTS,
   type ScoreKind,
   type UserScore,
+  withHighscoreEntry,
 } from "#/game/score.ts";
 import { formatNumber } from "#/lib/format.ts";
 
@@ -31,11 +31,8 @@ type Row = HighscoreEntry & { name: string };
 type PageData = {
   period: Period;
   rows: Row[];
-  /**
-   * The viewer's own row, when they have stars but aren't in the top rows.
-   * Ranked only where it's known: this week, not all time.
-   */
-  viewerRow: (Row & { rank?: number }) | null;
+  /** The viewer's own row, when they have stars but aren't in the top rows. */
+  viewerRow: (Row & { rank: number }) | null;
 };
 
 /**
@@ -64,30 +61,35 @@ async function getWeekHighscore(): Promise<HighscoreEntry[]> {
   return getHighscore(scores);
 }
 
+/**
+ * All time's highscore: the cached one, maybe a few minutes stale, with the
+ * viewer's own score put in their place, so theirs never is.
+ */
+async function getAllTimeHighscore(
+  userId: string,
+): Promise<HighscoreEntry[]> {
+  const [highscore, userScore] = await Promise.all([
+    listHighscore(),
+    getUserScore(userId),
+  ]);
+  return withHighscoreEntry(highscore, { userId, userScore });
+}
+
 export const handler = define.handlers<PageData>({
   async GET(ctx) {
-    const { userId, user, score } = ctx.state;
+    const { userId, user } = ctx.state;
     const period: Period = ctx.url.searchParams.get("period") === "all"
       ? "all"
       : "week";
 
-    let entries: HighscoreEntry[];
-    let viewer: (HighscoreEntry & { rank?: number }) | null = null;
-
-    if (period === "week") {
-      const highscore = await getWeekHighscore();
-      entries = highscore.slice(0, LIMIT);
-      const index = highscore.findIndex((entry) => entry.userId === userId);
-      if (index >= LIMIT) viewer = { ...highscore[index], rank: index + 1 };
-    } else {
-      entries = await listHighscore({ limit: LIMIT });
-      // Past the top rows, from the cookie: where they rank isn't known.
-      const userScore = getProgressScore(score);
-      const isListed = entries.some((entry) => entry.userId === userId);
-      if (!isListed && getTotalScore(userScore) > 0) {
-        viewer = { userId, userScore };
-      }
-    }
+    const highscore = period === "week"
+      ? await getWeekHighscore()
+      : await getAllTimeHighscore(userId);
+    const entries = highscore.slice(0, LIMIT);
+    const index = highscore.findIndex((entry) => entry.userId === userId);
+    const viewer = index >= LIMIT
+      ? { ...highscore[index], rank: index + 1 }
+      : null;
 
     const names = await getUserNames(entries.map((entry) => entry.userId));
     const rows = entries.map((entry) => ({
@@ -179,8 +181,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
 
 type RowItemProps = {
   row: Row;
-  /** Unknown past the top rows all time */
-  rank?: number;
+  rank: number;
   isViewer: boolean;
 };
 

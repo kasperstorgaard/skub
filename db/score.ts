@@ -9,6 +9,7 @@ import {
   type ScoreProgress,
   type UserScore,
   withEarned,
+  withHighscoreEntry,
   withScore,
 } from "#/game/score.ts";
 
@@ -63,22 +64,51 @@ export async function getUserScore(userId: string): Promise<UserScore> {
   return { ...emptyUserScore, ...res.value };
 }
 
-/** The top of the highscore, in rank order. */
-export async function listHighscore(
-  { limit = 50 }: { limit?: number } = {},
-): Promise<HighscoreEntry[]> {
-  const entries: HighscoreEntry[] = [];
-  const iter = kv.list<UserScore>({ prefix: ["highscore"] }, {
-    reverse: true,
-    limit,
-  });
-  for await (const { key, value } of iter) {
-    entries.push({
-      userId: key[4] as string,
-      userScore: { ...emptyUserScore, ...value },
-    });
+/** How long an isolate keeps the highscore before walking it again. */
+const HIGHSCORE_CACHE_MS = 5 * 60_000;
+let highscoreCache:
+  | { entries: Promise<HighscoreEntry[]>; expiresAt: number }
+  | null = null;
+
+/**
+ * The whole highscore, in rank order: one walk per isolate per few minutes,
+ * shared by every request, with this isolate's awards written through. Others'
+ * awards land on the next walk. The promise is cached, so requests arriving
+ * mid-walk wait on the same one.
+ */
+export function listHighscore(): Promise<HighscoreEntry[]> {
+  if (highscoreCache && highscoreCache.expiresAt > Date.now()) {
+    return highscoreCache.entries;
   }
+
+  const entries = (async () => {
+    const entries: HighscoreEntry[] = [];
+    const iter = kv.list<UserScore>({ prefix: ["highscore"] }, {
+      reverse: true,
+    });
+    for await (const { key, value } of iter) {
+      entries.push({
+        userId: key[4] as string,
+        userScore: { ...emptyUserScore, ...value },
+      });
+    }
+    return entries;
+  })();
+  highscoreCache = { entries, expiresAt: Date.now() + HIGHSCORE_CACHE_MS };
+  // A failed walk isn't kept: the next request tries again.
+  entries.catch(() => highscoreCache = null);
   return entries;
+}
+
+/** Puts a player's new score on this isolate's highscore, if it has one. */
+function setCachedHighscore(userId: string, userScore: UserScore) {
+  if (!highscoreCache) return;
+  const entries = highscoreCache.entries.then((entries) =>
+    withHighscoreEntry(entries, { userId, userScore })
+  );
+  // A failed walk isn't kept: the next request tries again.
+  entries.catch(() => highscoreCache = null);
+  highscoreCache.entries = entries;
 }
 
 /**
@@ -115,7 +145,10 @@ export async function awardScore(
     atomic.set(getHighscoreKey(userId, updated), updated);
 
     const result = await atomic.commit();
-    if (result.ok) return added;
+    if (result.ok) {
+      setCachedHighscore(userId, updated);
+      return added;
+    }
   }
 
   throw new Error("Failed to award score after 5 attempts");
@@ -163,7 +196,10 @@ export async function awardPastScore(
     atomic.set(getHighscoreKey(userId, updated), updated);
 
     const result = await atomic.commit();
-    if (result.ok) return added;
+    if (result.ok) {
+      setCachedHighscore(userId, updated);
+      return added;
+    }
   }
 
   throw new Error("Failed to award past score after 5 attempts");
