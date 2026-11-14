@@ -8,6 +8,7 @@ import { HttpError, page } from "fresh";
 import { ActionsPanel } from "#/components/actions-panel.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
+import { PreviewNudge } from "#/components/preview-nudge.tsx";
 import { PrintPanel } from "#/components/print-panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { define } from "#/core.ts";
@@ -16,6 +17,7 @@ import type { Puzzle } from "#/game/types.ts";
 import Board from "#/islands/board.tsx";
 import { PlayControls } from "#/islands/play-controls.tsx";
 import { ScoreBadge } from "#/islands/score-badge.tsx";
+import { canSubmitPuzzles } from "#/lib/email.ts";
 import { isDev } from "#/lib/env.ts";
 
 type PageData = {
@@ -42,7 +44,7 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
   return (
     <>
       <Main>
-        <Header back={{ href: "/" }} />
+        <Header back={{ href: "/puzzles/build" }} />
 
         <div className="flex items-end justify-between gap-fl-1 flex-wrap">
           <h1 className="text-text-1">
@@ -68,6 +70,12 @@ export default define.page<typeof handler>(function PreviewPuzzle(props) {
               "lg:absolute lg:ml-fl-1 lg:left-full lg:top-1/2 lg:-translate-y-1/2",
             )}
           />
+
+          {canSubmitPuzzles && (
+            <div className="max-w-2xs mx-auto mt-fl-2 print:hidden">
+              <PreviewNudge />
+            </div>
+          )}
         </div>
       </Main>
 

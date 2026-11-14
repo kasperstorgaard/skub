@@ -10,6 +10,7 @@ import {
   ArrowCounterClockwise,
   Icon,
   Lightbulb,
+  Pencil,
 } from "#/components/icons.tsx";
 import { KeyHint } from "#/components/key-hint.tsx";
 import { TOOL_BUTTON, Toolbar } from "#/components/toolbar.tsx";
@@ -248,6 +249,24 @@ export function PlayControls(
             className={clsx(TOOL, "text-text-2 lg:-order-2")}
             iconClassName="text-[1.25rem] max-lg:text-[2rem]"
           />
+        </>
+      )}
+
+      {isPreview && (
+        <>
+          {/* Set apart like Flash: back to the build */}
+          <span aria-hidden="true" className="lg:col-span-2 lg:-order-1" />
+          <a
+            href="/puzzles/build"
+            className={clsx(
+              TOOL,
+              "lg:-order-2 bg-(image:--pearl-border-faint) border-transparent",
+            )}
+            aria-label="Edit"
+            title="Back to editing"
+          >
+            <Icon icon={Pencil} className="text-[1.25rem] max-lg:text-[2rem]" />
+          </a>
         </>
       )}
 

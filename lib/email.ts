@@ -15,6 +15,10 @@ type Email = {
 /** Whether email can be sent here; features that send hide without it. */
 export const canSendEmail = Deno.env.has("RESEND_API_KEY");
 
+/** Whether built puzzles can be sent in: they're emailed to `SUBMISSIONS_EMAIL`. */
+export const canSubmitPuzzles = canSendEmail &&
+  Deno.env.has("SUBMISSIONS_EMAIL");
+
 /** Sends an email through Resend's HTTP API. */
 export async function sendEmail(email: Email): Promise<void> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
