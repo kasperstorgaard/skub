@@ -1,4 +1,4 @@
-import { Download, Icon, Pencil, Ranking } from "#/components/icons.tsx";
+import { Icon, Pencil, Ranking } from "#/components/icons.tsx";
 import { Panel } from "#/components/panel.tsx";
 
 type ActionsPanelProps = {
@@ -26,13 +26,6 @@ export function ActionsPanel(
             className="btn"
           >
             <Icon icon={Ranking} /> See solutions
-          </a>
-        )}
-
-        {isPreview && (
-          <a href="/api/export" download className="btn">
-            <Icon icon={Download} />
-            Download
           </a>
         )}
 
