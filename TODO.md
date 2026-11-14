@@ -215,6 +215,11 @@ PR finishes only part of an item, trim the item to what is left.
   grid tracks per toolbar, and the nudge under the board (tutorial, Flash,
   editor, preview — already drifting).
 
+  A ratchet keeps it from coming back: a CI check (beside `check-css`) counts
+  the loose rem/em values and fails when the count goes up, and lowering the
+  stored baseline is part of any PR that removes some. New code can't add debt;
+  the cleanup can land piece by piece.
+
 ## Play
 
 - **Flash makes a puzzle noticeably easier.** Flash plays a fixed share of the
