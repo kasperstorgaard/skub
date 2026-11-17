@@ -2,11 +2,7 @@ import { useSignal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { page } from "fresh";
 
-import {
-  ArchiveDays,
-  ArchiveSentinel,
-  getMonthName,
-} from "#/components/archive-row.tsx";
+import { ArchiveDays, getMonthName } from "#/components/archive-row.tsx";
 import { DesktopCalendar } from "#/components/desktop-calendar.tsx";
 import { Header } from "#/components/header.tsx";
 import { Main } from "#/components/main.tsx";
@@ -39,16 +35,17 @@ export const handler = define.handlers({
       bounds.to,
       Math.max(bounds.from, getPuzzleNumber(date)),
     );
-    const range = getWeekRange(getPuzzleDate(current), bounds);
-    const days = await listArchiveDays(range);
+    // Every day goes in the row; the server draws only this week's boards
+    const drawn = getWeekRange(getPuzzleDate(current), bounds);
+    const days = await listArchiveDays(bounds);
     const entries = await getAvailableEntries();
 
-    return page({ bounds, range, current, days, today, entries });
+    return page({ bounds, drawn, current, days, today, entries });
   },
 });
 
 export default define.page<typeof handler>(function PuzzlesPage(props) {
-  const { bounds, range, current, days, today, entries } = props.data;
+  const { bounds, drawn, current, days, today, entries } = props.data;
   const date = getPuzzleDate(current);
   const puzzle = days.find((day) => day.number === current)?.puzzle;
   const href = useSignal(props.url.href);
@@ -65,7 +62,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
 
         <ArchiveHeading
           bounds={bounds}
-          range={range}
           current={current}
           day={{
             date: date.toString(),
@@ -90,16 +86,11 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             "lg:hidden",
           )}
         >
-          <ArchiveSentinel
-            side="before"
-            span={range.from - bounds.from}
-            href={getWeekHref(range.from - 1, bounds)}
-          />
-          <ArchiveDays days={days} score={props.state.score} />
-          <ArchiveSentinel
-            side="after"
-            span={bounds.to - range.to}
-            href={getWeekHref(range.to + 1, bounds)}
+          <ArchiveDays
+            days={days}
+            score={props.state.score}
+            current={current}
+            drawn={drawn}
           />
         </ol>
 
@@ -140,13 +131,6 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
     </>
   );
 });
-
-/** The week a slot falls in, landing on that day; none past the bounds. */
-function getWeekHref(number: number, bounds: SlotRange) {
-  if (number < bounds.from || number > bounds.to) return undefined;
-  const date = getPuzzleDate(number).toString();
-  return `?date=${date}#${date}`;
-}
 
 /** Each month the archive spans, from its first slot within the bounds. */
 function getMonths(bounds: SlotRange): ArchiveMonth[] {

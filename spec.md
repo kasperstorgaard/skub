@@ -17,86 +17,52 @@ at 24rem. The row runs full width and scrolls inside its own container
 scrollbar hidden. Desktop keeps a calendar (see
 "Heading and desktop").
 
-**Page unit = one ISO week (Mon–Sun).** `?date=YYYY-MM-DD` picks the week that
-contains that date and defaults to today. The current week stops at today
-(future days only show in dev, as now).
+**Every day is in the row from the first paint.** The server renders a card
+for each day in the archive, so the scroll width is fixed and never changes
+while you scroll. Only the thumbnails wait. `?date=YYYY-MM-DD` picks the day
+to land on and defaults to today. The current week stops at today (future days
+only show in dev, as now).
+
+Why: the first version kept one loaded block between two skeleton sentinels
+and grew it as you scrolled. Every insert, span change or block swap changed
+the scroll geometry mid-gesture, so the same flick threw different distances,
+and touch feel is the whole point of the row. Mandatory snapping and holding
+batches until the scroll settled only moved the problem around.
 
 ### Without JS
 
-- The server renders the week for `?date`, with a `prev` link at the start of
-  the row and a `next` link at the end. Both are grid items inside the scroller
-  and point to `?date=<other week>#<day>`. There is no `next` link on the
-  current week.
-- The fragment scrolls the target card into view. On a plain `/puzzles` landing
-  the card for today gets `scroll-initial-target` where the browser supports it.
-- The month label above the row is the month of `?date`. 
+- The server draws the thumbnails for the week around `?date`. Other cards
+  show their frame, name, number and stars, with an empty thumbnail box.
+- The fragment scrolls the target card into view. Without a fragment, the
+  `?date` card gets `scroll-initial-target` where the browser supports it.
+- The month label above the row is the month of `?date`.
 
 ### With JS
 
-- **Two full-size sentinels around one loaded block.** One sentinel sits at
-  each end of the row and is the `IntersectionObserver` target (root = the
-  scroller, `rootMargin` about 2 weeks of card width). The server sets `--span`
-  on each to the number of days it stands in for (from the manifest). Under
-  `js:` the sentinel takes `grid-column: span var(--span)`, so it is exactly as
-  wide as those cards, gaps included, and the scroll width is fixed from the
-  first paint. Without JS it is a one-column prev/next link.
-- **They look like skeleton cards.** The span is painted with a tiled SVG: a
-  rounded-square outline for the thumbnail and two short bars for the caption.
-  The SVG is applied as a `mask-image` over a token `background-color`
-  (`surface-3`), so it follows the theme without one data URI per colour.
-  `mask-size` is one column plus one gap, using the same CSS variables as
-  the grid, so each outline lines up with where its card will land. It's
-  one element, not one per day. It covers at most 300vw next to the loaded
-  cards and tiles from that side: a mask as wide as the whole span (tens of
-  thousands of pixels) is past the GPU's texture limit and draws nothing.
-- **Growing the edge.** When a sentinel nears view, the island inserts the
-  fetched cards next to it and lowers its span by the number of inserted
-  `[data-date]` items. Count them rather than assuming 21, because a batch is
-  short at today or at the first puzzle.
-- **Proximity snapping.** Mandatory snapping was tried and dropped: it only
-  stops on loaded cards, so the loaded edge became a wall that long flicks
-  stopped at. With proximity snapping a fling can land in a sentinel. Once
-  scrolling settles, the island loads a block where it landed and swaps it
-  in, the same way a month link does.
-- **Rendering and settling use the platform.** Cards have
-  `content-visibility: auto` with a `contain-intrinsic-size` from the column
-  width, so off-screen thumbnails skip rendering. "Settled" means the
-  `scrollend` event, which fires once momentum and snapping are done; browsers
-  without it fall back to 150ms of idle scrolling.
-- **Batches wait for the scroll to settle.** Inserting cards mid-fling cut
-  momentum short on touch, so the same flick threw different distances. A
-  fetched batch is held until scrolling has been idle for 150ms, while the
-  skeletons cover the gap. Layout metrics are cached per size rather than
-  read on every scroll frame.
-- **Far landings and month links replace the block.** A jump to a day that
-  isn't loaded fetches around it, waits for scrolling to settle, then swaps
-  out the whole block and scrolls to the day in the
-  same task. The old cards collapse back into the two spans and both spans
-  are reset, so the total width is unchanged. There are always exactly two
-  sentinels and one block.
-- **Jump-free swaps.** Parse the fragment off-DOM into a `<template>` first.
-  Then insert or replace the cards and set the spans in one synchronous block,
-  with no `await` and no layout reads in between. Columns have a fixed track
-  width and the thumbnails are inline SVG with `aspect-square`, so nothing
-  resizes after a swap.
-- **Prefetch deep for fast flicks.** The island keeps 3 weeks (21 days)
-  loaded on each side of the centred day. On mount, that loads both
-  directions when linked into a past week, and only older weeks on the
-  current one. Each fetch is `GET /api/puzzles/days?from=<slot>&to=<slot>`
-  for 21 days, capped at 42 days per request. Each side has at most one fetch
-  in flight. A far jump drops any batches still in flight for the block it
-  replaces.
-- The API returns an **HTML fragment**: the same `WeekCards` component rendered
-  with `preact-render-to-string`. Thumbnail SVG and the card stay server-only,
-  with no JSON-to-card duplication on the client. It reads only the score
-  cookie, so a GET makes no KV calls.
-- The same island renders the **month label**. It tracks the leftmost card that
-  is fully in view (`data-date` on each card) and updates the month as you
-  scroll. It also does `replaceState(?date=…)` so a reload or back navigation
-  returns to the same place. It doesn't set `aria-live`, because the label
-  would chatter on every scroll.
+- **Thumbnails are drawn as they near view.** A card outside the drawn week
+  carries its board as `data-board`, the `encodeBoard` numbers joined with
+  commas (about 100 bytes, against a few KB of SVG). One
+  `IntersectionObserver` (root = the scroller, about 10 cards of margin each
+  side) renders `Thumbnail` into the box with Preact the first time it comes
+  near, then stops watching it. The same component draws it on the server and
+  in the browser.
+- **Filling a box never moves anything.** The box is `aspect-square` in a
+  fixed-width column, so a drawn board takes exactly the space it had. Drawing
+  mid-fling doesn't touch layout or momentum.
+- **Drawn boards stay.** Nothing is unloaded; `content-visibility: auto` on the
+  cards (with a `contain-intrinsic-size` from the column width) skips painting
+  the ones off screen.
+- **Proximity snapping**, as before.
+- **Month links scroll in place.** Every day is already there, so a month link
+  scrolls the row to that month's first day.
+- The same island renders the **month label**. It tracks the centred card
+  (`data-date` on each card) and updates the date and month as you scroll.
+  Once the scroll settles (`scrollend`, or 150ms of idle scrolling where it
+  isn't supported) it does `replaceState(?date=…)`, so a reload or back
+  navigation returns to the same place. It doesn't set `aria-live`, because
+  the label would chatter on every scroll.
 - The row itself is a static component. The island attaches to it by id and
-  never owns that DOM, so Preact's vdom and the injected HTML don't conflict.
+  never owns that DOM, so Preact's vdom and the server's markup don't conflict.
 
 ### Heading and desktop
 
@@ -137,11 +103,12 @@ much going on.
 - Unit: a pure week helper in `game/date.ts` (week bounds for a date, clamped
   to today, with prev/next week dates). Cover a week that spans a month
   boundary, a week that spans a year boundary, and the current partial week.
+- Unit: `decodeBoard` round-trips `encodeBoard`, including a board without a
+  puck or destination.
 - e2e: rewrite `archives_test.ts` around the carousel. Clicking a card lands on
-  the puzzle, and the prev link (no JS) shows the previous week.
+  the puzzle.
 
 ## Non-goals
 
 - Filtering, search, or difficulty grouping.
-- Unloading cards while you scroll continuously. Far jumps drop the old block
-  anyway; a long continuous scroll keeps everything it has loaded.
+- Unloading drawn thumbnails. A long scroll keeps everything it has drawn.

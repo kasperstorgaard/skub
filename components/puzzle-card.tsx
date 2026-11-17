@@ -4,6 +4,7 @@ import { AnchorHTMLAttributes } from "preact";
 import { Icon, Play } from "#/components/icons.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { Thumbnail } from "#/components/thumbnail.tsx";
+import { encodeBoard } from "#/game/board.ts";
 import type { ScoreKind } from "#/game/score.ts";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -17,6 +18,11 @@ export type PuzzleCardProps =
     showPlay?: boolean;
     /** `lg` for a card standing on its own, e.g. the calendar's selected day. */
     size?: "md" | "lg";
+    /**
+     * An empty box carrying the encoded board instead of the drawing, for a
+     * script to draw it in when it nears view.
+     */
+    deferThumbnail?: boolean;
   };
 
 /**
@@ -33,6 +39,7 @@ export function PuzzleCard({
   tagline,
   showPlay,
   size = "md",
+  deferThumbnail,
   className,
   ...rest
 }: PuzzleCardProps) {
@@ -51,10 +58,19 @@ export function PuzzleCard({
           "group-hover:filter-[lighten(1.3)] transition-colors",
         )}
       >
-        <Thumbnail
-          board={puzzle.board}
-          className="basis-0 grow aspect-square h-full"
-        />
+        {deferThumbnail
+          ? (
+            <div
+              data-board={encodeBoard(puzzle.board).join(",")}
+              className="basis-0 grow aspect-square"
+            />
+          )
+          : (
+            <Thumbnail
+              board={puzzle.board}
+              className="basis-0 grow aspect-square h-full"
+            />
+          )}
 
         {showPlay && (
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">

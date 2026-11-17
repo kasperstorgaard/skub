@@ -23,7 +23,6 @@ export type ArchiveMonth = {
 
 type Props = {
   bounds: SlotRange;
-  range: SlotRange;
   current: number;
   /** The centred day, until the row scrolls. */
   day: ArchiveHeadingDay;
@@ -36,7 +35,7 @@ type Props = {
  * by id: the row's DOM stays the server's.
  */
 export function ArchiveHeading(
-  { bounds, range, current, day: initial, months }: Props,
+  { bounds, current, day: initial, months }: Props,
 ) {
   const day = useSignal(initial);
 
@@ -55,7 +54,6 @@ export function ArchiveHeading(
     scroller.current = attachArchiveScroller({
       row,
       bounds,
-      range,
       current,
       onCentre: (card) => {
         if (card.id === day.value.date) return;
