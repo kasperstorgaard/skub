@@ -2,13 +2,7 @@ import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 
 import { attachArchiveScroller } from "#/client/archive-scroller.ts";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CaretLeft,
-  CaretRight,
-  Icon,
-} from "#/components/icons.tsx";
+import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
 import type { SlotRange } from "#/game/date.ts";
 
 export type ArchiveHeadingDay = {
@@ -112,16 +106,18 @@ export function ArchiveHeading(
           </h1>
         </hgroup>
 
+        {/* A question over its answer, like the panel's credits */}
         {target && (
-          <a
-            href={`?date=${target.date}#${target.date}`}
-            // Styled like the panel's credit links
-            className="flex items-center gap-1 text-2 text-text-1"
-            onClick={onUnplayedClick}
-          >
-            <Icon icon={older === undefined ? ArrowRight : ArrowLeft} />
-            Unplayed
-          </a>
+          <p className="m-0 text-right type-meta text-text-2">
+            Missed one? <br />
+            <a
+              href={`?date=${target.date}#${target.date}`}
+              className="text-2 text-text-1"
+              onClick={onUnplayedClick}
+            >
+              Catch up
+            </a>
+          </p>
         )}
       </div>
 

@@ -58,10 +58,10 @@ batches until the scroll settled only moved the problem around.
   and lands on a card.
 - **No month links on mobile with JS**: the row is flicked through. Without JS
   the links stay, going to `?date=<month>-01`.
-- **"Unplayed" link** (styled like the panel's credit links, arrow before the
-  text) beside the date: the nearest unsolved puzzle before the
+- **"Missed one? / Catch up"** beside the date, a question over a link like
+  the panel's credits: the nearest unsolved puzzle before the
   centred day (the archive is usually played backwards), or after it if
-  there's none. The arrow points the way. It's a `?date=` link without JS;
+  there's none. It's a `?date=` link without JS;
   with JS it scrolls the row. The server passes the unsolved days with their
   dates, so the island needs no `Temporal` in the browser. A filter toggle
   was ruled out: dropping cards from the row changes its width, which is what
