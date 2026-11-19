@@ -90,9 +90,8 @@ On mobile only the centred card gets the purple `link` frame. The rest are
 `data-centred` attribute as the row scrolls; it changes colour only, never
 layout. Without JS every frame stays purple.
 
-Each card reuses `PuzzleCard` at a smaller size. The tagline is the short
-weekday and date (e.g. "Mon 9") plus the puzzle number. A day without a puzzle
-renders a muted placeholder of the same size, so the grid rhythm holds.
+Each card is `PuzzleCard size="lg"` with the puzzle number as its lead-in.
+Every day in the archive has a puzzle, so there's no empty-day placeholder.
 
 ### Removed
 
@@ -108,8 +107,8 @@ much going on.
   boundary, a week that spans a year boundary, and the current partial week.
 - Unit: `decodeBoard` round-trips `encodeBoard`, including a board without a
   puck or destination.
-- e2e: rewrite `archives_test.ts` around the carousel. Clicking a card lands on
-  the puzzle.
+- e2e: desktop only. Clicking the selected day's card lands on the puzzle, and
+  the previous month link shows that month. The mobile carousel isn't covered.
 
 ## Non-goals
 

@@ -12,3 +12,16 @@ Deno.test("archives — clicking the selected-day detail navigates to the puzzle
     await teardown();
   }
 });
+
+Deno.test("archives — the previous month link shows that month", async () => {
+  const { page, teardown } = await setup();
+  try {
+    const archivesPage = await new ArchivesPage(page).goto();
+    await archivesPage.clickPreviousMonth();
+    const lastMonth = Temporal.Now.plainDateISO().subtract({ months: 1 })
+      .toLocaleString("en", { month: "long" });
+    await expect(archivesPage.heading).toHaveText(new RegExp(`^${lastMonth}`));
+  } finally {
+    await teardown();
+  }
+});

@@ -7,14 +7,19 @@ import { BASE_URL } from "#/e2e/helpers.ts";
 export class ArchivesPage {
   constructor(private page: Page) {}
 
-  /** The month in view is the page's title. */
+  /** The selected day's date is the page's title. */
   get heading() {
     return this.page.getByRole("heading", { level: 1 });
   }
 
-  /** The calendar grid container. */
+  /** The desktop calendar and the selected day's card. */
+  get calendar() {
+    return this.page.getByRole("region", { name: "Calendar" });
+  }
+
+  /** The calendar's day cells. */
   get grid() {
-    return this.page.locator(".grid-cols-7").first();
+    return this.calendar.locator(".grid-cols-7");
   }
 
   /** Days that have a puzzle (interactive day links). */
@@ -24,9 +29,8 @@ export class ArchivesPage {
 
   /** The puzzle card link shown in the detail panel after selecting a day. */
   get selectedPuzzleLink() {
-    return this.page.locator(
-      "section a[href^='/puzzles/'], section a[href='/']",
-    ).first();
+    return this.calendar.locator("a[href^='/puzzles/'], a[href='/']")
+      .first();
   }
 
   async goto(opts?: Parameters<typeof this.page.goto>[1]) {
