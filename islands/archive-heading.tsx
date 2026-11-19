@@ -115,8 +115,8 @@ export function ArchiveHeading(
         {target && (
           <a
             href={`?date=${target.date}#${target.date}`}
-            className="btn"
-            data-variant="quiet"
+            // Styled like the panel's credit links
+            className="flex items-center gap-1 text-2 text-text-1"
             onClick={onUnplayedClick}
           >
             <Icon icon={older === undefined ? ArrowRight : ArrowLeft} />

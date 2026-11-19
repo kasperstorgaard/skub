@@ -41,12 +41,9 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
               number === current && "[scroll-initial-target:nearest]",
             )}
           >
-            /> )}
-
             {
               /* Off-screen cards skip rendering. Their height is kept under a
-                real card's, so the drawn cards in view set the row's height.
-                On the card, not the item, so the line in the gap isn't clipped */
+                real card's, so the drawn cards in view set the row's height */
             }
             <div className="[content-visibility:auto] [contain-intrinsic-size:auto_var(--col)_auto_var(--col)]">
               {puzzle

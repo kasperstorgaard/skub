@@ -58,8 +58,8 @@ batches until the scroll settled only moved the problem around.
   and lands on a card.
 - **No month links on mobile with JS**: the row is flicked through. Without JS
   the links stay, going to `?date=<month>-01`.
-- **"Unplayed" button** (a quiet `.btn`, arrow before the text) beside the
-  date: the nearest unsolved puzzle before the
+- **"Unplayed" link** (styled like the panel's credit links, arrow before the
+  text) beside the date: the nearest unsolved puzzle before the
   centred day (the archive is usually played backwards), or after it if
   there's none. The arrow points the way. It's a `?date=` link without JS;
   with JS it scrolls the row. The server passes the unsolved days with their
