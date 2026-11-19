@@ -79,7 +79,7 @@ export function ArchiveHeading(
   }
 
   return (
-    <div className="grid gap-fl-2">
+    <div className="grid gap-fl-3">
       {/* The date is the page's title; the year leads in */}
       <hgroup className="flex flex-col">
         <p className="text-3 tabular-nums text-text-2">
