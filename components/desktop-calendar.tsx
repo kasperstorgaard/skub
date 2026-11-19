@@ -2,6 +2,7 @@ import { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 
 import { Stars } from "#/components/stars.tsx";
+import { getPuzzleNumber } from "#/game/date.ts";
 import type { ScoreProgress } from "#/game/score.ts";
 import { PuzzleManifestEntry } from "#/game/types.ts";
 
@@ -28,23 +29,26 @@ export function DesktopCalendar({
     selectedDate.month,
     1,
   );
+  const firstNumber = getPuzzleNumber(firstOfMonth);
 
   return (
     <div className="grid grid-cols-7 auto-rows-[4.5rem] text-center lg:gap-1">
-      {Array.from({ length: firstOfMonth.dayOfWeek }).map((_, i) => (
+      {/* Weeks start on Monday: dayOfWeek runs Monday 1 to Sunday 7 */}
+      {Array.from({ length: firstOfMonth.dayOfWeek - 1 }).map((_, i) => (
         <div key={`empty-${i}`} />
       ))}
 
       {Array.from({ length: daysInMonth }).map((_, idx) => {
         const day = idx + 1;
-        const dayOfYear = firstOfMonth.dayOfYear + idx;
+        // The schedule's slot, not the day of the year, so it holds past 2026
+        const number = firstNumber + idx;
 
-        const entry = entries.find((item) => item.number === dayOfYear);
+        const entry = entries.find((item) => item.number === number);
 
         if (!entry) {
           return (
             <div
-              key={dayOfYear}
+              key={number}
               className={clsx(
                 "flex flex-col items-center justify-center rounded-1",
                 "border-1 border-surface-2 text-3 text-text-2 leading-none",
