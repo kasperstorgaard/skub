@@ -114,20 +114,14 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           />
 
           <div className="self-start">
-            {puzzle
-              ? (
-                <PuzzleCard
-                  puzzle={puzzle}
-                  score={props.state.score[puzzle.slug]}
-                  showPlay
-                  size="lg"
-                />
-              )
-              : (
-                <div className="border-1 border-surface-2 rounded-2 p-fl-2 text-text-2 text-3 grid place-content-center min-h-40 text-center">
-                  No puzzle on this day.
-                </div>
-              )}
+            {puzzle && (
+              <PuzzleCard
+                puzzle={puzzle}
+                score={props.state.score[puzzle.slug]}
+                showPlay
+                size="lg"
+              />
+            )}
           </div>
         </section>
       </Main>

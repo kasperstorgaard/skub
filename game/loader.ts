@@ -255,8 +255,8 @@ export async function getArchiveBounds(): Promise<SlotRange> {
   return { from: 1, to: last };
 }
 
-/** One archive day: its slot, and the puzzle on it if there is one. */
-export type ArchiveDay = { number: number; puzzle: Puzzle | null };
+/** One archive day: its slot and its puzzle. */
+export type ArchiveDay = { number: number; puzzle: Puzzle };
 
 /** The archive days in a run of slots, in order. */
 export async function listArchiveDays(
@@ -265,11 +265,12 @@ export async function listArchiveDays(
   const entries = await getAvailableEntries();
   const slugs = new Map(entries.map((entry) => [entry.number, entry.slug]));
 
-  return Promise.all(
+  const days = await Promise.all(
     Array.from({ length: range.to - range.from + 1 }, async (_, i) => {
       const number = range.from + i;
       const slug = slugs.get(number);
       return { number, puzzle: slug ? await getPuzzle(slug) : null };
     }),
   );
+  return days.filter((day): day is ArchiveDay => day.puzzle !== null);
 }
