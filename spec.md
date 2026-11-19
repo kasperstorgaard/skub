@@ -56,8 +56,10 @@ batches until the scroll settled only moved the problem around.
   loaded cards, so the edge of the loaded block stopped long flicks. With every
   card in the row that edge is gone, and a fling keeps its native distance
   and lands on a card.
-- **Month links scroll in place.** Every day is already there, so a month link
-  scrolls the row to that month's first day.
+- **The row names its months.** A month's first card has the month name above
+  it, and a faded line runs down the gap before it. Both scroll with the
+  cards. On mobile with JS this replaces the month links; without JS the links
+  stay, going to `?date=<month>-01`.
 - The same island renders the **month label**. It tracks the centred card
   (`data-date` on each card) and updates the date and month as you scroll.
   Once the scroll settles (`scrollend`, or 150ms of idle scrolling where it

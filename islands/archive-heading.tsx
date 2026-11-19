@@ -79,7 +79,7 @@ export function ArchiveHeading(
   }
 
   return (
-    <div className="grid gap-fl-3 max-lg:gap-fl-5 max-lg:mt-fl-2">
+    <div className="grid gap-fl-3">
       {/* The date is the page's title; the year leads in */}
       <hgroup className="flex flex-col">
         <p className="text-3 tabular-nums text-text-2">
@@ -91,7 +91,11 @@ export function ArchiveHeading(
         </h1>
       </hgroup>
 
-      <nav aria-label="Months" className="flex justify-between gap-fl-2">
+      {/* On mobile with JS the row names its months instead */}
+      <nav
+        aria-label="Months"
+        className="flex justify-between gap-fl-2 js:max-lg:hidden"
+      >
         <MonthLink
           month={months[index - 1]}
           direction="previous"

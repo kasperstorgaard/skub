@@ -24,6 +24,8 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
     <>
       {days.map(({ number, puzzle }) => {
         const date = getPuzzleDate(number);
+        // A month's first day carries its name, and a line in the gap before
+        const isMonthStart = date.day === 1 || number === days[0].number;
 
         return (
           <li
@@ -33,10 +35,7 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
             data-month={getMonthName(date)}
             data-year={date.year}
             className={clsx(
-              "snap-center min-w-0 list-none pl-0",
-              // Off-screen cards skip rendering. Their height is kept under a
-              // real card's, so the drawn cards in view set the row's height
-              "[content-visibility:auto] [contain-intrinsic-size:auto_var(--col)_auto_var(--col)]",
+              "relative flex flex-col gap-2 snap-center min-w-0 list-none pl-0",
               // Purple frames only on the centred card; all of them without JS
               "[--frame:var(--color-link)] js:[--frame:var(--color-surface-3)]",
               "data-centred:[--frame:var(--color-link)]",
@@ -44,25 +43,50 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
               number === current && "[scroll-initial-target:nearest]",
             )}
           >
-            {puzzle
-              ? (
-                <PuzzleCard
-                  puzzle={puzzle}
-                  score={score[puzzle.slug]}
-                  size="lg"
-                  deferThumbnail={number < drawn.from || number > drawn.to}
-                />
-              )
-              : (
-                <div className="flex flex-col gap-2 text-text-3">
-                  <div className="aspect-square border-2 border-surface-3 rounded-1" />
-                  <PuzzleCardCaption size="lg">
-                    <span className="text-5 font-3 leading-flat">
-                      No puzzle
-                    </span>
-                  </PuzzleCardCaption>
-                </div>
-              )}
+            {/* Every card keeps the label's line, so the row's tops align */}
+            <span
+              aria-hidden="true"
+              className="h-[1lh] text-3 leading-tight text-text-3 select-none"
+            >
+              {isMonthStart && getMonthName(date)}
+            </span>
+
+            {isMonthStart && date.day === 1 && (
+              <span
+                aria-hidden="true"
+                className={clsx(
+                  "absolute inset-y-0 left-[calc(var(--gap)_/_-2)] w-px",
+                  "bg-linear-to-b from-text-3/40 to-transparent",
+                )}
+              />
+            )}
+
+            {
+              /* Off-screen cards skip rendering. Their height is kept under a
+                real card's, so the drawn cards in view set the row's height.
+                On the card, not the item, so the line in the gap isn't clipped */
+            }
+            <div className="[content-visibility:auto] [contain-intrinsic-size:auto_var(--col)_auto_var(--col)]">
+              {puzzle
+                ? (
+                  <PuzzleCard
+                    puzzle={puzzle}
+                    score={score[puzzle.slug]}
+                    size="lg"
+                    deferThumbnail={number < drawn.from || number > drawn.to}
+                  />
+                )
+                : (
+                  <div className="flex flex-col gap-2 text-text-3">
+                    <div className="aspect-square border-2 border-surface-3 rounded-1" />
+                    <PuzzleCardCaption size="lg">
+                      <span className="text-5 font-3 leading-flat">
+                        No puzzle
+                      </span>
+                    </PuzzleCardCaption>
+                  </div>
+                )}
+            </div>
           </li>
         );
       })}
