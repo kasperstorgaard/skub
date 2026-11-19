@@ -2,7 +2,6 @@ import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 
 import { attachArchiveScroller } from "#/client/archive-scroller.ts";
-import { centredSlot, goToSlot } from "#/client/archive-signals.ts";
 import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
 import type { SlotRange } from "#/game/date.ts";
 
@@ -58,7 +57,6 @@ export function ArchiveHeading(
       current,
       onCentre: (card) => {
         if (card.id === day.value.date) return;
-        centredSlot.value = Number(card.dataset.number);
         day.value = {
           date: card.id,
           month: card.dataset.month ?? "",
@@ -66,12 +64,7 @@ export function ArchiveHeading(
         };
       },
     });
-    goToSlot.value = scroller.current.goTo;
-    return () => {
-      scroller.current?.detach();
-      goToSlot.value = null;
-      centredSlot.value = null;
-    };
+    return () => scroller.current?.detach();
   }, []);
 
   const dayOfMonth = Number(day.value.date.slice(8));
