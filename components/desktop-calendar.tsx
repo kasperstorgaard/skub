@@ -33,11 +33,6 @@ export function DesktopCalendar({
 
   return (
     <div className="grid grid-cols-7 auto-rows-[4.5rem] text-center lg:gap-1">
-      {/* Weeks start on Monday: dayOfWeek runs Monday 1 to Sunday 7 */}
-      {Array.from({ length: firstOfMonth.dayOfWeek - 1 }).map((_, i) => (
-        <div key={`empty-${i}`} />
-      ))}
-
       {Array.from({ length: daysInMonth }).map((_, idx) => {
         const day = idx + 1;
         // The schedule's slot, not the day of the year, so it holds past 2026
