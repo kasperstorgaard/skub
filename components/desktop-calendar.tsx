@@ -2,10 +2,11 @@ import { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 
 import { Stars } from "#/components/stars.tsx";
+import { getPuzzleNumber } from "#/game/date.ts";
 import type { ScoreProgress } from "#/game/score.ts";
 import { PuzzleManifestEntry } from "#/game/types.ts";
 
-type CalendarGridProps = {
+type DesktopCalendarProps = {
   href: Signal<string>;
   selectedDate: Temporal.PlainDate;
   bestMoves: Record<string, number>;
@@ -14,39 +15,37 @@ type CalendarGridProps = {
   entries: PuzzleManifestEntry[];
 };
 
-export function CalendarGrid({
+export function DesktopCalendar({
   href,
   selectedDate,
   bestMoves,
   score,
   today,
   entries,
-}: CalendarGridProps) {
+}: DesktopCalendarProps) {
   const daysInMonth = selectedDate.daysInMonth;
   const firstOfMonth = new Temporal.PlainDate(
     selectedDate.year,
     selectedDate.month,
     1,
   );
+  const firstNumber = getPuzzleNumber(firstOfMonth);
 
   return (
-    <div className="grid grid-cols-7 text-center lg:gap-1">
-      {Array.from({ length: firstOfMonth.dayOfWeek }).map((_, i) => (
-        <div key={`empty-${i}`} />
-      ))}
-
+    <div className="grid grid-cols-7 auto-rows-[4.5rem] text-center lg:gap-1">
       {Array.from({ length: daysInMonth }).map((_, idx) => {
         const day = idx + 1;
-        const dayOfYear = firstOfMonth.dayOfYear + idx;
+        // The schedule's slot, not the day of the year, so it holds past 2026
+        const number = firstNumber + idx;
 
-        const entry = entries.find((item) => item.number === dayOfYear);
+        const entry = entries.find((item) => item.number === number);
 
         if (!entry) {
           return (
             <div
-              key={dayOfYear}
+              key={number}
               className={clsx(
-                "flex flex-col items-center py-2 rounded-1",
+                "flex flex-col items-center justify-center rounded-1",
                 "border-1 border-surface-2 text-3 text-text-2 leading-none",
                 "slashed cursor-not-allowed",
               )}
@@ -54,6 +53,8 @@ export function CalendarGrid({
               <span className="flex items-center justify-center w-7 h-7 rounded-round font-medium leading-none">
                 {day}
               </span>
+              {/* The stars' row, so numbers line up with solved days */}
+              <span className="h-[1em] text-2" aria-hidden="true" />
             </div>
           );
         }
@@ -80,7 +81,7 @@ export function CalendarGrid({
             aria-current={isActive || undefined}
             autoFocus={isActive}
             className={clsx(
-              "flex flex-col items-center justify-center py-2",
+              "flex flex-col items-center justify-center",
               "no-underline text-3 leading-none text-text-1 border-1 border-surface-2 transition-colors",
               "lg:rounded-1",
               // The stars cut their gaps in the cell's own background.

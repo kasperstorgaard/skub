@@ -1,6 +1,11 @@
 import { assertEquals } from "@std/assert";
 
-import { getPuzzleNumber, getWeekPuzzleNumbers } from "./date.ts";
+import {
+  getPuzzleDate,
+  getPuzzleNumber,
+  getWeekPuzzleNumbers,
+  getWeekRange,
+} from "./date.ts";
 
 Deno.test("getPuzzleNumber - the start date is slot 1", () => {
   assertEquals(getPuzzleNumber(new Date(2026, 0, 1)), 1);
@@ -38,5 +43,35 @@ Deno.test("getWeekPuzzleNumbers() starts a week on its Monday", () => {
   assertEquals(
     getWeekPuzzleNumbers(Temporal.PlainDate.from("2026-11-02")).from,
     getPuzzleNumber(Temporal.PlainDate.from("2026-11-02")),
+  );
+});
+
+Deno.test("getPuzzleDate() is the date of a slot", () => {
+  assertEquals(getPuzzleDate(366).toString(), "2027-01-01");
+});
+
+Deno.test("getWeekRange() is the Monday-to-Sunday week of a date", () => {
+  const bounds = { from: 1, to: 1000 };
+  assertEquals(
+    getWeekRange(Temporal.PlainDate.from("2026-11-07"), bounds),
+    getWeekPuzzleNumbers(Temporal.PlainDate.from("2026-11-07")),
+  );
+});
+
+Deno.test("getWeekRange() starts the first week at slot 1", () => {
+  // 1 January 2026 is a Thursday: its Monday is before the schedule.
+  const bounds = { from: 1, to: 1000 };
+  assertEquals(
+    getWeekRange(Temporal.PlainDate.from("2026-01-01"), bounds).from,
+    1,
+  );
+});
+
+Deno.test("getWeekRange() stops the current week at the last slot", () => {
+  // Monday 9 November 2026 is slot 313.
+  const bounds = { from: 1, to: 313 };
+  assertEquals(
+    getWeekRange(Temporal.PlainDate.from("2026-11-09"), bounds),
+    { from: 313, to: 313 },
   );
 });

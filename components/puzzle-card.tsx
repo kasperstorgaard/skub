@@ -4,6 +4,7 @@ import { AnchorHTMLAttributes } from "preact";
 import { Icon, Play } from "#/components/icons.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { Thumbnail } from "#/components/thumbnail.tsx";
+import { encodeBoard } from "#/game/board.ts";
 import type { ScoreKind } from "#/game/score.ts";
 import type { Puzzle } from "#/game/types.ts";
 
@@ -15,6 +16,13 @@ export type PuzzleCardProps =
     score?: ScoreKind[];
     tagline?: string;
     showPlay?: boolean;
+    /** `lg` for a card standing on its own, e.g. the calendar's selected day. */
+    size?: "md" | "lg";
+    /**
+     * An empty box carrying the encoded board instead of the drawing, for a
+     * script to draw it in when it nears view.
+     */
+    deferThumbnail?: boolean;
   };
 
 /**
@@ -30,6 +38,8 @@ export function PuzzleCard({
   score = [],
   tagline,
   showPlay,
+  size = "md",
+  deferThumbnail,
   className,
   ...rest
 }: PuzzleCardProps) {
@@ -48,10 +58,19 @@ export function PuzzleCard({
           "group-hover:filter-[lighten(1.3)] transition-colors",
         )}
       >
-        <Thumbnail
-          board={puzzle.board}
-          className="basis-0 grow aspect-square h-full"
-        />
+        {deferThumbnail
+          ? (
+            <div
+              data-board={encodeBoard(puzzle.board).join(",")}
+              className="basis-0 grow aspect-square"
+            />
+          )
+          : (
+            <Thumbnail
+              board={puzzle.board}
+              className="basis-0 grow aspect-square h-full"
+            />
+          )}
 
         {showPlay && (
           <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -64,7 +83,10 @@ export function PuzzleCard({
 
         <Stars
           kinds={score}
-          className="absolute top-0 right-0 p-2 py-2.5 text-4"
+          className={clsx(
+            "absolute top-0 right-0 p-2 py-2.5",
+            size === "lg" ? "text-5" : "text-4",
+          )}
         />
       </div>
 
@@ -73,8 +95,15 @@ export function PuzzleCard({
         tagline={[tagline, puzzle.number && `#${puzzle.number}`]
           .filter(Boolean)
           .join(" ")}
+        size={size}
       >
-        <span className="type-title">{puzzle.name}</span>
+        <span
+          className={size === "lg"
+            ? "text-5 font-3 leading-flat"
+            : "type-title"}
+        >
+          {puzzle.name}
+        </span>
       </PuzzleCardCaption>
     </a>
   );
@@ -82,19 +111,21 @@ export function PuzzleCard({
 
 type PuzzleCardCaptionProps = {
   tagline?: string;
+  size?: "md" | "lg";
   children: preact.ComponentChildren;
 };
 
 /** The lead and title under a card's thumbnail. */
 export function PuzzleCardCaption(
-  { tagline, children }: PuzzleCardCaptionProps,
+  { tagline, size = "md", children }: PuzzleCardCaptionProps,
 ) {
   return (
     <div className="flex flex-col">
       {tagline && (
         <span
           className={clsx(
-            "puzzle-card-tagline type-meta [font-weight:300] leading-tight text-text-2",
+            "puzzle-card-tagline [font-weight:300] leading-tight text-text-2",
+            size === "lg" ? "text-3" : "type-meta",
             "group-hover:text-current",
           )}
         >

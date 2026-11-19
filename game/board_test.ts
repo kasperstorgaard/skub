@@ -2,6 +2,8 @@ import { assertEquals, assertObjectMatch, assertThrows } from "@std/assert";
 
 import {
   BoardError,
+  decodeBoard,
+  encodeBoard,
   flipBoard,
   getGrid,
   getMoveSlide,
@@ -1470,4 +1472,36 @@ Deno.test("isReadyToSolve() should say yes once a puck has a destination", () =>
   });
 
   assertEquals(result, true);
+});
+
+Deno.test("decodeBoard() restores a board with every kind of cell", () => {
+  const board = {
+    destination: { x: 3, y: 5 },
+    pieces: [
+      { x: 6, y: 1, type: "puck" as const },
+      { x: 1, y: 1, type: "blocker" as const },
+      { x: 2, y: 6, type: "blocker" as const },
+    ],
+    walls: [
+      { x: 1, y: 2, orientation: "vertical" as const },
+      { x: 4, y: 5, orientation: "horizontal" as const },
+    ],
+    holes: [{ x: 7, y: 7 }],
+    portals: [{ x: 0, y: 3 }, { x: 5, y: 0 }],
+  };
+
+  assertEquals(isBoardSame(decodeBoard(encodeBoard(board)), board), true);
+});
+
+Deno.test("decodeBoard() leaves out a missing puck and destination", () => {
+  const board = {
+    pieces: [{ x: 2, y: 2, type: "blocker" as const }],
+    walls: [],
+    holes: [],
+    portals: [],
+  };
+
+  const decoded = decodeBoard(encodeBoard(board));
+  assertEquals(decoded.destination, undefined);
+  assertEquals(decoded.pieces, board.pieces);
 });

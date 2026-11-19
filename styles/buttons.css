@@ -73,6 +73,18 @@
     text-decoration: none;
   }
 
+  /* Quiet: a neutral frame, for secondary navigation beside purple content */
+  .btn[data-variant="quiet"] {
+    color: var(--color-text-2);
+    border-color: var(--color-surface-3);
+    background-color: transparent;
+  }
+
+  .btn[data-variant="quiet"]:is(:hover, :focus):not([disabled], [aria-disabled]) {
+    color: var(--color-text-1);
+    background-color: var(--color-surface-2);
+  }
+
   .btn:is([disabled], [aria-disabled]),
   .icon-btn:is([disabled], [aria-disabled]) {
     filter: opacity(0.4);
@@ -153,6 +165,23 @@
       &:is([disabled], [aria-disabled])::before {
         background: var(--color-surface-4);
         filter: none;
+      }
+
+      /* Quiet: a flat neutral ring, no pearl and no purple fill */
+      &.btn[data-variant="quiet"] {
+        background-color: transparent;
+
+        &::before {
+          background: var(--color-surface-3);
+        }
+
+        &:is(:hover, :focus):not([disabled], [aria-disabled]) {
+          background-color: var(--color-surface-2);
+
+          &::before {
+            background: var(--color-surface-4);
+          }
+        }
       }
     }
   }

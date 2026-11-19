@@ -182,6 +182,39 @@ export function encodeBoard(board: Board): number[] {
   ];
 }
 
+/** The inverse of {@link encodeBoard}, up to piece and wall order. */
+export function decodeBoard(encoding: number[]): Board {
+  const toPosition = (code: number) => ({
+    x: code % COLS,
+    y: Math.floor(code / COLS),
+  });
+  const [puckPos, destPos] = encoding;
+  const walls = encoding.indexOf(255);
+  const holes = encoding.indexOf(254);
+  const portals = encoding.indexOf(253);
+
+  const pieces: Piece[] = [
+    ...(puckPos === GONE
+      ? []
+      : [{ ...toPosition(puckPos), type: "puck" as const }]),
+    ...encoding.slice(2, walls).map((code) => ({
+      ...toPosition(code),
+      type: "blocker" as const,
+    })),
+  ];
+
+  return {
+    destination: destPos === GONE ? undefined : toPosition(destPos),
+    pieces,
+    walls: encoding.slice(walls + 1, holes).map((code) => ({
+      ...toPosition(code >> 1),
+      orientation: code & 1 ? "vertical" : "horizontal",
+    })),
+    holes: encoding.slice(holes + 1, portals).map(toPosition),
+    portals: encoding.slice(portals + 1).map(toPosition),
+  };
+}
+
 /**
  * Checks if two boards are the same layout, piece and wall order aside.
  * @param src The source board
