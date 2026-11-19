@@ -106,18 +106,18 @@ export function ArchiveHeading(
           </h1>
         </hgroup>
 
-        {/* A question over its answer, like the panel's credits */}
+        {/* A nudge: a line of text over its button */}
         {target && (
-          <p className="m-0 text-right type-meta text-text-2">
-            Missed one? <br />
+          <aside className="flex flex-col items-center gap-2 text-text-2">
+            <p className="m-0 leading-snug">Missed one?</p>
             <a
               href={`?date=${target.date}#${target.date}`}
-              className="text-2 text-text-1"
+              className="btn"
               onClick={onUnplayedClick}
             >
               Catch up
             </a>
-          </p>
+          </aside>
         )}
       </div>
 
