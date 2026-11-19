@@ -57,6 +57,8 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
           // Three rows on mobile: the desktop calendar's row would be an empty
           // gap above the panel
           "items-stretch place-content-stretch",
+          // The month links sit close over the row; the heading makes the room
+          "max-lg:gap-y-fl-2",
           "lg:max-w-3xl!",
         )}
       >
@@ -86,7 +88,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             // Lets the first and last cards centre too
             "[--pad:calc((100dvw_-_var(--col))_/_2)]",
             // Any spare height goes above the row, not between it and the panel
-            "self-end mt-fl-5",
+            "self-end",
             "lg:hidden",
           )}
         >
