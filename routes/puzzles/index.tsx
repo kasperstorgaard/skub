@@ -83,6 +83,8 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             "[--col:min((100dvw_-_2_*_var(--gap))_/_1.4,24rem)]",
             // Lets the first and last cards centre too
             "[--pad:calc((100dvw_-_var(--col))_/_2)]",
+            // Sits on the page's foot, within thumb reach; the heading stays up
+            "self-end",
             "lg:hidden",
           )}
         >
