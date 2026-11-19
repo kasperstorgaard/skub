@@ -24,8 +24,6 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
     <>
       {days.map(({ number, puzzle }) => {
         const date = getPuzzleDate(number);
-        // A faded line in the gap before each month's first day
-        const isMonthStart = date.day === 1 && number !== days[0].number;
 
         return (
           <li
@@ -35,7 +33,7 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
             data-month={getMonthName(date)}
             data-year={date.year}
             className={clsx(
-              "relative snap-center min-w-0 list-none pl-0",
+              "snap-center min-w-0 list-none pl-0",
               // Purple frames only on the centred card; all of them without JS
               "[--frame:var(--color-link)] js:[--frame:var(--color-surface-3)]",
               "data-centred:[--frame:var(--color-link)]",
@@ -43,15 +41,7 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
               number === current && "[scroll-initial-target:nearest]",
             )}
           >
-            {isMonthStart && (
-              <span
-                aria-hidden="true"
-                className={clsx(
-                  "absolute inset-y-0 left-[calc(var(--gap)_/_-2)] w-px",
-                  "bg-linear-to-b from-text-3/40 to-transparent",
-                )}
-              />
-            )}
+            /> )}
 
             {
               /* Off-screen cards skip rendering. Their height is kept under a

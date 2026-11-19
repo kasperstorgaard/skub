@@ -2,7 +2,13 @@ import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 
 import { attachArchiveScroller } from "#/client/archive-scroller.ts";
-import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CaretLeft,
+  CaretRight,
+  Icon,
+} from "#/components/icons.tsx";
 import type { SlotRange } from "#/game/date.ts";
 
 export type ArchiveHeadingDay = {
@@ -109,16 +115,17 @@ export function ArchiveHeading(
         {target && (
           <a
             href={`?date=${target.date}#${target.date}`}
-            className="inline-flex items-center gap-1 text-3 text-text-2 no-underline hover:text-link"
+            className="btn"
+            data-variant="quiet"
             onClick={onUnplayedClick}
           >
+            <Icon icon={older === undefined ? ArrowRight : ArrowLeft} />
             Unplayed
-            <Icon icon={older === undefined ? CaretRight : CaretLeft} />
           </a>
         )}
       </div>
 
-      {/* On mobile with JS the row's month lines stand in */}
+      {/* On mobile with JS the row is flicked through instead */}
       <nav
         aria-label="Months"
         className="flex justify-between gap-fl-2 js:max-lg:hidden"

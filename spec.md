@@ -56,13 +56,12 @@ batches until the scroll settled only moved the problem around.
   loaded cards, so the edge of the loaded block stopped long flicks. With every
   card in the row that edge is gone, and a fling keeps its native distance
   and lands on a card.
-- **The row marks its months.** A faded line runs down the gap before each
-  month's first card and scrolls with the cards. On mobile with JS this
-  replaces the month links; without JS the links stay, going to
-  `?date=<month>-01`.
-- **"Unplayed" link** beside the date: the nearest unsolved puzzle before the
+- **No month links on mobile with JS**: the row is flicked through. Without JS
+  the links stay, going to `?date=<month>-01`.
+- **"Unplayed" button** (a quiet `.btn`, arrow before the text) beside the
+  date: the nearest unsolved puzzle before the
   centred day (the archive is usually played backwards), or after it if
-  there's none. The caret points the way. It's a `?date=` link without JS;
+  there's none. The arrow points the way. It's a `?date=` link without JS;
   with JS it scrolls the row. The server passes the unsolved days with their
   dates, so the island needs no `Temporal` in the browser. A filter toggle
   was ruled out: dropping cards from the row changes its width, which is what
