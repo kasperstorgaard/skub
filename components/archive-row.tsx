@@ -34,8 +34,9 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
             data-year={date.year}
             className={clsx(
               "snap-center min-w-0 list-none pl-0",
-              // Off-screen cards skip rendering; their size is known
-              "[content-visibility:auto] [contain-intrinsic-size:auto_var(--col)_auto_calc(var(--col)_*_1.35)]",
+              // Off-screen cards skip rendering. Their height is kept under a
+              // real card's, so the drawn cards in view set the row's height
+              "[content-visibility:auto] [contain-intrinsic-size:auto_var(--col)_auto_var(--col)]",
               // Purple frames only on the centred card; all of them without JS
               "[--frame:var(--color-link)] js:[--frame:var(--color-surface-3)]",
               "data-centred:[--frame:var(--color-link)]",

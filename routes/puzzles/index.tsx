@@ -54,7 +54,9 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
     <>
       <Main
         className={clsx(
-          "max-lg:row-span-full items-stretch place-content-stretch",
+          // Three rows on mobile: the desktop calendar's row would be an empty
+          // gap above the panel
+          "items-stretch place-content-stretch",
           "lg:max-w-3xl!",
         )}
       >
@@ -83,7 +85,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             "[--col:min((100dvw_-_2_*_var(--gap))_/_1.4,24rem)]",
             // Lets the first and last cards centre too
             "[--pad:calc((100dvw_-_var(--col))_/_2)]",
-            // Sits on the page's foot, within thumb reach; the heading stays up
+            // Any spare height goes above the row, not between it and the panel
             "self-end",
             "lg:hidden",
           )}
