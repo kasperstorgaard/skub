@@ -27,6 +27,8 @@ type Props = {
   /** The centred day, until the row scrolls. */
   day: ArchiveHeadingDay;
   months: ArchiveMonth[];
+  /** Days with a puzzle the player hasn't solved, oldest first. */
+  unplayed: { number: number; date: string }[];
 };
 
 /**
@@ -35,9 +37,10 @@ type Props = {
  * by id: the row's DOM stays the server's.
  */
 export function ArchiveHeading(
-  { bounds, current, day: initial, months }: Props,
+  { bounds, current, day: initial, months, unplayed }: Props,
 ) {
   const day = useSignal(initial);
+  const slot = useSignal(current);
 
   // A client navigation brings a new day
   useEffect(() => {
@@ -57,6 +60,7 @@ export function ArchiveHeading(
       current,
       onCentre: (card) => {
         if (card.id === day.value.date) return;
+        slot.value = Number(card.dataset.number);
         day.value = {
           date: card.id,
           month: card.dataset.month ?? "",
@@ -78,20 +82,43 @@ export function ArchiveHeading(
     scroller.current.goTo(month.number);
   }
 
+  // Back through the archive first, the way it's usually played; then newer
+  const older = unplayed.findLast(({ number }) => number < slot.value);
+  const target = older ?? unplayed.find(({ number }) => number > slot.value);
+
+  function onUnplayedClick(event: MouseEvent) {
+    if (!scroller.current || !target) return;
+    event.preventDefault();
+    scroller.current.goTo(target.number);
+  }
+
   return (
     <div className="grid gap-fl-3">
-      {/* The date is the page's title; the year leads in */}
-      <hgroup className="flex flex-col">
-        <p className="text-3 tabular-nums text-text-2">
-          {day.value.year}
-        </p>
-        <h1 className="text-brand text-7 leading-flat">
-          {day.value.month}
-          <span className="ml-[0.25em]">{dayOfMonth}</span>
-        </h1>
-      </hgroup>
+      <div className="flex items-end justify-between gap-fl-2">
+        {/* The date is the page's title; the year leads in */}
+        <hgroup className="flex flex-col">
+          <p className="text-3 tabular-nums text-text-2">
+            {day.value.year}
+          </p>
+          <h1 className="text-brand text-7 leading-flat">
+            {day.value.month}
+            <span className="ml-[0.25em]">{dayOfMonth}</span>
+          </h1>
+        </hgroup>
 
-      {/* On mobile with JS the row names its months instead */}
+        {target && (
+          <a
+            href={`?date=${target.date}#${target.date}`}
+            className="inline-flex items-center gap-1 text-3 text-text-2 no-underline hover:text-link"
+            onClick={onUnplayedClick}
+          >
+            Unplayed
+            <Icon icon={older === undefined ? CaretRight : CaretLeft} />
+          </a>
+        )}
+      </div>
+
+      {/* On mobile with JS the row's month lines stand in */}
       <nav
         aria-label="Months"
         className="flex justify-between gap-fl-2 js:max-lg:hidden"

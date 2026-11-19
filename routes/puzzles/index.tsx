@@ -71,6 +71,11 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             year: date.year,
           }}
           months={getMonths(bounds)}
+          unplayed={days.flatMap(({ number, puzzle }) =>
+            puzzle && !props.state.score[puzzle.slug]?.length
+              ? [{ number, date: getPuzzleDate(number).toString() }]
+              : []
+          )}
         />
 
         <ol
@@ -86,7 +91,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             // Lets the first and last cards centre too
             "[--pad:calc((100dvw_-_var(--col))_/_2)]",
             // Any spare height goes above the row, not between it and the panel
-            "self-end",
+            "self-end max-lg:mt-fl-3",
             "lg:hidden",
           )}
         >

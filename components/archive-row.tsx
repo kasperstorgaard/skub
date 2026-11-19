@@ -24,8 +24,8 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
     <>
       {days.map(({ number, puzzle }) => {
         const date = getPuzzleDate(number);
-        // A month's first day carries its name, and a line in the gap before
-        const isMonthStart = date.day === 1 || number === days[0].number;
+        // A faded line in the gap before each month's first day
+        const isMonthStart = date.day === 1 && number !== days[0].number;
 
         return (
           <li
@@ -35,7 +35,7 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
             data-month={getMonthName(date)}
             data-year={date.year}
             className={clsx(
-              "relative flex flex-col gap-2 snap-center min-w-0 list-none pl-0",
+              "relative snap-center min-w-0 list-none pl-0",
               // Purple frames only on the centred card; all of them without JS
               "[--frame:var(--color-link)] js:[--frame:var(--color-surface-3)]",
               "data-centred:[--frame:var(--color-link)]",
@@ -43,15 +43,7 @@ export function ArchiveDays({ days, score, current, drawn }: ArchiveDaysProps) {
               number === current && "[scroll-initial-target:nearest]",
             )}
           >
-            {/* Every card keeps the label's line, so the row's tops align */}
-            <span
-              aria-hidden="true"
-              className="h-[1lh] text-3 leading-tight text-text-3 select-none"
-            >
-              {isMonthStart && getMonthName(date)}
-            </span>
-
-            {isMonthStart && date.day === 1 && (
+            {isMonthStart && (
               <span
                 aria-hidden="true"
                 className={clsx(
