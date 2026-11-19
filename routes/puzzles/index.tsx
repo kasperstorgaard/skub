@@ -25,6 +25,7 @@ import {
   ArchiveHeading,
   type ArchiveMonth,
 } from "#/islands/archive-heading.tsx";
+import { ArchiveNudge } from "#/islands/archive-nudge.tsx";
 
 export const handler = define.handlers({
   async GET(ctx) {
@@ -71,37 +72,45 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             year: date.year,
           }}
           months={getMonths(bounds)}
-          unplayed={days.flatMap(({ number, puzzle }) =>
-            puzzle && !props.state.score[puzzle.slug]?.length
-              ? [{ number, date: getPuzzleDate(number).toString() }]
-              : []
-          )}
         />
 
-        <ol
-          id="archive-row"
-          aria-label="Puzzles by day"
-          className={clsx(
-            // Full bleed, a card centred with 0.2 of each neighbour showing,
-            // capped for wide phones and tablets
-            "relative grid grid-flow-col auto-cols-(--col) gap-(--gap) w-dvw ml-[calc(50%_-_50dvw)] m-0 py-2 px-(--pad)",
-            "overflow-x-auto overscroll-x-contain snap-x snap-mandatory no-scrollbar",
-            "[--gap:var(--size-fluid-4)]",
-            "[--col:min((100dvw_-_2_*_var(--gap))_/_1.4,24rem)]",
-            // Lets the first and last cards centre too
-            "[--pad:calc((100dvw_-_var(--col))_/_2)]",
-            // Any spare height goes above the row, not between it and the panel
-            "self-end max-lg:mt-fl-3",
-            "lg:hidden",
-          )}
-        >
-          <ArchiveDays
-            days={days}
-            score={props.state.score}
-            current={current}
-            drawn={drawn}
-          />
-        </ol>
+        {/* The row with its nudge underneath, kept to the page's foot */}
+        <div className="self-end grid lg:hidden">
+          <ol
+            id="archive-row"
+            aria-label="Puzzles by day"
+            className={clsx(
+              // Full bleed, a card centred with 0.2 of each neighbour showing,
+              // capped for wide phones and tablets
+              "relative grid grid-flow-col auto-cols-(--col) gap-(--gap) w-dvw ml-[calc(50%_-_50dvw)] m-0 py-2 px-(--pad)",
+              "overflow-x-auto overscroll-x-contain snap-x snap-mandatory no-scrollbar",
+              "[--gap:var(--size-fluid-4)]",
+              "[--col:min((100dvw_-_2_*_var(--gap))_/_1.4,24rem)]",
+              // Lets the first and last cards centre too
+              "[--pad:calc((100dvw_-_var(--col))_/_2)]",
+              "max-lg:mt-fl-3",
+            )}
+          >
+            <ArchiveDays
+              days={days}
+              score={props.state.score}
+              current={current}
+              drawn={drawn}
+            />
+          </ol>
+
+          {/* The puzzle page's nudge spot, under the board */}
+          <div className="max-w-2xs mx-auto mt-fl-2 empty:hidden">
+            <ArchiveNudge
+              current={current}
+              unplayed={days.flatMap(({ number, puzzle }) =>
+                puzzle && !props.state.score[puzzle.slug]?.length
+                  ? [{ number, date: getPuzzleDate(number).toString() }]
+                  : []
+              )}
+            />
+          </div>
+        </div>
 
         <section
           f-client-nav

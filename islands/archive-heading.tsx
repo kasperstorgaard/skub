@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 
 import { attachArchiveScroller } from "#/client/archive-scroller.ts";
+import { centredSlot, goToSlot } from "#/client/archive-signals.ts";
 import { CaretLeft, CaretRight, Icon } from "#/components/icons.tsx";
 import type { SlotRange } from "#/game/date.ts";
 
@@ -27,8 +28,6 @@ type Props = {
   /** The centred day, until the row scrolls. */
   day: ArchiveHeadingDay;
   months: ArchiveMonth[];
-  /** Days with a puzzle the player hasn't solved, oldest first. */
-  unplayed: { number: number; date: string }[];
 };
 
 /**
@@ -37,10 +36,9 @@ type Props = {
  * by id: the row's DOM stays the server's.
  */
 export function ArchiveHeading(
-  { bounds, current, day: initial, months, unplayed }: Props,
+  { bounds, current, day: initial, months }: Props,
 ) {
   const day = useSignal(initial);
-  const slot = useSignal(current);
 
   // A client navigation brings a new day
   useEffect(() => {
@@ -60,7 +58,7 @@ export function ArchiveHeading(
       current,
       onCentre: (card) => {
         if (card.id === day.value.date) return;
-        slot.value = Number(card.dataset.number);
+        centredSlot.value = Number(card.dataset.number);
         day.value = {
           date: card.id,
           month: card.dataset.month ?? "",
@@ -68,7 +66,12 @@ export function ArchiveHeading(
         };
       },
     });
-    return () => scroller.current?.detach();
+    goToSlot.value = scroller.current.goTo;
+    return () => {
+      scroller.current?.detach();
+      goToSlot.value = null;
+      centredSlot.value = null;
+    };
   }, []);
 
   const dayOfMonth = Number(day.value.date.slice(8));
@@ -82,44 +85,18 @@ export function ArchiveHeading(
     scroller.current.goTo(month.number);
   }
 
-  // Back through the archive first, the way it's usually played; then newer
-  const older = unplayed.findLast(({ number }) => number < slot.value);
-  const target = older ?? unplayed.find(({ number }) => number > slot.value);
-
-  function onUnplayedClick(event: MouseEvent) {
-    if (!scroller.current || !target) return;
-    event.preventDefault();
-    scroller.current.goTo(target.number);
-  }
-
   return (
     <div className="grid gap-fl-3">
-      <div className="flex items-end justify-between gap-fl-2">
-        {/* The date is the page's title; the year leads in */}
-        <hgroup className="flex flex-col">
-          <p className="text-3 tabular-nums text-text-2">
-            {day.value.year}
-          </p>
-          <h1 className="text-brand text-7 leading-flat">
-            {day.value.month}
-            <span className="ml-[0.25em]">{dayOfMonth}</span>
-          </h1>
-        </hgroup>
-
-        {/* A nudge: a line of text over its button */}
-        {target && (
-          <aside className="flex flex-col items-center gap-2 text-text-2">
-            <p className="m-0 leading-snug">Missed one?</p>
-            <a
-              href={`?date=${target.date}#${target.date}`}
-              className="btn"
-              onClick={onUnplayedClick}
-            >
-              Catch up
-            </a>
-          </aside>
-        )}
-      </div>
+      {/* The date is the page's title; the year leads in */}
+      <hgroup className="flex flex-col">
+        <p className="text-3 tabular-nums text-text-2">
+          {day.value.year}
+        </p>
+        <h1 className="text-brand text-7 leading-flat">
+          {day.value.month}
+          <span className="ml-[0.25em]">{dayOfMonth}</span>
+        </h1>
+      </hgroup>
 
       {/* On mobile with JS the row is flicked through instead */}
       <nav

@@ -58,14 +58,16 @@ batches until the scroll settled only moved the problem around.
   and lands on a card.
 - **No month links on mobile with JS**: the row is flicked through. Without JS
   the links stay, going to `?date=<month>-01`.
-- **"Missed one? / Catch up"** beside the date, in the nudges' style (a
-  line of text over a `.btn`): the nearest unsolved puzzle before the
-  centred day (the archive is usually played backwards), or after it if
-  there's none. It's a `?date=` link without JS;
-  with JS it scrolls the row. The server passes the unsolved days with their
-  dates, so the island needs no `Temporal` in the browser. A filter toggle
-  was ruled out: dropping cards from the row changes its width, which is what
-  made flicks inconsistent.
+- **"Missed one? / Catch up"** under the row, in the puzzle page's nudge
+  spot and style (a line of text over a `.btn`): the nearest unsolved puzzle
+  before the centred day (the archive is usually played backwards), or after
+  it if there's none. It's a `?date=` link without JS; with JS it scrolls the
+  row. It's its own island, sharing the centred slot and the row's `goTo`
+  with the heading through module signals. The server passes the unsolved
+  days with their dates, so no `Temporal` is needed in the browser. A filter
+  toggle was ruled out: dropping cards from the row changes its width, which
+  is what made flicks inconsistent. Tried above the row, beside the date: it
+  never sat right there.
 - The same island renders the **month label**. It tracks the centred card
   (`data-date` on each card) and updates the date and month as you scroll.
   Once the scroll settles (`scrollend`, or 150ms of idle scrolling where it
