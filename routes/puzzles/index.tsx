@@ -86,7 +86,7 @@ export default define.page<typeof handler>(function PuzzlesPage(props) {
             // Lets the first and last cards centre too
             "[--pad:calc((100dvw_-_var(--col))_/_2)]",
             // Any spare height goes above the row, not between it and the panel
-            "self-end",
+            "self-end mt-fl-5",
             "lg:hidden",
           )}
         >
