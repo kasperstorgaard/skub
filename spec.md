@@ -52,7 +52,10 @@ batches until the scroll settled only moved the problem around.
 - **Drawn boards stay.** Nothing is unloaded; `content-visibility: auto` on the
   cards (with a `contain-intrinsic-size` from the column width) skips painting
   the ones off screen.
-- **Proximity snapping**, as before.
+- **Mandatory snapping.** It was dropped once because it only stopped on
+  loaded cards, so the edge of the loaded block stopped long flicks. With every
+  card in the row that edge is gone, and a fling keeps its native distance
+  and lands on a card.
 - **Month links scroll in place.** Every day is already there, so a month link
   scrolls the row to that month's first day.
 - The same island renders the **month label**. It tracks the centred card
