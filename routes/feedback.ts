@@ -125,9 +125,7 @@ async function sendFeedbackEmail(email: FeedbackEmail) {
   await sendEmail({
     from: FEEDBACK_FROM,
     to,
-    subject: email.rating
-      ? `Rating: ${about} (${email.rating})`
-      : `Feedback: ${about}`,
+    subject: email.rating ? `Rating: ${about}` : `Feedback: ${about}`,
     replyTo: email.replyTo,
     text: [
       `About: ${about}`,
