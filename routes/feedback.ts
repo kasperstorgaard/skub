@@ -50,9 +50,13 @@ export const handler = define.handlers({
     if (!rating && !message) return respond("failed");
 
     // A logged-in player chooses whether to be named; a guest by typing an email.
+    // Only with a message: a bare rating has nothing to reply to.
     const user = ctx.state.user;
-    const identified = !user.email || form.has("include_email");
-    const replyTo = user.email
+    // Unchecking "include my email" (only offered with a message) also unnames.
+    const identified = !user.email || !message || form.has("include_email");
+    const replyTo = !message
+      ? undefined
+      : user.email
       ? (identified ? user.email : undefined)
       : toEmail(form.get("email"));
 

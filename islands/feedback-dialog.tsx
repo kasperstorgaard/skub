@@ -47,6 +47,9 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
   // Nothing to send until a rating is picked or a line written. Only once
   // hydrated: without JS the server answers an empty send instead.
   const [isEmpty, setIsEmpty] = useState(false);
+  // A reply address only matters with a message to reply to. Without JS it's
+  // always shown, and the server drops it when there's no message.
+  const [hasMessage, setHasMessage] = useState(true);
 
   const onLocationUpdated = useCallback((url: URL) => {
     href.value = url.href;
@@ -60,7 +63,10 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
   const step = params.get("dialog");
   const source = (params.get("from") ?? "panel") as FeedbackSource;
 
-  useEffect(() => setIsEmpty(true), [step]);
+  useEffect(() => {
+    setIsEmpty(true);
+    setHasMessage(false);
+  }, [step]);
 
   /** The page as it was before the dialog opened. */
   const closeHref = useMemo(() => {
@@ -155,10 +161,9 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
         onSubmit={onSubmit}
         onInput={(event) => {
           const form = new FormData(event.currentTarget);
-          setIsEmpty(
-            !form.get("difficulty") && !form.get("liked") &&
-              !form.get("message")?.toString().trim(),
-          );
+          const message = !!form.get("message")?.toString().trim();
+          setHasMessage(message);
+          setIsEmpty(!form.get("difficulty") && !form.get("liked") && !message);
         }}
       >
         <input type="hidden" name="return" value={closeHref} />
@@ -225,7 +230,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
           />
         </label>
 
-        {userEmail
+        {hasMessage && (userEmail
           ? (
             <label className="flex items-center gap-2 text-text-2 text-1">
               <input type="checkbox" name="include_email" defaultChecked />
@@ -243,7 +248,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                 className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
               />
             </label>
-          )}
+          ))}
       </form>
 
       <DialogActions
