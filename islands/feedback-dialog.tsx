@@ -30,14 +30,23 @@ const SEGMENTS = clsx(
   "grid grid-flow-col auto-cols-fr gap-1 p-1 m-0 min-w-0",
   "rounded-round bg-surface-2 border-0",
 );
-// A raised segment once picked, like the pill switch's active item
+// A segment lights up in its own colour once picked
 const SEGMENT = clsx(
   "flex items-center justify-center gap-2 py-2 px-2 rounded-round",
   "text-2 whitespace-nowrap cursor-pointer",
-  "text-text-2 hover:text-text-1",
-  "has-checked:bg-surface-3 has-checked:text-text-1",
+  "text-text-2 hover:text-text-1 has-checked:text-text-1",
   "has-focus-visible:outline-2 has-focus-visible:outline-brand",
 );
+
+// Good reads teal, bad red; difficulty runs teal, violet, orange. Full class
+// names, so Tailwind finds them.
+const TONES = {
+  good: "has-checked:bg-teal-4/30 [&_svg]:text-teal-4",
+  bad: "has-checked:bg-red-6/30 [&_svg]:text-red-6",
+  easy: "has-checked:bg-teal-4/30",
+  right: "has-checked:bg-violet-5/35",
+  hard: "has-checked:bg-orange-6/30",
+};
 
 /**
  * Rates a puzzle and/or sends a line of feedback, driven by `?dialog=`:
@@ -189,7 +198,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                   "Too hard",
                 ]] as const
               ).map(([value, label]) => (
-                <label key={value} className={SEGMENT}>
+                <label key={value} className={clsx(SEGMENT, TONES[value])}>
                   <input
                     type="radio"
                     name="difficulty"
@@ -203,7 +212,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
 
             <fieldset className={SEGMENTS}>
               <legend className="sr-only">Did you like it?</legend>
-              <label className={SEGMENT}>
+              <label className={clsx(SEGMENT, TONES.good)}>
                 <input
                   type="radio"
                   name="liked"
@@ -212,7 +221,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                 />
                 <Icon icon={ThumbsUp} /> Liked it
               </label>
-              <label className={SEGMENT}>
+              <label className={clsx(SEGMENT, TONES.bad)}>
                 <input
                   type="radio"
                   name="liked"
