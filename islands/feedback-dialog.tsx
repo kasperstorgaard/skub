@@ -164,11 +164,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
           {puzzle ? `How was ${puzzle.name}?` : "Send feedback"}
         </h2>
 
-        <p>
-          {puzzle
-            ? "Your take helps shape the next puzzles."
-            : "Ideas, wishes, bugs: it all helps."}
-        </p>
+        <p>Let me know what you think.</p>
       </div>
 
       <form
