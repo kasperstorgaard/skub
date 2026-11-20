@@ -72,7 +72,8 @@ export const handler = define.handlers({
         puzzleName: puzzle?.name,
         rating: [
           rating?.difficulty && `difficulty ${rating.difficulty}`,
-          rating?.liked !== undefined && (rating.liked ? "liked" : "not for me"),
+          rating?.liked !== undefined &&
+          (rating.liked ? "liked" : "not for me"),
         ].filter(Boolean).join(", "),
         from: `${(identified && user.name) || "anonymous"}${
           replyTo ? ` <${replyTo}>` : ""

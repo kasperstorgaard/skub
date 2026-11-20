@@ -11,7 +11,7 @@ looking to say something after a good or bad experience.
 
 One feedback dialog, two shapes:
 
-- **About a puzzle:** difficulty (too easy / just right / too hard), liked
+- **About a puzzle:** difficulty (easy / just right / hard), liked
   (thumbs up/down) and an optional line.
 - **About the game:** a message.
 
