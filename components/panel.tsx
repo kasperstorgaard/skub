@@ -1,11 +1,11 @@
 import { clsx } from "clsx/lite";
 
-import { PanelCredits } from "#/components/panel-credits.tsx";
+import { type PanelAside, PanelCredits } from "#/components/panel-credits.tsx";
 
 type PanelProps = {
   children?: preact.ComponentChildren;
-  /** Drop the builder link, e.g. while building */
-  hideBuilder?: boolean;
+  /** What sits opposite the credits: the builder link by default. */
+  aside?: PanelAside;
   className?: string;
 };
 
@@ -14,7 +14,7 @@ type PanelProps = {
  * - Mobile/tablet: Bottom panel spanning full width
  * - Large screens: Fixed right sidebar
  */
-export function Panel({ children, hideBuilder, className }: PanelProps) {
+export function Panel({ children, aside, className }: PanelProps) {
   return (
     <aside
       className={clsx(
@@ -31,7 +31,7 @@ export function Panel({ children, hideBuilder, className }: PanelProps) {
         /* Credits and the builder: mobile a row at the foot, a group step under
           the content; desktop the builder on top, credits at the foot */
       }
-      <PanelCredits hideBuilder={hideBuilder} className="not-first:mt-fl-4" />
+      <PanelCredits aside={aside} className="not-first:mt-fl-4" />
     </aside>
   );
 }

@@ -45,7 +45,7 @@ export function EditorPanel(
   }, []);
 
   return (
-    <Panel hideBuilder>
+    <Panel aside="none">
       {isDev && (
         <div className="flex flex-col col-[2/3] lg:row-[3/4]">
           <a href="/candidates/review" className="btn" onClick={onReview}>

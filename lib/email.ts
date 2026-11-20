@@ -49,3 +49,11 @@ export async function sendEmail(email: Email): Promise<void> {
     throw new Error(`Resend responded ${res.status}: ${await res.text()}`);
   }
 }
+
+/** An optional address typed into a form; anything unlike one is dropped. */
+export function toEmail(value: FormDataEntryValue | null) {
+  const email = value?.toString().trim() ?? "";
+  return /^[^\s@]+@[^\s@]+$/.test(email) && email.length <= 254
+    ? email
+    : undefined;
+}
