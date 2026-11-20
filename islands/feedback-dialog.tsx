@@ -25,10 +25,15 @@ type Props = {
   userEmail?: string;
 };
 
-const SEGMENTS = "inline-flex gap-1 p-1 rounded-round bg-surface-2 w-fit";
+// Full width, equal segments, so the two rating rows line up as one block
+const SEGMENTS = clsx(
+  "grid grid-flow-col auto-cols-fr gap-1 p-1 m-0 min-w-0",
+  "rounded-round bg-surface-2 border-0",
+);
 // A raised segment once picked, like the pill switch's active item
 const SEGMENT = clsx(
-  "flex items-center gap-1 px-3 py-1 rounded-round text-1 cursor-pointer",
+  "flex items-center justify-center gap-2 py-2 px-2 rounded-round",
+  "text-2 whitespace-nowrap cursor-pointer",
   "text-text-2 hover:text-text-1",
   "has-checked:bg-surface-3 has-checked:text-text-1",
   "has-focus-visible:outline-2 has-focus-visible:outline-brand",
@@ -121,7 +126,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
 
           <p>
             {isSent
-              ? "I read every one."
+              ? "Every bit helps shape what comes next."
               : "That didn't go through. Try again."}
           </p>
         </div>
@@ -150,7 +155,11 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
           {puzzle ? `How was ${puzzle.name}?` : "Send feedback"}
         </h2>
 
-        <p>Good or bad, I read every one.</p>
+        <p>
+          {puzzle
+            ? "Your take helps shape the next puzzles."
+            : "Ideas, wishes, bugs: it all helps."}
+        </p>
       </div>
 
       <form
@@ -171,7 +180,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
         {puzzle && <input type="hidden" name="slug" value={puzzle.slug} />}
 
         {puzzle && (
-          <>
+          <div className="grid gap-2">
             <fieldset className={SEGMENTS}>
               <legend className="sr-only">Difficulty</legend>
               {(
@@ -201,7 +210,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                   value="yes"
                   className="sr-only"
                 />
-                <Icon icon={ThumbsUp} aria-label="Liked it" />
+                <Icon icon={ThumbsUp} /> Liked it
               </label>
               <label className={SEGMENT}>
                 <input
@@ -210,10 +219,10 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                   value="no"
                   className="sr-only"
                 />
-                <Icon icon={ThumbsDown} aria-label="Didn't like it" />
+                <Icon icon={ThumbsDown} /> Not for me
               </label>
             </fieldset>
-          </>
+          </div>
         )}
 
         <label className="flex flex-col">
@@ -223,7 +232,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
           <textarea
             name="message"
             placeholder={puzzle ? "Anything else? (optional)" : "Message"}
-            rows={3}
+            rows={2}
             maxLength={2000}
             required={!puzzle}
             className="border border-surface-4 p-2 bg-surface-2 text-2 rounded-1"
