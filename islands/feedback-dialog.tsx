@@ -6,10 +6,10 @@ import { feedbackSent } from "#/client/feedback-signals.ts";
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
+  HandsClapping,
   Icon,
   PaperPlaneTilt,
-  Smiley,
-  SmileySad,
+  SmileyMeh,
   Spinner,
 } from "#/components/icons.tsx";
 import type { FeedbackSource } from "#/game/feedback.ts";
@@ -38,11 +38,12 @@ const SEGMENT = clsx(
   "has-focus-visible:outline-2 has-focus-visible:outline-brand",
 );
 
-// Good reads teal, bad red; difficulty runs teal, violet, orange. Full class
+// Liked reads teal, not for me a shrugging amber rather than a red "bad";
+// difficulty runs teal, violet, orange. Full class
 // names, so Tailwind finds them.
 const TONES = {
   good: "has-checked:bg-teal-4/30 [&_svg]:text-teal-4",
-  bad: "has-checked:bg-red-6/30 [&_svg]:text-red-6",
+  bad: "has-checked:bg-yellow-7/30 [&_svg]:text-yellow-7",
   easy: "has-checked:bg-teal-4/30",
   right: "has-checked:bg-violet-5/35",
   hard: "has-checked:bg-orange-6/30",
@@ -219,7 +220,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                   value="yes"
                   className="sr-only"
                 />
-                <Icon icon={Smiley} /> Liked it
+                <Icon icon={HandsClapping} /> Liked it
               </label>
               <label className={clsx(SEGMENT, TONES.bad)}>
                 <input
@@ -228,7 +229,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                   value="no"
                   className="sr-only"
                 />
-                <Icon icon={SmileySad} /> Not for me
+                <Icon icon={SmileyMeh} /> Not for me
               </label>
             </fieldset>
           </div>
