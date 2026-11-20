@@ -237,16 +237,19 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
                 )}
               </ol>
             )}
+
+          {/* Under the list, like the nudge under the board */}
+          {askRating && (
+            <RateNudge url={props.url} className="max-w-2xs mx-auto" />
+          )}
         </div>
       </Main>
 
       <Panel>
-        <div className="col-[2/3] flex flex-col items-start gap-y-fl-2 lg:col-auto lg:row-start-3">
+        <div className="col-[2/3] flex items-start lg:col-auto lg:row-start-3">
           <a href="/highscore" className="btn">
             <Icon icon={Trophy} /> High score
           </a>
-
-          {askRating && <RateNudge url={props.url} className="px-0" />}
         </div>
       </Panel>
 
