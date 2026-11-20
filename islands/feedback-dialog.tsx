@@ -135,7 +135,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
 
           <p>
             {isSent
-              ? "Much appreciated, it really helps."
+              ? "That really helps."
               : "That didn't go through. Try again."}
           </p>
         </div>
