@@ -163,8 +163,8 @@ export function trackPuzzleSubmitted(
 }
 
 /**
- * Track feedback being sent: a rating, a message, or both. No message text —
- * that goes by email and KV.
+ * Track feedback being sent: a rating, a message, or both. The reply address
+ * stays out; it's only in the email and KV.
  */
 export function trackFeedbackSent(
   state: State,
@@ -173,7 +173,7 @@ export function trackFeedbackSent(
     url: string;
     source: FeedbackSource;
     rating?: Rating;
-    hasMessage: boolean;
+    message: string;
     hasReplyTo: boolean;
   },
 ): void {
@@ -188,7 +188,7 @@ export function trackFeedbackSent(
       feedback_source: options.source,
       rating_difficulty: options.rating?.difficulty,
       rating_liked: options.rating?.liked,
-      has_message: options.hasMessage,
+      feedback_message: options.message || undefined,
       has_reply_to: options.hasReplyTo,
     },
   });

@@ -19,7 +19,7 @@ Both take an optional reply address, the same as puzzle submission.
 
 Sent feedback goes three ways: stored in KV (every piece by id, plus the latest
 rating per player and puzzle), emailed to `SUBMISSIONS_EMAIL` the way
-submissions are, and tracked as `feedback_sent`. It counts as sent once KV or
+submissions are, and tracked as `feedback_sent` (message included, reply address not). It counts as sent once KV or
 the email takes it. Without JS it posts and 303s back with
 `dialog=feedback-sent`. With JS it fetches and stays on the page, so a solved
 board isn't reloaded and re-posted.

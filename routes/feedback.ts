@@ -93,7 +93,7 @@ export const handler = define.handlers({
       url: returnUrl.href,
       source,
       rating,
-      hasMessage: !!message,
+      message,
       hasReplyTo: !!replyTo,
     });
 
