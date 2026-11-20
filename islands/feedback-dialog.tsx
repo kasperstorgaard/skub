@@ -8,9 +8,9 @@ import {
   ArrowRight,
   Icon,
   PaperPlaneTilt,
+  Smiley,
+  SmileySad,
   Spinner,
-  ThumbsDown,
-  ThumbsUp,
 } from "#/components/icons.tsx";
 import type { FeedbackSource } from "#/game/feedback.ts";
 import type { Puzzle } from "#/game/types.ts";
@@ -219,7 +219,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                   value="yes"
                   className="sr-only"
                 />
-                <Icon icon={ThumbsUp} /> Liked it
+                <Icon icon={Smiley} /> Liked it
               </label>
               <label className={clsx(SEGMENT, TONES.bad)}>
                 <input
@@ -228,7 +228,7 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
                   value="no"
                   className="sr-only"
                 />
-                <Icon icon={ThumbsDown} /> Not for me
+                <Icon icon={SmileySad} /> Not for me
               </label>
             </fieldset>
           </div>
