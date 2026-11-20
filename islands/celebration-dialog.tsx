@@ -1,8 +1,14 @@
 import { type Signal } from "@preact/signals";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
+import { feedbackSent } from "#/client/feedback-signals.ts";
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
-import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
+import {
+  ArrowRight,
+  ChatCircleDots,
+  Icon,
+  Ranking,
+} from "#/components/icons.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import { getSolveScore, type ScoreKind } from "#/game/score.ts";
@@ -36,6 +42,8 @@ type Props = {
   celebrationError: Signal<boolean>;
   /** A Flash solve: off the leaderboard, so no link to it. */
   isFlash?: boolean;
+  /** Rate takes Play one more's slot this time; the rate icon is always there. */
+  askRating?: boolean;
 };
 
 export function CelebrationDialog(
@@ -46,6 +54,7 @@ export function CelebrationDialog(
     celebrationData,
     celebrationError,
     isFlash,
+    askRating,
   }: Props,
 ) {
   const destination = puzzle.value.board.destination;
@@ -98,6 +107,12 @@ export function CelebrationDialog(
       isNewPath: false,
       flash: !!isFlash,
     });
+  const getRateHref = (from: "prompted" | "celebration") => {
+    const url = new URL(href.value);
+    url.searchParams.set("dialog", "feedback");
+    url.searchParams.set("from", from);
+    return url.href;
+  };
   const headline = !isPerfect
     ? "Solved!"
     : stars.includes("first")
@@ -134,11 +149,24 @@ export function CelebrationDialog(
           />
         </div>
 
-        <p className="text-3 text-text-2">
-          {celebrationError.value
-            ? "Couldn't save your solution."
-            : "Thanks for playing. What's next?"}
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-3 text-text-2">
+            {celebrationError.value
+              ? "Couldn't save your solution."
+              : "Thanks for playing. What's next?"}
+          </p>
+
+          {/* Always there, for those who came wanting to say something */}
+          <a
+            href={getRateHref("celebration")}
+            data-router
+            className="icon-btn shrink-0"
+            data-size="sm"
+            title="Rate this puzzle"
+          >
+            <Icon icon={ChatCircleDots} aria-label="Rate this puzzle" />
+          </a>
+        </div>
       </div>
 
       <DialogActions
@@ -165,13 +193,26 @@ export function CelebrationDialog(
           <Icon icon={Ranking} /> See solutions
         </a>
 
-        <a
-          href="/puzzles/recommended"
-          className="btn"
-          autoFocus
-        >
-          Play one more <Icon icon={ArrowRight} />
-        </a>
+        {askRating && !feedbackSent.value
+          ? (
+            <a
+              href={getRateHref("prompted")}
+              data-router
+              className="btn"
+              autoFocus
+            >
+              <Icon icon={ChatCircleDots} /> Rate it
+            </a>
+          )
+          : (
+            <a
+              href="/puzzles/recommended"
+              className="btn"
+              autoFocus
+            >
+              Play one more <Icon icon={ArrowRight} />
+            </a>
+          )}
       </DialogActions>
     </Dialog>
   );

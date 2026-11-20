@@ -1,3 +1,4 @@
+import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { page } from "fresh";
 
@@ -21,6 +22,7 @@ import {
   type ScoreKind,
   type UserScore,
 } from "#/game/score.ts";
+import { FeedbackDialog } from "#/islands/feedback-dialog.tsx";
 import { formatNumber } from "#/lib/format.ts";
 
 const LIMIT = 50;
@@ -102,6 +104,7 @@ export const handler = define.handlers<PageData>({
 
 export default define.page<typeof handler>(function HighscorePage(props) {
   const { period, rows, viewerRow } = props.data;
+  const href = useSignal(props.url.href);
   const { userId } = props.state;
 
   return (
@@ -172,7 +175,8 @@ export default define.page<typeof handler>(function HighscorePage(props) {
         </div>
       </Main>
 
-      <Panel />
+      <Panel aside="feedback" />
+      <FeedbackDialog href={href} userEmail={props.state.user.email} />
     </>
   );
 });
