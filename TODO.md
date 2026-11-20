@@ -276,7 +276,9 @@ PR finishes only part of an item, trim the item to what is left.
   every later solve gets the celebration: stars flying in, the headline, what's
   next. Make the name dialog a tweak on the celebration instead, the same payoff
   with the name field added, so the first solve feels like the best one rather
-  than a form. Without JS it stays a plain form.
+  than a form. The calls to action stay the first solve's own: posting the
+  solution under the name, not Play one more or the rating rotation. Without JS
+  it stays a plain form.
 
 - **Picking a name feels like giving nothing up.** The first solve asks for a
   name, and that's fine: it isn't the barrier. The moment should read as nothing
