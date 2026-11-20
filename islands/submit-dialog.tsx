@@ -91,7 +91,7 @@ export function SubmitDialog({ puzzle, href, solveState, userEmail }: Props) {
 
         {userEmail
           ? (
-            <label className="flex items-center gap-1 text-text-2 text-1">
+            <label className="flex items-center gap-2 text-text-2 text-1">
               <input type="checkbox" name="include_email" defaultChecked />
               Include my email ({userEmail})
             </label>
