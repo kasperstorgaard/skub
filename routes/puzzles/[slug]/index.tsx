@@ -18,12 +18,15 @@ import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import {
+  type CelebrationAction,
+  pickCelebrationAction,
+} from "#/game/celebration.ts";
+import {
   getFlashStart,
   getHintCount,
   isFlashExplained,
 } from "#/game/cookies.ts";
 import { getTodaysPuzzleNumber, isTodaysPuzzle } from "#/game/date.ts";
-import { shouldAskRating } from "#/game/feedback.ts";
 import { withFlashStart } from "#/game/flash.ts";
 import { isSolved, withSolve } from "#/game/progress.ts";
 import { getOnboardingLabel } from "#/game/recommendation.ts";
@@ -61,8 +64,8 @@ type PageData = {
   isFlashOn: boolean;
   /** The Flash dialog was answered: no more dialog, no more nudge. */
   isFlashExplained: boolean;
-  /** The celebration offers Rate in place of Play one more. */
-  askRating: boolean;
+  /** The celebration's second call to action. */
+  celebrationAction: CelebrationAction;
 };
 
 export const handler = define.handlers<PageData>({
@@ -103,12 +106,15 @@ export const handler = define.handlers<PageData>({
 
     const showEdit = isDev && (puzzle.number ?? 0) > getTodaysPuzzleNumber();
 
-    // Only named players get the celebration that asks.
-    const askRating = !!savedName && shouldAskRating(slug, {
-      userId: ctx.state.userId,
-      solvedCount: Object.keys(ctx.state.progress).length + (hasSolved ? 0 : 1),
-      isRated: await hasRated(ctx.state.userId, slug),
-    });
+    // Only named players get the celebration: no rating lookup for the rest.
+    const celebrationAction = savedName
+      ? pickCelebrationAction(slug, {
+        userId: ctx.state.userId,
+        solvedCount: Object.keys(ctx.state.progress).length +
+          (hasSolved ? 0 : 1),
+        isRated: await hasRated(ctx.state.userId, slug),
+      })
+      : "play";
 
     return page({
       puzzle,
@@ -119,7 +125,7 @@ export const handler = define.handlers<PageData>({
       hasFlash,
       isFlashOn: !!flashStart,
       isFlashExplained: isFlashExplained(ctx.req.headers),
-      askRating,
+      celebrationAction,
     });
   },
   async POST(ctx) {
@@ -372,7 +378,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             celebrationData={celebrationData}
             celebrationError={celebrationError}
             isFlash={isFlashOn}
-            askRating={props.data.askRating}
+            action={props.data.celebrationAction}
           />
           <AutoPostSolution
             href={href}

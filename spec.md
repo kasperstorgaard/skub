@@ -26,12 +26,13 @@ board isn't reloaded and re-posted.
 
 ### Where it's offered
 
-- **Celebration slot (`prompted`):** "Rate it" takes the place of "Play one
-  more", which sees little use anyway. Never on a player's first solve (still
-  onboarding), always on the second (a first impression from new players), then
-  on about one in three unrated puzzles. The pick is deterministic per player
-  and puzzle, so a reload never flips it. A puzzle already rated is never asked
-  about again.
+- **Celebration slot (`prompted`):** the second call to action, beside See
+  solutions, becomes a rotation picked by the server, deterministically per
+  player and puzzle, so a reload never flips it. Play one more on a player's
+  first solve (still onboarding). Rate it on the second (a first impression
+  from new players). After that, a third each of Rate it, Build your own (folded
+  in from #302) and Play one more. A puzzle already rated gets Play instead of
+  Rate.
 - **Celebration icon (`celebration`):** a small rate icon beside "Thanks for
   playing", on every celebration, for players who want to say something whether
   or not they were asked.

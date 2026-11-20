@@ -11,6 +11,7 @@ import {
 } from "#/components/icons.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
+import type { CelebrationAction } from "#/game/celebration.ts";
 import { getSolveScore, type ScoreKind } from "#/game/score.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
@@ -42,8 +43,8 @@ type Props = {
   celebrationError: Signal<boolean>;
   /** A Flash solve: off the leaderboard, so no link to it. */
   isFlash?: boolean;
-  /** Rate takes Play one more's slot this time; the rate icon is always there. */
-  askRating?: boolean;
+  /** The second call to action: picked by the server per player and puzzle. */
+  action?: CelebrationAction;
 };
 
 export function CelebrationDialog(
@@ -54,7 +55,7 @@ export function CelebrationDialog(
     celebrationData,
     celebrationError,
     isFlash,
-    askRating,
+    action = "play",
   }: Props,
 ) {
   const destination = puzzle.value.board.destination;
@@ -193,7 +194,7 @@ export function CelebrationDialog(
           <Icon icon={Ranking} /> See solutions
         </a>
 
-        {askRating && !feedbackSent.value
+        {action === "rate" && !feedbackSent.value
           ? (
             <a
               href={getRateHref("prompted")}
@@ -202,6 +203,18 @@ export function CelebrationDialog(
               autoFocus
             >
               <Icon icon={ChatCircleDots} /> Rate it
+            </a>
+          )
+          : action === "build"
+          ? (
+            <a
+              href="/puzzles/new"
+              // Full navigation: /puzzles/new redirects, which client nav drops
+              f-client-nav={false}
+              className="btn"
+              autoFocus
+            >
+              Build your own <Icon icon={ArrowRight} />
             </a>
           )
           : (
