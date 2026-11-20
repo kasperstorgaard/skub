@@ -31,6 +31,7 @@ export const handler = define.handlers({
       : toEmail(form.get("email"));
     const message = form.get("message")?.toString().trim().slice(0, 2000) ?? "";
     const name = puzzle.name || "Untitled";
+    const player = (identified && user.name) || "anonymous";
 
     try {
       const to = Deno.env.get("SUBMISSIONS_EMAIL");
@@ -39,14 +40,12 @@ export const handler = define.handlers({
       await sendEmail({
         from: SUBMISSIONS_FROM,
         to,
-        subject: `Puzzle submission: ${name}`,
+        subject: `Puzzle submission: ${name} by ${player}`,
         replyTo,
         text: [
           `Name: ${name}`,
           `Moves: ${puzzle.minMoves || "unknown"}`,
-          `From: ${(identified && user.name) || "anonymous"}${
-            replyTo ? ` <${replyTo}>` : ""
-          }`,
+          `From: ${player}${replyTo ? ` <${replyTo}>` : ""}`,
           "",
           ...(message ? ["Message:", message, ""] : []),
           markdown,
