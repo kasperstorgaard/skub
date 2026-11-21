@@ -162,7 +162,7 @@ export function CelebrationDialog(
       {
         /* Always there, for those who came wanting to say something: a faded
           solid bubble in the text colour, so it's the dialog's inverse in any
-          theme, cut by the dialog's rounded edge. The clip lives
+          theme, in the bottom-left corner, cut by the dialog's rounded edge. The clip lives
           on its own layer, matching the dialog's corners, as the dialog itself
           lets the stars overflow. */
       }
@@ -172,8 +172,9 @@ export function CelebrationDialog(
           data-router
           title="Rate this puzzle"
           className={clsx(
-            "absolute -bottom-4 -right-4 p-3 rounded-round pointer-events-auto",
-            "text-[3.5rem] text-text-1 opacity-70 -rotate-12",
+            "absolute -bottom-4 -left-4 p-3 rounded-round pointer-events-auto",
+            // Mirrored, so the bubble's tail points in rather than into the cut
+            "text-[3.5rem] text-text-1 opacity-70 rotate-12 -scale-x-100",
             "transition-[opacity,transform] duration-200",
             "hover:opacity-100 hover:rotate-0 focus-visible:opacity-100",
           )}
