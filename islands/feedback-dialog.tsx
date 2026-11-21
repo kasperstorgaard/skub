@@ -38,11 +38,12 @@ const SEGMENT = clsx(
   "has-focus-visible:outline-2 has-focus-visible:outline-brand",
 );
 
-// Liked reads teal, not for me red; difficulty runs teal, violet, orange. Full class
+// Liked reads teal, not for me a shrugging amber rather than a red "bad";
+// difficulty runs teal, violet, orange. Full class
 // names, so Tailwind finds them.
 const TONES = {
   good: "has-checked:bg-teal-4/30 [&_svg]:text-teal-4",
-  bad: "has-checked:bg-red-6/30 [&_svg]:text-red-6",
+  bad: "has-checked:bg-yellow-7/30 [&_svg]:text-yellow-7",
   easy: "has-checked:bg-teal-4/30",
   right: "has-checked:bg-violet-5/35",
   hard: "has-checked:bg-orange-6/30",
