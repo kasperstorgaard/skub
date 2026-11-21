@@ -115,6 +115,8 @@ export function CelebrationDialog(
     url.searchParams.set("from", from);
     return url.href;
   };
+  // Rate holds the main slot until feedback goes out; then the link is enough
+  const isRatePrimary = action === "rate" && !feedbackSent.value;
   const headline = !isPerfect
     ? "Solved!"
     : stars.includes("first")
@@ -175,13 +177,15 @@ export function CelebrationDialog(
                 </a>
               )}
 
-            <a
-              href={getRateHref("celebration")}
-              data-router
-              className={clsx(DISMISS, "inline-flex items-center gap-1")}
-            >
-              <Icon icon={ChatCircleDots} /> Rate
-            </a>
+            {!isRatePrimary && (
+              <a
+                href={getRateHref("celebration")}
+                data-router
+                className={clsx(DISMISS, "inline-flex items-center gap-1")}
+              >
+                <Icon icon={ChatCircleDots} /> Rate
+              </a>
+            )}
           </div>
         }
       >
@@ -195,7 +199,7 @@ export function CelebrationDialog(
           <Icon icon={Ranking} /> See solutions
         </a>
 
-        {action === "rate" && !feedbackSent.value
+        {isRatePrimary
           ? (
             <a
               href={getRateHref("prompted")}
