@@ -7,6 +7,7 @@ import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
   ChatCircleDots,
+  ChatCircleDotsFill,
   Icon,
   Ranking,
 } from "#/components/icons.tsx";
@@ -160,7 +161,8 @@ export function CelebrationDialog(
 
       {
         /* Always there, for those who came wanting to say something: a faded
-          ghost in the corner, cut by the dialog's rounded edge. The clip lives
+          solid bubble in the text colour, so it's the dialog's inverse in any
+          theme, cut by the dialog's rounded edge. The clip lives
           on its own layer, matching the dialog's corners, as the dialog itself
           lets the stars overflow. */
       }
@@ -171,12 +173,12 @@ export function CelebrationDialog(
           title="Rate this puzzle"
           className={clsx(
             "absolute -bottom-4 -right-4 p-3 rounded-round pointer-events-auto",
-            "text-[3.5rem] text-text-2 opacity-70 -rotate-12",
+            "text-[3.5rem] text-text-1 opacity-70 -rotate-12",
             "transition-[opacity,transform] duration-200",
             "hover:opacity-100 hover:rotate-0 focus-visible:opacity-100",
           )}
         >
-          <Icon icon={ChatCircleDots} aria-label="Rate this puzzle" />
+          <Icon icon={ChatCircleDotsFill} aria-label="Rate this puzzle" />
         </a>
       </div>
 
