@@ -7,7 +7,6 @@ import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
   ChatCircleDots,
-  ChatCircleDotsFill,
   Icon,
   Ranking,
 } from "#/components/icons.tsx";
@@ -159,43 +158,32 @@ export function CelebrationDialog(
         </p>
       </div>
 
-      {
-        /* Always there, for those who came wanting to say something: a faded
-          solid bubble in the text colour, so it's the dialog's inverse in any
-          theme, in the bottom-left corner, cut by the dialog's rounded edge. The clip lives
-          on its own layer, matching the dialog's corners, as the dialog itself
-          lets the stars overflow. */
-      }
-      <div className="absolute inset-0 overflow-hidden rounded-cond-2 pointer-events-none">
-        <a
-          href={getRateHref("celebration")}
-          data-router
-          title="Rate this puzzle"
-          className={clsx(
-            "absolute -bottom-4 -left-4 p-3 rounded-round pointer-events-auto",
-            // Mirrored, so the bubble's tail points in rather than into the cut
-            "text-[3.5rem] text-text-1 opacity-70 rotate-12 -scale-x-100",
-            "transition-[opacity,transform] duration-200",
-            "hover:opacity-100 hover:rotate-0 focus-visible:opacity-100",
-          )}
-        >
-          <Icon icon={ChatCircleDotsFill} aria-label="Rate this puzzle" />
-        </a>
-      </div>
-
       <DialogActions
-        // One way out: another go if it wasn't perfect, otherwise back
-        dismiss={isPerfect
-          ? (
-            <a href={back.href} className={DISMISS}>
-              {back.label}
+        // One way out: another go if it wasn't perfect, otherwise back. Beside
+        // it, always, rating, for those who came wanting to say something.
+        dismiss={
+          <div className="flex flex-wrap justify-center gap-x-fl-2 gap-y-1">
+            {isPerfect
+              ? (
+                <a href={back.href} className={DISMISS}>
+                  {back.label}
+                </a>
+              )
+              : (
+                <a href={getResetHref(href.value)} className={DISMISS}>
+                  Play it again
+                </a>
+              )}
+
+            <a
+              href={getRateHref("celebration")}
+              data-router
+              className={clsx(DISMISS, "inline-flex items-center gap-1")}
+            >
+              <Icon icon={ChatCircleDots} /> Rate
             </a>
-          )
-          : (
-            <a href={getResetHref(href.value)} className={DISMISS}>
-              Play it again
-            </a>
-          )}
+          </div>
+        }
       >
         {/* Flash solutions are their own tab */}
         <a
