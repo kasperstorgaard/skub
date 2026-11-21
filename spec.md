@@ -33,9 +33,9 @@ board isn't reloaded and re-posted.
   from new players). After that, a third each of Rate it, Build your own (folded
   in from #302) and Play one more. A puzzle already rated gets Play instead of
   Rate.
-- **Celebration icon (`celebration`):** a small rate icon beside "Thanks for
-  playing", on every celebration, for players who want to say something whether
-  or not they were asked.
+- **Celebration icon (`celebration`):** a ghostly rate icon in the dialog's
+  bottom-right corner, cut by its edge, on every celebration, for players who
+  want to say something whether or not they were asked.
 - **Solutions page nudge (`nudge`):** "How was it? Rate it" for a player who
   has solved the puzzle and hasn't rated it.
 - **Sidebar (`panel`):** on the profile and high score pages, "Got thoughts?
