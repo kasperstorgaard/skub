@@ -3,6 +3,7 @@
 // boilerplate (distinctId, $process_person_profile, $current_url) is
 // derived automatically.
 import type { State } from "#/core.ts";
+import type { FeedbackSource, Rating } from "#/game/feedback.ts";
 import type { Move, Puzzle, SkillLevel } from "#/game/types.ts";
 import { posthog } from "#/lib/posthog.ts";
 
@@ -157,6 +158,38 @@ export function trackPuzzleSubmitted(
       puzzle_min_moves: puzzle.minMoves,
       has_reply_to: options.hasReplyTo,
       has_message: options.hasMessage,
+    },
+  });
+}
+
+/**
+ * Track feedback being sent: a rating, a message, or both. The reply address
+ * stays out; it's only in the email and KV.
+ */
+export function trackFeedbackSent(
+  state: State,
+  puzzle: Puzzle | null,
+  options: {
+    url: string;
+    source: FeedbackSource;
+    rating?: Rating;
+    message: string;
+    hasReplyTo: boolean;
+  },
+): void {
+  posthog?.capture({
+    distinctId: state.trackingId,
+    event: "feedback_sent",
+    properties: {
+      $current_url: options.url,
+      $process_person_profile: state.cookieChoice === "accepted",
+      puzzle_slug: puzzle?.slug,
+      puzzle_min_moves: puzzle?.minMoves,
+      feedback_source: options.source,
+      rating_difficulty: options.rating?.difficulty,
+      rating_liked: options.rating?.liked,
+      feedback_message: options.message || undefined,
+      has_reply_to: options.hasReplyTo,
     },
   });
 }

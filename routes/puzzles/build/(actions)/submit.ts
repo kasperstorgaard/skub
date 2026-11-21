@@ -1,7 +1,7 @@
 import { define } from "#/core.ts";
 import { parsePuzzle } from "#/game/parser.ts";
 import type { Puzzle } from "#/game/types.ts";
-import { sendEmail } from "#/lib/email.ts";
+import { sendEmail, toEmail } from "#/lib/email.ts";
 import { trackPuzzleSubmitted } from "#/lib/tracking.ts";
 
 const SUBMISSIONS_FROM = "Skub <submissions@skub.app>";
@@ -76,12 +76,4 @@ function redirect(result: "sent" | "failed") {
     headers: { Location: `/puzzles/build?submit=${result}` },
     status: 303,
   });
-}
-
-/** An optional address typed into the form; anything unlike one is dropped. */
-function toEmail(value: FormDataEntryValue | null) {
-  const email = value?.toString().trim() ?? "";
-  return /^[^\s@]+@[^\s@]+$/.test(email) && email.length <= 254
-    ? email
-    : undefined;
 }

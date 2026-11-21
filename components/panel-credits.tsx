@@ -2,18 +2,26 @@ import { clsx } from "clsx/lite";
 
 import { GithubLogo, Icon, LinkedinLogo } from "#/components/icons.tsx";
 
+/**
+ * Opposite the credits: the builder link, a feedback link (pages that pair it
+ * with a `FeedbackDialog`), or nothing, e.g. while building.
+ */
+export type PanelAside = "builder" | "feedback" | "none";
+
 type PanelCreditsProps = {
-  /** Drop the builder link, e.g. while building */
-  hideBuilder?: boolean;
+  aside?: PanelAside;
   className?: string;
 };
 
 /**
- * The credit, GitHub and LinkedIn, and the builder link, on every `Panel`.
+ * The credit, GitHub and LinkedIn, and the builder or feedback link, on every
+ * `Panel`.
  * Mobile: one row at the foot. Desktop: the row dissolves into the panel's
  * grid, the builder on top and the credits at the foot.
  */
-export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
+export function PanelCredits(
+  { aside = "builder", className }: PanelCreditsProps,
+) {
   return (
     <div
       className={clsx(
@@ -50,7 +58,7 @@ export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
         </div>
       </footer>
 
-      {!hideBuilder && (
+      {aside === "builder" && (
         <p className="print:hidden m-0 text-right lg:text-left lg:row-start-1">
           Feeling creative? <br />
           <a
@@ -60,6 +68,20 @@ export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
             className="text-2 text-text-1"
           >
             Build a puzzle
+          </a>
+        </p>
+      )}
+
+      {aside === "feedback" && (
+        <p className="print:hidden m-0 text-right lg:text-left lg:row-start-1">
+          Got thoughts? <br />
+          <a
+            href="?dialog=feedback&from=panel"
+            // The dialog opens it on the current URL, see FeedbackDialog
+            data-feedback
+            className="text-2 text-text-1"
+          >
+            Send feedback
           </a>
         </p>
       )}
