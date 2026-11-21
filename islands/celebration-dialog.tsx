@@ -126,6 +126,31 @@ export function CelebrationDialog(
       {/* Overflow visible: the stars fly in from outside the dialog */}
       <div className="flex flex-col gap-fl-2">
         {/* The payoff, beside the headline so nothing shifts when it lands */}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-fl-2 font-semibold text-text-1">
+            {headline}
+          </h2>
+
+          <Stars
+            kinds={stars}
+            className="shrink-0 text-[calc(var(--text-fl-2)*1.25)]"
+            getStarProps={(kind) => {
+              // Left to right movement, landing the rightmost star first, so
+              // each lands on top of the one before.
+              const i = stars.length - 1 - stars.indexOf(kind);
+              const [x, y] = flyStarts[i];
+              return {
+                className: "star-fly",
+                style: {
+                  "--fly-x": `${x.toFixed(2)}em`,
+                  "--fly-y": `${y.toFixed(2)}em`,
+                  "--fly-delay": `${i * 400}ms`,
+                },
+              };
+            }}
+          />
+        </div>
+
         <p className="text-3 text-text-2">
           {celebrationError.value
             ? "Couldn't save your solution."
@@ -135,25 +160,21 @@ export function CelebrationDialog(
 
       {
         /* Always there, for those who came wanting to say something: a ghost
-          in the corner, cut by the dialog's rounded edge. The clip lives on
-          its own layer, matching the dialog's corners, as the dialog itself lets
-          the stars overflow. */
+          hanging off the corner, overflowing like the stars do */
       }
-      <div className="absolute inset-0 overflow-hidden rounded-cond-2 pointer-events-none">
-        <a
-          href={getRateHref("celebration")}
-          data-router
-          title="Rate this puzzle"
-          className={clsx(
-            "absolute -bottom-4 -right-4 p-3 rounded-round pointer-events-auto",
-            "text-[3.5rem] text-text-3 opacity-40 -rotate-12",
-            "transition-[opacity,transform] duration-200",
-            "hover:opacity-90 hover:rotate-0 focus-visible:opacity-90",
-          )}
-        >
-          <Icon icon={ChatCircleDots} aria-label="Rate this puzzle" />
-        </a>
-      </div>
+      <a
+        href={getRateHref("celebration")}
+        data-router
+        title="Rate this puzzle"
+        className={clsx(
+          "absolute -bottom-5 -right-5 p-2 rounded-round",
+          "text-[3.5rem] text-text-3 opacity-50 -rotate-12",
+          "transition-[opacity,transform] duration-200",
+          "hover:opacity-90 hover:rotate-0 focus-visible:opacity-90",
+        )}
+      >
+        <Icon icon={ChatCircleDots} aria-label="Rate this puzzle" />
+      </a>
 
       <DialogActions
         // One way out: another go if it wasn't perfect, otherwise back
