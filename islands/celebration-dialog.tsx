@@ -172,9 +172,8 @@ export function CelebrationDialog(
         title="Rate this puzzle"
         className={clsx(
           "absolute -bottom-5 -right-5 grid p-2 rounded-round",
-          "text-[3.5rem] opacity-60 -rotate-12",
-          "transition-[opacity,transform] duration-200",
-          "hover:opacity-100 hover:rotate-0 focus-visible:opacity-100",
+          "text-[3.5rem] -rotate-12",
+          "transition-transform duration-200 hover:rotate-0",
         )}
       >
         <Icon
