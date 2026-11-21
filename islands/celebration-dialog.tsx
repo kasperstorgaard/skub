@@ -181,9 +181,15 @@ export function CelebrationDialog(
               <a
                 href={getRateHref("celebration")}
                 data-router
-                className={clsx(DISMISS, "inline-flex items-center gap-1")}
+                // Drawn underline: text-decoration skips the icon, this spans it
+                className={clsx(
+                  DISMISS,
+                  "inline-flex items-center gap-1 pb-[3px] no-underline",
+                  "bg-[linear-gradient(currentColor,currentColor)] bg-no-repeat",
+                  "bg-bottom bg-[length:100%_1px] hover:bg-[length:100%_2px]",
+                )}
               >
-                <Icon icon={ChatCircleDots} /> Rate
+                <Icon icon={ChatCircleDots} /> Rate it
               </a>
             )}
           </div>
