@@ -7,6 +7,7 @@ import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
   ChatCircleDots,
+  ChatCircleDotsFill,
   Icon,
   Ranking,
 } from "#/components/icons.tsx";
@@ -160,20 +161,35 @@ export function CelebrationDialog(
 
       {
         /* Always there, for those who came wanting to say something: a ghost
-          hanging off the corner, overflowing like the stars do */
+          hanging off the corner, overflowing like the stars do. Two icons
+          stacked: a white filled bubble with a white halo stroke behind, the
+          outline in the dialog's colour on top, so it reads over both the
+          dialog and the backdrop. */
       }
       <a
         href={getRateHref("celebration")}
         data-router
         title="Rate this puzzle"
         className={clsx(
-          "absolute -bottom-5 -right-5 p-2 rounded-round",
-          "text-[3.5rem] text-text-3 opacity-50 -rotate-12",
+          "absolute -bottom-5 -right-5 grid p-2 rounded-round",
+          "text-[3.5rem] opacity-60 -rotate-12",
           "transition-[opacity,transform] duration-200",
-          "hover:opacity-90 hover:rotate-0 focus-visible:opacity-90",
+          "hover:opacity-100 hover:rotate-0 focus-visible:opacity-100",
         )}
       >
-        <Icon icon={ChatCircleDots} aria-label="Rate this puzzle" />
+        <Icon
+          icon={ChatCircleDotsFill}
+          className={clsx(
+            "col-start-1 row-start-1 overflow-visible text-white",
+            "[&_path]:stroke-white [&_path]:[stroke-width:28px]",
+            "[&_path]:[stroke-linejoin:round]",
+          )}
+        />
+        <Icon
+          icon={ChatCircleDots}
+          className="col-start-1 row-start-1 text-surface-1"
+          aria-label="Rate this puzzle"
+        />
       </a>
 
       <DialogActions
