@@ -10,7 +10,6 @@ export * from "./caret-left.ts";
 export * from "./caret-right.ts";
 export * from "./chalkboard-teacher.ts";
 export * from "./chat-circle-dots.ts";
-export * from "./chat-circle-dots-fill.ts";
 export * from "./download.ts";
 export * from "./envelope-simple.ts";
 export * from "./eye.ts";
