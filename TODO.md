@@ -271,6 +271,13 @@ PR finishes only part of an item, trim the item to what is left.
   for perfect or pioneer, three for both, and that a puzzle's stars are your
   best solution's, not a sum.
 
+- **A first solve feels celebrated.** Today a player's first solve, with no name
+  yet, gets the plain name dialog ("Solved!", a name field, Post), while every
+  later solve gets the celebration. The first one deserves at least as much
+  payoff, so borrow from the celebration where it fits, but it doesn't need to
+  match it: it keeps its own job of posting the solution under a name. Without
+  JS it stays a plain form.
+
 - **Picking a name feels like giving nothing up.** The first solve asks for a
   name, and that's fine: it isn't the barrier. The moment should read as nothing
   to lose, no account, no email, nothing tied to it but your solutions, so
