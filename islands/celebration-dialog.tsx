@@ -7,7 +7,6 @@ import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
   ChatCircleDots,
-  ChatCircleDotsFill,
   Icon,
   Ranking,
 } from "#/components/icons.tsx";
@@ -160,36 +159,26 @@ export function CelebrationDialog(
       </div>
 
       {
-        /* Always there, for those who came wanting to say something: a ghost
-          hanging off the corner, overflowing like the stars do. Two icons
-          stacked: a white filled bubble with a white halo stroke behind, the
-          outline in the dialog's colour on top, so it reads over both the
-          dialog and the backdrop. */
+        /* Always there, for those who came wanting to say something: a faded
+          ghost in the corner, cut by the dialog's rounded edge. The clip lives
+          on its own layer, matching the dialog's corners, as the dialog itself
+          lets the stars overflow. */
       }
-      <a
-        href={getRateHref("celebration")}
-        data-router
-        title="Rate this puzzle"
-        className={clsx(
-          "absolute -bottom-5 -right-5 grid p-2 rounded-round",
-          "text-[3.5rem] -rotate-12",
-          "transition-transform duration-200 hover:rotate-0",
-        )}
-      >
-        <Icon
-          icon={ChatCircleDotsFill}
+      <div className="absolute inset-0 overflow-hidden rounded-cond-2 pointer-events-none">
+        <a
+          href={getRateHref("celebration")}
+          data-router
+          title="Rate this puzzle"
           className={clsx(
-            "col-start-1 row-start-1 overflow-visible text-white",
-            "[&_path]:stroke-white [&_path]:[stroke-width:28px]",
-            "[&_path]:[stroke-linejoin:round]",
+            "absolute -bottom-4 -right-4 p-3 rounded-round pointer-events-auto",
+            "text-[3.5rem] text-text-2 opacity-70 -rotate-12",
+            "transition-[opacity,transform] duration-200",
+            "hover:opacity-100 hover:rotate-0 focus-visible:opacity-100",
           )}
-        />
-        <Icon
-          icon={ChatCircleDots}
-          className="col-start-1 row-start-1 text-surface-1"
-          aria-label="Rate this puzzle"
-        />
-      </a>
+        >
+          <Icon icon={ChatCircleDots} aria-label="Rate this puzzle" />
+        </a>
+      </div>
 
       <DialogActions
         // One way out: another go if it wasn't perfect, otherwise back
