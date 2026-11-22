@@ -34,6 +34,7 @@ export function TrackingScript(
           api_host: "/ph",
           ui_host: "https://eu.posthog.com",
           defaults: "2025-11-30",
+          // Cookieless is off in the PostHog project; turning it on means updating /cookie-policy
           cookieless_mode: "on_reject",
         });
       }
