@@ -50,7 +50,7 @@ export function CookieBanner({ open }: Props) {
           Okay if I track?
         </h2>
 
-        <p className="type-body text-pretty">
+        <p className="type-body text-pretty max-sm:text-balance">
           It's just me building this thing,
           <br className="sm:hidden" /> so a little peek shows me what to fix.
           {" "}
