@@ -1,12 +1,14 @@
 import { globToRegExp } from "@std/path";
 
-import selection from "#/e2e/selection.json" with { type: "json" };
+import config from "#/e2e/blast-radius.config.ts";
 
 /** Repo-relative files each root module reaches through its imports, itself included. */
 export type ImportGraph = Record<string, string[]>;
 
-/** none: can't change what a player sees; full: run every test; dep: follow imports. */
-const OUTCOMES = ["none", "full", "dep"];
+export type BlastRadiusConfig = [
+  glob: string,
+  outcome: "none" | "full" | "dep",
+][];
 
 const ROUTE_TEST = /^routes\/(.*\/)?_e2e\/[^/]+_test\.ts$/;
 const FLOW_TEST = /^e2e\/[^/]+_test\.ts$/;
@@ -14,7 +16,7 @@ const ROUTE_MODULE = /^routes\/(?!(.*\/)?_e2e\/).*\.tsx?$/;
 
 /**
  * Picks the e2e test files a change can break, classifying each changed file
- * by `e2e/selection.json`. For dep files: a route's nearest `_e2e/` tests when the route or
+ * by `e2e/blast-radius.config.ts`. For dep files: a route's nearest `_e2e/` tests when the route or
  * anything it imports changed, plus the `e2e/` flows.
  * Graph roots are route modules and e2e test files.
  */
@@ -22,22 +24,17 @@ export function selectE2eTests(
   changedFiles: string[],
   graph: ImportGraph,
 ): string[] {
-  const matchers = selection.map(([glob, outcome]) => {
-    if (!OUTCOMES.includes(outcome)) {
-      throw new Error(`Unknown outcome "${outcome}" for ${glob}`);
-    }
-    return {
-      pattern: globToRegExp(glob, { globstar: true, extended: true }),
-      outcome,
-    };
-  });
+  const matchers = config.map(([glob, outcome]) => ({
+    pattern: globToRegExp(glob, { globstar: true, extended: true }),
+    outcome,
+  }));
   const classify = (file: string) =>
     matchers.find(({ pattern }) => pattern.test(file))?.outcome;
 
   const unclassified = changedFiles.filter((file) => !classify(file));
   if (unclassified.length > 0) {
     throw new Error(
-      `Unclassified changed files, add them to e2e/selection.json: ${
+      `Unclassified changed files, add them to e2e/blast-radius.config.ts: ${
         unclassified.join(", ")
       }`,
     );

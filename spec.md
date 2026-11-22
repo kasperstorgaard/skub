@@ -33,7 +33,7 @@ keys before the suite runs. Guards:
 - The workflow's per-ref concurrency group means one run per branch at a time.
 
 **Deterministic test selection.** Replace `scripts/select-e2e-tests.ts` (Claude
-API) with an explicit classification: `e2e/selection.json` maps globs to an
+API) with an explicit classification: `e2e/blast-radius.config.ts` maps globs to an
 outcome, first match wins.
 
 - `none`: can't change what a player sees (docs, specs, unit tests, scripts,
