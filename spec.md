@@ -16,7 +16,7 @@ gets more crowded every run).
 ## Approach
 
 **Test against the branch timeline, not the revision.** Deploy gives each git
-branch its own KV database (`{app-id}--{branch}`), served at
+branch its own KV database (`<app-id>--<branch>`), served at
 `https://<app>--<branch>.<org>.deno.net`. CI points `BASE_URL` there. Deploy drops slashes from the branch name
 (`fix/cookie-banner-copy` → `ricochet--fixcookie-banner-copy`). The branch URL
 may still serve the previous revision when the deployment event fires, so CI
