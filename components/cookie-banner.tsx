@@ -51,8 +51,9 @@ export function CookieBanner({ open }: Props) {
         </h2>
 
         <p className="type-body text-pretty">
-          It's just me building this thing, so a little peek shows me what to
-          fix.{" "}
+          It's just me building this thing,
+          <br className="sm:hidden" /> so a little peek shows me what to fix.
+          {" "}
           <a href="/cookie-policy" className="text-current">Cookie policy</a>
         </p>
       </div>
