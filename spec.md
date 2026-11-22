@@ -33,12 +33,19 @@ keys before the suite runs. Guards:
 - The workflow's per-ref concurrency group means one run per branch at a time.
 
 **Deterministic test selection.** Replace `scripts/select-e2e-tests.ts` (Claude
-API) with a blast-radius script: map changed files to routes through the import
-graph (`deno info --json`), run the co-located `routes/**/_e2e/` tests of
-affected routes plus the `e2e/` flows. Shared entry points (main.ts, _app.tsx,
-client.ts, deno.json, vite config, middleware) run everything; docs, specs and
-unit tests only run nothing. Drop `continue-on-error`: a selection failure is a
-CI failure, not a pass.
+API) with an explicit classification: `e2e/selection.ts` maps globs to an
+outcome, first match wins.
+
+- `none`: can't change what a player sees (docs, specs, unit tests, scripts,
+  puzzles).
+- `full`: global, runs every test (entry points, config, middleware, layouts,
+  all CSS, static assets).
+- `dep`: follows the import graph (`deno info --json`): the nearest
+  `routes/**/_e2e/` tests of affected routes, plus the `e2e/` flows.
+
+A changed file matching no glob fails the check, so a new kind of file can't
+slip through selecting nothing. Drop `continue-on-error`: a selection failure is
+a CI failure, not a pass.
 
 **Fix the stale back-link locator** so the suite is green before it gates PRs
 (29/29 locally).
