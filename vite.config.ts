@@ -15,7 +15,9 @@ export default defineConfig({
       // /api/candidates). Without this, Vite's dev watcher treats each new file
       // as a source change and full-reloads the page — wiping the just-shown
       // candidate back to the empty server state.
-      ignored: ["**/candidates/**"],
+      // Atomic writes rename a `*.tmp.*` file away before chokidar can watch
+      // it, and the NotFound kills the dev server.
+      ignored: ["**/candidates/**", "**/*.tmp.*"],
     },
     // Transform the entries in the background as soon as the server boots,
     // rather than on the first request. Same total work, but it overlaps with
