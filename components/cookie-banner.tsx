@@ -46,14 +46,13 @@ export function CookieBanner({ open }: Props) {
       </svg>
 
       <div className="grid gap-3">
-        <h2 className="type-title text-pretty">
+        <h2 className="type-title text-balance">
           Okay if I track?
         </h2>
 
-        <p className="type-body text-pretty max-sm:text-balance">
-          It's just me building this thing,
-          <br className="sm:hidden" /> so a little peek shows me what to fix.
-          {" "}
+        <p className="type-body text-balance">
+          It's just me building this thing, so a little peek shows me what to
+          fix.{" "}
           <a href="/cookie-policy" className="text-current">Cookie policy</a>
         </p>
       </div>
