@@ -225,3 +225,18 @@ Deno.test("selectE2eTests runs a deleted route's nearest tests", () => {
 
   assertEquals(selected, ["routes/profile/_e2e/profile_test.ts"]);
 });
+
+Deno.test("selectE2eTests runs every test when a stylesheet changed", () => {
+  const selected = selectE2eTests(["styles/tokens.css"], {
+    "routes/profile/index.tsx": ["routes/profile/index.tsx"],
+    "routes/profile/_e2e/profile_test.ts": [
+      "routes/profile/_e2e/profile_test.ts",
+    ],
+    "e2e/new-user-flow_test.ts": ["e2e/new-user-flow_test.ts"],
+  });
+
+  assertEquals(selected, [
+    "e2e/new-user-flow_test.ts",
+    "routes/profile/_e2e/profile_test.ts",
+  ]);
+});

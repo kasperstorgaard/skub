@@ -17,7 +17,7 @@ const SHARED_ENTRY_POINTS = [
   /^deno\.(json|lock)$/,
   /^vite\.config\.ts$/,
   /^plugins\//,
-  /^styles\.css$/,
+  /\.css$/,
   /^\.github\/workflows\/e2e\.yml$/,
   /^scripts\/select-e2e-tests\.ts$/,
   /^scripts\/lib\/e2e-selection\.ts$/,
