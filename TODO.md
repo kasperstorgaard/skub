@@ -137,13 +137,6 @@ PR finishes only part of an item, trim the item to what is left.
   like a score, full stops come and go, and "Found it" isn't bold like the other
   headings. One voice, facts only, as short as the Flash dialog.
 
-- **The cookie banner is just nice.** It's quirky today: a bitten cookie peeking
-  out of the corner, "One quick thing", and a line break before Learn more. Make
-  it calm and plain like the rest of the main look. The cookie policy page reads
-  the same way ("That's it. (and it's opt in)"), and it says Skub uses a single
-  cookie, though the game sets its own functional ones too (player, Flash,
-  hints).
-
 - **Retro themes follow the new layout.** The main look moved on: play controls
   are a toolbar beside the board, the score badge replaced the difficulty badge
   and move counter, the sidebar has a footer, and cards lost their difficulty
