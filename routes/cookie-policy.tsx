@@ -14,8 +14,37 @@ const gameCookies = [
 
 const analyticsCookies = [
   ["tracking_id", "A random id for your visits", "1 year"],
-  ["ph_…_posthog", "PostHog's own id for the same visits", "1 year"],
+  [
+    "ph_…_posthog",
+    "PostHog's own id for the same visits, also kept in local storage",
+    "1 year",
+  ],
 ];
+
+function CookieTable({ cookies }: { cookies: string[][] }) {
+  return (
+    <div>
+      <table>
+        <thead>
+          <tr>
+            <th align="left">Cookie</th>
+            <th align="left">Purpose</th>
+            <th align="right">Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cookies.map(([name, purpose, duration]) => (
+            <tr key={name}>
+              <td align="left">{name}</td>
+              <td align="left">{purpose}</td>
+              <td align="right">{duration}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default define.page(function CookiePolicyPage() {
   return (
@@ -36,72 +65,30 @@ export default define.page(function CookiePolicyPage() {
             analytics.
           </p>
 
-          <div>
-            <table>
-              <thead>
-                <tr>
-                  <th align="left">Cookie</th>
-                  <th align="left">Purpose</th>
-                  <th align="right">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {gameCookies.map(([name, purpose, duration]) => (
-                  <tr key={name}>
-                    <td align="left">{name}</td>
-                    <td align="left">{purpose}</td>
-                    <td align="right">{duration}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CookieTable cookies={gameCookies} />
 
           <p className="text-text-2">
             Logging in happens on Auth0's page, which sets its own cookies
             there.
           </p>
 
-          <h3 className="text-2 font-semibold mt-fl-1">Whatever you choose</h3>
+          <h3 className="text-2 font-semibold mt-fl-1">Until you say yes</h3>
 
           <p className="text-text-2">
-            The game sends a few events, like a puzzle being solved, with a new
-            random id each time. They can't be tied to you or to each other.
-          </p>
-
-          <h3 className="text-2 font-semibold mt-fl-1">If you say no</h3>
-
-          <p className="text-text-2">
-            PostHog still counts visits, but without cookies, so it can't tell
-            you apart from anyone else.
+            Nothing from your browser is recorded. The game sends a few events,
+            like a puzzle being solved, each with a new random id, so they can't
+            be tied to you or to each other. If you say no, the tracking_id
+            cookie remembers that for a year.
           </p>
 
           <h3 className="text-2 font-semibold mt-fl-1">If you say yes</h3>
 
           <p className="text-text-2">
-            Two cookies let me follow your visits over time:
+            Two cookies let me follow your visits over time, and the game's
+            events carry the same id:
           </p>
 
-          <div>
-            <table>
-              <thead>
-                <tr>
-                  <th align="left">Cookie</th>
-                  <th align="left">Purpose</th>
-                  <th align="right">Duration</th>
-                </tr>
-              </thead>
-              <tbody>
-                {analyticsCookies.map(([name, purpose, duration]) => (
-                  <tr key={name}>
-                    <td align="left">{name}</td>
-                    <td align="left">{purpose}</td>
-                    <td align="right">{duration}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CookieTable cookies={analyticsCookies} />
 
           <p className="text-text-2">With them, I see:</p>
 
@@ -121,12 +108,12 @@ export default define.page(function CookiePolicyPage() {
             <li>Sell your data</li>
             <li>Share it with advertisers</li>
             <li>Track you across other websites</li>
-            <li>Send your name or email to analytics</li>
+            <li>Send your email to analytics</li>
             <li>Keep your IP address</li>
           </ul>
 
           <p className="text-text-2">
-            Everything is stored with PostHog in the EU. To change your mind,
+            Analytics are stored with PostHog in the EU. To change your mind,
             clear Skub's cookies and the question comes back.
           </p>
 
