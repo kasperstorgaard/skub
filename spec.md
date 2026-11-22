@@ -32,7 +32,8 @@ board isn't reloaded and re-posted.
   first solve (still onboarding). Rate it on the second (a first impression
   from new players). After that, a third each of Rate it, Build your own (folded
   in from #302) and Play one more. A puzzle already rated gets Play instead of
-  Rate.
+  Rate. Rated puzzles are remembered in the progress cookie (KV stays the
+  durable copy), so the puzzle page doesn't wait on KV.
 - **Celebration link (`celebration`):** a quiet "Rate" text link with an
   inline icon beside the dismiss link, on every celebration, for players who
   want to say something whether or not they were asked.
