@@ -2,7 +2,7 @@ import { type Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
-import { feedbackSent } from "#/client/feedback-signals.ts";
+import { ratedSlug } from "#/client/feedback-signals.ts";
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
@@ -115,8 +115,9 @@ export function CelebrationDialog(
     url.searchParams.set("from", from);
     return url.href;
   };
-  // Rate holds the main slot until feedback goes out; then the link is enough
-  const isRatePrimary = action === "rate" && !feedbackSent.value;
+  // Rate holds the main slot until it's rated; then the link is enough
+  const isRatePrimary = action === "rate" &&
+    ratedSlug.value !== puzzle.value.slug;
   const headline = !isPerfect
     ? "Solved!"
     : stars.includes("first")

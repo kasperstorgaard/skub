@@ -2,7 +2,7 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
-import { feedbackSent } from "#/client/feedback-signals.ts";
+import { ratedSlug } from "#/client/feedback-signals.ts";
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
@@ -111,14 +111,22 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
     event.preventDefault();
     setIsSubmitting(true);
 
-    const result = await fetch("/feedback", {
-      method: "POST",
-      headers: { Accept: "application/json" },
-      body: new FormData(event.currentTarget as HTMLFormElement),
-    }).then((res) => res.ok ? "sent" : "failed", () => "failed");
+    const form = new FormData(event.currentTarget as HTMLFormElement);
+    let result: "sent" | "failed";
+    try {
+      const res = await fetch("/feedback", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: form,
+      });
+      result = res.ok ? "sent" : "failed";
+    } catch {
+      result = "failed";
+    }
 
     setIsSubmitting(false);
-    if (result === "sent") feedbackSent.value = true;
+    const isRating = form.has("difficulty") || form.has("liked");
+    if (result === "sent" && puzzle && isRating) ratedSlug.value = puzzle.slug;
     const url = new URL(closeHref);
     url.searchParams.set("dialog", `feedback-${result}`);
     updateLocation(url.href, { replace: true });
