@@ -1,125 +1,157 @@
 /**
- * AI-driven e2e test selection.
- *
- * Reads the git diff for the deployed SHA and the full content of each e2e
- * test file, asks Claude which tests are affected, and prints a
- * space-separated list of file paths to stdout.
- * Prints nothing (exit 0) if no tests are needed — the caller should skip.
+ * Prints the e2e test files affected by this branch, space-separated.
+ * Prints nothing when no e2e test is affected. Any failure exits non-zero.
  *
  * Usage: deno run -A scripts/select-e2e-tests.ts
- * Env:   DEPLOY_SHA      — git SHA from the Deno Deploy dispatch payload
- *        PR_DESCRIPTION  — PR body from GitHub API (optional, improves selection)
+ * Env:   DEPLOY_SHA — commit to compare against origin/main (default HEAD)
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+import {
+  type ImportGraph,
+  selectE2eTests,
+} from "#/scripts/lib/e2e-selection.ts";
 
-async function getDiff(): Promise<string> {
-  const sha = Deno.env.get("DEPLOY_SHA");
-  const range = sha ? `origin/main...${sha}` : "origin/main...HEAD";
+type DenoInfo = {
+  roots: string[];
+  redirects: Record<string, string>;
+  modules: {
+    specifier: string;
+    local?: string;
+    error?: string;
+    dependencies?: {
+      code?: { specifier: string };
+      type?: { specifier: string };
+    }[];
+  }[];
+};
 
-  const result = await new Deno.Command("git", {
-    args: ["diff", range, "--unified=0"],
-    stdout: "piped",
-    stderr: "piped",
-  }).output();
-
-  return new TextDecoder().decode(result.stdout).trim();
-}
-
-async function collectTestFiles(
-  dir: string,
-  paths: string[],
-): Promise<void> {
-  for await (const entry of Deno.readDir(dir)) {
-    const path = `${dir}/${entry.name}`;
-    if (entry.isDirectory) {
-      if (entry.name === "_fresh" || entry.name === "node_modules") continue;
-      await collectTestFiles(path, paths);
-    } else if (entry.name.endsWith("_test.ts")) {
-      if (path.startsWith("./e2e/") || path.includes("/_e2e/")) {
-        paths.push(path);
-      }
-    }
-  }
-}
-
-async function readTestFiles(): Promise<string> {
-  const paths: string[] = [];
-  await collectTestFiles(".", paths);
-
-  const sections = await Promise.all(
-    paths.map(async (path) => {
-      const content = await Deno.readTextFile(path);
-      return `=== ${path} ===\n${content}`;
-    }),
-  );
-  return sections.join("\n\n");
-}
+const REPO = Deno.cwd();
 
 const log = (...args: unknown[]) =>
   console.error("[select-e2e-tests]", ...args);
 
-const [diff, testFiles] = await Promise.all([getDiff(), readTestFiles()]);
+async function run(command: string, args: string[]): Promise<string> {
+  const result = await new Deno.Command(command, {
+    args,
+    stdout: "piped",
+    stderr: "piped",
+  }).output();
 
-if (!diff) Deno.exit(0);
+  if (!result.success) {
+    const stderr = new TextDecoder().decode(result.stderr);
+    throw new Error(`${command} ${args.join(" ")} failed:\n${stderr}`);
+  }
 
-const client = new Anthropic();
-
-const prDescription = Deno.env.get("PR_DESCRIPTION")?.trim() ?? "";
-
-const prSection = prDescription
-  ? `Here is the PR description for this deployment:\n\n${prDescription}\n\n`
-  : "";
-
-const response = await client.messages.create({
-  model: "claude-opus-4-6",
-  max_tokens: 1024,
-  output_config: {
-    format: {
-      type: "json_schema",
-      schema: {
-        type: "object",
-        properties: {
-          reasoning: { type: "string" },
-          files: {
-            type: "array",
-            items: { type: "string" },
-          },
-        },
-        required: ["reasoning", "files"],
-        additionalProperties: false,
-      },
-    },
-  },
-  messages: [
-    {
-      role: "user",
-      content: `${prSection}Here is the git diff for this deployment:
-
-${diff}
-
-Here are the e2e test files and their full contents:
-
-${testFiles}
-
-Return the test files that should run given what changed.
-If the PR description mentions specific tests or flows to verify, prioritise those.
-Return an empty array if no e2e tests are needed.`,
-    },
-  ],
-});
-
-const block = response.content[0];
-if (block.type !== "text") Deno.exit(0);
-
-const { reasoning, files } = JSON.parse(block.text) as {
-  reasoning: string;
-  files: string[];
-};
-
-log(`reasoning: ${reasoning}`);
-log(`selected files: ${files.join(", ") || "(none)"}`);
-
-if (files.length > 0) {
-  console.log(files.join(" "));
+  return new TextDecoder().decode(result.stdout);
 }
+
+async function getChangedFiles(): Promise<string[]> {
+  const sha = Deno.env.get("DEPLOY_SHA") || "HEAD";
+  const output = await run("git", [
+    "diff",
+    "--name-only",
+    "--no-renames",
+    "-z",
+    `origin/main...${sha}`,
+  ]);
+  return output.split("\0").filter(Boolean);
+}
+
+async function collectRoots(dir: string, roots: string[]): Promise<void> {
+  for await (const entry of Deno.readDir(dir)) {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory) {
+      await collectRoots(path, roots);
+    } else if (/\.tsx?$/.test(entry.name)) {
+      const isTest = entry.name.endsWith("_test.ts");
+      const isE2e = path.startsWith("e2e/") || path.includes("/_e2e/");
+      if (isE2e ? isTest : !isTest) roots.push(path);
+    }
+  }
+}
+
+function toRepoPath(specifier: string): string | null {
+  if (!specifier.startsWith("file://")) return null;
+  const path = decodeURIComponent(new URL(specifier).pathname);
+  return path.startsWith(`${REPO}/`) ? path.slice(REPO.length + 1) : null;
+}
+
+/** One `deno info` over a generated module importing every root. */
+async function buildGraph(roots: string[]): Promise<ImportGraph> {
+  const dir = await Deno.makeTempDir();
+  try {
+    const entry = `${dir}/entry.ts`;
+    const imports = roots.map((root) =>
+      `import ${JSON.stringify(new URL(`file://${REPO}/${root}`).href)};`
+    );
+    await Deno.writeTextFile(entry, imports.join("\n"));
+
+    const info: DenoInfo = JSON.parse(
+      await run("deno", [
+        "info",
+        "--json",
+        "--config",
+        `${REPO}/deno.json`,
+        entry,
+      ]),
+    );
+
+    const resolve = (specifier: string) =>
+      info.redirects[specifier] ?? specifier;
+    const deps = new Map<string, string[]>();
+    for (const module of info.modules) {
+      if (module.error) {
+        throw new Error(`${module.specifier}: ${module.error}`);
+      }
+      deps.set(
+        module.specifier,
+        (module.dependencies ?? []).flatMap((dep) =>
+          [dep.code?.specifier, dep.type?.specifier]
+            .filter((specifier) => specifier !== undefined)
+            .map(resolve)
+        ),
+      );
+    }
+
+    const graph: ImportGraph = {};
+    for (const root of roots) {
+      const start = new URL(`file://${REPO}/${root}`).href;
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length > 0) {
+        const current = queue.pop() ?? "";
+        for (const next of deps.get(current) ?? []) {
+          if (seen.has(next) || toRepoPath(next) === null) continue;
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+      graph[root] = [...seen].flatMap((specifier) =>
+        toRepoPath(specifier) ?? []
+      );
+    }
+    return graph;
+  } finally {
+    await Deno.remove(dir, { recursive: true });
+  }
+}
+
+const roots: string[] = [];
+await collectRoots("routes", roots);
+await collectRoots("e2e", roots);
+
+const [changedFiles, graph] = await Promise.all([
+  getChangedFiles(),
+  buildGraph(roots),
+]);
+
+if (!Object.keys(graph).some((root) => root.endsWith("_test.ts"))) {
+  throw new Error("No e2e test files found");
+}
+
+const files = selectE2eTests(changedFiles, graph);
+
+log(`changed: ${changedFiles.join(", ") || "(none)"}`);
+log(`selected: ${files.join(", ") || "(none)"}`);
+
+if (files.length > 0) console.log(files.join(" "));
