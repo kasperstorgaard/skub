@@ -34,7 +34,7 @@ board isn't reloaded and re-posted.
   in from #302) and Play one more. A puzzle already rated gets Play instead of
   Rate. Rated puzzles are remembered in the progress cookie (KV stays the
   durable copy), so the puzzle page doesn't wait on KV.
-- **Celebration link (`celebration`):** a quiet "Rate" text link with an
+- **Celebration link (`celebration`):** a quiet "Rate it" text link with an
   inline icon beside the dismiss link, on every celebration, for players who
   want to say something whether or not they were asked.
 - **Solutions page nudge (`nudge`):** "How was it? Rate it" for a player who
