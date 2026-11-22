@@ -15,7 +15,7 @@ export class PuzzlePage {
   }
 
   get backLink() {
-    return this.page.getByRole("link", { name: /^Back to (home|puzzles)$/ });
+    return this.page.getByRole("link", { name: /^Go to (home|puzzles)$/ });
   }
 
   get heading() {
