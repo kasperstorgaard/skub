@@ -4,6 +4,7 @@ import {
   decodeProgress,
   encodeProgress,
   getProgress,
+  withRated,
   withSolve,
 } from "#/game/progress.ts";
 import type { Move } from "#/game/types.ts";
@@ -137,7 +138,53 @@ Deno.test("decodeProgress() round trips solution score beside best moves", () =>
   };
 
   assertEquals(
-    decodeProgress(encodeProgress(progress, entries, score), entries),
-    { progress, score },
+    decodeProgress(encodeProgress(progress, entries, { score }), entries),
+    { progress, score, rated: [] },
   );
+});
+
+Deno.test("decodeProgress() round trips rated puzzles, solved or not", () => {
+  const entries = [
+    { slug: "daily-1", number: 1 },
+    { slug: "daily-2", number: 2 },
+    { slug: "daily-3", number: 3 },
+  ];
+  const bytes = encodeProgress({ "daily-1": 7 }, entries, {
+    rated: ["daily-1", "daily-3"],
+  });
+
+  assertEquals(decodeProgress(bytes, entries).rated, ["daily-1", "daily-3"]);
+});
+
+Deno.test("decodeProgress() keeps the solution score of a rated puzzle", () => {
+  const entries = [{ slug: "daily-1", number: 1 }];
+  const bytes = encodeProgress({ "daily-1": 7 }, entries, {
+    score: { "daily-1": ["solve", "flash"] },
+    rated: ["daily-1"],
+  });
+
+  assertEquals(decodeProgress(bytes, entries).score, {
+    "daily-1": ["solve", "flash"],
+  });
+});
+
+Deno.test("decodeProgress() gives a rated, unscored puzzle no solution score", () => {
+  const entries = [{ slug: "daily-1", number: 1 }];
+  const bytes = encodeProgress({ "daily-1": 7 }, entries, {
+    rated: ["daily-1"],
+  });
+
+  assertEquals(decodeProgress(bytes, entries).score, {});
+});
+
+// withRated
+
+Deno.test("withRated() adds a rated puzzle", () => {
+  assertEquals(withRated(["daily-1"], "daily-2"), ["daily-1", "daily-2"]);
+});
+
+Deno.test("withRated() returns the same array for a puzzle already rated", () => {
+  const rated = ["daily-1"];
+
+  assertStrictEquals(withRated(rated, "daily-1"), rated);
 });

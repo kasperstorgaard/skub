@@ -1,4 +1,5 @@
 import { define } from "#/core.ts";
+import { listRatedPuzzles } from "#/db/feedback.ts";
 import { listSolutionScores } from "#/db/score.ts";
 import { listUserSolutions } from "#/db/solutions.ts";
 import type { User } from "#/db/types.ts";
@@ -22,8 +23,8 @@ import { getUserIdCookie } from "#/lib/user-cookie.ts";
 const SYNC_INTERVAL_MS = 30 * 60 * 1000;
 
 /**
- * Populates ctx.state.user, ctx.state.progress and ctx.state.score from the
- * signed `profile`
+ * Populates ctx.state.user, ctx.state.progress, ctx.state.score and
+ * ctx.state.rated from the signed `profile`
  * and `progress` cookies, reading KV only when a cookie is missing, belongs to
  * another user or login, or a logged-in device last synced over 30 minutes ago
  * (so devices converge). Re-issues the cookies when they changed. Requires
@@ -46,10 +47,11 @@ export const user = define.middleware(async (ctx) => {
 
   // Progress resyncs with the profile, in the same round trip.
   const isProgressDue = isKnown && (!isFresh || !cookieProgress);
-  const [stored, solutions, storedScore] = await Promise.all([
+  const [stored, solutions, storedScore, storedRated] = await Promise.all([
     !isFresh && isKnown ? getUser(userId) : null,
     isProgressDue ? listUserSolutions(userId, { limit: "max" }) : null,
     isProgressDue ? listSolutionScores(userId) : null,
+    isProgressDue ? listRatedPuzzles(userId) : null,
   ]);
 
   let syncedAt = profile?.syncedAt;
@@ -66,10 +68,12 @@ export const user = define.middleware(async (ctx) => {
     ? getProgress(solutions)
     : cookieProgress?.progress ?? {};
   const score = storedScore ?? cookieProgress?.score ?? {};
+  const rated = storedRated ?? cookieProgress?.rated ?? [];
 
   ctx.state.user = user;
   ctx.state.progress = progress;
   ctx.state.score = score;
+  ctx.state.rated = rated;
 
   const res = await ctx.next();
 
@@ -90,7 +94,8 @@ export const user = define.middleware(async (ctx) => {
 
   let progressValue: string | null = null;
   const isProgressSame = cookieProgress && !solutions &&
-    ctx.state.progress === progress && ctx.state.score === score;
+    ctx.state.progress === progress && ctx.state.score === score &&
+    ctx.state.rated === rated;
   if (!isSet("progress") && !isProgressSame) {
     progressValue = await signProgress(ctx.state, userId);
   }

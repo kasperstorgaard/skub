@@ -46,11 +46,10 @@ export async function saveFeedback(
   return saved;
 }
 
-/** Whether a player has rated a puzzle. */
-export async function hasRated(
-  userId: string,
-  puzzleSlug: string,
-): Promise<boolean> {
-  const res = await kv.get(ratingKey(userId, puzzleSlug));
-  return res.value !== null;
+/** Slugs of the puzzles a player has rated. */
+export async function listRatedPuzzles(userId: string): Promise<string[]> {
+  const slugs: string[] = [];
+  const iter = kv.list({ prefix: ["rating_by_user_puzzle", userId] });
+  for await (const entry of iter) slugs.push(entry.key[2] as string);
+  return slugs;
 }

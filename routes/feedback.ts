@@ -6,6 +6,7 @@ import {
   parseRating,
 } from "#/game/feedback.ts";
 import { getPuzzle } from "#/game/loader.ts";
+import { withRated } from "#/game/progress.ts";
 import { canSendEmail, sendEmail, toEmail } from "#/lib/email.ts";
 import { trackFeedbackSent } from "#/lib/tracking.ts";
 
@@ -14,7 +15,8 @@ const FEEDBACK_FROM = "Skub <feedback@skub.app>";
 /**
  * Takes a rating, a message, or both, about a puzzle or the game. Kept in KV,
  * emailed to `SUBMISSIONS_EMAIL` the way puzzle submissions are, and tracked.
- * Sent counts as sent once either KV or the email takes it.
+ * Sent counts as sent once either KV or the email takes it. A rating stored
+ * marks the puzzle rated in the `progress` cookie, on both answers.
  *
  * Answers JSON to the dialog's fetch, otherwise 303s back to the page it came
  * from with `dialog=feedback-sent` / `feedback-failed`.
@@ -92,6 +94,11 @@ export const handler = define.handlers({
     }
     if (stored.status === "rejected" && emailed.status === "rejected") {
       return respond("failed");
+    }
+
+    // Middleware re-signs the progress cookie with it.
+    if (puzzle && rating && stored.status === "fulfilled") {
+      ctx.state.rated = withRated(ctx.state.rated, puzzle.slug);
     }
 
     trackFeedbackSent(ctx.state, puzzle, {

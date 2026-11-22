@@ -11,7 +11,6 @@ import { PrintPanel } from "#/components/print-panel.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { BadgeStars } from "#/components/stars.tsx";
 import { TutorialNudge } from "#/components/tutorial-nudge.tsx";
-import { hasRated } from "#/db/feedback.ts";
 import { awardScore } from "#/db/score.ts";
 import { saveSolution, updateSolutionAggregates } from "#/db/solutions.ts";
 import type { User } from "#/db/types.ts";
@@ -69,7 +68,7 @@ type PageData = {
 };
 
 export const handler = define.handlers<PageData>({
-  async GET(ctx) {
+  GET(ctx) {
     const { slug } = ctx.params;
     const savedName = ctx.state.user?.name ?? null;
 
@@ -106,13 +105,13 @@ export const handler = define.handlers<PageData>({
 
     const showEdit = isDev && (puzzle.number ?? 0) > getTodaysPuzzleNumber();
 
-    // Only named players get the celebration: no rating lookup for the rest.
+    // Only named players get the celebration.
     const celebrationAction = savedName
       ? pickCelebrationAction(slug, {
         userId: ctx.state.userId,
         solvedCount: Object.keys(ctx.state.progress).length +
           (hasSolved ? 0 : 1),
-        isRated: await hasRated(ctx.state.userId, slug),
+        isRated: ctx.state.rated.includes(slug),
       })
       : "play";
 

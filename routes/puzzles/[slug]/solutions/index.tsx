@@ -11,7 +11,6 @@ import { PuzzleName } from "#/components/puzzle-name.tsx";
 import { RateNudge } from "#/components/rate-nudge.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { TOOL_BUTTON } from "#/components/toolbar.tsx";
-import { hasRated } from "#/db/feedback.ts";
 import {
   getCanonicalGroup,
   listCanonicalGroups,
@@ -95,11 +94,10 @@ export const handler = define.handlers<Data>({
     const skip = tab === "flash" ? puzzle.flashStart?.length ?? 0 : 0;
 
     // Independent reads, at once: KV is far from the isolate.
-    const [allUserSolutions, groups, solutions, isRated] = await Promise.all([
+    const [allUserSolutions, groups, solutions] = await Promise.all([
       listUserPuzzleSolutions(userId, slug, { limit: 100 }),
       tab === "solutions" ? listCanonicalGroups(slug, { limit: PATHS }) : [],
       tab === "flash" ? listPuzzleSolutions(slug, { limit: 1000 }) : [],
-      hasRated(userId, slug),
     ]);
     const userSolutions = allUserSolutions.filter((solution) =>
       tab === "flash" ? solution.flash : !solution.flash
@@ -156,7 +154,7 @@ export const handler = define.handlers<Data>({
       paths,
       extraPath,
       userCanonicalKeys,
-      askRating: allUserSolutions.length > 0 && !isRated,
+      askRating: allUserSolutions.length > 0 && !ctx.state.rated.includes(slug),
     });
   },
 });

@@ -25,6 +25,8 @@ export type State = {
   progress: Progress;
   // Solution score per puzzle, kept with progress (middleware/user.ts)
   score: ScoreProgress;
+  // Slugs of the puzzles rated, kept with progress (middleware/user.ts)
+  rated: string[];
 };
 
 export const define = createDefine<State>();
