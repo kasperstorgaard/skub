@@ -191,7 +191,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
           </section>
         </div>
       </Main>
-      <Panel aside="feedback" />
+      <Panel aside="feedback" url={props.url} />
       <FeedbackDialog href={href} userEmail={props.state.user.email} />
     </>
   );

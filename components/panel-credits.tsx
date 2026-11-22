@@ -4,14 +4,13 @@ import { GithubLogo, Icon, LinkedinLogo } from "#/components/icons.tsx";
 
 /**
  * Opposite the credits: the builder link, a feedback link (pages that pair it
- * with a `FeedbackDialog`), or nothing, e.g. while building.
+ * with a `FeedbackDialog`) opening over `url`, or nothing, e.g. while building.
  */
-export type PanelAside = "builder" | "feedback" | "none";
+export type PanelAsideProps =
+  | { aside?: "builder" | "none"; url?: never }
+  | { aside: "feedback"; url: URL };
 
-type PanelCreditsProps = {
-  aside?: PanelAside;
-  className?: string;
-};
+type PanelCreditsProps = PanelAsideProps & { className?: string };
 
 /**
  * The credit, GitHub and LinkedIn, and the builder or feedback link, on every
@@ -20,8 +19,12 @@ type PanelCreditsProps = {
  * grid, the builder on top and the credits at the foot.
  */
 export function PanelCredits(
-  { aside = "builder", className }: PanelCreditsProps,
+  { aside = "builder", url, className }: PanelCreditsProps,
 ) {
+  const feedbackUrl = url && new URL(url);
+  feedbackUrl?.searchParams.set("dialog", "feedback");
+  feedbackUrl?.searchParams.set("from", "panel");
+
   return (
     <div
       className={clsx(
@@ -72,11 +75,11 @@ export function PanelCredits(
         </p>
       )}
 
-      {aside === "feedback" && (
+      {feedbackUrl && (
         <p className="print:hidden m-0 text-right lg:text-left lg:row-start-1">
           Got thoughts? <br />
           <a
-            href="?dialog=feedback&from=panel"
+            href={feedbackUrl.href}
             // The dialog opens it on the current URL, see FeedbackDialog
             data-feedback
             className="text-2 text-text-1"

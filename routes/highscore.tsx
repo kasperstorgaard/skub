@@ -175,7 +175,7 @@ export default define.page<typeof handler>(function HighscorePage(props) {
         </div>
       </Main>
 
-      <Panel aside="feedback" />
+      <Panel aside="feedback" url={props.url} />
       <FeedbackDialog href={href} userEmail={props.state.user.email} />
     </>
   );
