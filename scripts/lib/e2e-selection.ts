@@ -12,7 +12,7 @@ export type BlastRadiusConfig = [
 
 const ROUTE_TEST = /^routes\/(.*\/)?_e2e\/[^/]+_test\.ts$/;
 const FLOW_TEST = /^e2e\/[^/]+_test\.ts$/;
-const ROUTE_MODULE = /^routes\/(?!(.*\/)?_e2e\/).*\.tsx?$/;
+const ROUTE_MODULE = /^routes\/(?!(.*\/)?_e2e\/)(?!.*_test\.ts$).*\.tsx?$/;
 
 /**
  * Picks the e2e test files a change can break, classifying each changed file

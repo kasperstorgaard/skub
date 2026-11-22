@@ -91,37 +91,29 @@ jobs:
         if: steps.select.outputs.files != ''
         run: npx playwright install chromium --with-deps
 
-      # The branch URL can still serve the previous revision when this event
-      # fires, so retry until the reset answers from the revision under test.
+      # Empties the branch database. Deploy points the branch URL at a new
+      # build a little after this event fires, so retry (10s apart, up to 3
+      # minutes) until the reset answers from the build under test: its
+      # buildId must match the revision id in the per-commit URL.
       - name: Reset branch database
         if: steps.select.outputs.files != ''
         run: |
+          # https://ricochet-<revision>.kasperstorgaard.deno.net -> <revision>
           HOST=${REVISION_URL#https://}
-          HOST=${HOST%%.*}
-          REVISION=${HOST#ricochet-}
-          DEADLINE=$((SECONDS + 180))
-          while true; do
-            RESPONSE=$(curl -sS -X POST "$BASE_URL/api/e2e/reset" \
-              -H "x-e2e-secret: $E2E_SECRET" \
-              -w '\n%{http_code}') || RESPONSE=$'\n000'
-            STATUS=${RESPONSE##*$'\n'}
-            BODY=${RESPONSE%$'\n'*}
-            if [ "$STATUS" = "200" ]; then
-              BUILD_ID=$(echo "$BODY" | jq -r '.buildId' 2>/dev/null || true)
-              if [ "$BUILD_ID" = "$REVISION" ]; then
-                echo "Reset: $BODY"
-                break
-              fi
-              echo "Branch serves $BUILD_ID, waiting for $REVISION"
-            else
-              echo "Reset returned $STATUS: $BODY"
+          REVISION=${HOST%%.*}
+          REVISION=${REVISION#ricochet-}
+          for attempt in $(seq 18); do
+            BUILD_ID=$(curl -sS -f -X POST "$BASE_URL/api/e2e/reset" \
+              -H "x-e2e-secret: $E2E_SECRET" | jq -r '.buildId') || true
+            if [ "$BUILD_ID" = "$REVISION" ]; then
+              echo "Reset on $REVISION"
+              exit 0
             fi
-            if [ $SECONDS -ge $DEADLINE ]; then
-              echo "::error::Branch deploy never served $REVISION"
-              exit 1
-            fi
+            echo "Branch serves ${BUILD_ID:-no reset}, waiting for $REVISION"
             sleep 10
           done
+          echo "::error::Branch deploy never served $REVISION"
+          exit 1
         env:
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
           REVISION_URL: ${{ github.event.deployment_status.environment_url }}

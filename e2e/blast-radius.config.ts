@@ -6,24 +6,33 @@ import type { BlastRadiusConfig } from "#/scripts/lib/e2e-selection.ts";
  *
  * - none: can't change what a player sees
  * - full: shared by every page, runs every test
- * - dep: runs the tests that reach it through the import graph
+ * - dep: runs the tests that reach it through the import graph; unit tests
+ *   land here too and select nothing, since no route imports them
  */
 export default [
-  // Before static/**
-  ["static/puzzles/**", "none"],
-
-  // The selector itself, before scripts/** and .github/**
+  // The selector itself, in folders that otherwise run nothing
   ["e2e/blast-radius.config.ts", "full"],
   ["scripts/select-e2e-tests.ts", "full"],
   ["scripts/lib/e2e-selection.ts", "full"],
   [".github/workflows/e2e.yml", "full"],
 
-  // E2E tests before the generic *_test.ts
-  ["e2e/**/*_test.ts", "dep"],
-  ["**/_e2e/**", "dep"],
-  ["**/*_test.ts", "none"],
+  ["static/puzzles/**", "none"],
   ["**/*.md", "none"],
   ["**/.DS_Store", "none"],
+  ["specs/**", "none"],
+  [".claude/**", "none"],
+  ["candidates/**", "none"],
+  ["scripts/**", "none"],
+  [".github/**", "none"],
+  [".vscode/**", "none"],
+  ["plugins/**/*_test.ts", "none"],
+  ["LICENSE", "none"],
+  [".gitignore", "none"],
+  [".claudeignore", "none"],
+  [".mcp.json", "none"],
+  ["paseo.json", "none"],
+  ["ricochet.code-workspace", "none"],
+  ["skills-lock.json", "none"],
 
   ["main.ts", "full"],
   ["client.ts", "full"],
@@ -40,20 +49,6 @@ export default [
   ["styles/**", "full"],
   ["static/**", "full"],
 
-  ["specs/**", "none"],
-  [".claude/**", "none"],
-  ["candidates/**", "none"],
-  ["scripts/**", "none"],
-  [".github/**", "none"],
-  [".vscode/**", "none"],
-  ["LICENSE", "none"],
-  [".gitignore", "none"],
-  [".claudeignore", "none"],
-  [".mcp.json", "none"],
-  ["paseo.json", "none"],
-  ["ricochet.code-workspace", "none"],
-  ["skills-lock.json", "none"],
-
   ["routes/**", "dep"],
   ["islands/**", "dep"],
   ["components/**", "dep"],
@@ -61,6 +56,5 @@ export default [
   ["client/**", "dep"],
   ["lib/**", "dep"],
   ["db/**", "dep"],
-  // Last: helpers and page objects
   ["e2e/**", "dep"],
 ] satisfies BlastRadiusConfig;
