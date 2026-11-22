@@ -17,7 +17,10 @@ gets more crowded every run).
 
 **Test against the branch timeline, not the revision.** Deploy gives each git
 branch its own KV database (`{app-id}--{branch}`), served at
-`https://<app>--<branch>.<org>.deno.net`. CI points `BASE_URL` there.
+`https://<app>--<branch>.<org>.deno.net`. CI points `BASE_URL` there. Deploy drops slashes from the branch name
+(`fix/cookie-banner-copy` → `ricochet--fixcookie-banner-copy`). The branch URL
+may still serve the previous revision when the deployment event fires, so CI
+waits until it serves the commit under test.
 
 **Start every run from an empty database.** A new e2e reset route deletes all
 keys before the suite runs. Guards:
@@ -39,11 +42,6 @@ CI failure, not a pass.
 
 **Fix the stale back-link locator** so the suite is green before it gates PRs
 (29/29 locally).
-
-## Open
-
-- How Deploy slugs branch names with slashes in the URL (`feat/player-feedback`
-  → ?). Needed to build `BASE_URL` in the workflow.
 
 ## Non-goals
 
