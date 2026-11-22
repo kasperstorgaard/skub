@@ -2,8 +2,10 @@
 export const backupPrefixes = [
   "auth",
   "auth_session",
+  "feedback",
   "highscore",
   "oauth_state",
+  "rating_by_user_puzzle",
   "solution_groups_by_puzzle",
   "solution_score_by_user_puzzle",
   "solutions_by_puzzle",
