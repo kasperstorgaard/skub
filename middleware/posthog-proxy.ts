@@ -22,9 +22,10 @@ export const posthogProxy = define.middleware(async (ctx) => {
     ? `https://eu-assets.i.posthog.com/${path}${url.search}`
     : `https://eu.i.posthog.com/${path}${url.search}`;
 
-  // Forward headers (remove host)
+  // Forward headers, minus host and our first-party cookies
   const headers = new Headers(ctx.req.headers);
   headers.delete("host");
+  headers.delete("cookie");
 
   const response = await fetch(targetUrl, {
     method,
