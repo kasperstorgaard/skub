@@ -19,7 +19,7 @@ export function CookieBanner({ open }: Props) {
         "grid gap-5 rounded-cond-2 overflow-hidden bg-surface-2",
         "sm:max-w-88 max-lg:shadow-3",
         "md:bottom-fl-2 md:left-fl-2 md:right-auto",
-        "motion-safe:animate-rise-in motion-reduce:animate-fade-in",
+        "motion-safe:animate-slide-in-bottom motion-safe:md:animate-slide-in-left",
       )}
     >
       {/* A puck with a bite out of it, peeking in from the corner */}
