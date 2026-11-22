@@ -113,9 +113,19 @@ export default define.page(function CookiePolicyPage() {
           </ul>
 
           <p className="text-text-2">
-            Analytics are stored with PostHog in the EU. To change your mind,
-            clear Skub's cookies and the question comes back.
+            Analytics are stored with PostHog in the EU.
           </p>
+
+          <form action="/api/consent" method="POST">
+            <button
+              type="submit"
+              name="action"
+              value="reset"
+              className="link p-0 bg-transparent cursor-pointer"
+            >
+              Change your choice
+            </button>
+          </form>
 
           <p className="mt-fl-2 border-t border-surface-3 text-text-3 text-0">
             Last updated: November 2026

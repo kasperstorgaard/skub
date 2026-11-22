@@ -1,4 +1,4 @@
-import { getCookies, setCookie } from "@std/http/cookie";
+import { deleteCookie, getCookies, setCookie } from "@std/http/cookie";
 
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import type { Move } from "#/game/types.ts";
@@ -47,6 +47,11 @@ export function setTrackingCookie(headers: Headers, id: string) {
   });
 
   return headers;
+}
+
+/** Clears the analytics choice, so the banner asks again. */
+export function deleteTrackingCookie(headers: Headers) {
+  deleteCookie(headers, TRACKING_ID_KEY, { path: "/" });
 }
 
 /**
