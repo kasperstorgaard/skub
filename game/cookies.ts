@@ -1,11 +1,11 @@
-import { getCookies, setCookie } from "@std/http/cookie";
+import { deleteCookie, getCookies, setCookie } from "@std/http/cookie";
 
 import { decodeMoves, encodeMoves } from "#/game/strings.ts";
 import type { Move } from "#/game/types.ts";
 
 const TRACKING_ID_KEY = "tracking_id";
-// 1 year
-const TRACKING_DURATION = 1000 * 60 * 60 * 24 * 365;
+// 1 year in seconds
+const TRACKING_DURATION = 60 * 60 * 24 * 365;
 
 const HINT_COUNT_KEY = "hint_count";
 // 24 h in seconds
@@ -47,6 +47,11 @@ export function setTrackingCookie(headers: Headers, id: string) {
   });
 
   return headers;
+}
+
+/** Clears the analytics choice, so the banner asks again. */
+export function deleteTrackingCookie(headers: Headers) {
+  deleteCookie(headers, TRACKING_ID_KEY, { path: "/" });
 }
 
 /**

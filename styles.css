@@ -109,34 +109,17 @@
   --animate-spin: var(--animation-spin);
   --animate-blink: var(--animation-blink);
   --animate-pulse: var(--animation-pulse);
-  --animate-sneak-in-bottom: sneak-in-bottom 1.4s ease 500ms both;
-  --animate-sneak-in-left: sneak-in-left 1.4s ease 500ms both;
-  @keyframes sneak-in-bottom {
-    0% {
+  /* Slides in once the page has settled */
+  --animate-slide-in-bottom: slide-in-bottom 700ms var(--ease-out-3) 500ms both;
+  --animate-slide-in-left: slide-in-left 700ms var(--ease-out-3) 500ms both;
+  @keyframes slide-in-bottom {
+    from {
       transform: translateY(100%);
     }
-    60% {
-      transform: translateY(80%);
-    }
-    80% {
-      transform: translateY(85%);
-    }
-    100% {
-      transform: translateY(0);
-    }
   }
-  @keyframes sneak-in-left {
-    0% {
+  @keyframes slide-in-left {
+    from {
       transform: translateX(-110%);
-    }
-    60% {
-      transform: translateX(-90%);
-    }
-    80% {
-      transform: translateX(-92%);
-    }
-    100% {
-      transform: translateX(0);
     }
   }
 

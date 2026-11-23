@@ -74,7 +74,7 @@ export default define.page<typeof handler>(function ProfilePage(props) {
               ? (
                 <>
                   <div className="flex items-center gap-fl-2">
-                    <span>{user.email}</span>
+                    <span className="ph-no-capture">{user.email}</span>
                     <a href="/auth/logout">
                       Log out
                     </a>
