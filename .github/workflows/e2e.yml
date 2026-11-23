@@ -1,25 +1,44 @@
 name: e2e tests
-run-name: "e2e — ${{ github.event.deployment.description }}"
+run-name: "e2e — ${{ github.event.deployment.description || github.event.pull_request.title }}"
 
 on:
   deployment_status:
-
-concurrency:
-  group: e2e-${{ github.event.deployment.ref }}
-  cancel-in-progress: true
+  # Marking ready doesn't redeploy, so test the branch's current build
+  pull_request:
+    types: [ready_for_review]
 
 jobs:
   check-pr:
-    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'preview'
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'preview')
     runs-on: ubuntu-latest
     outputs:
       should-run: ${{ steps.pr.outputs.should-run }}
+      base-url: ${{ steps.pr.outputs.base-url }}
+      sha: ${{ steps.pr.outputs.sha }}
+      revision-url: ${{ steps.pr.outputs.revision-url }}
     steps:
       - name: Check for open, non-draft PR
         id: pr
         run: |
-          PR_JSON=$(gh api repos/${{ github.repository }}/commits/${{ github.event.deployment.sha }}/pulls \
-            --jq '.[0] // empty')
+          if [ "$EVENT" = "pull_request" ]; then
+            SHA=$PR_HEAD_SHA
+            # The per-commit URL of the deploy registered for this commit
+            DEPLOY_ID=$(gh api "repos/$REPO/deployments?sha=$SHA&environment=preview" \
+              --jq '.[0].id // empty')
+            if [ -z "$DEPLOY_ID" ]; then
+              echo "should-run=false" >> $GITHUB_OUTPUT
+              echo "No deploy yet; e2e runs when it lands"
+              exit 0
+            fi
+            REVISION_URL=$(gh api "repos/$REPO/deployments/$DEPLOY_ID/statuses" \
+              --jq '.[0].environment_url')
+          fi
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "revision-url=$REVISION_URL" >> $GITHUB_OUTPUT
+
+          PR_JSON=$(gh api repos/$REPO/commits/$SHA/pulls --jq '.[0] // empty')
           if [ -z "$PR_JSON" ]; then
             echo "should-run=false" >> $GITHUB_OUTPUT
             echo "No open PR found"
@@ -33,19 +52,31 @@ jobs:
             echo "should-run=false" >> $GITHUB_OUTPUT
             echo "Skipping: state=$STATE draft=$DRAFT"
           fi
+          # Branch timeline URL: Deploy drops "/" from the branch name.
+          BRANCH=$(echo "$PR_JSON" | jq -r '.head.ref')
+          echo "base-url=https://ricochet--${BRANCH//\//}.kasperstorgaard.deno.net" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SHA: ${{ github.event.deployment.sha }}
+          REVISION_URL: ${{ github.event.deployment_status.environment_url }}
 
   e2e:
     needs: [check-pr]
     if: needs.check-pr.outputs.should-run == 'true'
+    # One run per branch database: a newer push's reset would wipe this run.
+    concurrency:
+      group: e2e-${{ needs.check-pr.outputs.base-url }}
+      cancel-in-progress: true
     # Playwright 1.59 has no chromium build for ubuntu-latest (26.04).
     runs-on: ubuntu-24.04
     permissions:
       statuses: write
     env:
-      BASE_URL: ${{ github.event.deployment_status.environment_url }}
-      DEPLOY_SHA: ${{ github.event.deployment.sha }}
+      BASE_URL: ${{ needs.check-pr.outputs.base-url }}
+      DEPLOY_SHA: ${{ needs.check-pr.outputs.sha }}
 
     steps:
       - name: Post pending status
@@ -54,14 +85,14 @@ jobs:
             --method POST \
             -f state=pending \
             -f context="e2e tests" \
-            -f description="Selecting and running tests..." \
+            -f description="Running affected tests on the branch deploy..." \
             -f target_url="$BASE_URL"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.deployment.sha }}
+          ref: ${{ needs.check-pr.outputs.sha }}
           fetch-depth: 0
 
       - uses: denoland/setup-deno@v2
@@ -69,26 +100,11 @@ jobs:
           # 2.7.12 fails, issue filed
           deno-version: 2.9.8
 
-      - name: Fetch PR description
-        id: pr
-        run: |
-          BODY=$(gh api repos/${{ github.repository }}/commits/$DEPLOY_SHA/pulls \
-            --jq '.[0].body // ""')
-          echo "body<<EOF" >> $GITHUB_OUTPUT
-          echo "$BODY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Select tests
         id: select
-        continue-on-error: true
         run: |
           FILES=$(deno run -A scripts/select-e2e-tests.ts)
           echo "files=$FILES" >> $GITHUB_OUTPUT
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          PR_DESCRIPTION: ${{ steps.pr.outputs.body }}
 
       - name: Generate puzzle manifest
         if: steps.select.outputs.files != ''
@@ -98,9 +114,25 @@ jobs:
         if: steps.select.outputs.files != ''
         run: npx playwright install chromium --with-deps
 
+      # Empties the branch database; fails if the branch URL isn't serving
+      # this revision yet (re-run the job).
+      - name: Reset branch database
+        if: steps.select.outputs.files != ''
+        run: |
+          HOST=${REVISION_URL#https://}
+          REVISION=${HOST%%.*}
+          BUILD_ID=$(curl -sSf -X POST "$BASE_URL/api/e2e/reset" \
+            -H "x-e2e-secret: $E2E_SECRET" | jq -r .buildId)
+          test "$BUILD_ID" = "${REVISION#ricochet-}"
+        env:
+          E2E_SECRET: ${{ secrets.E2E_SECRET }}
+          REVISION_URL: ${{ needs.check-pr.outputs.revision-url }}
+
       - name: Run e2e tests
         if: steps.select.outputs.files != ''
-        run: deno test -A --no-check $TEST_FILES
+        run: |
+          read -ra FILES <<< "$TEST_FILES"
+          deno test -A --no-check "${FILES[@]}"
         env:
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
           TEST_FILES: ${{ steps.select.outputs.files }}
@@ -115,7 +147,7 @@ jobs:
             -f description="$DESC" \
             -f target_url="$RUN_URL"
         env:
-          STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
-          DESC: ${{ job.status == 'success' && 'All tests passed' || 'Tests failed' }}
+          STATE: ${{ job.status == 'success' && 'success' || job.status == 'cancelled' && 'error' || 'failure' }}
+          DESC: ${{ job.status == 'cancelled' && 'Superseded by a newer push' || job.status != 'success' && 'Tests failed' || steps.select.outputs.files == '' && 'No e2e tests affected' || 'All tests passed' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

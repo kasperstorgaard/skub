@@ -45,7 +45,6 @@
   ],
   "imports": {
     "#/": "./",
-    "@anthropic-ai/sdk": "npm:@anthropic-ai/sdk@^0.80",
     "@annervisser/slug": "jsr:@annervisser/slug@^1.2.1",
     "@opentelemetry/api": "npm:@opentelemetry/api@^1.9.1",
     "@deno/esbuild-plugin": "jsr:@deno/esbuild-plugin@^1.2.1",
@@ -58,6 +57,7 @@
     "@std/async": "jsr:@std/async@^1.2.0",
     "@std/async/debounce": "jsr:@std/async@^1.2.0/debounce",
     "@std/async/unstable-semaphore": "jsr:@std/async@^1.2.0/unstable-semaphore",
+    "@std/path": "jsr:@std/path@^1.1.6",
     "@std/http/cookie": "jsr:@std/http@^1.0.25/cookie",
     "@std/front-matter": "jsr:@std/front-matter@^1.0.9",
     "@std/text": "jsr:@std/text@^1.0.17",
