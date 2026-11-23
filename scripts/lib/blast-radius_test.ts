@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "@std/assert";
 
-import { selectE2eTests } from "./e2e-selection.ts";
+import { selectE2eTests } from "./blast-radius.ts";
 
 Deno.test("selectE2eTests runs a changed route's tests and the flows", () => {
   const selected = selectE2eTests(["game/board.ts"], {

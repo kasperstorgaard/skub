@@ -1,4 +1,4 @@
-import type { BlastRadiusConfig } from "#/scripts/lib/e2e-selection.ts";
+import type { BlastRadiusConfig } from "#/scripts/lib/blast-radius.ts";
 
 /**
  * Which e2e tests a changed file runs. First match wins; a changed file
@@ -13,7 +13,7 @@ export default [
   // The selector itself, in folders that otherwise run nothing
   ["e2e/blast-radius.config.ts", "full"],
   ["scripts/select-e2e-tests.ts", "full"],
-  ["scripts/lib/e2e-selection.ts", "full"],
+  ["scripts/lib/blast-radius.ts", "full"],
   [".github/workflows/e2e.yml", "full"],
 
   ["static/puzzles/**", "none"],

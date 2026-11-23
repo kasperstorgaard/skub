@@ -9,7 +9,7 @@
 import {
   type ImportGraph,
   selectE2eTests,
-} from "#/scripts/lib/e2e-selection.ts";
+} from "#/scripts/lib/blast-radius.ts";
 
 type DenoInfo = {
   roots: string[];
