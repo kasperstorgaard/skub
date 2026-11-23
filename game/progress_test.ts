@@ -177,6 +177,13 @@ Deno.test("decodeProgress() gives a rated, unscored puzzle no solution score", (
   assertEquals(decodeProgress(bytes, entries).score, {});
 });
 
+Deno.test("decodeProgress() doesn't count a rated, unsolved puzzle as solved", () => {
+  const entries = [{ slug: "daily-1", number: 1 }];
+  const bytes = encodeProgress({}, entries, { rated: ["daily-1"] });
+
+  assertEquals(decodeProgress(bytes, entries).progress, {});
+});
+
 // withRated
 
 Deno.test("withRated() adds a rated puzzle", () => {
