@@ -1,26 +1,44 @@
 name: e2e tests
-run-name: "e2e — ${{ github.event.deployment.description }}"
+run-name: "e2e — ${{ github.event.deployment.description || github.event.pull_request.title }}"
 
 on:
   deployment_status:
-
-concurrency:
-  group: e2e-${{ github.event.deployment.ref }}
-  cancel-in-progress: true
+  # Marking ready doesn't redeploy, so test the branch's current build
+  pull_request:
+    types: [ready_for_review]
 
 jobs:
   check-pr:
-    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'preview'
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'preview')
     runs-on: ubuntu-latest
     outputs:
       should-run: ${{ steps.pr.outputs.should-run }}
       base-url: ${{ steps.pr.outputs.base-url }}
+      sha: ${{ steps.pr.outputs.sha }}
+      revision-url: ${{ steps.pr.outputs.revision-url }}
     steps:
       - name: Check for open, non-draft PR
         id: pr
         run: |
-          PR_JSON=$(gh api repos/${{ github.repository }}/commits/${{ github.event.deployment.sha }}/pulls \
-            --jq '.[0] // empty')
+          if [ "$EVENT" = "pull_request" ]; then
+            SHA=$PR_HEAD_SHA
+            # The per-commit URL of the deploy registered for this commit
+            DEPLOY_ID=$(gh api "repos/$REPO/deployments?sha=$SHA&environment=preview" \
+              --jq '.[0].id // empty')
+            if [ -z "$DEPLOY_ID" ]; then
+              echo "should-run=false" >> $GITHUB_OUTPUT
+              echo "No deploy yet; e2e runs when it lands"
+              exit 0
+            fi
+            REVISION_URL=$(gh api "repos/$REPO/deployments/$DEPLOY_ID/statuses" \
+              --jq '.[0].environment_url')
+          fi
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "revision-url=$REVISION_URL" >> $GITHUB_OUTPUT
+
+          PR_JSON=$(gh api repos/$REPO/commits/$SHA/pulls --jq '.[0] // empty')
           if [ -z "$PR_JSON" ]; then
             echo "should-run=false" >> $GITHUB_OUTPUT
             echo "No open PR found"
@@ -39,6 +57,11 @@ jobs:
           echo "base-url=https://ricochet--${BRANCH//\//}.kasperstorgaard.deno.net" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SHA: ${{ github.event.deployment.sha }}
+          REVISION_URL: ${{ github.event.deployment_status.environment_url }}
 
   e2e:
     needs: [check-pr]
@@ -53,7 +76,7 @@ jobs:
       statuses: write
     env:
       BASE_URL: ${{ needs.check-pr.outputs.base-url }}
-      DEPLOY_SHA: ${{ github.event.deployment.sha }}
+      DEPLOY_SHA: ${{ needs.check-pr.outputs.sha }}
 
     steps:
       - name: Post pending status
@@ -69,7 +92,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.deployment.sha }}
+          ref: ${{ needs.check-pr.outputs.sha }}
           fetch-depth: 0
 
       - uses: denoland/setup-deno@v2
@@ -103,7 +126,7 @@ jobs:
           test "$BUILD_ID" = "${REVISION#ricochet-}"
         env:
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
-          REVISION_URL: ${{ github.event.deployment_status.environment_url }}
+          REVISION_URL: ${{ needs.check-pr.outputs.revision-url }}
 
       - name: Run e2e tests
         if: steps.select.outputs.files != ''
