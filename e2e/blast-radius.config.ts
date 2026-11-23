@@ -17,6 +17,8 @@ export default [
   [".github/workflows/e2e.yml", "full"],
 
   ["static/puzzles/**", "none"],
+  // Read from disk by the candidates tool, not imported
+  ["game/danish-names.json", "none"],
   ["**/*.md", "none"],
   ["**/.DS_Store", "none"],
   ["specs/**", "none"],
@@ -48,6 +50,9 @@ export default [
   ["**/*.css", "full"],
   ["styles/**", "full"],
   ["static/**", "full"],
+  // Called by fetch and form posts the import graph can't see
+  ["routes/api/**", "full"],
+  ["routes/auth/**", "full"],
 
   ["routes/**", "dep"],
   ["islands/**", "dep"],

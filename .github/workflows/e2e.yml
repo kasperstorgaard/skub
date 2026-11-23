@@ -147,7 +147,7 @@ jobs:
             -f description="$DESC" \
             -f target_url="$RUN_URL"
         env:
-          STATE: ${{ job.status == 'success' && 'success' || 'failure' }}
-          DESC: ${{ job.status != 'success' && 'Tests failed' || steps.select.outputs.files == '' && 'No e2e tests affected' || 'All tests passed' }}
+          STATE: ${{ job.status == 'success' && 'success' || job.status == 'cancelled' && 'error' || 'failure' }}
+          DESC: ${{ job.status == 'cancelled' && 'Superseded by a newer push' || job.status != 'success' && 'Tests failed' || steps.select.outputs.files == '' && 'No e2e tests affected' || 'All tests passed' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
