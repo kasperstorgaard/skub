@@ -2,7 +2,6 @@ import { type Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
-import { ratedSlug } from "#/client/feedback-signals.ts";
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
@@ -46,6 +45,8 @@ type Props = {
   isFlash?: boolean;
   /** The second call to action: picked by the server per player and puzzle. */
   action?: CelebrationAction;
+  /** The player has rated this puzzle, this page view included. */
+  isRated: Signal<boolean>;
 };
 
 export function CelebrationDialog(
@@ -57,6 +58,7 @@ export function CelebrationDialog(
     celebrationError,
     isFlash,
     action = "play",
+    isRated,
   }: Props,
 ) {
   const destination = puzzle.value.board.destination;
@@ -116,8 +118,7 @@ export function CelebrationDialog(
     return url.href;
   };
   // Rate holds the main slot until it's rated; then the link is enough
-  const isRatePrimary = action === "rate" &&
-    ratedSlug.value !== puzzle.value.slug;
+  const isRatePrimary = action === "rate" && !isRated.value;
   const headline = !isPerfect
     ? "Solved!"
     : stars.includes("first")

@@ -2,7 +2,6 @@ import type { Signal } from "@preact/signals";
 import { clsx } from "clsx/lite";
 import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
-import { ratedSlug } from "#/client/feedback-signals.ts";
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
 import {
   ArrowRight,
@@ -21,6 +20,8 @@ type Props = {
   href: Signal<string>;
   /** The puzzle the feedback is about: adds the rating. Unset: the game. */
   puzzle?: Pick<Puzzle, "slug" | "name">;
+  /** Set once `puzzle` is rated, for islands that react to it. */
+  isRated?: Signal<boolean>;
   // The logged-in player's address, used as Reply-To.
   userEmail?: string;
 };
@@ -57,7 +58,9 @@ const TONES = {
  * Also opens from any `a[data-feedback]` (the sidebar's link) on the current
  * URL, so a board in play keeps its moves.
  */
-export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
+export function FeedbackDialog(
+  { href, puzzle, isRated, userEmail }: Props,
+) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Nothing to send until a rating is picked or a line written. Only once
   // hydrated: without JS the server answers an empty send instead.
@@ -126,7 +129,9 @@ export function FeedbackDialog({ href, puzzle, userEmail }: Props) {
 
     setIsSubmitting(false);
     const isRating = form.has("difficulty") || form.has("liked");
-    if (result === "sent" && puzzle && isRating) ratedSlug.value = puzzle.slug;
+    if (result === "sent" && puzzle && isRating && isRated) {
+      isRated.value = true;
+    }
     const url = new URL(closeHref);
     url.searchParams.set("dialog", `feedback-${result}`);
     updateLocation(url.href, { replace: true });

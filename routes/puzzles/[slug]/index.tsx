@@ -250,6 +250,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const mode = useSignal<"solve">("solve");
   const celebrationData = useSignal<CelebrationData | null>(null);
   const celebrationError = useSignal(false);
+  const isRated = useSignal(props.state.rated.includes(props.data.puzzle.slug));
   const printUrl = props.url.hostname + props.url.pathname;
   const { hasFlash, isFlashOn } = props.data;
 
@@ -364,6 +365,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
           slug: props.data.puzzle.slug,
           name: props.data.puzzle.name,
         }}
+        isRated={isRated}
         userEmail={props.state.user.email}
       />
 
@@ -378,6 +380,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             celebrationError={celebrationError}
             isFlash={isFlashOn}
             action={props.data.celebrationAction}
+            isRated={isRated}
           />
           <AutoPostSolution
             href={href}
