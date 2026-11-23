@@ -2,18 +2,29 @@ import { clsx } from "clsx/lite";
 
 import { GithubLogo, Icon, LinkedinLogo } from "#/components/icons.tsx";
 
-type PanelCreditsProps = {
-  /** Drop the builder link, e.g. while building */
-  hideBuilder?: boolean;
-  className?: string;
-};
+/**
+ * Opposite the credits: the builder link, a feedback link (pages that pair it
+ * with a `FeedbackDialog`) opening over `url`, or nothing, e.g. while building.
+ */
+export type PanelAsideProps =
+  | { aside?: "builder" | "none"; url?: never }
+  | { aside: "feedback"; url: URL };
+
+type PanelCreditsProps = PanelAsideProps & { className?: string };
 
 /**
- * The credit, GitHub and LinkedIn, and the builder link, on every `Panel`.
+ * The credit, GitHub and LinkedIn, and the builder or feedback link, on every
+ * `Panel`.
  * Mobile: one row at the foot. Desktop: the row dissolves into the panel's
  * grid, the builder on top and the credits at the foot.
  */
-export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
+export function PanelCredits(
+  { aside = "builder", url, className }: PanelCreditsProps,
+) {
+  const feedbackUrl = url && new URL(url);
+  feedbackUrl?.searchParams.set("dialog", "feedback");
+  feedbackUrl?.searchParams.set("from", "panel");
+
   return (
     <div
       className={clsx(
@@ -50,7 +61,7 @@ export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
         </div>
       </footer>
 
-      {!hideBuilder && (
+      {aside === "builder" && (
         <p className="print:hidden m-0 text-right lg:text-left lg:row-start-1">
           Feeling creative? <br />
           <a
@@ -60,6 +71,20 @@ export function PanelCredits({ hideBuilder, className }: PanelCreditsProps) {
             className="text-2 text-text-1"
           >
             Build a puzzle
+          </a>
+        </p>
+      )}
+
+      {feedbackUrl && (
+        <p className="print:hidden m-0 text-right lg:text-left lg:row-start-1">
+          Got thoughts? <br />
+          <a
+            href={feedbackUrl.href}
+            // The dialog opens it on the current URL, see FeedbackDialog
+            data-feedback
+            className="text-2 text-text-1"
+          >
+            Send feedback
           </a>
         </p>
       )}

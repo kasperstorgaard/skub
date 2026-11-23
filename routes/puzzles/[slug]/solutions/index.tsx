@@ -1,3 +1,4 @@
+import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { page } from "fresh";
 
@@ -7,6 +8,7 @@ import { Main } from "#/components/main.tsx";
 import { Panel } from "#/components/panel.tsx";
 import { PillSwitch } from "#/components/pill-switch.tsx";
 import { PuzzleName } from "#/components/puzzle-name.tsx";
+import { RateNudge } from "#/components/rate-nudge.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { TOOL_BUTTON } from "#/components/toolbar.tsx";
 import {
@@ -21,6 +23,7 @@ import { getPathGroups } from "#/game/paths.ts";
 import { getSolveScore } from "#/game/score.ts";
 import { getCanonicalMoveKey } from "#/game/strings.ts";
 import type { Puzzle } from "#/game/types.ts";
+import { FeedbackDialog } from "#/islands/feedback-dialog.tsx";
 import { define } from "#/routes/puzzles/[slug]/_middleware.ts";
 
 type Tab = "solutions" | "flash";
@@ -46,6 +49,8 @@ type Data = {
   /** The viewer's latest path, when it isn't among the shown ones */
   extraPath: Path | null;
   userCanonicalKeys: string[];
+  /** The viewer solved it and hasn't rated it: ask how it was. */
+  askRating: boolean;
 };
 
 function toPath(
@@ -149,12 +154,14 @@ export const handler = define.handlers<Data>({
       paths,
       extraPath,
       userCanonicalKeys,
+      askRating: allUserSolutions.length > 0 && !ctx.state.rated.includes(slug),
     });
   },
 });
 
 export default define.page<typeof handler>(function SolutionsListPage(props) {
-  const { tab, paths, extraPath, userCanonicalKeys } = props.data;
+  const { tab, paths, extraPath, userCanonicalKeys, askRating } = props.data;
+  const href = useSignal(props.url.href);
   const { slug, flashStart } = props.data.puzzle;
   const solutionsHref = `/puzzles/${slug}/solutions`;
   // The shortest a path can be on this tab: Flash counts from its start.
@@ -228,10 +235,22 @@ export default define.page<typeof handler>(function SolutionsListPage(props) {
                 )}
               </ol>
             )}
+
+          {/* Under the list, like the nudge under the board */}
+          {askRating && (
+            <RateNudge url={props.url} className="max-w-2xs mx-auto" />
+          )}
         </div>
       </Main>
 
       <Panel />
+
+      {/* Always there: its sent answer shows after the nudge is gone */}
+      <FeedbackDialog
+        href={href}
+        puzzle={{ slug, name: props.data.puzzle.name }}
+        userEmail={props.state.user.email}
+      />
     </>
   );
 });

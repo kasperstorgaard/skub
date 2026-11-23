@@ -1,10 +1,17 @@
 import { type Signal } from "@preact/signals";
+import { clsx } from "clsx/lite";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
 import { DialogActions, DISMISS } from "#/components/dialog-actions.tsx";
-import { ArrowRight, Icon, Ranking } from "#/components/icons.tsx";
+import {
+  ArrowRight,
+  ChatCircleDots,
+  Icon,
+  Ranking,
+} from "#/components/icons.tsx";
 import { Stars } from "#/components/stars.tsx";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
+import type { CelebrationAction } from "#/game/celebration.ts";
 import { getSolveScore, type ScoreKind } from "#/game/score.ts";
 import { Puzzle } from "#/game/types.ts";
 import { decodeState, getResetHref } from "#/game/url.ts";
@@ -36,6 +43,10 @@ type Props = {
   celebrationError: Signal<boolean>;
   /** A Flash solve: off the leaderboard, so no link to it. */
   isFlash?: boolean;
+  /** The second call to action: picked by the server per player and puzzle. */
+  action?: CelebrationAction;
+  /** The player has rated this puzzle, this page view included. */
+  isRated: Signal<boolean>;
 };
 
 export function CelebrationDialog(
@@ -46,6 +57,8 @@ export function CelebrationDialog(
     celebrationData,
     celebrationError,
     isFlash,
+    action = "play",
+    isRated,
   }: Props,
 ) {
   const destination = puzzle.value.board.destination;
@@ -98,6 +111,14 @@ export function CelebrationDialog(
       isNewPath: false,
       flash: !!isFlash,
     });
+  const getRateHref = (from: "prompted" | "celebration") => {
+    const url = new URL(href.value);
+    url.searchParams.set("dialog", "feedback");
+    url.searchParams.set("from", from);
+    return url.href;
+  };
+  // Rate holds the main slot until it's rated; then the link is enough
+  const isRatePrimary = action === "rate" && !isRated.value;
   const headline = !isPerfect
     ? "Solved!"
     : stars.includes("first")
@@ -142,18 +163,39 @@ export function CelebrationDialog(
       </div>
 
       <DialogActions
-        // One way out: another go if it wasn't perfect, otherwise back
-        dismiss={isPerfect
-          ? (
-            <a href={back.href} className={DISMISS}>
-              {back.label}
-            </a>
-          )
-          : (
-            <a href={getResetHref(href.value)} className={DISMISS}>
-              Play it again
-            </a>
-          )}
+        // One way out: another go if it wasn't perfect, otherwise back. Beside
+        // it, always, rating, for those who came wanting to say something.
+        dismiss={
+          <div className="flex flex-wrap justify-center gap-x-fl-2 gap-y-1">
+            {isPerfect
+              ? (
+                <a href={back.href} className={DISMISS}>
+                  {back.label}
+                </a>
+              )
+              : (
+                <a href={getResetHref(href.value)} className={DISMISS}>
+                  Play it again
+                </a>
+              )}
+
+            {!isRatePrimary && (
+              <a
+                href={getRateHref("celebration")}
+                data-router
+                // Drawn underline: text-decoration skips the icon, this spans it
+                className={clsx(
+                  DISMISS,
+                  "inline-flex items-center gap-1 pb-[3px] no-underline",
+                  "bg-[linear-gradient(currentColor,currentColor)] bg-no-repeat",
+                  "bg-bottom bg-[length:100%_1px] hover:bg-[length:100%_2px]",
+                )}
+              >
+                <Icon icon={ChatCircleDots} /> Rate it
+              </a>
+            )}
+          </div>
+        }
       >
         {/* Flash solutions are their own tab */}
         <a
@@ -165,13 +207,38 @@ export function CelebrationDialog(
           <Icon icon={Ranking} /> See solutions
         </a>
 
-        <a
-          href="/puzzles/recommended"
-          className="btn"
-          autoFocus
-        >
-          Play one more <Icon icon={ArrowRight} />
-        </a>
+        {isRatePrimary
+          ? (
+            <a
+              href={getRateHref("prompted")}
+              data-router
+              className="btn"
+              autoFocus
+            >
+              <Icon icon={ChatCircleDots} /> Rate it
+            </a>
+          )
+          : action === "build"
+          ? (
+            <a
+              href="/puzzles/new"
+              // Full navigation: /puzzles/new redirects, which client nav drops
+              f-client-nav={false}
+              className="btn"
+              autoFocus
+            >
+              Build your own <Icon icon={ArrowRight} />
+            </a>
+          )
+          : (
+            <a
+              href="/puzzles/recommended"
+              className="btn"
+              autoFocus
+            >
+              Play one more <Icon icon={ArrowRight} />
+            </a>
+          )}
       </DialogActions>
     </Dialog>
   );

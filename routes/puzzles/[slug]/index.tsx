@@ -17,6 +17,10 @@ import type { User } from "#/db/types.ts";
 import { setUser } from "#/db/user.ts";
 import { isValidSolution, resolveMoves } from "#/game/board.ts";
 import {
+  type CelebrationAction,
+  pickCelebrationAction,
+} from "#/game/celebration.ts";
+import {
   getFlashStart,
   getHintCount,
   isFlashExplained,
@@ -35,6 +39,7 @@ import {
   type CelebrationData,
   CelebrationDialog,
 } from "#/islands/celebration-dialog.tsx";
+import { FeedbackDialog } from "#/islands/feedback-dialog.tsx";
 import { FlashDialog } from "#/islands/flash-dialog.tsx";
 import { FlashNudge } from "#/islands/flash-nudge.tsx";
 import { HintDialog } from "#/islands/hint-dialog.tsx";
@@ -58,6 +63,8 @@ type PageData = {
   isFlashOn: boolean;
   /** The Flash dialog was answered: no more dialog, no more nudge. */
   isFlashExplained: boolean;
+  /** The celebration's second call to action. */
+  celebrationAction: CelebrationAction;
 };
 
 export const handler = define.handlers<PageData>({
@@ -97,6 +104,17 @@ export const handler = define.handlers<PageData>({
     }
 
     const showEdit = isDev && (puzzle.number ?? 0) > getTodaysPuzzleNumber();
+
+    // Unused without a name: the celebration only renders for named players.
+    const celebrationAction = savedName
+      ? pickCelebrationAction(slug, {
+        userId: ctx.state.userId,
+        solvedCount: Object.keys(ctx.state.progress).length +
+          (hasSolved ? 0 : 1),
+        isRated: ctx.state.rated.includes(slug),
+      })
+      : "play";
+
     return page({
       puzzle,
       hintCount,
@@ -106,6 +124,7 @@ export const handler = define.handlers<PageData>({
       hasFlash,
       isFlashOn: !!flashStart,
       isFlashExplained: isFlashExplained(ctx.req.headers),
+      celebrationAction,
     });
   },
   async POST(ctx) {
@@ -231,6 +250,7 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
   const mode = useSignal<"solve">("solve");
   const celebrationData = useSignal<CelebrationData | null>(null);
   const celebrationError = useSignal(false);
+  const isRated = useSignal(props.state.rated.includes(props.data.puzzle.slug));
   const printUrl = props.url.hostname + props.url.pathname;
   const { hasFlash, isFlashOn } = props.data;
 
@@ -339,6 +359,16 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
 
       {hasFlash && <FlashDialog puzzle={puzzle} href={href} isOn={isFlashOn} />}
 
+      <FeedbackDialog
+        href={href}
+        puzzle={{
+          slug: props.data.puzzle.slug,
+          name: props.data.puzzle.name,
+        }}
+        isRated={isRated}
+        userEmail={props.state.user.email}
+      />
+
       {/* Celebration + auto-post are paired: only named users get them */}
       {props.data.savedName && (
         <>
@@ -349,6 +379,8 @@ export default define.page<typeof handler>(function PuzzleDetails(props) {
             celebrationData={celebrationData}
             celebrationError={celebrationError}
             isFlash={isFlashOn}
+            action={props.data.celebrationAction}
+            isRated={isRated}
           />
           <AutoPostSolution
             href={href}

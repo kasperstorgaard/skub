@@ -1,3 +1,4 @@
+import { useSignal } from "@preact/signals";
 import clsx from "clsx/lite";
 import { page } from "fresh";
 
@@ -11,6 +12,7 @@ import { setUser } from "#/db/user.ts";
 import { getAvailableEntries } from "#/game/loader.ts";
 import { getProgressScore, getTotalScore } from "#/game/score.ts";
 import { computeUserStats, type UserStats } from "#/game/streak.ts";
+import { FeedbackDialog } from "#/islands/feedback-dialog.tsx";
 import { resolveTheme, type Theme, THEMES } from "#/lib/themes.ts";
 
 type PageData = {
@@ -51,6 +53,7 @@ export const handler = define.handlers<PageData>({
 
 export default define.page<typeof handler>(function ProfilePage(props) {
   const { user } = props.state;
+  const href = useSignal(props.url.href);
   const { userStats } = props.data;
 
   const savedName = user?.name ?? null;
@@ -188,7 +191,8 @@ export default define.page<typeof handler>(function ProfilePage(props) {
           </section>
         </div>
       </Main>
-      <Panel />
+      <Panel aside="feedback" url={props.url} />
+      <FeedbackDialog href={href} userEmail={props.state.user.email} />
     </>
   );
 });

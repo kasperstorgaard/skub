@@ -23,7 +23,11 @@ const PROGRESS_MAX_LENGTH = 3800;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-export type ProgressCookie = { progress: Progress; score: ScoreProgress };
+export type ProgressCookie = {
+  progress: Progress;
+  score: ScoreProgress;
+  rated: string[];
+};
 
 /** The verified `progress` cookie, or `null` if absent, tampered with or another user's. */
 export async function getProgressCookie(
@@ -53,12 +57,14 @@ export async function getProgressCookie(
 
 /** Signs progress bound to its user, or `null` if it won't fit in a cookie. */
 export async function signProgress(
-  { progress, score }: ProgressCookie,
+  { progress, score, rated }: ProgressCookie,
   userId: string,
 ): Promise<string | null> {
   const manifest = await getPuzzleManifest();
   const id = encoder.encode(userId);
-  const body = await deflate(encodeProgress(progress, manifest, score));
+  const body = await deflate(
+    encodeProgress(progress, manifest, { score, rated }),
+  );
   const payload = new Uint8Array([PROGRESS_VERSION, id.length, ...id, ...body]);
 
   const value = await signBytes(payload, COOKIE_SIGNING_KEY);
