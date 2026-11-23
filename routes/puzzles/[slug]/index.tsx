@@ -105,7 +105,7 @@ export const handler = define.handlers<PageData>({
 
     const showEdit = isDev && (puzzle.number ?? 0) > getTodaysPuzzleNumber();
 
-    // Only named players get the celebration.
+    // Unused without a name: the celebration only renders for named players.
     const celebrationAction = savedName
       ? pickCelebrationAction(slug, {
         userId: ctx.state.userId,
