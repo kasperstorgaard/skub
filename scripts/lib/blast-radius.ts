@@ -20,7 +20,7 @@ const ROUTE_MODULE = /^routes\/(?!(.*\/)?_e2e\/)(?!.*_test\.ts$).*\.tsx?$/;
  * anything it imports changed, plus the `e2e/` flows.
  * Graph roots are route modules and e2e test files.
  */
-export function selectE2eTests(
+export function getBlastRadius(
   changedFiles: string[],
   graph: ImportGraph,
 ): string[] {

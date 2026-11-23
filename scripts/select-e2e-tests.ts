@@ -7,8 +7,8 @@
  */
 
 import {
+  getBlastRadius,
   type ImportGraph,
-  selectE2eTests,
 } from "#/scripts/lib/blast-radius.ts";
 
 type DenoInfo = {
@@ -149,7 +149,7 @@ if (!Object.keys(graph).some((root) => root.endsWith("_test.ts"))) {
   throw new Error("No e2e test files found");
 }
 
-const files = selectE2eTests(changedFiles, graph);
+const files = getBlastRadius(changedFiles, graph);
 
 log(`changed: ${changedFiles.join(", ") || "(none)"}`);
 log(`selected: ${files.join(", ") || "(none)"}`);

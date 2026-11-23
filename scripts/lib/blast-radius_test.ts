@@ -1,9 +1,9 @@
 import { assertEquals, assertThrows } from "@std/assert";
 
-import { selectE2eTests } from "./blast-radius.ts";
+import { getBlastRadius } from "./blast-radius.ts";
 
-Deno.test("selectE2eTests runs a changed route's tests and the flows", () => {
-  const selected = selectE2eTests(["game/board.ts"], {
+Deno.test("getBlastRadius runs a changed route's tests and the flows", () => {
+  const selected = getBlastRadius(["game/board.ts"], {
     "routes/puzzles/[slug]/index.tsx": [
       "routes/puzzles/[slug]/index.tsx",
       "game/board.ts",
@@ -24,8 +24,8 @@ Deno.test("selectE2eTests runs a changed route's tests and the flows", () => {
   ]);
 });
 
-Deno.test("selectE2eTests runs nothing for puzzle content", () => {
-  const selected = selectE2eTests(["static/puzzles/boxy.md"], {
+Deno.test("getBlastRadius runs nothing for puzzle content", () => {
+  const selected = getBlastRadius(["static/puzzles/boxy.md"], {
     "routes/puzzles/[slug]/_e2e/puzzle_test.ts": [
       "routes/puzzles/[slug]/_e2e/puzzle_test.ts",
     ],
@@ -35,8 +35,8 @@ Deno.test("selectE2eTests runs nothing for puzzle content", () => {
   assertEquals(selected, []);
 });
 
-Deno.test("selectE2eTests runs everything when the app shell changes", () => {
-  const selected = selectE2eTests(["routes/_app.tsx"], {
+Deno.test("getBlastRadius runs everything when the app shell changes", () => {
+  const selected = getBlastRadius(["routes/_app.tsx"], {
     "routes/profile/_e2e/profile_test.ts": [
       "routes/profile/_e2e/profile_test.ts",
     ],
@@ -49,9 +49,9 @@ Deno.test("selectE2eTests runs everything when the app shell changes", () => {
   ]);
 });
 
-Deno.test("selectE2eTests throws for an unclassified file", () => {
+Deno.test("getBlastRadius throws for an unclassified file", () => {
   assertThrows(() =>
-    selectE2eTests(["Makefile"], {
+    getBlastRadius(["Makefile"], {
       "e2e/new-user-flow_test.ts": ["e2e/new-user-flow_test.ts"],
     })
   );
