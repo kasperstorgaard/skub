@@ -89,6 +89,9 @@ scoring:
 solutionTags:
   E6D6-D3-G7G8-D8-D4-G4-H4H5-D5-D3D4-F4:
     - interesting
+  G7G8-D8-D3-E6D6-D4-H4E4-E5-D4H4-E5E4-H4F4:
+    - interesting
+    - unique
 rating: 3.5
 reasons: []
 ---

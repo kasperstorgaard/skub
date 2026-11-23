@@ -60,6 +60,11 @@ scoring:
         isolationGap: 2
         nearMissCount: 0
   calibrationVersion: 5.0.0
+solutionTags:
+  G7H7-H5-A4A1-H5A4-A2-B2:
+    - too-easy
+rating: 2.5
+reasons: []
 ---
 
 ```

@@ -61,6 +61,8 @@ scoring:
         nearMissCount: 5
   calibrationVersion: 5.0.0
 promotedAs: sylvi
+rating: 5
+reasons: []
 ---
 
 ```
