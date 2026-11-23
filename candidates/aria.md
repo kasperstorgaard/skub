@@ -135,6 +135,15 @@ scoring:
         isolationGap: 1
         nearMissCount: 8
   calibrationVersion: 5.0.0
+solutionTags:
+  G2E2-E4-E1E3-E4G4-A4F4-E5E4-F4F7-E4F4-F6:
+    - unique
+  G2E2-A4G4-E2E4-E1E3-E4F4-E5E4-F4F7-E4F4-F6:
+    - unique
+  E1E4-G2E2-E3-E4G4-A4F4-E5E4-F4F7-E4F4-F6:
+    - unique
+reasons: []
+rating: 3
 ---
 
 ```

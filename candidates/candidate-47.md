@@ -110,6 +110,13 @@ scoring:
         isolationGap: 1
         nearMissCount: 4
   calibrationVersion: 5.0.0
+solutionTags:
+  B7B6-B3H3-E6E1-B6E6-E2-E1H1-H2-E2G2:
+    - interesting
+  B7B6-B3H3-E6E1-B6E6-E2-E1H1-H3H2-E2G2:
+    - interesting
+rating: 3
+reasons: []
 ---
 
 ```

@@ -85,6 +85,12 @@ scoring:
         isolationGap: 1
         nearMissCount: 6
   calibrationVersion: 5.0.0
+rating: 2
+reasons: []
+solutionTags:
+  F3F1-D1-B6B8-D8-D2-F7D7-D2B2-D7D2-C2:
+    - boring
+    - too-easy
 ---
 
 ```

@@ -85,6 +85,11 @@ scoring:
         isolationGap: 1
         nearMissCount: 1
   calibrationVersion: 5.0.0
+solutionTags:
+  C3A3-A5-C5H5-A6D6-D5-G5-A5F5:
+    - too-easy
+rating: 2
+reasons: []
 ---
 
 ```

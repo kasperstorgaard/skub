@@ -85,6 +85,15 @@ scoring:
         isolationGap: 1
         nearMissCount: 3
   calibrationVersion: 5.0.0
+solutionTags:
+  H3H1-B1-B3B2-D2-B1B7-C7D7-D3-B7D7-D4:
+    - unique
+    - interesting
+  B3A3-H3B3-B7-A3A2-D2-C7D7-D3-B7D7-D4:
+    - interesting
+    - unique
+rating: 3.5
+reasons: []
 ---
 
 ```

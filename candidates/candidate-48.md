@@ -185,6 +185,21 @@ scoring:
         isolationGap: 1
         nearMissCount: 1
   calibrationVersion: 5.0.0
+solutionTags:
+  A8A4-H4-H8-A3F3-F8F4-H8F8-F5-D5:
+    - boring
+    - interesting
+  A8E8-E1-A1-F8F3-A3E3-A1A3-D3-D5:
+    - interesting
+  A8E8-A3A1-G1-E8E1-G1G6-E1G1-G5-D5:
+    - interesting
+  A8E8-B7B1-G1-E8E1-G1G6-E1G1-G5-D5:
+    - interesting
+  A8A4-F8H8-H1H7-A4H4-H7C7-C4-H4D4-D5:
+    - unique
+    - interesting
+rating: 3
+reasons: []
 ---
 
 ```
