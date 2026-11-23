@@ -92,7 +92,7 @@ solutionTags:
   E6F6-E4E8-D5E5-E8E6-F6F4-E6F6-F5-H5-A6:
     - unique
     - interesting
-rating: 3.5
+rating: 3
 reasons: []
 note: >-
   tons of unused board again. the tile with the cross just has 0 use when not

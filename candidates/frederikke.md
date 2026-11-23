@@ -110,11 +110,11 @@ scoring:
         isolationGap: 2
         nearMissCount: 0
   calibrationVersion: 5.0.0
-rating: 3.5
 reasons: []
 solutionTags:
   G6G8-E8A8-D2D8-G8E8-E1-A1-A7:
     - unique
+rating: 3
 ---
 
 ```
