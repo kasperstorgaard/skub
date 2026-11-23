@@ -35,8 +35,8 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   const javaScriptEnabled = opts?.javaScriptEnabled ?? true;
   const context = await browser.newContext({
     javaScriptEnabled,
-    // Without JS, Playwright's in-page retry wait never fires: a click that
-    // lands mid-transition stalls ~30s. Reduced motion keeps dialogs still.
+    // No-JS runs double as the reduced-motion player. It also keeps dialogs
+    // still: without JS, Playwright's retry wait never fires and clicks stall.
     ...(!javaScriptEnabled && { reducedMotion: "reduce" }),
   });
 
