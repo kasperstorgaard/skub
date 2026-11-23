@@ -58,7 +58,7 @@ Size doesn't matter — a one-liner on a different topic still belongs elsewhere
 
 ## Planning
 
-When planning work before implementation, write the plan to `spec.md` at the project root and commit it. On every push, CI auto-populates the PR body between `<!-- spec:start -->` / `<!-- spec:end -->` markers with the current spec content.
+When planning work before implementation, write the plan to `spec.md` at the project root and commit it. When the PR is opened, CI populates the PR body between `<!-- spec:start -->` / `<!-- spec:end -->` markers with the current spec content.
 
 On merge to main, the `archive-spec` workflow automatically moves `spec.md` to `specs/<pr-number>-<branch-slug>.md` — no manual step needed.
 
