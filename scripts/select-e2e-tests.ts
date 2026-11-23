@@ -7,6 +7,7 @@
  */
 
 import {
+  classifyFile,
   getBlastRadius,
   type ImportGraph,
 } from "#/scripts/lib/blast-radius.ts";
@@ -27,8 +28,8 @@ type DenoInfo = {
 
 const REPO = Deno.cwd();
 
-const log = (...args: unknown[]) =>
-  console.error("[select-e2e-tests]", ...args);
+// stdout is the file list; everything else goes to stderr
+const log = (line: string) => console.error(line);
 
 async function run(command: string, args: string[]): Promise<string> {
   const result = await new Deno.Command(command, {
@@ -149,9 +150,14 @@ if (!Object.keys(graph).some((root) => root.endsWith("_test.ts"))) {
   throw new Error("No e2e test files found");
 }
 
+log(`Changed files (${changedFiles.length}):`);
+for (const file of changedFiles) {
+  log(`  ${(classifyFile(file) ?? "????").padEnd(4)}  ${file}`);
+}
+
 const files = getBlastRadius(changedFiles, graph);
 
-log(`changed: ${changedFiles.join(", ") || "(none)"}`);
-log(`selected: ${files.join(", ") || "(none)"}`);
+log(`\nSelected e2e tests (${files.length}):`);
+for (const file of files) log(`  ${file}`);
 
 if (files.length > 0) console.log(files.join(" "));

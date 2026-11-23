@@ -10,28 +10,30 @@ export type BlastRadiusConfig = [
   outcome: "none" | "full" | "dep",
 ][];
 
+const MATCHERS = config.map(([glob, outcome]) => ({
+  pattern: globToRegExp(glob, { globstar: true, extended: true }),
+  outcome,
+}));
+
+/** The config outcome of the first glob a file matches, if any. */
+export function classifyFile(file: string) {
+  return MATCHERS.find(({ pattern }) => pattern.test(file))?.outcome;
+}
+
 const ROUTE_TEST = /^routes\/(.*\/)?_e2e\/[^/]+_test\.ts$/;
 const FLOW_TEST = /^e2e\/[^/]+_test\.ts$/;
 const ROUTE_MODULE = /^routes\/(?!(.*\/)?_e2e\/)(?!.*_test\.ts$).*\.tsx?$/;
 
 /**
- * Picks the e2e test files a change can break, classifying each changed file
- * by `e2e/blast-radius.config.ts`. For dep files: a route's nearest `_e2e/` tests when the route or
- * anything it imports changed, plus the `e2e/` flows.
- * Graph roots are route modules and e2e test files.
+ * The e2e test files a change can break, per `e2e/blast-radius.config.ts`.
+ * A dep file runs the nearest `_e2e/` tests of each route reaching it, plus
+ * the `e2e/` flows. Graph roots are route modules and e2e test files.
  */
 export function getBlastRadius(
   changedFiles: string[],
   graph: ImportGraph,
 ): string[] {
-  const matchers = config.map(([glob, outcome]) => ({
-    pattern: globToRegExp(glob, { globstar: true, extended: true }),
-    outcome,
-  }));
-  const classify = (file: string) =>
-    matchers.find(({ pattern }) => pattern.test(file))?.outcome;
-
-  const unclassified = changedFiles.filter((file) => !classify(file));
+  const unclassified = changedFiles.filter((file) => !classifyFile(file));
   if (unclassified.length > 0) {
     throw new Error(
       `Unclassified changed files, add them to e2e/blast-radius.config.ts: ${
@@ -58,7 +60,7 @@ export function getBlastRadius(
   };
 
   for (const file of changedFiles) {
-    const outcome = classify(file);
+    const outcome = classifyFile(file);
     if (outcome === "none") continue;
     if (outcome === "full") return tests.toSorted();
 
