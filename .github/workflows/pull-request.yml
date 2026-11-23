@@ -1,16 +1,17 @@
 name: Pull Request
-# Verify formatting, linting and unit tests on all PRs
+# Verify formatting, linting and unit tests on ready PRs; drafts skip
 
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize]
+    types: [opened, synchronize, ready_for_review]
 
 permissions:
   contents: read
 
 jobs:
   verify:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
 
     steps:
