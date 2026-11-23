@@ -32,12 +32,8 @@ export async function setup(opts?: ContextOptions): Promise<Fixtures> {
   const browser = await chromium.launch({
     args: ["--disable-dev-shm-usage"],
   });
-  const javaScriptEnabled = opts?.javaScriptEnabled ?? true;
   const context = await browser.newContext({
-    javaScriptEnabled,
-    // No-JS runs double as the reduced-motion player. It also keeps dialogs
-    // still: without JS, Playwright's retry wait never fires and clicks stall.
-    ...(!javaScriptEnabled && { reducedMotion: "reduce" }),
+    javaScriptEnabled: opts?.javaScriptEnabled ?? true,
   });
 
   const page = await context.newPage();
