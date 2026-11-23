@@ -150,9 +150,30 @@ if (!Object.keys(graph).some((root) => root.endsWith("_test.ts"))) {
   throw new Error("No e2e test files found");
 }
 
-log(`Changed files (${changedFiles.length}):`);
-for (const file of changedFiles) {
-  log(`  ${(classifyFile(file) ?? "????").padEnd(4)}  ${file}`);
+const LIST_LIMIT = 20;
+
+// Only the files that explain the selection
+const byOutcome = Object.groupBy(
+  changedFiles,
+  (file) => classifyFile(file) ?? "unclassified",
+);
+const listFiles = (files: string[]) => {
+  for (const file of files.slice(0, LIST_LIMIT)) log(`  ${file}`);
+  if (files.length > LIST_LIMIT) {
+    log(`  +${files.length - LIST_LIMIT} more`);
+  }
+};
+
+if (byOutcome.unclassified) {
+  log("Unclassified, add to e2e/blast-radius.config.ts:");
+  for (const file of byOutcome.unclassified) log(`  ${file}`);
+} else if (byOutcome.full) {
+  log("Running all e2e tests, because of:");
+  listFiles(byOutcome.full);
+} else {
+  log(`Dependencies changed (${byOutcome.dep?.length ?? 0}):`);
+  listFiles(byOutcome.dep ?? []);
+  log(`${byOutcome.none?.length ?? 0} files run nothing`);
 }
 
 const files = getBlastRadius(changedFiles, graph);
