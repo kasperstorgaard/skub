@@ -13,7 +13,11 @@ export class SolutionsPage {
   }
 
   get backLink() {
-    return this.page.getByRole("link", { name: "Back", exact: true });
+    // Inside <main>, so the header has no banner role to scope by
+    return this.page.locator("header").getByRole("link", {
+      name: "Back",
+      exact: true,
+    });
   }
 
   // By name, or as "you" once a path has more players than it names

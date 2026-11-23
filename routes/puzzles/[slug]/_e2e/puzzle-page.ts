@@ -15,7 +15,10 @@ export class PuzzlePage {
   }
 
   get backLink() {
-    return this.page.getByRole("link", { name: /^Go to (home|puzzles)$/ });
+    // Inside <main>, so the header has no banner role to scope by
+    return this.page.locator("header").getByRole("link", {
+      name: /^Go to (home|puzzles)$/,
+    });
   }
 
   get heading() {
