@@ -493,15 +493,18 @@
     border: 0;
   }
 
-  /* Not supported in tailwind yet, so we add it here */
-  @starting-style {
-    dialog[open] {
-      opacity: 0;
-      transform: scale(0.96) translateY(8px);
-    }
+  @media (prefers-reduced-motion: no-preference) {
+    /* Not supported in tailwind yet, so we add it here */
+    @starting-style {
+      /* Without JS the dialog arrives with the page: no entrance */
+      [data-js] dialog[open] {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+      }
 
-    dialog[open]::backdrop {
-      background-color: rgb(0 0 0 / 0);
+      [data-js] dialog[open]::backdrop {
+        background-color: rgb(0 0 0 / 0);
+      }
     }
   }
 
