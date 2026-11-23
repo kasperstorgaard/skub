@@ -60,7 +60,7 @@ export function selectE2eTests(
   for (const file of changedFiles) {
     const outcome = classify(file);
     if (outcome === "none") continue;
-    if (outcome === "full") return [...tests].sort();
+    if (outcome === "full") return tests.toSorted();
 
     // Covers deleted routes too, which are no longer in the graph.
     if (ROUTE_MODULE.test(file)) addRoute(file);
@@ -76,7 +76,7 @@ export function selectE2eTests(
     for (const test of flowTests) selected.add(test);
   }
 
-  return [...selected].sort();
+  return [...selected].toSorted();
 }
 
 /** The tests in the closest `_e2e/` folder at or above the route's folder. */

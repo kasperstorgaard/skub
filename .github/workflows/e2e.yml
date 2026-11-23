@@ -91,29 +91,16 @@ jobs:
         if: steps.select.outputs.files != ''
         run: npx playwright install chromium --with-deps
 
-      # Empties the branch database. Deploy points the branch URL at a new
-      # build a little after this event fires, so retry (10s apart, up to 3
-      # minutes) until the reset answers from the build under test: its
-      # buildId must match the revision id in the per-commit URL.
+      # Empties the branch database; fails if the branch URL isn't serving
+      # this revision yet (re-run the job).
       - name: Reset branch database
         if: steps.select.outputs.files != ''
         run: |
-          # https://ricochet-<revision>.kasperstorgaard.deno.net -> <revision>
           HOST=${REVISION_URL#https://}
           REVISION=${HOST%%.*}
-          REVISION=${REVISION#ricochet-}
-          for attempt in $(seq 18); do
-            BUILD_ID=$(curl -sS -f -X POST "$BASE_URL/api/e2e/reset" \
-              -H "x-e2e-secret: $E2E_SECRET" | jq -r '.buildId') || true
-            if [ "$BUILD_ID" = "$REVISION" ]; then
-              echo "Reset on $REVISION"
-              exit 0
-            fi
-            echo "Branch serves ${BUILD_ID:-no reset}, waiting for $REVISION"
-            sleep 10
-          done
-          echo "::error::Branch deploy never served $REVISION"
-          exit 1
+          BUILD_ID=$(curl -sSf -X POST "$BASE_URL/api/e2e/reset" \
+            -H "x-e2e-secret: $E2E_SECRET" | jq -r .buildId)
+          test "$BUILD_ID" = "${REVISION#ricochet-}"
         env:
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
           REVISION_URL: ${{ github.event.deployment_status.environment_url }}
