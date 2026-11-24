@@ -164,22 +164,24 @@ PR finishes only part of an item, trim the item to what is left.
   a slow trickle of particles. Subtle, never distracting, and off under reduced
   motion.
 
-- **A solve saves as the variant it was played.** Turning Flash on and going
-  back in the browser can bring back the regular board from the back/forward
-  cache, with the Flash cookie set. The solve POST reads the variant from the
-  cookie, puts the Flash start in front of the regular moves, and rejects the
-  solve ("Couldn't save your solution"), or now and then saves it as Flash. Two
-  tabs, one with Flash on, do the same. The page should send the variant it
-  played (JSON field, hidden form input), and the server should build and check
-  the moves from that, using the puzzle's own Flash start.
+- **A solve saves as the variant it was played.** (Fixed by design in the
+  Cloudflare rebuild: decision 28.) Turning Flash on and going back in the
+  browser can bring back the regular board from the back/forward cache, with the
+  Flash cookie set. The solve POST reads the variant from the cookie, puts the
+  Flash start in front of the regular moves, and rejects the solve ("Couldn't
+  save your solution"), or now and then saves it as Flash. Two tabs, one with
+  Flash on, do the same. The page should send the variant it played (JSON field,
+  hidden form input), and the server should build and check the moves from that,
+  using the puzzle's own Flash start.
 
-- **Reloading a solved board shows the celebration.** Any GET with a solved
-  board redirects to `?dialog=solution`, the no-JS name form, since the server
-  can't tell JS from no JS. So a named player who reloads, misses the
-  back/forward cache, or opens a shared solved URL gets "Solved!" with a name
-  field and Post instead of the celebration. With JS and a saved name, the name
-  dialog should step aside (drop `dialog=solution` on replace, `js:hidden` until
-  then) and let auto-post and the celebration run; without JS it stays as is.
+- **Reloading a solved board shows the celebration.** (Fixed by design in the
+  Cloudflare rebuild: decision 29.) Any GET with a solved board redirects to
+  `?dialog=solution`, the no-JS name form, since the server can't tell JS from
+  no JS. So a named player who reloads, misses the back/forward cache, or opens
+  a shared solved URL gets "Solved!" with a name field and Post instead of the
+  celebration. With JS and a saved name, the name dialog should step aside (drop
+  `dialog=solution` on replace, `js:hidden` until then) and let auto-post and
+  the celebration run; without JS it stays as is.
 
 - **Undo and redo are easy to hit with a mouse.** Check whether the desktop
   toolbar's buttons, sized like the editor's, are too small for quick undo/redo,

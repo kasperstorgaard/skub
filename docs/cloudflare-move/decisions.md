@@ -378,9 +378,9 @@ state is described in [architecture.md](architecture.md).
 ## 30. JSON write branches are deleted
 
 - **Date:** 2026-11-24
-- **Decision:** the hint, Flash, feedback and solve endpoints lose their JSON
-  branches. Islands submit the same `FormData` through `submitForm()` and follow
-  the 303 in place.
+- **Decision:** every write endpoint loses its JSON branch: hint, Flash,
+  feedback, solve and the tutorial's auto-post. Islands submit the same
+  `FormData` through `submitForm()` and follow the 303 in place.
 - **Alternatives:** keeping two representations per write.
 - **Why:** follows from invariants 1 and 5. One path to test, and no-JS and JS
   land on the same page by construction.
