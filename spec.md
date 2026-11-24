@@ -90,6 +90,26 @@ bold.
   on the new one.
 - The swap is a DNS change, and rolling it back is the same change in reverse.
 
+### Write model
+
+Offline-first sets the rules for every write:
+
+- **Self-contained requests.** A write carries everything the server needs.
+  Puzzle, moves, name and flash start for a solve. The server verifies it on
+  its own terms, for example by replaying the moves, and never depends on an
+  earlier request.
+- **One endpoint per write, whatever the source.** A no-JS form POST, an
+  island's fetch and an outbox replay hit the same handler with the same
+  fields.
+- **Replay-safe.** Each write carries a client-made id, and the store's unique
+  indexes make a duplicate a no-op.
+- **The client predicts, the server confirms.** `game/` runs on both sides, so
+  the island shows the result at once. The response only updates the cookie
+  and derived data.
+- **Online-only is a short, named list:** hints, login and the editor solve.
+- **IndexedDB holds the outbox queue and nothing else.** It's the one exception
+  to "server-set cookies only".
+
 ### Non-goals
 
 - Redesigning game rules or UI during the move. Ports first, then improvements.
@@ -196,13 +216,15 @@ production doesn't change until step 7.
      - Never caches unreleased puzzles or other players' data.
    - **Speculation Rules** prerender the likely next page: the next released
      puzzle, the archive, and the solutions page after a solve.
-   - **Outbox for solves.**
-     - The celebration opens at once, and the solve is queued until it's
-       sent.
-     - The queue replays on `online` and on the next navigation, with
-       Background Sync as a Chromium-only bonus.
-     - The server replays the moves to verify them, and the unique index
-       makes duplicates harmless.
+   - **Outbox: a queue of requests, owned by the service worker.**
+     - A failed POST to an allowlisted route (solve, feedback, profile name) is
+       stored in IndexedDB: method, URL, body and an id. The service worker
+       answers with a pending response, or the usual 303 for a form POST.
+     - The queue replays in order on `online` and on the next navigation,
+       with Background Sync as a Chromium-only bonus. A 2xx clears an entry, a
+       4xx drops it, and a network error or 5xx keeps it.
+     - Replays carry the current cookies, and the browser stores the response's
+       `Set-Cookie`, so the progress cookie updates on sync.
      - Path claims go by server receipt, so a late solve quietly misses the
        claim.
    - **Pending solves** show as a plain fact ("saved on this device") until
@@ -242,5 +264,3 @@ production doesn't change until step 7.
   keep store code out of unit tests as today.
 - How strictly to freeze features on the Deno app during the transition.
 - Solver: compact TypeScript, or Rust → WASM (decided by the spike).
-- Where the outbox lives: IndexedDB (queue only), or a small cookie set by the
-  client. Either is an exception to "server-set cookies only".
