@@ -31,8 +31,14 @@ Reviewers check these on every PR.
 - **An anonymous GET makes no store call.** Pages render from the URL, signed
   cookies and bundled puzzles.
 - **Every flow works without JS,** except the editor.
-- **Every write is one endpoint** that serves a no-JS form POST (303), an
-  island's fetch and an outbox replay, with the same fields.
+- **Client/server alignment** (see [the section](#clientserver-alignment)):
+  1. Every write answers with a 303. No JSON write endpoints.
+  2. The URL is the only navigational state.
+  3. Requests are self-contained. Cookies hold only identity and progress.
+  4. One pure function in `game/` per derived view of the URL.
+  5. JS changes presentation, not outcome.
+  6. The open dialog is `getDialog(url, player)`.
+  7. Redirect targets depend only on the request and static data.
 - **Every write is replay-safe:** a client-made id plus a unique index.
 - **Cookies are set by the server.** The outbox in IndexedDB is the one
   exception.
@@ -95,9 +101,12 @@ One SQLite-backed Durable Object is the whole database.
   signals. A page whose islands share state (the puzzle page) gets one island
   root that owns the signals and renders the board and dialogs as ordinary
   children.
-- **Skub's own `?dialog=` router** opens and closes dialogs.
+- **Skub's own `?dialog=` router** opens and closes explicit dialogs. Outcome
+  dialogs are derived (see [alignment](#clientserver-alignment), 6).
 - **`ClientRouter`** handles client navigation and view transitions. It replaces
   Fresh Partials. Its fetches go through the service worker.
+- **Moves don't navigate.** They update the URL with `history.replaceState` plus
+  a signal. A `ClientRouter` swap per move would remount the board island.
 - **Static pages** (cookie policy and similar) are prerendered at build.
 - **Puzzles are bundled at build time** as a generated module. No runtime disk
   reads. Names (`danish-names.json`) load the same way.
@@ -113,17 +122,61 @@ One SQLite-backed Durable Object is the whole database.
 ## Write model
 
 - **Self-contained requests.** A write carries everything the server needs. For
-  a solve: puzzle, moves, name and Flash start. The server verifies on its own
-  terms, for example by replaying the moves, and never depends on an earlier
-  request.
-- **One endpoint per write, whatever the source:** form POST, fetch or outbox
-  replay.
+  a solve: puzzle, moves, name, the Flash variant and a client-made id. The
+  server verifies on its own terms, for example by replaying the moves, and
+  never depends on an earlier request.
+- **One endpoint per write, whatever the source:** a no-JS form POST, an
+  island's `fetch` of the same `FormData` (through `submitForm()`) or an outbox
+  replay. Each answers with a 303.
 - **Replay-safe.** Each write carries a client-made id. Unique indexes make a
   duplicate a no-op.
 - **The client predicts, the server confirms.** `game/` runs on both sides, so
-  the island shows the result at once. The response only updates the cookie and
-  derived data.
+  the island shows the result at once. The 303 lands on the same URL, and its
+  `Set-Cookie` updates progress.
 - **Online-only is a short, named list:** hints, login and the editor solve.
+
+## Client/server alignment
+
+The client and server never diverge on what a request means or where it lands.
+Reviewers check all seven.
+
+1. **Every write answers with a 303** to the page that shows its result. There
+   are no JSON write endpoints. An island submits the same `FormData` with
+   `fetch` and follows the redirect in place, through one shared `submitForm()`
+   helper.
+2. **The URL is the only navigational state:** moves, cursor, hint, Flash
+   variant (`?flash=1`) and explicit dialogs. A signal may mirror the URL.
+   Nothing the server reads may exist only in a signal, or in an httpOnly cookie
+   the client has to shadow (e.g. the hint count is server-rendered into props,
+   not mirrored in a signal).
+3. **Requests are self-contained.** The variant, moves and client-made id are in
+   the body or URL. The server never reads a cookie to decide what a request
+   means. Cookies hold only identity and progress.
+4. **One pure function per derived view of the URL,** in `game/`, shared by the
+   server, the islands and the service worker: e.g.
+   `derivePlayState(url, puzzle)` for moves, board and solved. Islands never
+   re-derive these themselves.
+5. **JS changes presentation, not outcome.** A JS path may show a pending state
+   or animate, but it ends on the same URL and the same page as the no-JS path.
+   A difference is a bug.
+6. **The open dialog is a pure function of the URL and player state:**
+   `getDialog(url, player)` in `game/`. An explicit `?dialog=` wins (one dialog
+   at a time). Outcome dialogs (the name form, the first-stars explainer, the
+   celebration) are derived from the solved board plus player state. The server
+   evaluates it from cookies on every render, so a reloaded solved board shows
+   the right dialog. Offline, the island evaluates it from the cached page's
+   props plus the solve it just made.
+7. **Redirect targets depend only on the request and static data,** e.g.
+   `getSolveRedirect(form)` → the solved-board URL, in `game/`. The server and
+   the service worker share them, so an offline write lands on the same URL as
+   online. Anything that depends on player or store state is derived at render
+   time, never baked into the redirect.
+
+Consequences:
+
+- **Celebration stars** come from the progress cookie on the next render, not
+  from redirect params.
+- **Moves don't navigate** (see [framework](#framework-and-rendering)).
 
 ## Offline
 
@@ -153,13 +206,18 @@ One SQLite-backed Durable Object is the whole database.
 
 - **A queue of requests, owned by the service worker,** stored in IndexedDB via
   `idb-keyval`.
-- A failed POST to an allowlisted route (solve, feedback, profile name) is
-  stored as method, URL, body and an id. The service worker answers with a
-  pending response, or the usual 303 for a form POST.
+- An allowlisted write (solve, feedback, profile name) made offline is stored as
+  method, URL, body and an id. The service worker answers
+  `Response.redirect(getSolveRedirect(...), 303)`, the same target as online.
+- The target page comes from the cache, matched ignoring the query, and the
+  islands render the URL's state.
+- **Offline celebrations** show what the shared code can compute: solved, moves,
+  and stars via `game/score.ts`. Path claims, pioneer and rank appear after
+  sync.
 - **Replay** runs in order on `online` and on the next navigation. Background
   Sync is a Chromium-only bonus.
-- **Outcomes:** 2xx clears the entry, 4xx drops it, a network error or 5xx keeps
-  it.
+- **Outcomes:** a 2xx or the write's 303 clears the entry, 4xx drops it, a
+  network error or 5xx keeps it.
 - Replays carry the current cookies. The browser stores the response's
   `Set-Cookie`, so the progress cookie updates on sync.
 - Path claims go by server receipt. A late solve quietly misses the claim.
@@ -260,6 +318,14 @@ The puzzle authoring tool is a set of dev-only pages in the new app.
 
 It is ported before the switch, in rollout step 4. Until then it runs locally on
 the Deno/Fresh app.
+
+## Parked
+
+- **View transitions.** `ClientRouter` brings them; the design is decided later.
+  Ideas already in TODO.md: zoom into the board page, and the puzzle card's
+  thumbnail morphing into the board. Moves never navigate, so there are no
+  transitions per move. Nothing in the port should block them: keep stable
+  element identities for the board and thumbnails.
 
 ## Open
 

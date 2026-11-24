@@ -337,3 +337,50 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** cutting either in the "kill your darlings" review.
 - **Why:** Kasper: "Streak 100% stays, and skill is a good engine to tie into
   and evolve for onboarding."
+
+## 27. Client/server alignment invariants
+
+- **Date:** 2026-11-24
+- **Decision:** seven invariants keep the client and server on one path (see
+  [architecture.md](architecture.md#clientserver-alignment)): every write
+  answers with a 303; the URL is the only navigational state; requests are
+  self-contained; one pure function in `game/` per derived view of the URL; JS
+  changes presentation, not outcome; the open dialog is
+  `getDialog(url, player)`; redirect targets depend only on the request and
+  static data.
+- **Alternatives:** today's shape, where some flows take a JSON branch with JS
+  and a 303 branch without, and the client shadows server state in signals.
+- **Why:** Kasper: "some flows diverge on client/server… Wins on simplicity for
+  sure". One path also means the service worker can answer an offline write with
+  the same redirect as the server.
+
+## 28. The Flash variant lives in the URL
+
+- **Date:** 2026-11-24
+- **Decision:** the Flash variant is `?flash=1` in the URL and is sent with the
+  solve. The server never reads the Flash cookie to decide what a solve means.
+- **Alternatives:** today's Flash cookie as the source of the variant.
+- **Why:** follows from invariants 2 and 3. It fixes the TODO "A solve saves as
+  the variant it was played": a back/forward cache restore or a second tab can
+  no longer pair one variant's board with the other's cookie.
+
+## 29. Outcome dialogs are derived at render
+
+- **Date:** 2026-11-24
+- **Decision:** outcome dialogs (the name form, the first-stars explainer, the
+  celebration) are derived by `getDialog(url, player)` on every render, not
+  encoded in the redirect. An explicit `?dialog=` still wins.
+- **Alternatives:** today's redirect of any solved board to `?dialog=solution`.
+- **Why:** follows from invariants 6 and 7. It fixes the TODO "Reloading a
+  solved board shows the celebration": a named player who reloads gets the
+  celebration, not the name form.
+
+## 30. JSON write branches are deleted
+
+- **Date:** 2026-11-24
+- **Decision:** the hint, Flash, feedback and solve endpoints lose their JSON
+  branches. Islands submit the same `FormData` through `submitForm()` and follow
+  the 303 in place.
+- **Alternatives:** keeping two representations per write.
+- **Why:** follows from invariants 1 and 5. One path to test, and no-JS and JS
+  land on the same page by construction.
