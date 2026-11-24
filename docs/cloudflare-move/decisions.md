@@ -384,3 +384,15 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** keeping two representations per write.
 - **Why:** follows from invariants 1 and 5. One path to test, and no-JS and JS
   land on the same page by construction.
+
+## 31. No further cuts for now
+
+- **Date:** 2026-11-24
+- **Decision:** beyond the retro themes, everything ports with its current
+  outcome. The proposed simplifications are paused: cut Panel/ActionsPanel,
+  collapse feedback and rating, a plain archive list instead of the calendar and
+  scroller, and dropping the redirect routes and the print panel.
+- **Alternatives:** trimming them in the port.
+- **Why:** Kasper: "Let's not cut more right now. Simplifications paused." The
+  alignment invariants and the "next" link still apply where they already change
+  mechanism.
