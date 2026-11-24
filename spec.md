@@ -17,7 +17,7 @@ bold.
 |---|---|---|
 | Runtime + host | Deno Deploy isolate (Amsterdam) | Cloudflare Workers (workerd), nearest colo |
 | Store | Deno KV (Virginia) | One SQLite-backed Durable Object, placed in western Europe |
-| Framework | Fresh 2.3 | Being chosen (Astro 6 front-runner; Remix 3, own thin layer and a Fresh fork under review) |
+| Framework | Fresh 2.3 | Astro 6 + `@astrojs/preact` + `@astrojs/cloudflare`; TSX components and islands, thin `.astro` page shells |
 | Static assets | `staticFiles()` | Workers Static Assets |
 | Puzzles | `.md` files read from disk at runtime | Bundled at build time (generated module) |
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
@@ -44,6 +44,17 @@ bold.
 - **Worker Previews** give each branch its own empty DO storage automatically,
   so e2e starts from clean data per branch. `/api/e2e/reset` becomes
   `deleteAll()`.
+- **Astro 6** is owned by Cloudflare (January 2026), runs workerd in dev,
+  prerender and production, keeps Preact islands, and has a Bun recipe. Pages
+  become thin `.astro` shells, while components, islands, `game/` and `lib/`
+  stay TSX. Astro islands don't share signals the way Fresh's do, so a page
+  with shared state gets one island root that owns the signals and renders the
+  board and dialogs as ordinary children. Skub's own `?dialog=` router stays.
+  `ClientRouter` replaces Partials and brings view transitions. Rejected:
+  Remix 3 (no `@preact/signals`, so every island would be rewritten, plus
+  Node-only tooling), HonoX (alpha) and a Fresh fork (dead upstream). The
+  fallback is a thin layer of our own (Hono + Vite + Preact, about 800 lines to
+  own) if Astro's islands don't hold up.
 - **The self-hosting path stays open:** workerd plus celld is single-object
   Durable Objects on object storage, which is exactly this shape.
 
@@ -89,9 +100,20 @@ Each step is its own PR. Steps 1–5 touch only the new app and shared code, and
 production doesn't change until step 6.
 
 0. **Spikes (throwaway):**
-   - The chosen framework on workerd under Bun with `@cloudflare/vite-plugin`:
-     a page, an island, a partial navigation, a no-JS form POST and the
-     streamed solve.
+   - Astro 6 on workerd under `bunx --bun astro dev` and `astro build`:
+     - A page.
+     - An island imported from outside the app directory.
+     - A `ClientRouter` navigation alongside the `?dialog=` router.
+     - A no-JS form POST → 303.
+     - The streamed solve.
+
+     Also confirm:
+     - A single Preact instance in dev and prod.
+     - Tailwind `@source` picking up the shared directories.
+     - Puzzle page JS within 40 KB gz and home within 25 KB.
+   - Shared signals: audit which islands share signals, and check that the
+     puzzle page collapses to one island root. This decides Astro over the
+     fallback.
    - Solver memory and CPU. Workers caps memory at 128 MB per isolate. The
      editor budget (3M states) is about 175 MB today, and hints allow 7M states.
      The spike decides between three outcomes: it fits, it fits with a compact
@@ -99,11 +121,13 @@ production doesn't change until step 6.
      down.
    - A DO with `locationHint: "weur"` on a Worker Preview: the round trip from
      Denmark, and per-preview storage.
-   - Bun with Vite 8, the Cloudflare plugin and Playwright. If Vite misbehaves
-     on Bun, Vite runs on Node and Bun keeps everything else.
+   - Bun with Playwright and `bun test` on the shared tests. If Astro's dev
+     server misbehaves on Bun, it runs on Node and Bun keeps everything else.
 1. **Shared core.** Make `game/` and the portable parts of `lib/` import
    cleanly from Bun:
    - Bare specifiers and the `#/` alias, with JSR `@std/*` swapped for npm.
+   - The one Fresh import in shared code (`islands/solution-dialog.tsx`)
+     removed.
    - Puzzles and names loaded through an injected source instead of disk
      reads.
    - Temporal via a polyfill where it's missing.
@@ -157,7 +181,6 @@ production doesn't change until step 6.
 
 ## Open decisions
 
-- The framework (scout running).
 - DO placement: `locationHint: "weur"` (best effort), or the `eu` jurisdiction
   (hard EU residency, permanent).
 - Store tests: run the SQL layer against in-memory SQLite in unit tests, or
