@@ -20,7 +20,7 @@ bold where it pays.
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
 | Previews + e2e | Deploy previews sharing one KV | Worker Previews: one per branch, own DO storage |
 | Tracing | Deploy's built-in OTEL | Workers OTLP export to an external backend |
-| Toolchain | `deno fmt/lint/test`, JSR | Node + Vite 8, Vitest, Oxlint + Oxfmt, TypeScript 7 (optionally all through Vite+ `vp`) |
+| Toolchain | `deno fmt/lint/test`, JSR | Bun (installs, scripts, `bun test`) + Vite 8, Oxlint + Oxfmt, TypeScript 7 |
 
 ### Why this shape
 
@@ -73,6 +73,11 @@ Deno Deploy. Layer 4 is the cutover.
   hints allow 7M states. Outcome: fits in-request, fits after a compact
   visited set (packed integer states in typed arrays), or needs a lower
   budget.
+- **Bun:** `bun install`, then `vite build` and `vite dev` with `fresh()` +
+  `cloudflare()` under `bun --bun`, a few test files on `bun test` with the
+  `#/` alias, one script, and one Playwright test. If Vite or the Cloudflare
+  plugin misbehaves on Bun, Bun stays as installer, script runner and test
+  runner, and Vite runs on Node.
 - **DO smoke test:** one SQLite DO with `locationHint: "weur"` on a Worker
   Preview. Measure the Worker→DO round trip from Denmark and confirm the
   preview gets its own storage.
@@ -84,14 +89,16 @@ Lowest regret, and it works on both runtimes.
 - `package.json` + `tsconfig.json` with the `#/` alias. JSR `@std/*` replaced
   by npm or platform APIs (`cookie`, `ulid`, `yaml`, `node:util` `parseArgs`,
   a tiny local semaphore).
-- Unit tests on Vitest (`Deno.test` → `test`; keep `@std/assert` from npm at
-  first, or codemod to `expect`).
+- Unit tests on `bun test` (`Deno.test` → `test`; keep `@std/assert` from npm
+  at first, or codemod to `expect`). Vitest is the fallback if `bun test`
+  falls short.
 - Oxlint + Oxfmt, with `lint-imports` ported as an Oxlint JS plugin (Biome 2 is
   the fallback if alpha plugins bite). `tsc --noEmit` on TypeScript 7.
-- Scripts and Vite plugins on `node:` APIs. e2e on `@playwright/test`, keeping
+- Scripts on Bun, written against `node:` APIs so nothing locks to one runtime.
+  Vite plugins on `node:` APIs too. e2e on `@playwright/test`, keeping
   the blast-radius selector.
 - Temporal through a polyfill wherever workerd or browsers lack it.
-- CI on Node.
+- CI on Bun (`oven-sh/setup-bun`).
 
 ### 2. Runtime seams (still on Deno Deploy)
 
@@ -145,8 +152,6 @@ framework cost. Routes, middleware and Partials would be rewritten. Islands,
 ## Open decisions
 
 - Fresh's replacement (layer 5).
-- Toolchain wrapper: Vite+ (`vp`) on Node, or the same tools called directly;
-  Bun only as installer/script runner.
 - DO placement: `locationHint: "weur"` (best effort) or the `eu` jurisdiction
   (hard EU residency, permanent).
 - Store tests: run the SQL layer against in-memory SQLite in unit tests, or
