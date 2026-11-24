@@ -218,8 +218,9 @@ production doesn't change until step 7.
      puzzle, the archive, and the solutions page after a solve.
    - **Outbox: a queue of requests, owned by the service worker.**
      - A failed POST to an allowlisted route (solve, feedback, profile name) is
-       stored in IndexedDB: method, URL, body and an id. The service worker
-       answers with a pending response, or the usual 303 for a form POST.
+       stored in IndexedDB via `idb-keyval`: method, URL, body and an id. The
+       service worker answers with a pending response, or the usual 303 for a
+       form POST.
      - The queue replays in order on `online` and on the next navigation,
        with Background Sync as a Chromium-only bonus. A 2xx clears an entry, a
        4xx drops it, and a network error or 5xx keeps it.
