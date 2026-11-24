@@ -137,11 +137,16 @@ PR finishes only part of an item, trim the item to what is left.
   like a score, full stops come and go, and "Found it" isn't bold like the other
   headings. One voice, facts only, as short as the Flash dialog.
 
-- **Retro themes follow the new layout.** The main look moved on: play controls
-  are a toolbar beside the board, the score badge replaced the difficulty badge
-  and move counter, the sidebar has a footer, and cards lost their difficulty
-  tag. Retro themes still style the old pieces (`.move-counter`,
-  `.puzzle-card-difficulty`, the header builder icon) and need a pass to match.
+- **Buttons and Flash have character, not gloss.** Full-gradient button
+  backgrounds and the loud Flash styling read as generic AI design. Draw
+  character from Open Props instead (shapes, borders, shadows, easing, type),
+  and tone down how much of the UI Flash takes up.
+
+- **Flash is called what it is.** Flash stays the path for new players, but the
+  name doesn't say what it does. It likely becomes easy mode, or another name
+  that reads as "an easier version of this puzzle". Copy, toggle and the
+  solutions tab follow. "Flash on feels alive" (below) pulls the other way, so
+  decide its fate with the rename.
 
 - **A solution says when it was found.** The solutions page shows who claimed
   each path and how many moves it takes; it doesn't say when.
