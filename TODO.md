@@ -69,13 +69,13 @@ PR finishes only part of an item, trim the item to what is left.
   (announced 2026-10-09): Deno Deploy shuts down in about six months, and the
   Deno runtime gets bug-fix and security releases for a year, then development
   ends. Everything hosted on Deploy needs a new home: the app itself, Deno KV
-  (users, solutions, stats, candidates — a data migration, not just a redeploy),
-  env vars and secrets, the preview deployments whose `deployment_status` events
-  drive the e2e workflow, the OTEL traces the perf work reads, and the region
-  setting. The `skub.app` DNS is already on Cloudflare. The runtime end means
-  the stack choice (Deno, Fresh, `deno test` / `fmt` / `lint`) is on the table
-  too, on a longer clock. Cloudflare's path is Workers and Durable Objects
-  (self-hostable via workerd merged with Deno's celld).
+  (users, solutions, stats — a data migration, not just a redeploy), env vars
+  and secrets, the preview deployments whose `deployment_status` events drive
+  the e2e workflow, the OTEL traces the perf work reads, and the region setting.
+  The `skub.app` DNS is already on Cloudflare. The runtime end means the stack
+  choice (Deno, Fresh, `deno test` / `fmt` / `lint`) is on the table too, on a
+  longer clock. Cloudflare's path is Workers and Durable Objects (self-hostable
+  via workerd merged with Deno's celld).
 
   Runtime target: [workerd](https://github.com/cloudflare/workerd). Lean: host
   on Cloudflare Workers and move the toolchain to Bun (tests, formatting,
