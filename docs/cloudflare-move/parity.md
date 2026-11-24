@@ -4,9 +4,10 @@ Every player-facing flow and route of the Deno app, and whether the new app has
 it. A flow counts as ported when its e2e tests pass on the new app's preview.
 The switch needs every row ported or marked not kept.
 
-- **Keep?** is filled by a separate "kill your darlings" review.
-- **Ported** and **Passes on next** are filled during rollout steps 4–5 (step 8
-  for the authoring tool).
+- **Keep?** is otherwise filled by a separate "kill your darlings" review.
+- **Ported** and **Passes on next** are filled during rollout steps 4–5.
+- **Keep?** already holds the owner's calls where made: retro themes cut;
+  editor, authoring, streak and skill kept.
 - **E2E today** names the test files. "write first" marks rows whose lean e2e is
   written against the Deno app before the flow is ported (rollout step 4). Where
   the files live:
@@ -20,15 +21,16 @@ The switch needs every row ported or marked not kept.
 
 ## Play and solve
 
-| Flow                        | Routes                                                                        | No-JS behaviour                                                                                               | E2E today                                                                                           | Keep? | Ported | Passes on next | Notes                                                                                        |
-| --------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----- | ------ | -------------- | -------------------------------------------------------------------------------------------- |
-| Open and play a puzzle      | `GET /puzzles/[slug]`                                                         | Each move is a link; moves live in the URL. An invalid move 303s back with `?error=`.                         | `puzzle_test.ts` (no-JS, portals), `returning-user-flow_test.ts`                                    |       |        |                | Unreleased puzzles 404. Islands: board, play-controls, score-badge. One island root on next. |
-| Solve and save, named (JS)  | `POST /puzzles/[slug]` (JSON)                                                 | n/a                                                                                                           | `puzzle_test.ts` (celebration, duplicate solve), `returning-user-flow_test.ts`, `highscore_test.ts` |       |        |                | Auto-post on solve, then the celebration. Outbox-allowlisted on next.                        |
-| Solve and save without JS   | `GET /puzzles/[slug]` → 303 `?dialog=solution`; `POST /puzzles/[slug]` (form) | Solved board redirects to the name dialog; the form POST 303s to the solutions page (`?tab=flash` for Flash). | `puzzle_test.ts`, `new-user-flow_test.ts`, `returning-user-flow_test.ts`                            |       |        |                |                                                                                              |
-| New player names themselves | `POST /puzzles/[slug]`                                                        | Name form in the solution dialog.                                                                             | `puzzle_test.ts` (keyboard solve prompt, name → solutions page)                                     |       |        |                | Name is stored on the user.                                                                  |
-| Celebration                 | `GET /puzzles/[slug]`                                                         | Named no-JS players get the solution dialog with the name pre-filled, not the celebration.                    | `puzzle_test.ts`, `returning-user-flow_test.ts`                                                     |       |        |                | Stars and a second call to action.                                                           |
-| Play next                   | `GET /puzzles/recommended`                                                    | 303 to `/puzzles/<slug>`, or `/`.                                                                             | none: write first                                                                                   |       |        |                | On next the server renders a concrete link instead. Whether the route stays is open.         |
-| Share image                 | `GET /puzzles/[slug]/og-image`                                                | Plain SVG.                                                                                                    | none                                                                                                |       |        |                |                                                                                              |
+| Flow                        | Routes                                                                        | No-JS behaviour                                                                                               | E2E today                                                                                           | Keep? | Ported | Passes on next | Notes                                                                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----- | ------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Open and play a puzzle      | `GET /puzzles/[slug]`                                                         | Each move is a link; moves live in the URL. An invalid move 303s back with `?error=`.                         | `puzzle_test.ts` (no-JS, portals), `returning-user-flow_test.ts`                                    |       |        |                | Unreleased puzzles 404. Islands: board, play-controls, score-badge. One island root on next.                                    |
+| Solve and save, named (JS)  | `POST /puzzles/[slug]` (JSON)                                                 | n/a                                                                                                           | `puzzle_test.ts` (celebration, duplicate solve), `returning-user-flow_test.ts`, `highscore_test.ts` |       |        |                | Auto-post on solve, then the celebration. Outbox-allowlisted on next.                                                           |
+| Solve and save without JS   | `GET /puzzles/[slug]` → 303 `?dialog=solution`; `POST /puzzles/[slug]` (form) | Solved board redirects to the name dialog; the form POST 303s to the solutions page (`?tab=flash` for Flash). | `puzzle_test.ts`, `new-user-flow_test.ts`, `returning-user-flow_test.ts`                            |       |        |                |                                                                                                                                 |
+| New player names themselves | `POST /puzzles/[slug]`                                                        | Name form in the solution dialog.                                                                             | `puzzle_test.ts` (keyboard solve prompt, name → solutions page)                                     |       |        |                | Name is stored on the user.                                                                                                     |
+| Skill level                 | `POST /puzzles/[slug]`, `POST /puzzles/tutorial`                              | Assessed server-side on each new solve; the tutorial's "I'm ready" sets beginner.                             | `home_test.ts` (cards per skill, seeded)                                                            | yes   |        |                | Drives the recommended card and "Play next". Kept as the engine for onboarding.                                                 |
+| Celebration                 | `GET /puzzles/[slug]`                                                         | Named no-JS players get the solution dialog with the name pre-filled, not the celebration.                    | `puzzle_test.ts`, `returning-user-flow_test.ts`                                                     |       |        |                | Stars and a second call to action.                                                                                              |
+| Play next                   | `GET /puzzles/recommended`                                                    | 303 to `/puzzles/<slug>`, or `/`.                                                                             | none: write first                                                                                   | yes   |        |                | On next the server renders a concrete link instead. Whether the route stays is open. Picked by skill level, like the home card. |
+| Share image                 | `GET /puzzles/[slug]/og-image`                                                | Plain SVG.                                                                                                    | none: write first                                                                                   |       |        |                |                                                                                                                                 |
 
 ## Hints
 
@@ -59,10 +61,11 @@ The switch needs every row ported or marked not kept.
 
 ## Archive and home
 
-| Flow    | Routes                    | No-JS behaviour            | E2E today                                                              | Keep? | Ported | Passes on next | Notes                                                                                     |
-| ------- | ------------------------- | -------------------------- | ---------------------------------------------------------------------- | ----- | ------ | -------------- | ----------------------------------------------------------------------------------------- |
-| Home    | `GET /`                   | Server-rendered.           | `home_test.ts`, `new-user-flow_test.ts`, `returning-user-flow_test.ts` |       |        |                | Daily puzzle, recommended card (tutorial, starter, quick), stats and streak from cookies. |
-| Archive | `GET /puzzles` (`?date=`) | Month links and day links. | `archives_test.ts`, `returning-user-flow_test.ts`                      |       |        |                | Desktop month calendar, mobile card row.                                                  |
+| Flow             | Routes                    | No-JS behaviour               | E2E today                                                              | Keep? | Ported | Passes on next | Notes                                                                                    |
+| ---------------- | ------------------------- | ----------------------------- | ---------------------------------------------------------------------- | ----- | ------ | -------------- | ---------------------------------------------------------------------------------------- |
+| Home             | `GET /`                   | Server-rendered.              | `home_test.ts`, `new-user-flow_test.ts`, `returning-user-flow_test.ts` | yes   |        |                | Daily puzzle and the recommended card (tutorial, starter, quick), picked by skill level. |
+| Stats and streak | `GET /`, `GET /profile`   | Server-rendered from cookies. | `home_test.ts` (streak after several dailies)                          | yes   |        |                | Kasper: "Streak 100% stays."                                                             |
+| Archive          | `GET /puzzles` (`?date=`) | Month links and day links.    | `archives_test.ts`, `returning-user-flow_test.ts`                      |       |        |                | Desktop month calendar, mobile card row.                                                 |
 
 ## Login and profile
 
@@ -71,7 +74,7 @@ The switch needs every row ported or marked not kept.
 | Log in                  | `GET /auth/login` (`?return_to=`), `GET /auth/callback` | 303s through Auth0 and back.       | none: write first                              |                   |        |                | PKCE plus a one-time `oauth_state` (`expires_at` on next, checked on consume). Sessions are imported, so no re-login at the switch. First login claims sub → userId. Online-only on next. Auth0 needs `next.skub.app` as a callback. |
 | Log out                 | `GET /auth/logout`                                      | 303; the device starts over.       | none: write first                              |                   |        |                |                                                                                                                                                                                                                                      |
 | Profile: name and theme | `GET /profile`, `POST /profile`                         | Form POST 303s back to `/profile`. | `profile_test.ts` (seeded user; no real login) |                   |        |                | Two of its four tests inspect storage and cookies, as commented exceptions. Name is outbox-allowlisted on next. Its tests seed the retro theme `dookie`; on next they need a ported theme.                                           |
-| Retro themes            | `POST /profile` (theme)                                 | Theme picker is a form.            | `profile_test.ts` (seeds `dookie`)             | cut: retro themes |        |                | matrix, discman, geocities, sash, riso, digicam, dookie (and the retired moquette). Kept on the Deno app until the switch. A player with a cut theme falls back to skub on next.                                                     |
+| Retro themes            | `POST /profile` (theme)                                 | Theme picker is a form.            | `profile_test.ts` (seeds `dookie`)             | cut: retro themes |        |                | matrix, discman, geocities, sash, riso, digicam, dookie (and the retired moquette). Kept on the Deno app until the switch. Players with a retro theme fall back to skub.                                                             |
 
 ## Editor
 
@@ -79,12 +82,12 @@ The editor relies on JS by design.
 
 | Flow                  | Routes                                                                           | No-JS behaviour                   | E2E today         | Keep? | Ported | Passes on next | Notes                                                                                       |
 | --------------------- | -------------------------------------------------------------------------------- | --------------------------------- | ----------------- | ----- | ------ | -------------- | ------------------------------------------------------------------------------------------- |
-| Build a board         | `GET /puzzles/build`, `GET /puzzles/new` (303), `GET /puzzles/build/reset` (303) | Board renders; editing needs JS.  | none: write first |       |        |                | Resumes the draft stored per user (`draft` column on `user` on next).                       |
-| Autosave and download | `POST /api/store`, `GET /api/export`                                             | n/a                               | none: write first |       |        |                | Writes the `draft` column on next.                                                          |
-| Difficulty badge      | `POST /api/solve`                                                                | n/a                               | none: write first |       |        |                | Streamed solve, 3M-state budget, refuses boards in the corpus. Public. Online-only on next. |
-| Play the draft        | `POST /puzzles/build/play` (303), `GET /puzzles/preview`                         | Preview plays with links.         | none: write first |       |        |                | No solution submission.                                                                     |
-| Remix a puzzle        | `POST /puzzles/[slug]/clone`                                                     | Form POST 303s to the editor.     | none: write first |       |        |                |                                                                                             |
-| Submit a board        | `POST /puzzles/build/submit`                                                     | 303 with a sent or failed dialog. | none: write first |       |        |                | Emailed to `SUBMISSIONS_EMAIL`.                                                             |
+| Build a board         | `GET /puzzles/build`, `GET /puzzles/new` (303), `GET /puzzles/build/reset` (303) | Board renders; editing needs JS.  | none: write first | yes   |        |                | Resumes the draft stored per user (`draft` column on `user` on next).                       |
+| Autosave and download | `POST /api/store`, `GET /api/export`                                             | n/a                               | none: write first | yes   |        |                | Writes the `draft` column on next.                                                          |
+| Difficulty badge      | `POST /api/solve`                                                                | n/a                               | none: write first | yes   |        |                | Streamed solve, 3M-state budget, refuses boards in the corpus. Public. Online-only on next. |
+| Play the draft        | `POST /puzzles/build/play` (303), `GET /puzzles/preview`                         | Preview plays with links.         | none: write first | yes   |        |                | No solution submission.                                                                     |
+| Remix a puzzle        | `POST /puzzles/[slug]/clone`                                                     | Form POST 303s to the editor.     | none: write first | yes   |        |                |                                                                                             |
+| Submit a board        | `POST /puzzles/build/submit`                                                     | 303 with a sent or failed dialog. | none: write first | yes   |        |                | Emailed to `SUBMISSIONS_EMAIL`.                                                             |
 
 ## Feedback
 
@@ -98,14 +101,14 @@ The editor relies on JS by design.
 | ------------------ | ----------------------------------------------------- | -------------------------------------------- | --------------------------------------------- | ----- | ------ | -------------- | ---------------------------------- |
 | Solve the tutorial | `GET /puzzles/tutorial` (`?mode=`, `?tutorial_step=`) | Steps and dialogs via 303s; moves are links. | `tutorial_test.ts`, `new-user-flow_test.ts`   |       |        |                | JSON POST from auto-post on solve. |
 | Watch the replay   | `GET /puzzles/tutorial?mode=replay`                   | Replay steps are links.                      | `tutorial_test.ts`, `new-user-flow_test.ts`   |       |        |                |                                    |
-| "I'm ready"        | `POST /puzzles/tutorial` (form)                       | Sets the beginner skill level, 303 home.     | `home_test.ts` (indirectly, via seeded state) |       |        |                |                                    |
+| "I'm ready"        | `POST /puzzles/tutorial` (form)                       | Sets the beginner skill level, 303 home.     | `home_test.ts` (indirectly, via seeded state) | yes   |        |                |                                    |
 | Tutorial nudge     | `GET /puzzles/[slug]`, `GET /`                        | Server-rendered link.                        | `puzzle_test.ts`, `home_test.ts`              |       |        |                |                                    |
 
 ## Policy pages and consent
 
 | Flow          | Routes               | No-JS behaviour                                     | E2E today         | Keep? | Ported | Passes on next | Notes                                            |
 | ------------- | -------------------- | --------------------------------------------------- | ----------------- | ----- | ------ | -------------- | ------------------------------------------------ |
-| Cookie policy | `GET /cookie-policy` | Static.                                             | none              |       |        |                | Prerendered at build on next.                    |
+| Cookie policy | `GET /cookie-policy` | Static.                                             | none: write first |       |        |                | Prerendered at build on next.                    |
 | Cookie banner | `POST /api/consent`  | Accept, decline or reset; 303 back to the referrer. | none: write first |       |        |                | The e2e helpers set a cookie to hide the banner. |
 
 ## Cross-cutting
@@ -133,20 +136,21 @@ Endpoints not already listed under a flow.
 `/api/solve`, `/api/store`, `/api/export` and `/api/consent` are listed under
 their flows above.
 
-## Authoring tool (ported after the switch)
+## Authoring tool (ported before the switch, dev-only)
 
-Not part of the switch. It runs locally on the Deno/Fresh app until rollout step
-8 moves it into the new app as dev-only pages. See
+Ported before the switch as the "Authoring (dev-only)" flow in rollout step 4:
+dev-only pages plus the dev-only filesystem integration. Excluded from
+production builds, so it has no preview e2e. See
 [architecture.md](architecture.md#authoring-tool).
 
 | Flow                    | Routes                                                             | E2E today | Keep?                                    | Ported | Notes                                         |
 | ----------------------- | ------------------------------------------------------------------ | --------- | ---------------------------------------- | ------ | --------------------------------------------- |
-| Browse candidates       | `GET /candidates` (`?show=promoted`)                               | none      | yes, ported after the switch as dev-only |        | 404 outside dev.                              |
-| Review a candidate      | `GET /candidates/[slug]`, `GET /candidates/review`                 | none      | yes, ported after the switch as dev-only |        | Ratings and route tags via `/api/candidates`. |
-| Edit a candidate        | `GET /candidates/[slug]/edit`                                      | none      | yes, ported after the switch as dev-only |        | Opens it in the editor.                       |
-| Promote                 | `POST /candidates/[slug]/promote`                                  | none      | yes, ported after the switch as dev-only |        | Writes `static/puzzles`.                      |
-| Candidate API           | `POST /api/candidates`                                             | none      | yes, ported after the switch as dev-only |        | Writes `candidates/*.md`.                     |
-| Scoring and calibration | `scripts/` (score-corpus, check-calibration, list-candidates, ...) | none      | yes, ported after the switch as dev-only |        | Includes the metric catalog.                  |
+| Browse candidates       | `GET /candidates` (`?show=promoted`)                               | none      | yes, ported before the switch (dev-only) |        | 404 outside dev.                              |
+| Review a candidate      | `GET /candidates/[slug]`, `GET /candidates/review`                 | none      | yes, ported before the switch (dev-only) |        | Ratings and route tags via `/api/candidates`. |
+| Edit a candidate        | `GET /candidates/[slug]/edit`                                      | none      | yes, ported before the switch (dev-only) |        | Opens it in the editor.                       |
+| Promote                 | `POST /candidates/[slug]/promote`                                  | none      | yes, ported before the switch (dev-only) |        | Writes `static/puzzles`.                      |
+| Candidate API           | `POST /api/candidates`                                             | none      | yes, ported before the switch (dev-only) |        | Writes `candidates/*.md`.                     |
+| Scoring and calibration | `scripts/` (score-corpus, check-calibration, list-candidates, ...) | none      | yes, ported before the switch (dev-only) |        | Includes the metric catalog.                  |
 
 ## Dev-only behaviour in player routes
 

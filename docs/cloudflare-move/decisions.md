@@ -238,27 +238,26 @@ state is described in [architecture.md](architecture.md).
 - **Why:** Kasper: "parallel builds, a data transfer/backup one way and a
   feature flag/separate url. Then I can switch when the bugs are eradicated."
 
-## 19. The authoring tool moves last, as dev-only pages
+## 19. The authoring tool is ported before the switch, as dev-only pages
 
 - **Date:** 2026-11-24
 - **Decision:** the puzzle authoring tool (candidates, scoring, the metric
   catalog, calibration scripts, the `/candidates` routes and the promote flow)
-  is not part of the switch.
-  - First, it keeps running locally on the Deno/Fresh app.
-  - After the switch, it moves into the new app as dev-only pages. Astro renders
-    them with the shared UI. A dev-only Astro integration (`astro:server:setup`,
-    in the Vite dev process on the host, not in workerd) provides the save and
-    promote endpoints that write `candidates/*.md` and `static/puzzles/*.md`.
-    It's excluded from production builds.
-  - Once it has moved, the Deno app is deleted entirely.
+  moves into the new app before the switch, like every other flow.
+  - Dev-only pages rendered by Astro with the shared UI.
+  - A dev-only Astro integration (`astro:server:setup`, in the Vite dev process
+    on the host, not in workerd) provides the save and promote endpoints that
+    write `candidates/*.md` and `static/puzzles/*.md`.
+  - Excluded from production builds.
+  - After the switch, the Deno app is deleted entirely.
   - Its contract with the player app is the puzzle `.md` format and the shared
     `game/` code. It retires when community submissions replace it.
-- **Alternatives:**
-  - Porting it before the switch: not chosen; it isn't part of the switch.
-  - Keeping it on Deno for good: the first version of this decision, replaced
-    the same day.
-- **Why:** Kasper needs it until community submissions come in. It stays in the
-  repo to reuse the shared UI. Which framework drives it doesn't matter.
+- **Alternatives:** both replaced the same day:
+  - Keeping it on Deno for good, trimming the Deno app down to it.
+  - Moving it after the switch, with the Deno app kept locally until then.
+- **Why:** Kasper: "Everything gets ported before cutover, even local flows." He
+  needs the tool until community submissions come in, and it stays in the repo
+  to reuse the shared UI. Which framework drives it doesn't matter.
 
 ## 20. CSS budget: what CI enforces today
 
@@ -324,7 +323,17 @@ state is described in [architecture.md](architecture.md).
 - **Decision:** the new app ports skub, the other original colour themes
   (dracula, acid, catppuccin, solarized-light, ember) and high-contrast. The
   retro themes (matrix, discman, geocities, sash, riso, digicam, dookie, and the
-  retired moquette) are cut, not deferred. The Deno app keeps them until the
-  switch, with no freeze.
+  retired moquette) are cut, not deferred. Players with a retro theme fall back
+  to skub, the existing fallback. The Deno app keeps them until the switch, with
+  no freeze.
 - **Alternatives:** porting them, or deferring them.
 - **Why:** Kasper: "Little chance they get maintained really, is the main risk."
+
+## 26. Streak and skill stay
+
+- **Date:** 2026-11-24
+- **Decision:** the streak is ported as is. The skill level is ported too, as
+  the engine to build onboarding on.
+- **Alternatives:** cutting either in the "kill your darlings" review.
+- **Why:** Kasper: "Streak 100% stays, and skill is a good engine to tie into
+  and evolve for onboarding."

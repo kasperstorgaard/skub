@@ -107,7 +107,8 @@ One SQLite-backed Durable Object is the whole database.
 - Astro Actions are not used.
 - **Themes are colour-only variants of one look,** plus high-contrast for
   accessibility: skub, dracula, acid, catppuccin, solarized-light, ember and
-  high-contrast. There are no retro themes.
+  high-contrast. There are no retro themes; a player whose saved theme was a
+  retro one falls back to skub, the existing fallback.
 
 ## Write model
 
@@ -257,7 +258,8 @@ The puzzle authoring tool is a set of dev-only pages in the new app.
   `game/` code.
 - **Lifetime:** retired when community submissions replace it.
 
-Until it moves (after the switch), it runs locally on the Deno/Fresh app.
+It is ported before the switch, in rollout step 4. Until then it runs locally on
+the Deno/Fresh app.
 
 ## Open
 

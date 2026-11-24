@@ -27,7 +27,7 @@ done.
 | [Backup cron](#backup-cron)                                                                      | 6        |
 | [OTLP export](#otlp-export)                                                                      | 6        |
 | [Read-only mode on the Deno app](#read-only-mode-on-the-deno-app)                                | before 7 |
-| [Dev-only authoring integration](#dev-only-authoring-integration)                                | 8        |
+| [Dev-only authoring integration](#dev-only-authoring-integration)                                | 4        |
 
 ## Solver budget probe
 
@@ -108,11 +108,12 @@ done.
 
 ## E2E for uncovered flows, on the Deno app first
 
-- **What:** e2e tests for the flows with none today, written against the Deno
-  app before that flow is ported: hints, editor, feedback, consent banner,
-  login, "Play next" (`/puzzles/recommended`), the weekly high score, error
-  pages and solution replay. Lean: the core outcome only, from seeded state, per
-  the existing e2e conventions. Login seeds a session rather than driving Auth0.
+- **What:** e2e tests for every player-facing flow with none today, written
+  against the Deno app before that flow is ported: hints, editor, feedback,
+  consent banner, cookie policy, login, "Play next" (`/puzzles/recommended`),
+  the share image (`og-image`), the weekly high score, error pages and solution
+  replay. Lean: the core outcome only, from seeded state, per the existing e2e
+  conventions. Login seeds a session rather than driving Auth0.
 - **Why:** a port can only be checked against a test that already passes on the
   original. Otherwise the parity check has gaps exactly where nothing is tested.
 - **When:** step 4, at the start of each flow's PR.
@@ -272,6 +273,6 @@ done.
   promote endpoints that write `candidates/*.md` and `static/puzzles/*.md`.
 - **Why:** the authoring tool moves into the new app as dev-only pages, and
   workerd has no filesystem. This is what lets the Deno app be deleted.
-- **When:** step 8, after the switch.
+- **When:** step 4, as the "Authoring (dev-only)" flow, before the switch.
 - **Done when:** saving and promoting a candidate work under `astro dev`, and a
   production build contains neither the authoring pages nor the endpoints.

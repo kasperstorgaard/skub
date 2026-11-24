@@ -19,7 +19,7 @@ The docs in `docs/cloudflare-move/` are the source of truth:
   principles, measurable goals and the switch criterion.
 - [architecture.md](docs/cloudflare-move/architecture.md): the north star
   that PRs on the new app are reviewed against.
-- [rollout.md](docs/cloudflare-move/rollout.md): steps 0–9, spikes with
+- [rollout.md](docs/cloudflare-move/rollout.md): steps 0–8, spikes with
   success criteria and fallbacks, the switch runbook, rollback and risks.
 - [harness.md](docs/cloudflare-move/harness.md): the tooling that makes the
   move safe and measurable, per step.

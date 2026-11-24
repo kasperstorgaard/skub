@@ -84,20 +84,32 @@ The new app boots on workerd with its own CI pipeline:
 One PR per flow. A flow is ported when its e2e tests pass on its preview and its
 [parity.md](parity.md) rows are ticked.
 
-**E2E first for uncovered flows.** A flow with no e2e today gets its tests
-written against the Deno app before it is ported: hints, editor, feedback,
-consent banner, login, "Play next", the weekly high score, error pages and
-solution replay. The test must pass on the Deno app, then on the flow's preview.
-Keep it lean: the core outcome only, from seeded state, per the existing e2e
-conventions. Login seeds a session rather than driving Auth0.
+Everything is ported before the switch, local flows included. Kasper:
+"Everything gets ported before cutover, even local flows."
+
+**E2E first for uncovered flows.** Every player-facing flow with no e2e today
+gets its tests written against the Deno app before it is ported: hints, editor,
+feedback, consent banner, cookie policy, login, "Play next", the share image,
+the weekly high score, error pages and solution replay. The test must pass on
+the Deno app, then on the flow's preview. Keep it lean: the core outcome only,
+from seeded state, per the existing e2e conventions. Login seeds a session
+rather than driving Auth0.
 
 1. Play and solve.
 2. Hints and Flash.
 3. Solutions and high score.
 4. Archive and home.
 5. Login and profile.
-6. Editor.
+6. Editor, including submit.
 7. Feedback and policy pages.
+8. Authoring (dev-only): the authoring tool (candidates, scoring, the metric
+   catalog, calibration scripts, the `/candidates` routes and the promote flow)
+   as dev-only pages rendered by Astro with the shared UI, plus a dev-only Astro
+   integration (`astro:server:setup`, in the Vite dev process on the host) for
+   the save and promote endpoints that write `candidates/*.md` and
+   `static/puzzles/*.md`. Excluded from production builds, so it has no preview
+   e2e; it's done when saving and promoting work under `astro dev`. The scoring
+   and calibration scripts move with it.
 
 ### 5. Offline
 
@@ -127,24 +139,11 @@ conventions. Login seeds a session rather than driving Auth0.
 
 The only step that touches production. See [the runbook](#switch-runbook).
 
-### 8. Authoring tool → new app
+### 8. Cleanup
 
-After the switch. Until then the authoring tool (candidates, scoring, the metric
-catalog, calibration scripts, the `/candidates` routes and the promote flow)
-runs locally on the Deno/Fresh app and is not part of the switch.
+After the switch, delete the Deno app entirely:
 
-- Dev-only pages in the new app, rendered by Astro, reusing the shared UI.
-- A dev-only Astro integration (`astro:server:setup`, in the Vite dev process on
-  the host) for the save and promote endpoints that write `candidates/*.md` and
-  `static/puzzles/*.md`.
-- Excluded from production builds.
-- The scoring and calibration scripts move with it.
-
-### 9. Cleanup
-
-Once the authoring tool has moved:
-
-- Delete the Deno app, `deno.json`, the Deno CI and the KV Connect scripts.
+- The Deno app, `deno.json`, the Deno CI and the KV Connect scripts.
 - Move the new app to the repo root if wanted.
 - Update CLAUDE.md and the skills.
 
