@@ -23,6 +23,7 @@ bold.
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
 | Previews + e2e | Deploy previews sharing one KV | Worker Previews: one per branch, own DO storage |
 | Tracing | Deploy's built-in OTEL | Workers OTLP export to an external backend |
+| Platform CLI | `deno deploy`, Deploy console | `cf` CLI with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2 (both beta); Wrangler only where `cf` lacks a feature |
 | Toolchain | `deno fmt/lint/test`, JSR | Bun (installs, scripts, `bun test`) + Vite 8, Oxlint + Oxfmt, TypeScript 7 |
 
 ### Why this shape
@@ -63,6 +64,11 @@ bold.
   types and rules with the islands. Splitting them into a Rust API would add a
   service boundary and a second copy of the domain types, for no speed a
   player would notice.
+- **`cf` over Wrangler.** `cf` is Cloudflare's successor to Wrangler. It's
+  built on Vite and generated from the full API. Wrangler gets 18 months of
+  maintenance once the `cf` beta ends. Starting on `cf` avoids a second
+  tooling migration. Wrangler stays available for anything `cf` doesn't cover
+  yet.
 - **The self-hosting path stays open:** workerd plus celld is single-object
   Durable Objects on object storage, which is exactly this shape.
 
@@ -90,7 +96,7 @@ bold.
 ### Repo shape
 
 - The new app lives in its own directory as a Bun workspace with its own
-  `package.json` and `wrangler.jsonc`. The Deno app stays at the root until the
+  `package.json` and `cloudflare.config.ts`. The Deno app stays at the root until the
   swap.
 - **Shared, pure code is imported by both apps, not copied:** `game/`, the
   portable parts of `lib/`, and the Preact components and islands the new
@@ -119,6 +125,10 @@ production doesn't change until step 6.
      - A single Preact instance in dev and prod.
      - Tailwind `@source` picking up the shared directories.
      - Puzzle page JS within 40 KB gz and home within 25 KB.
+   - `cf` + Vite plugin v2 with the Astro Cloudflare adapter: build, local
+     dev in workerd, deploy, and a per-branch preview with its own DO storage.
+     If `cf` can't make previews yet, previews go through `wrangler preview`
+     until it can.
    - Shared signals: audit which islands share signals, and check that the
      puzzle page collapses to one island root. This decides Astro over the
      fallback.
