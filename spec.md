@@ -23,6 +23,7 @@ bold.
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
 | Previews + e2e | Deploy previews sharing one KV | Worker Previews: one per branch, own DO storage |
 | Tracing | Deploy's built-in OTEL | Workers OTLP export to an external backend |
+| Offline | None | Service worker cache for visited pages + an outbox for solves; Speculation Rules prerendering |
 | Platform CLI | `deno deploy`, Deploy console | `cf` CLI with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2 (both beta); Wrangler only where `cf` lacks a feature |
 | Toolchain | `deno fmt/lint/test`, JSR | Bun (installs, scripts, `bun test`) + Vite 8, Oxlint + Oxfmt, TypeScript 7 |
 
@@ -69,6 +70,12 @@ bold.
   maintenance once the `cf` beta ends. Starting on `cf` avoids a second
   tooling migration. Wrangler stays available for anything `cf` doesn't cover
   yet.
+- **Offline-first where it's cheap.** Skub's writes only add facts (a solve
+  never changes, and the server can verify it by replaying the moves), and
+  shared data (paths, the high score) is derived from them. So writes can be
+  eventually consistent with no conflict handling. Pages stay server-rendered.
+  The service worker only caches them and never renders. Without JS, nothing
+  changes.
 - **The self-hosting path stays open:** workerd plus celld is single-object
   Durable Objects on object storage, which is exactly this shape.
 
@@ -110,8 +117,8 @@ bold.
 
 ### Steps
 
-Each step is its own PR. Steps 1–5 touch only the new app and shared code, and
-production doesn't change until step 6.
+Each step is its own PR. Steps 1–6 touch only the new app and shared code, and
+production doesn't change until step 7.
 
 0. **Spikes (throwaway):**
    - Astro 6 on workerd under `bunx --bun astro dev` and `astro build`:
@@ -179,13 +186,40 @@ production doesn't change until step 6.
    5. Login and profile.
    6. Editor.
    7. Feedback and policy pages.
-5. **Platform.**
+5. **Offline.**
+   - **Service worker.**
+     - Precaches the build's assets.
+     - Serves visited pages from cache while refreshing them in the
+       background.
+     - Serves an `/offline` page.
+     - Is versioned per build.
+     - Never caches unreleased puzzles or other players' data.
+   - **Speculation Rules** prerender the likely next page: the next released
+     puzzle, the archive, and the solutions page after a solve.
+   - **Outbox for solves.**
+     - The celebration opens at once, and the solve is queued until it's
+       sent.
+     - The queue replays on `online` and on the next navigation, with
+       Background Sync as a Chromium-only bonus.
+     - The server replays the moves to verify them, and the unique index
+       makes duplicates harmless.
+     - Path claims go by server receipt, so a late solve quietly misses the
+       claim.
+   - **Pending solves** show as a plain fact ("saved on this device") until
+     the server confirms them and the progress cookie updates.
+   - **Online-only, said plainly:** hints, login, the editor solve and
+     feedback.
+   - **e2e:** Playwright offline emulation covers play, solve, reconnect and
+     sync.
+   - **Budget:** ≤ 5 KB gz added to the puzzle page, and nothing on home
+     before the service worker installs.
+6. **Platform.**
    - Cron backup.
    - OTLP tracing.
    - PostHog via `waitUntil`, with the `/ph` proxy kept.
    - A staging Worker refreshed from the hourly backup, so the swap is
      rehearsed on real data.
-6. **Swap.** This is the only step that touches production:
+7. **Swap.** This is the only step that touches production:
    1. A short read-only window.
    2. The final backup.
    3. Import, then verify the counts.
@@ -195,7 +229,7 @@ production doesn't change until step 6.
    stays valid. Auth sessions may be dropped, which means one re-login.
    Afterwards, check the perf budgets: GET TTFB ≤ 150 ms warm from EU, and solve
    POST ≤ 400 ms.
-7. **Cleanup.**
+8. **Cleanup.**
    - Delete the Deno app, `deno.json`, the Deno CI and the KV Connect scripts.
    - Move the new app to the repo root if wanted.
    - Update CLAUDE.md and the skills.
@@ -208,3 +242,5 @@ production doesn't change until step 6.
   keep store code out of unit tests as today.
 - How strictly to freeze features on the Deno app during the transition.
 - Solver: compact TypeScript, or Rust → WASM (decided by the spike).
+- Where the outbox lives: IndexedDB (queue only), or a small cookie set by the
+  client. Either is an exception to "server-set cookies only".
