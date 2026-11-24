@@ -91,7 +91,8 @@ state is described in [architecture.md](architecture.md).
 - **Date:** 2026-11-24
 - **Decision:** Rust → WASM inside the Worker for the solver only, and only if
   the spike shows it's needed. Packed states in a compact hash set, checked
-  against `game/solver.ts` on all shipped puzzles.
+  against `game/solver.ts` on every puzzle file (all 340, unreleased included;
+  it's offline dev tooling).
 - **Alternatives:**
   - Compact TypeScript, or a lower budget: the other spike outcomes.
   - A separate Rust API for the server: rejected.
@@ -150,10 +151,10 @@ state is described in [architecture.md](architecture.md).
 
 - **Date:** 2026-11-24
 - **Decision:** cache every released puzzle page (~330 × ~6 KB gz ≈ 2 MB) with a
-  hand-written service worker (~150 lines) and a build-time manifest. HTML
-  network-first with a ~300–500 ms timeout; assets cache-first, old versions
-  kept while cached pages reference them. Idle and good connections only, never
-  Save-Data. `/offline` lists cached puzzles.
+  hand-written service worker (~150 lines) and a build-time manifest (assets
+  only since entry 21). HTML network-first with a ~300–500 ms timeout; assets
+  cache-first, old versions kept while cached pages reference them. Idle and
+  good connections only, never Save-Data. `/offline` lists cached puzzles.
 - **Alternatives:**
   - Intermittent offline only: discussed first. Longer offline needs cross-page
     progress, offline recommendations and daily rollover; caching everything
@@ -229,8 +230,8 @@ state is described in [architecture.md](architecture.md).
     account. Writes on `next` stay there.
   - The switch, when bug-free: read-only window → final import → verify counts →
     DNS. Rollback is DNS back and loses only post-switch writes.
-  - The same `COOKIE_SIGNING_KEY`, so signed cookies survive. Auth sessions may
-    drop (one re-login).
+  - The same `COOKIE_SIGNING_KEY`, so signed cookies survive. Auth sessions were
+    expected to drop (one re-login); entry 23 imports them instead.
   - The ~1M bot `user` records don't move.
 - **Alternatives:** a routing Worker on `skub.app` with a feature flag:
   rejected. It adds a hop and a moving part in front of production.
@@ -258,3 +259,72 @@ state is described in [architecture.md](architecture.md).
     the same day.
 - **Why:** Kasper needs it until community submissions come in. It stays in the
   repo to reuse the shared UI. Which framework drives it doesn't matter.
+
+## 20. CSS budget: what CI enforces today
+
+- **Date:** 2026-11-24
+- **Decision:** the entry CSS stays ≤ 16 KB gz and each theme ≤ 6 KB gz, as
+  `scripts/check-css.ts` enforces.
+- **Alternatives:** 14 KB gz (from the notes) and 15 KB gz (TODO.md, the
+  frontend skill).
+- **Why:** the notes, TODO.md, the skill and CI disagreed. CI is the one that's
+  enforced.
+
+## 21. Released puzzles come from an endpoint, not the build
+
+- **Date:** 2026-11-24
+- **Decision:** the service worker's build manifest holds assets only. The
+  released puzzle list comes from a small server endpoint, e.g.
+  `/puzzles/released.json`, cacheable until the next release and never listing
+  unreleased slugs. The service worker fetches it on activate and, when online,
+  at most once a day, then caches any pages it doesn't have yet.
+- **Alternatives:** released puzzle URLs in the build manifest: rejected.
+- **Why:** a puzzle releases every day without a deploy, so a build-time list
+  lags until the next deploy.
+
+## 22. A solve invalidates its path groups in its colo
+
+- **Date:** 2026-11-24
+- **Decision:** the viewer's own solutions are always a direct DO read, never
+  cached. On a solve, the Worker deletes that puzzle's cached path-group entry
+  in its colo (Cache API `delete`).
+- **Alternatives:** live with the 30–60 s TTL for everyone.
+- **Why:** read-after-write matters on solve → solutions page. The player's next
+  request usually hits the same colo, so they see their path at once. Other
+  players may lag by up to the TTL, which is fine.
+
+## 23. Schema gaps closed, auth sessions imported
+
+- **Date:** 2026-11-24
+- **Decision:**
+  - Editor drafts become a `draft` column on `user`.
+  - `oauth_state` gets an `expires_at` column, checked on consume (replacing
+    KV's `expireIn`).
+  - `auth_session` is imported, so nobody has to log in again at the switch.
+  - `node:zlib`, used for the progress cookie, runs under `nodejs_compat`, to be
+    confirmed in the Astro spike.
+- **Alternatives:** dropping sessions at the switch (one re-login).
+- **Why:** these were the stored data and runtime couplings the first plan
+  didn't place.
+
+## 24. E2E first for uncovered flows
+
+- **Date:** 2026-11-24
+- **Decision:** a flow with no e2e today gets lean e2e written against the Deno
+  app before it's ported: core outcome only, seeded state, existing conventions.
+  The test passes on the Deno app, then on the flow's preview. Login seeds a
+  session rather than driving Auth0.
+- **Alternatives:** write the tests only on the new app.
+- **Why:** the e2e suite is the parity check. A test that never ran on the Deno
+  app can't show the port matches it.
+
+## 25. Retro themes are cut
+
+- **Date:** 2026-11-24
+- **Decision:** the new app ports skub, the other original colour themes
+  (dracula, acid, catppuccin, solarized-light, ember) and high-contrast. The
+  retro themes (matrix, discman, geocities, sash, riso, digicam, dookie, and the
+  retired moquette) are cut, not deferred. The Deno app keeps them until the
+  switch, with no freeze.
+- **Alternatives:** porting them, or deferring them.
+- **Why:** Kasper: "Little chance they get maintained really, is the main risk."

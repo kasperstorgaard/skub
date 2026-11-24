@@ -43,7 +43,8 @@ Each goal is checked on `next.skub.app` before the switch, and again after it.
 | Solve POST                     | ≤ 400 ms                                            |
 | JS, puzzle page                | ≤ 40 KB gz                                          |
 | JS, home                       | ≤ 25 KB gz                                          |
-| CSS                            | ≤ 14 KB gz                                          |
+| CSS, entry                     | ≤ 16 KB gz                                          |
+| CSS, per theme                 | ≤ 6 KB gz                                           |
 | Service worker cost            | ≤ 5 KB gz added to the puzzle page; nothing on home |
 | Puzzle page render, in workerd | Above ~20 ms, revisit edge-caching the page shell   |
 

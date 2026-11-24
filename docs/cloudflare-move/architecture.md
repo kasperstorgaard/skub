@@ -39,7 +39,7 @@ Reviewers check these on every PR.
 - **The HTML is always the server's.** The service worker caches pages; it never
   renders them.
 - **Unreleased puzzles never ship publicly:** not as static files, not in the
-  service worker precache.
+  released puzzle list, not in the service worker precache.
 - **Shared code is imported, never copied.**
 - **Redirects are 303.**
 
@@ -57,6 +57,8 @@ Reviewers check these on every PR.
   replaces today's `isDev` ("not on Deploy"). Secrets are Worker secrets.
 - `COOKIE_SIGNING_KEY` is the same key the Deno app uses.
 - Temporal comes from a polyfill where the runtime lacks it.
+- `node:zlib`, used for the progress cookie, runs under `nodejs_compat`. A
+  runtime dependency to confirm in the Astro spike.
 
 ## Store
 
@@ -65,11 +67,13 @@ One SQLite-backed Durable Object is the whole database.
 - **Placement:** `locationHint: "weur"`, set on first get. Objects never move.
   No replication.
 - **Tables:** user, solution, score, user_score, feedback, rating and auth.
+  - The user row holds the editor draft in a `draft` column.
   - A solution is one row. Today's four KV copies (by puzzle, by user, by user
     and puzzle, by canonical path) are indexes on that row.
   - Path groups are a SQL query over solutions.
   - The high score is a ranked SQL query over scores.
-  - The auth table keeps the Auth0 `sub` → `userId` mapping.
+  - The auth tables keep the Auth0 `sub` → `userId` mapping, auth sessions, and
+    `oauth_state` with an `expires_at` column that is checked on consume.
 - **The solve is one `transactionSync`:** insert the solution once (a unique
   index dedups), claim the path, award the score. No versionstamps, no retry
   loops, no best-effort follow-up writes.
@@ -101,6 +105,9 @@ One SQLite-backed Durable Object is the whole database.
   recommendation as `/puzzles/<slug>`, not a link to the `/puzzles/recommended`
   redirect.
 - Astro Actions are not used.
+- **Themes are colour-only variants of one look,** plus high-contrast for
+  accessibility: skub, dracula, acid, catppuccin, solarized-light, ember and
+  high-contrast. There are no retro themes.
 
 ## Write model
 
@@ -122,11 +129,17 @@ One SQLite-backed Durable Object is the whole database.
 ### Service worker
 
 - Hand-written, ~150 lines. Not Workbox, not `@vite-pwa/astro`.
-- **Manifest:** a build-time Vite plugin emits the hashed assets, every released
-  puzzle URL and a build version, inlined into `sw.ts`.
+- **Build manifest:** a build-time Vite plugin emits the hashed assets and a
+  build version, inlined into `sw.ts`. Assets only, no puzzles.
+- **Released puzzle list:** a small server endpoint, e.g.
+  `/puzzles/released.json`, lists the released puzzle URLs. It is cacheable
+  until the next daily release and never lists unreleased slugs. The service
+  worker fetches it on activate, and when online at most once a day, so a new
+  daily puzzle is picked up without a deploy.
 - **Caches every released puzzle page** (~330 pages × ~6 KB gz ≈ 2 MB) in the
-  background. Only when idle and on good connections, never on Save-Data. Calls
-  `navigator.storage.persist()` once filled.
+  background: any page on the list it doesn't have yet. Only when idle and on
+  good connections, never on Save-Data. Calls `navigator.storage.persist()` once
+  filled.
 - **HTML: network first** with a ~300–500 ms timeout, then cache.
 - **Assets: cache first.** Old versions stay while any cached page references
   them. Pages refresh lazily after a deploy: on visit, plus a slow background
@@ -158,8 +171,12 @@ One SQLite-backed Durable Object is the whole database.
   holds the top high score entries with names, and each puzzle's path groups,
   for 30–60 s with stale-while-revalidate.
 - **Personalised pages render per player.** `/highscore` and the solutions pages
-  add the viewer's own row or solutions: from cookies, plus one DO read for
-  their own solutions.
+  add the viewer's own row or solutions: from cookies, plus a direct DO read for
+  their own solutions. The viewer's own solutions are never cached.
+- **A solve invalidates its puzzle's path groups in its colo.** The Worker
+  deletes that puzzle's cached entry (Cache API `delete`). The player's next
+  request usually hits the same colo, so they see their path at once. Other
+  players may lag by up to the TTL.
 - **Puzzle and archive pages are not edge-cached.** They render from bundled
   data and cookies with no store call.
 - **Early Hints** for CSS and fonts.
@@ -178,8 +195,8 @@ One SQLite-backed Durable Object is the whole database.
   integer states in typed arrays); Rust → WASM; or a lower budget.
 - **If Rust:** only the BFS and its slide logic, compiled to WASM and imported
   by the Worker, holding packed states in a compact hash set. It must match
-  `game/solver.ts` on all shipped puzzles. There is no separate Rust service;
-  everything else stays TypeScript.
+  `game/solver.ts` on every puzzle file (all 340, unreleased included). There is
+  no separate Rust service; everything else stays TypeScript.
 
 ## Toolchain
 
@@ -251,5 +268,3 @@ Until it moves (after the switch), it runs locally on the Deno/Fresh app.
 - Prefetch mechanism: Astro prefetch or Speculation Rules.
 - The HTML network-first timeout, within ~300–500 ms.
 - Per-branch previews through `cf` or `wrangler preview`.
-- Not discussed yet: editor drafts and `oauth_state` expiry (KV `expireIn`
-  today) in the schema, and `node:zlib` on workerd.

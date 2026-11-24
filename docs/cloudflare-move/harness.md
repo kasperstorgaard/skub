@@ -4,28 +4,30 @@ The tooling that makes the move safe and measurable. Each entry says what it is,
 why we need it, when it lands (the [rollout](rollout.md) step), and when it's
 done.
 
-| Harness                                                               | Step     |
-| --------------------------------------------------------------------- | -------- |
-| [Solver budget probe](#solver-budget-probe)                           | 0        |
-| [DO round-trip probe](#do-round-trip-probe)                           | 0        |
-| [Shared tests under `bun test`](#shared-tests-under-bun-test)         | 1        |
-| [Import rules lint](#import-rules-lint)                               | 1–2      |
-| [New app CI pipeline](#new-app-ci-pipeline)                           | 2        |
-| [Per-branch previews and DO reset](#per-branch-previews-and-do-reset) | 2        |
-| [E2E suite on `@playwright/test`](#e2e-suite-on-playwrighttest)       | 2        |
-| [Parity report](#parity-report)                                       | 2–7      |
-| [Perf budget checks](#perf-budget-checks)                             | 2–7      |
-| [Store scenario tests](#store-scenario-tests)                         | 3        |
-| [KV → SQL import](#kv--sql-import)                                    | 3        |
-| [Data-drift check](#data-drift-check)                                 | 3        |
-| [Solver parity check](#solver-parity-check)                           | if Rust  |
-| [Service worker manifest plugin](#service-worker-manifest-plugin)     | 5        |
-| [Offline e2e](#offline-e2e)                                           | 5        |
-| [Import cron](#import-cron)                                           | 6        |
-| [Backup cron](#backup-cron)                                           | 6        |
-| [OTLP export](#otlp-export)                                           | 6        |
-| [Read-only mode on the Deno app](#read-only-mode-on-the-deno-app)     | before 7 |
-| [Dev-only authoring integration](#dev-only-authoring-integration)     | 8        |
+| Harness                                                                                          | Step     |
+| ------------------------------------------------------------------------------------------------ | -------- |
+| [Solver budget probe](#solver-budget-probe)                                                      | 0        |
+| [DO round-trip probe](#do-round-trip-probe)                                                      | 0        |
+| [Shared tests under `bun test`](#shared-tests-under-bun-test)                                    | 1        |
+| [Import rules lint](#import-rules-lint)                                                          | 1–2      |
+| [New app CI pipeline](#new-app-ci-pipeline)                                                      | 2        |
+| [Per-branch previews and DO reset](#per-branch-previews-and-do-reset)                            | 2        |
+| [E2E suite on `@playwright/test`](#e2e-suite-on-playwrighttest)                                  | 2        |
+| [E2E for uncovered flows, on the Deno app first](#e2e-for-uncovered-flows-on-the-deno-app-first) | 4        |
+| [Parity report](#parity-report)                                                                  | 2–7      |
+| [Perf budget checks](#perf-budget-checks)                                                        | 2–7      |
+| [Store scenario tests](#store-scenario-tests)                                                    | 3        |
+| [KV → SQL import](#kv--sql-import)                                                               | 3        |
+| [Data-drift check](#data-drift-check)                                                            | 3        |
+| [Solver parity check](#solver-parity-check)                                                      | if Rust  |
+| [Service worker manifest plugin](#service-worker-manifest-plugin)                                | 5        |
+| [Released puzzle list endpoint](#released-puzzle-list-endpoint)                                  | 5        |
+| [Offline e2e](#offline-e2e)                                                                      | 5        |
+| [Import cron](#import-cron)                                                                      | 6        |
+| [Backup cron](#backup-cron)                                                                      | 6        |
+| [OTLP export](#otlp-export)                                                                      | 6        |
+| [Read-only mode on the Deno app](#read-only-mode-on-the-deno-app)                                | before 7 |
+| [Dev-only authoring integration](#dev-only-authoring-integration)                                | 8        |
 
 ## Solver budget probe
 
@@ -104,6 +106,19 @@ done.
 - **Done when:** the suite passes against the Deno app's branch URL, and a
   flow's tests pass on the new app's preview before that flow counts as ported.
 
+## E2E for uncovered flows, on the Deno app first
+
+- **What:** e2e tests for the flows with none today, written against the Deno
+  app before that flow is ported: hints, editor, feedback, consent banner,
+  login, "Play next" (`/puzzles/recommended`), the weekly high score, error
+  pages and solution replay. Lean: the core outcome only, from seeded state, per
+  the existing e2e conventions. Login seeds a session rather than driving Auth0.
+- **Why:** a port can only be checked against a test that already passes on the
+  original. Otherwise the parity check has gaps exactly where nothing is tested.
+- **When:** step 4, at the start of each flow's PR.
+- **Done when:** the test passes on the Deno app, then on the flow's preview.
+  [parity.md](parity.md) marks which rows need it.
+
 ## Parity report
 
 - **What:** the result of each e2e test on both apps side by side, mapped to the
@@ -118,8 +133,9 @@ done.
 ## Perf budget checks
 
 - **What:** checks against the budgets in [mission.md](mission.md#goals):
-  - JS ≤ 40 KB gz puzzle page, ≤ 25 KB home; CSS ≤ 14 KB gz. In CI, on every
-    build. The CSS check keeps today's unresolved `var(--…)` check.
+  - JS ≤ 40 KB gz puzzle page, ≤ 25 KB home; CSS ≤ 16 KB gz entry and ≤ 6 KB gz
+    per theme, as `scripts/check-css.ts` enforces today. In CI, on every build.
+    The CSS check keeps today's unresolved `var(--…)` check.
   - Service worker: ≤ 5 KB gz added to the puzzle page, nothing on home before
     install. In CI from step 5.
   - Puzzle page render time in workerd: measured in step 0; above ~20 ms,
@@ -148,7 +164,8 @@ done.
 
 - **What:** a script that reads the hourly backup (JSONL) and writes SQL: bots
   dropped, the four solution index copies deduplicated to one row, scores
-  rebuilt, `auth` sub→userId kept. Idempotent (`INSERT OR IGNORE` on ids).
+  rebuilt, `auth` sub→userId and auth sessions kept, editor drafts into the
+  user's `draft` column. Idempotent (`INSERT OR IGNORE` on ids).
 - **Why:** the data moves one way, many times: on every import cron run and once
   more at the switch.
 - **When:** step 3.
@@ -169,21 +186,35 @@ done.
 
 ## Solver parity check
 
-- **What:** the Rust → WASM solver run against `game/solver.ts` on all shipped
-  puzzles: same `minMoves`, same solvability.
+- **What:** the Rust → WASM solver run against `game/solver.ts` on every puzzle
+  file (all 340, unreleased included; it's offline dev tooling): same
+  `minMoves`, same solvability.
 - **Why:** the hints and editor badge must not change answers.
 - **When:** only if the solver spike picks Rust.
-- **Done when:** every shipped puzzle matches, in CI.
+- **Done when:** every puzzle file matches, in CI.
 
 ## Service worker manifest plugin
 
-- **What:** a small Vite plugin that emits the hashed assets, every released
-  puzzle URL and a build version, inlined into `sw.ts`.
-- **Why:** the service worker precaches from it and keeps old assets while
-  cached pages reference them.
+- **What:** a small Vite plugin that emits the hashed assets and a build
+  version, inlined into `sw.ts`. Assets only: puzzles release daily without a
+  deploy, so they come from the released puzzle list instead.
+- **Why:** the service worker precaches assets from it and keeps old assets
+  while cached pages reference them.
 - **When:** step 5.
-- **Done when:** the manifest matches the build, and a test fails if an
-  unreleased puzzle appears in it.
+- **Done when:** the manifest matches the build and holds no puzzle URLs.
+
+## Released puzzle list endpoint
+
+- **What:** a small server endpoint, e.g. `/puzzles/released.json`, listing the
+  released puzzle URLs. Cacheable until the next daily release. The service
+  worker fetches it on activate, and when online at most once a day, then caches
+  any pages it doesn't have yet.
+- **Why:** a new puzzle releases every day without a deploy. A build-time list
+  would lag until the next deploy.
+- **When:** step 5.
+- **Done when:** the list matches the released puzzles on any given day, a test
+  fails if it ever lists an unreleased slug, and the day's new puzzle is cached
+  without a deploy.
 
 ## Offline e2e
 
