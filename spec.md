@@ -23,7 +23,7 @@ bold.
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
 | Previews + e2e | Deploy previews sharing one KV | Worker Previews: one per branch, own DO storage |
 | Tracing | Deploy's built-in OTEL | Workers OTLP export to an external backend |
-| Caching | Immutable assets only | Edge cache for shared pages that read the DO; Early Hints; Astro prefetch; service worker page cache in the browser |
+| Caching | Immutable assets only | Edge cache for shared DO query results; Early Hints; Astro prefetch; service worker page cache in the browser |
 | Offline | None | Service worker page cache + an outbox for solves |
 | Platform CLI | `deno deploy`, Deploy console | `cf` CLI with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2 (both beta); Wrangler only where `cf` lacks a feature |
 | Toolchain | `deno fmt/lint/test`, JSR | Bun (installs, scripts, `bun test`) + Vite 8, Oxlint + Oxfmt, TypeScript 7 |
@@ -249,11 +249,14 @@ production doesn't change until step 7.
    - **Budget:** ≤ 5 KB gz added to the puzzle page, and nothing on home
      before the service worker installs.
 6. **Platform.**
-   - Edge cache for shared, cookie-free pages that read the DO: `/highscore`,
-     solutions pages, the archive list. A 30–60 s TTL with
-     stale-while-revalidate. Puzzle pages aren't edge-cached: they render
-     from bundled data and cookies with no store call, so a cache hit would
-     save only render CPU.
+   - Edge cache for shared DO query results, not HTML. `/highscore` and the
+     solutions pages add the viewer's own row or solutions, so the page
+     still renders per player. The shared part comes from the Worker's
+     Cache API with a 30–60 s TTL and stale-while-revalidate: the top
+     entries with names, and a puzzle's path groups. The viewer's part
+     comes from cookies, plus one DO read for their own solutions. Puzzle
+     and archive pages need no cache, because they render from bundled data
+     and cookies with no store call.
    - Static pages (cookie policy and similar) prerendered at build.
    - Early Hints for CSS and fonts.
    - Cron backup.
