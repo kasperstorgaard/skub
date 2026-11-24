@@ -14,7 +14,7 @@ bold where it pays.
 |---|---|---|
 | Runtime + host | Deno Deploy isolate (Amsterdam) | Cloudflare Workers (workerd), nearest colo |
 | Store | Deno KV (Virginia) | One SQLite-backed Durable Object, placed in western Europe |
-| Framework | Fresh 2.3 | Fresh 2.3 on workerd via `@cloudflare/vite-plugin`; replacing it is a separate, later decision |
+| Framework | Fresh 2.3 | Fresh 2.3 on workerd as a bridge for the move, then replaced (layer 5) |
 | Static assets | `staticFiles()` | Workers Static Assets |
 | Puzzles | `.md` files read from disk at runtime | Bundled at build time (generated module) |
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
@@ -41,16 +41,15 @@ bold where it pays.
 - **Worker Previews** give each branch its own empty DO storage automatically,
   so e2e starts from clean data per branch. `/api/e2e/reset` becomes
   `deleteAll()`.
-- **Fresh stays for the move.** Fresh 2.3 already has what the principles ask
-  for: zero-JS pages, islands, Partials, view transitions. Fresh documents
-  running on Workers. Changing framework would not make Skub faster. It would
-  answer a stewardship question, so it gets its own decision after the move.
+- **Fresh is a bridge, not the destination.** It won't be maintained after the
+  Deno deal, but it documents running on Workers. Keeping it through the
+  cutover means one big change at a time. The replacement is its own layer.
 - **The self-hosting path stays open:** workerd plus celld is single-object
   Durable Objects on object storage, which is exactly this shape.
 
 ### Non-goals
 
-- Changing framework during the move.
+- Changing framework in the same PRs as the store or host.
 - Redesigning data beyond what SQL makes natural (one solutions table, derived
   paths, a ranked score table).
 - Migrating the ~1M bot `user` records. Only players with a solution or a login
@@ -135,17 +134,17 @@ store module and the entry point are Deno-specific.
   ≤ 400 ms.
 - Retire Deno Deploy, `db/kv.ts`, the KV Connect scripts and `deno.json`.
 
-### 5. Framework decision (after the move)
+### 5. Replace Fresh
 
-Revisit once Fresh's future under Cloudflare is clearer. The front-runner if
-Skub leaves Fresh is Astro 6 (owned by Cloudflare, workerd in dev and prod,
-Preact islands), at roughly 2.5–3× the move's framework cost. Routes,
-middleware and Partials would be rewritten. Islands, `game/`, `components/`
-and `lib/` carry over.
+Fresh won't be maintained, so it gets replaced after the cutover. The
+replacement is being chosen. Astro 6 (owned by Cloudflare, workerd in dev and
+prod, Preact islands) is the current front-runner, at roughly 2.5–3× the move's
+framework cost. Routes, middleware and Partials would be rewritten. Islands,
+`game/`, `components/` and `lib/` carry over.
 
 ## Open decisions
 
-- Framework: stay on Fresh for the move (this spec), or switch as part of it.
+- Fresh's replacement (layer 5).
 - Toolchain wrapper: Vite+ (`vp`) on Node, or the same tools called directly;
   Bun only as installer/script runner.
 - DO placement: `locationHint: "weur"` (best effort) or the `eu` jurisdiction
