@@ -23,7 +23,8 @@ bold.
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
 | Previews + e2e | Deploy previews sharing one KV | Worker Previews: one per branch, own DO storage |
 | Tracing | Deploy's built-in OTEL | Workers OTLP export to an external backend |
-| Offline | None | Service worker cache for visited pages + an outbox for solves; Speculation Rules prerendering |
+| Caching | Immutable assets only | Edge cache for shared pages that read the DO; Early Hints; Astro prefetch; service worker page cache in the browser |
+| Offline | None | Service worker page cache + an outbox for solves |
 | Platform CLI | `deno deploy`, Deploy console | `cf` CLI with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2 (both beta); Wrangler only where `cf` lacks a feature |
 | Toolchain | `deno fmt/lint/test`, JSR | Bun (installs, scripts, `bun test`) + Vite 8, Oxlint + Oxfmt, TypeScript 7 |
 
@@ -152,6 +153,9 @@ production doesn't change until step 7.
      - A single Preact instance in dev and prod.
      - Tailwind `@source` picking up the shared directories.
      - Puzzle page JS within 40 KB gz and home within 25 KB.
+     - Puzzle page render time in workerd. Above ~20 ms, revisit caching the
+       page shell at the edge with HTMLRewriter filling in the player's parts
+       from cookies.
    - `cf` + Vite plugin v2 with the Astro Cloudflare adapter: build, local
      dev in workerd, deploy, and a per-branch preview with its own DO storage.
      If `cf` can't make previews yet, previews go through `wrangler preview`
@@ -209,13 +213,21 @@ production doesn't change until step 7.
 5. **Offline.**
    - **Service worker.**
      - Precaches the build's assets.
-     - Serves visited pages from cache while refreshing them in the
-       background.
+     - Puzzle pages: cache first, refreshed in the background. Filled early
+       when the browser is idle (today's daily and recent archive puzzles),
+       skipped on Save-Data or slow connections.
+     - Home and archive: network first, falling back to cache, since they
+       change with the daily release.
+     - A solve POST evicts that puzzle's cached page.
+     - Client navigations (`ClientRouter`) fetch HTML through the service
+       worker, so a cached page swaps in instantly. There's no client-side
+       rendering path: the HTML is always the server's.
      - Serves an `/offline` page.
      - Is versioned per build.
      - Never caches unreleased puzzles or other players' data.
-   - **Speculation Rules** prerender the likely next page: the next released
-     puzzle, the archive, and the solutions page after a solve.
+   - **Astro prefetch** (hover, viewport, or Speculation Rules) for the
+     likely next page: the next released puzzle, the archive, and the
+     solutions page after a solve.
    - **Outbox: a queue of requests, owned by the service worker.**
      - A failed POST to an allowlisted route (solve, feedback, profile name) is
        stored in IndexedDB via `idb-keyval`: method, URL, body and an id. The
@@ -237,6 +249,13 @@ production doesn't change until step 7.
    - **Budget:** ≤ 5 KB gz added to the puzzle page, and nothing on home
      before the service worker installs.
 6. **Platform.**
+   - Edge cache for shared, cookie-free pages that read the DO: `/highscore`,
+     solutions pages, the archive list. A 30–60 s TTL with
+     stale-while-revalidate. Puzzle pages aren't edge-cached: they render
+     from bundled data and cookies with no store call, so a cache hit would
+     save only render CPU.
+   - Static pages (cookie policy and similar) prerendered at build.
+   - Early Hints for CSS and fonts.
    - Cron backup.
    - OTLP tracing.
    - PostHog via `waitUntil`, with the `/ph` proxy kept.
