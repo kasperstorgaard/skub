@@ -55,6 +55,14 @@ bold.
   Node-only tooling), HonoX (alpha) and a Fresh fork (dead upstream). The
   fallback is a thin layer of our own (Hono + Vite + Preact, about 800 lines to
   own) if Astro's islands don't hold up.
+- **Rust only where it pays: the solver.** The BFS is the one CPU- and
+  memory-bound piece, and it's what pushes against the 128 MB isolate limit.
+  As Rust compiled to WASM, imported by the Worker, it holds states as packed
+  integers in a compact hash set. The rest of the server (pages, form POSTs,
+  auth, the DO's SQL) stays TypeScript. Those parts are I/O-bound and share
+  types and rules with the islands. Splitting them into a Rust API would add a
+  service boundary and a second copy of the domain types, for no speed a
+  player would notice.
 - **The self-hosting path stays open:** workerd plus celld is single-object
   Durable Objects on object storage, which is exactly this shape.
 
@@ -116,9 +124,12 @@ production doesn't change until step 6.
      fallback.
    - Solver memory and CPU. Workers caps memory at 128 MB per isolate. The
      editor budget (3M states) is about 175 MB today, and hints allow 7M states.
-     The spike decides between three outcomes: it fits, it fits with a compact
-     visited set (packed integer states in typed arrays), or the budget comes
-     down.
+     The spike decides between four outcomes: it fits, it fits with a compact
+     visited set (packed integer states in typed arrays), it moves to Rust →
+     WASM, or the budget comes down. For Rust, port the BFS and its slide
+     logic, then check it against `game/solver.ts` on all 340 shipped puzzles
+     (same `minMoves`, same solvability). Measure peak memory, CPU, WASM size
+     and cold start inside workerd.
    - A DO with `locationHint: "weur"` on a Worker Preview: the round trip from
      Denmark, and per-preview storage.
    - Bun with Playwright and `bun test` on the shared tests. If Astro's dev
@@ -186,3 +197,4 @@ production doesn't change until step 6.
 - Store tests: run the SQL layer against in-memory SQLite in unit tests, or
   keep store code out of unit tests as today.
 - How strictly to freeze features on the Deno app during the transition.
+- Solver: compact TypeScript, or Rust → WASM (decided by the spike).
