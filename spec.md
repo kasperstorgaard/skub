@@ -1,12 +1,15 @@
 # Move Skub to Cloudflare
 
 Deno Deploy shuts down in April 2027 and Deno runtime development ends a year
-after the October 2026 Deno–Cloudflare deal. Skub needs a new runtime, host and
-store, and the toolchain has to leave Deno too. This spec picks the target
-architecture and splits the move into layers that each ship on their own.
+after the October 2026 Deno–Cloudflare deal. Fresh won't be maintained either.
+Skub needs a new runtime, host, store, framework and toolchain.
+
+Instead of migrating the live app piece by piece, build the new app in parallel
+in the same repo, run both CI pipelines, and swap when the new one is good
+enough.
 
 Principles: performance (server and client), server first, simple at a glance,
-bold where it pays.
+bold.
 
 ## Target architecture
 
@@ -14,7 +17,7 @@ bold where it pays.
 |---|---|---|
 | Runtime + host | Deno Deploy isolate (Amsterdam) | Cloudflare Workers (workerd), nearest colo |
 | Store | Deno KV (Virginia) | One SQLite-backed Durable Object, placed in western Europe |
-| Framework | Fresh 2.3 | Fresh 2.3 on workerd as a bridge for the move, then replaced (layer 5) |
+| Framework | Fresh 2.3 | Being chosen (Astro 6 front-runner; Remix 3, own thin layer and a Fresh fork under review) |
 | Static assets | `staticFiles()` | Workers Static Assets |
 | Puzzles | `.md` files read from disk at runtime | Bundled at build time (generated module) |
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
@@ -41,118 +44,122 @@ bold where it pays.
 - **Worker Previews** give each branch its own empty DO storage automatically,
   so e2e starts from clean data per branch. `/api/e2e/reset` becomes
   `deleteAll()`.
-- **Fresh is a bridge, not the destination.** It won't be maintained after the
-  Deno deal, but it documents running on Workers. Keeping it through the
-  cutover means one big change at a time. The replacement is its own layer.
 - **The self-hosting path stays open:** workerd plus celld is single-object
   Durable Objects on object storage, which is exactly this shape.
 
+### Why in parallel
+
+- The Deno app keeps shipping to players untouched. Nothing on `main` has to
+  work on two runtimes at once.
+- The new app is built for its target from the start, so no Fresh-on-workerd
+  bridge, no dual-runtime shims and no throwaway adapters.
+- **The e2e suite is the parity check.** It asserts what players see, so the
+  same Playwright tests run against both apps. The swap is ready when they pass
+  on the new one.
+- The swap is a DNS change, and rolling it back is the same change in reverse.
+
 ### Non-goals
 
-- Changing framework in the same PRs as the store or host.
+- Redesigning game rules or UI during the move. Ports first, then improvements.
 - Redesigning data beyond what SQL makes natural (one solutions table, derived
   paths, a ranked score table).
 - Migrating the ~1M bot `user` records. Only players with a solution or a login
   move.
 
-## Layers
+## Plan
 
-Each layer is its own branch in one stack (generic changes at the bottom), and
-each one is reviewable alone. Layers 1–2 merge while production is still on
-Deno Deploy. Layer 4 is the cutover.
+### Repo shape
 
-### 0. Spikes (throwaway, not merged)
+- The new app lives in its own directory as a Bun workspace with its own
+  `package.json` and `wrangler.jsonc`. The Deno app stays at the root until the
+  swap.
+- **Shared, pure code is imported by both apps, not copied:** `game/`, the
+  portable parts of `lib/`, and the Preact components and islands the new
+  framework can render. Shared code uses bare specifiers that resolve under
+  both `deno.json` and `package.json`, plus the `#/` alias.
+- New features during the transition go into shared code where they can, so
+  they don't have to be built twice.
+- Two CI pipelines. The existing Deno workflows stay as they are. The new app
+  gets its own: Oxfmt, Oxlint, `tsc`, `bun test`, build, CSS budget, a Worker
+  Preview per branch, and e2e against that preview.
 
-- **Fresh on workerd:** build with `fresh()` + `cloudflare()`. Run the home
-  page, a puzzle page, one island, a Partial navigation, a no-JS form POST and
-  the streamed `/api/solve` in local workerd. Check that the custom Vite plugins
-  survive. Also choose `@cloudflare/vite-plugin` v1 + wrangler or v2 beta + `cf`.
-- **Solver budget:** measure CPU and peak memory for hints on the hardest
-  shipped puzzles and for a budget-exhausting editor board. Workers caps memory
-  at 128 MB per isolate. The editor budget (3M states) is ~175 MB today and
-  hints allow 7M states. Outcome: fits in-request, fits after a compact
-  visited set (packed integer states in typed arrays), or needs a lower
-  budget.
-- **Bun:** `bun install`, then `vite build` and `vite dev` with `fresh()` +
-  `cloudflare()` under `bun --bun`, a few test files on `bun test` with the
-  `#/` alias, one script, and one Playwright test. If Vite or the Cloudflare
-  plugin misbehaves on Bun, Bun stays as installer, script runner and test
-  runner, and Vite runs on Node.
-- **DO smoke test:** one SQLite DO with `locationHint: "weur"` on a Worker
-  Preview. Measure the Worker→DO round trip from Denmark and confirm the
-  preview gets its own storage.
+### Steps
 
-### 1. Portable toolchain (still on Deno Deploy)
+Each step is its own PR. Steps 1–5 touch only the new app and shared code, and
+production doesn't change until step 6.
 
-Lowest regret, and it works on both runtimes.
+0. **Spikes (throwaway):**
+   - The chosen framework on workerd under Bun with `@cloudflare/vite-plugin`:
+     a page, an island, a partial navigation, a no-JS form POST and the
+     streamed solve.
+   - Solver memory and CPU. Workers caps memory at 128 MB per isolate. The
+     editor budget (3M states) is about 175 MB today, and hints allow 7M states.
+     The spike decides between three outcomes: it fits, it fits with a compact
+     visited set (packed integer states in typed arrays), or the budget comes
+     down.
+   - A DO with `locationHint: "weur"` on a Worker Preview: the round trip from
+     Denmark, and per-preview storage.
+   - Bun with Vite 8, the Cloudflare plugin and Playwright. If Vite misbehaves
+     on Bun, Vite runs on Node and Bun keeps everything else.
+1. **Shared core.** Make `game/` and the portable parts of `lib/` import
+   cleanly from Bun:
+   - Bare specifiers and the `#/` alias, with JSR `@std/*` swapped for npm.
+   - Puzzles and names loaded through an injected source instead of disk
+     reads.
+   - Temporal via a polyfill where it's missing.
+   - Unit tests runnable by `bun test`.
 
-- `package.json` + `tsconfig.json` with the `#/` alias. JSR `@std/*` replaced
-  by npm or platform APIs (`cookie`, `ulid`, `yaml`, `node:util` `parseArgs`,
-  a tiny local semaphore).
-- Unit tests on `bun test` (`Deno.test` → `test`; keep `@std/assert` from npm
-  at first, or codemod to `expect`). Vitest is the fallback if `bun test`
-  falls short.
-- Oxlint + Oxfmt, with `lint-imports` ported as an Oxlint JS plugin (Biome 2 is
-  the fallback if alpha plugins bite). `tsc --noEmit` on TypeScript 7.
-- Scripts on Bun, written against `node:` APIs so nothing locks to one runtime.
-  Vite plugins on `node:` APIs too. e2e on `@playwright/test`, keeping
-  the blast-radius selector.
-- Temporal through a polyfill wherever workerd or browsers lack it.
-- CI on Bun (`oven-sh/setup-bun`).
+   This lands on `main`, and the Deno app keeps working.
+2. **Skeleton.** The new app boots on workerd and has its own CI pipeline. It
+   has:
+   - The env module, the app-environment flag and secrets.
+   - Puzzles bundled at build time.
+   - Static assets, Tailwind 4 and the CSS budget.
+   - The e2e suite ported to `@playwright/test`, with the base URL as config.
+3. **Store.**
+   - The DO with its schema: user, solution, score, user_score, feedback,
+     rating and auth tables.
+   - Migrations on `PRAGMA user_version`.
+   - Typed SQL helpers, or Drizzle's durable-sqlite driver.
+   - The solve as one transaction.
+   - The KV import script: backup JSONL → SQL, with bots dropped, the four
+     solution indexes deduplicated, scores rebuilt and `auth` sub→userId kept.
+     Checked by counting solutions, players and score totals.
+4. **Pages, by flow.** Each flow is one PR, and the port is done when that
+   flow's e2e tests pass on its preview:
+   1. Play and solve.
+   2. Hints and Flash.
+   3. Solutions and high score.
+   4. Archive and home.
+   5. Login and profile.
+   6. Editor.
+   7. Feedback and policy pages.
+5. **Platform.**
+   - Cron backup.
+   - OTLP tracing.
+   - PostHog via `waitUntil`, with the `/ph` proxy kept.
+   - A staging Worker refreshed from the hourly backup, so the swap is
+     rehearsed on real data.
+6. **Swap.** This is the only step that touches production:
+   1. A short read-only window.
+   2. The final backup.
+   3. Import, then verify the counts.
+   4. Point `skub.app` at the Worker. It's on Cloudflare DNS already.
 
-### 2. Runtime seams (still on Deno Deploy)
-
-Take the Deno assumptions out of request paths, so that afterwards only the
-store module and the entry point are Deno-specific.
-
-- One env module instead of `Deno.env` reads, and an explicit app-environment
-  flag instead of `isDev` = "not on Deploy".
-- Puzzles, the manifest and `danish-names.json` bundled at build time. Future
-  puzzles are no longer public static files.
-- Solver without `new Worker`: in-request with the budget chosen by the spike,
-  serialised per isolate as today.
-- A tracing setup that exports on any host (spans keep their names). PostHog
-  server events flushed through the platform's `waitUntil`.
-
-### 3. SQL store, built alongside KV
-
-- DO class with the schema: user, solution (one row, indexed by puzzle / path /
-  user), score, user_score (ranked index), feedback, rating, auth tables. A
-  small migration runner on `PRAGMA user_version`. Raw SQL with typed helpers,
-  or Drizzle's durable-sqlite driver, chosen during the layer.
-- `db/` functions reimplemented against it with the same signatures. The solve
-  becomes one transaction.
-- Transform script: hourly backup JSONL → SQL import (bots dropped, the four
-  solution indexes deduped, scores rebuilt, `auth` sub→userId kept). Verified by
-  solution, player and score-total counts.
-- Merges unused in production.
-
-### 4. Cutover to Workers
-
-- `wrangler.jsonc`, Worker entry, static assets, secrets (same
-  `COOKIE_SIGNING_KEY`, so every signed cookie stays valid), Cron Trigger
-  backup, OTLP export.
-- e2e workflow on Worker Previews instead of Deploy's `deployment_status`
-  events. Previews may need Cloudflare Access or the e2e secret on writes.
-- Runbook: a short read-only window → final backup → import → verify counts →
-  point `skub.app` (already on Cloudflare DNS) at the Worker. Anonymous play
-  keeps working throughout. Auth sessions may be dropped (one re-login).
-- Check against the perf budgets: GET TTFB ≤ 150 ms warm from EU, solve POST
-  ≤ 400 ms.
-- Retire Deno Deploy, `db/kv.ts`, the KV Connect scripts and `deno.json`.
-
-### 5. Replace Fresh
-
-Fresh won't be maintained, so it gets replaced after the cutover. The
-replacement is being chosen. Astro 6 (owned by Cloudflare, workerd in dev and
-prod, Preact islands) is the current front-runner, at roughly 2.5–3× the move's
-framework cost. Routes, middleware and Partials would be rewritten. Islands,
-`game/`, `components/` and `lib/` carry over.
+   The signing key is the same `COOKIE_SIGNING_KEY`, so every signed cookie
+   stays valid. Auth sessions may be dropped, which means one re-login.
+   Afterwards, check the perf budgets: GET TTFB ≤ 150 ms warm from EU, and solve
+   POST ≤ 400 ms.
+7. **Cleanup.**
+   - Delete the Deno app, `deno.json`, the Deno CI and the KV Connect scripts.
+   - Move the new app to the repo root if wanted.
+   - Update CLAUDE.md and the skills.
 
 ## Open decisions
 
-- Fresh's replacement (layer 5).
-- DO placement: `locationHint: "weur"` (best effort) or the `eu` jurisdiction
+- The framework (scout running).
+- DO placement: `locationHint: "weur"` (best effort), or the `eu` jurisdiction
   (hard EU residency, permanent).
 - Store tests: run the SQL layer against in-memory SQLite in unit tests, or
   keep store code out of unit tests as today.
+- How strictly to freeze features on the Deno app during the transition.
