@@ -41,9 +41,17 @@ bold.
   `/highscore` and solutions pages become indexed SQL queries. Skub's write rate
   is far below the ~1,000 req/s soft limit for one object. Sharding (drafts
   first, then by puzzle) stays available if a measured limit ever appears.
-- **EU placement** swaps today's ~110 ms transatlantic hop per KV call for an
-  intra-EU hop. Only solves, logins, cookie refreshes, drafts, `/highscore` and
-  solutions pages pay it.
+- **Close to the player without replication.** The DO sits in western Europe
+  (`locationHint: "weur"`), where most players are. That swaps today's
+  ~110 ms transatlantic hop per KV call for an intra-EU hop. For everyone
+  else, the design keeps the database off the critical path:
+  - Pages render from cookies at the nearest data centre.
+  - Shared reads are edge-cached.
+  - Solves are optimistic: the celebration doesn't wait on the write.
+
+  What's left (a logged-in cookie refresh every 30 minutes, the player's own
+  solutions on the solutions page) doesn't justify D1 read replicas and
+  their session bookmarks. Revisit if non-EU traffic grows.
 - **Worker Previews** give each branch its own empty DO storage automatically,
   so e2e starts from clean data per branch. `/api/e2e/reset` becomes
   `deleteAll()`.
@@ -130,6 +138,16 @@ Offline-first sets the rules for every write:
 
 ## Plan
 
+### Features during the transition
+
+No freeze. Two rules keep both apps in step:
+
+- A change to stored data on the Deno app (a new KV key or field) adds its
+  mapping to the import and the SQL schema in the same PR. Otherwise the
+  data silently stops flowing to `next`.
+- UI-only changes land in shared code where they can. Otherwise they get
+  ported when their flow is, or after it.
+
 ### Repo shape
 
 - The new app lives in its own directory as a Bun workspace with its own
@@ -214,6 +232,11 @@ production doesn't change until step 7.
    - Migrations on `PRAGMA user_version`.
    - Typed SQL helpers, or Drizzle's durable-sqlite driver.
    - The solve as one transaction.
+   - Store code takes a minimal `exec(sql, ...params)` interface, so tests
+     run it on in-memory `bun:sqlite`.
+   - A handful of scenario tests at the level of store operations, e.g. "a
+     solve claims the path and ranks the player". They don't test the SQL
+     library or each query.
    - The KV import script: backup JSONL → SQL, with bots dropped, the four
      solution indexes deduplicated, scores rebuilt and `auth` sub→userId kept.
      Checked by counting solutions, players and score totals.
@@ -308,9 +331,4 @@ production doesn't change until step 7.
 
 ## Open decisions
 
-- DO placement: `locationHint: "weur"` (best effort), or the `eu` jurisdiction
-  (hard EU residency, permanent).
-- Store tests: run the SQL layer against in-memory SQLite in unit tests, or
-  keep store code out of unit tests as today.
-- How strictly to freeze features on the Deno app during the transition.
 - Solver: compact TypeScript, or Rust → WASM (decided by the spike).
