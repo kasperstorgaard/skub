@@ -17,14 +17,14 @@ bold.
 |---|---|---|
 | Runtime + host | Deno Deploy isolate (Amsterdam) | Cloudflare Workers (workerd), nearest colo |
 | Store | Deno KV (Virginia) | One SQLite-backed Durable Object, placed in western Europe |
-| Framework | Fresh 2.3 | Astro 6 + `@astrojs/preact` + `@astrojs/cloudflare`; TSX components and islands, thin `.astro` page shells |
+| Framework | Fresh 2.3 | Astro 6 + `@astrojs/preact` + `@astrojs/cloudflare`; TSX components and islands, thin `.astro` page shells; the DO exported from `src/worker.ts` next to the adapter's `handle()` |
 | Static assets | `staticFiles()` | Workers Static Assets |
 | Puzzles | `.md` files read from disk at runtime | Bundled at build time (generated module) |
 | Cron | `Deno.cron` | Cron Trigger → backup to GCS (or R2) |
 | Previews + e2e | Deploy previews sharing one KV | Worker Previews: one per branch, own DO storage |
 | Tracing | Deploy's built-in OTEL | Workers OTLP export to an external backend |
 | Caching | Immutable assets only | Edge cache for shared DO query results; Early Hints; Astro prefetch; service worker page cache in the browser |
-| Offline | None | Service worker page cache + an outbox for solves |
+| Offline | None | Hand-written service worker: every released puzzle page cached, plus an outbox for writes |
 | Platform CLI | `deno deploy`, Deploy console | `cf` CLI with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2 (both beta); Wrangler only where `cf` lacks a feature |
 | Toolchain | `deno fmt/lint/test`, JSR | Bun (installs, scripts, `bun test`) + Vite 8, Oxlint + Oxfmt, TypeScript 7 |
 
@@ -54,7 +54,9 @@ bold.
   with shared state gets one island root that owns the signals and renders the
   board and dialogs as ordinary children. Skub's own `?dialog=` router stays.
   `ClientRouter` replaces Partials and brings view transitions. Rejected:
-  Remix 3 (no `@preact/signals`, so every island would be rewritten, plus
+  SvelteKit (its service worker support is the most native, but its adapter
+  can't export a Durable Object and it hydrates whole routes rather than
+  islands), Remix 3 (no `@preact/signals`, so every island would be rewritten, plus
   Node-only tooling), HonoX (alpha) and a Fresh fork (dead upstream). The
   fallback is a thin layer of our own (Hono + Vite + Preact, about 800 lines to
   own) if Astro's islands don't hold up.
@@ -87,9 +89,16 @@ bold.
 - The new app is built for its target from the start, so no Fresh-on-workerd
   bridge, no dual-runtime shims and no throwaway adapters.
 - **The e2e suite is the parity check.** It asserts what players see, so the
-  same Playwright tests run against both apps. The swap is ready when they pass
-  on the new one.
-- The swap is a DNS change, and rolling it back is the same change in reverse.
+  same Playwright tests run against both apps.
+- **The new app runs on its own URL with real data.**
+  - `next.skub.app` is fed by a one-way, idempotent import of the hourly
+    backup.
+  - Logging in there shows your real account, because the `auth` sub→userId
+    mapping moves with the data.
+  - Writes made on `next` stay there and never flow back.
+- **The switch happens when the bugs are gone, not on a date.** It's a DNS
+  change. Rolling it back is the same change, and it loses only writes made on
+  the new app since the switch.
 
 ### Write model
 
@@ -160,6 +169,13 @@ production doesn't change until step 7.
      dev in workerd, deploy, and a per-branch preview with its own DO storage.
      If `cf` can't make previews yet, previews go through `wrangler preview`
      until it can.
+   - **Service worker + `ClientRouter` offline.** Cache 20 puzzle pages, go
+     offline, and navigate between them. Then open an uncached page, check
+     view transitions, and survive a deploy with an old tab open (old assets
+     still served).
+   - **DO entrypoint on Astro 6.** `src/worker.ts` exports a SQLite DO next
+     to `handle()`. Check `astro dev` in workerd, `deleteAll()` for the e2e
+     reset, and adapter compatibility with Vite 8 and `cf`.
    - Shared signals: audit which islands share signals, and check that the
      puzzle page collapses to one island root. This decides Astro over the
      fallback.
@@ -211,20 +227,29 @@ production doesn't change until step 7.
    6. Editor.
    7. Feedback and policy pages.
 5. **Offline.**
-   - **Service worker.**
-     - Precaches the build's assets.
-     - Puzzle pages: cache first, refreshed in the background. Filled early
-       when the browser is idle (today's daily and recent archive puzzles),
-       skipped on Save-Data or slow connections.
-     - Home and archive: network first, falling back to cache, since they
-       change with the daily release.
-     - A solve POST evicts that puzzle's cached page.
+   - **Service worker.** It's hand-written (~150 lines), not Workbox or
+     `@vite-pwa/astro`. That plugin's Astro 6 support is unverified, and
+     Workbox's model clashes with keeping old assets alive.
+     - **Manifest:** a small Vite plugin emits the hashed assets, every
+       released puzzle URL and a build version, inlined into `sw.ts`.
+     - **Caches every released puzzle page** (~330 pages, ~6 KB gz each,
+       ~2 MB) in the background. Only on idle and on good connections,
+       never on Save-Data. Calls `navigator.storage.persist()` once filled.
+     - **HTML: network first** with a ~300–500 ms timeout, falling back to
+       cache. Online stays fresh, and the cache is offline insurance.
+     - **Assets: cache first.** Old versions stay while any cached page
+       references them. Pages refresh lazily after a deploy: on visit, plus
+       a slow background trickle.
      - Client navigations (`ClientRouter`) fetch HTML through the service
-       worker, so a cached page swaps in instantly. There's no client-side
+       worker, so offline a cached page swaps in. There's no client-side
        rendering path: the HTML is always the server's.
-     - Serves an `/offline` page.
-     - Is versioned per build.
+     - **`/offline`** lists the cached puzzles (`caches.keys()`) when a link
+       isn't available.
      - Never caches unreleased puzzles or other players' data.
+   - **"Next" is a concrete link.** The server renders the pseudo-random
+     recommendation as `/puzzles/<slug>` instead of linking the
+     `/puzzles/recommended` redirect. It works without JS, saves a round
+     trip online, and offline lands on a cached page.
    - **Astro prefetch** (hover, viewport, or Speculation Rules) for the
      likely next page: the next released puzzle, the archive, and the
      solutions page after a solve.
@@ -242,8 +267,7 @@ production doesn't change until step 7.
        claim.
    - **Pending solves** show as a plain fact ("saved on this device") until
      the server confirms them and the progress cookie updates.
-   - **Online-only, said plainly:** hints, login, the editor solve and
-     feedback.
+   - **Online-only, said plainly:** hints, login and the editor solve.
    - **e2e:** Playwright offline emulation covers play, solve, reconnect and
      sync.
    - **Budget:** ≤ 5 KB gz added to the puzzle page, and nothing on home
@@ -262,10 +286,13 @@ production doesn't change until step 7.
    - Cron backup.
    - OTLP tracing.
    - PostHog via `waitUntil`, with the `/ph` proxy kept.
-   - A staging Worker refreshed from the hourly backup, so the swap is
-     rehearsed on real data.
-7. **Swap.** This is the only step that touches production:
-   1. A short read-only window.
+   - **One-way import cron.** It reads the Deno app's hourly backup from GCS
+     and merges it into the new DO idempotently (`INSERT OR IGNORE` on ids,
+     scores rebuilt), so `next.skub.app` always runs on near-live data.
+     Auth0 gets `next.skub.app` as an allowed callback.
+7. **Switch,** once `next.skub.app` has run bug-free on real data. This is the
+   only step that touches production:
+   1. A short read-only window on the Deno app.
    2. The final backup.
    3. Import, then verify the counts.
    4. Point `skub.app` at the Worker. It's on Cloudflare DNS already.
