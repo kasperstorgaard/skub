@@ -34,9 +34,9 @@ The switch needs every row ported or marked not kept.
 
 ## Hints
 
-| Flow       | Routes                                          | No-JS behaviour                                  | E2E today         | Keep? | Ported | Passes on next | Notes                                                                                                                                                                                                                                                                                                  |
-| ---------- | ----------------------------------------------- | ------------------------------------------------ | ----------------- | ----- | ------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Get a hint | `POST /puzzles/[slug]/hint` (`GET` answers 405) | Form POST 303s back to the puzzle with the hint. | none: write first |       |        |                | JSON for the hint dialog. One per puzzle, counted in a cookie. Runs the solver (7M states). Online-only on next. Port follows the [alignment invariants](architecture.md#clientserver-alignment), so the mechanism changes by design: 303 only, no JSON branch; hint count server-rendered into props. |
+| Flow       | Routes                                          | No-JS behaviour                                  | E2E today         | Keep? | Ported | Passes on next | Notes                                                                                                                                                                                                                                                                                                                                      |
+| ---------- | ----------------------------------------------- | ------------------------------------------------ | ----------------- | ----- | ------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Get a hint | `POST /puzzles/[slug]/hint` (`GET` answers 405) | Form POST 303s back to the puzzle with the hint. | none: write first |       |        |                | JSON for the hint dialog. One per puzzle, counted in a cookie. Runs the solver (7M states). Online-only on next. Port follows the [alignment invariants](architecture.md#clientserver-alignment), so the mechanism changes by design: 303 only, no JSON branch; hint count server-rendered into props. Offline: "Hints need a connection." |
 
 ## Flash
 
@@ -121,6 +121,17 @@ The editor relies on JS by design.
 | Client navigation         | Fresh Partials, `islands/router.tsx` | Full page loads. | `returning-user-flow_test.ts` (back links) |       |        |                | `ClientRouter` on next. `?dialog=` router stays.                                            |
 | Hourly backup             | `Deno.cron`                          | n/a              | none                                       |       |        |                | Cron Trigger on next.                                                                       |
 | `robots.txt`, favicons    | static                               | n/a              | none                                       |       |        |                |                                                                                             |
+
+## Offline (new in the new app)
+
+No Deno equivalent. E2E is written first, with Playwright offline emulation, in
+the new app only (see [harness.md](harness.md#offline-e2e)).
+
+| Flow                    | Routes                                         | No-JS behaviour                    | E2E today         | Keep? | Ported | Passes on next | Notes                                                                                                                                                               |
+| ----------------------- | ---------------------------------------------- | ---------------------------------- | ----------------- | ----- | ------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Offline overlay         | any `ClientRouter` navigation                  | n/a (needs the service worker)     | none: write first |       |        |                | Opens when an uncached navigation fails or is pending after ~3 s: "Waiting for connection…" plus "Play offline". Closes if the request completes.                   |
+| Offline Home            | `/?offline&return=<url>`                       | n/a (served by the service worker) | none: write first |       |        |                | Cached Home. Dims uncached links, "N solves will sync when you're back", return dialog once online. Full page loads offline land here.                              |
+| Offline solution dialog | `/puzzles/[slug]` (202 Queued, stays in place) | n/a                                | none: write first |       |        |                | Placeholder stars, "saved on this device" → "saved" after sync, "Next puzzle" and "More puzzles". Name form for unnamed players; the name is queued with the solve. |
 
 ## API endpoints
 

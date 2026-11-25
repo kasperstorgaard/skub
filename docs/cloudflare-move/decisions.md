@@ -139,9 +139,10 @@ state is described in [architecture.md](architecture.md).
 
 - **Date:** 2026-11-24
 - **Decision:** the service worker owns a queue of requests, stored in IndexedDB
-  via `idb-keyval`. Replays in order on `online` and on the next navigation;
-  Background Sync is a Chromium bonus. 2xx clears, 4xx drops, network error or
-  5xx keeps. Path claims go by server receipt.
+  via `idb-keyval`. Replays in order on `online` and on the next navigation
+  (triggers revised by entry 31); Background Sync is a Chromium bonus. 2xx
+  clears, 4xx drops, network error or 5xx keeps. Path claims go by server
+  receipt.
 - **Alternatives:** the Cache API used as a key-value store: rejected as "too
   custom".
 - **Why:** Kasper: "it should be a queue of requests, for simplicity", and a
@@ -152,9 +153,10 @@ state is described in [architecture.md](architecture.md).
 - **Date:** 2026-11-24
 - **Decision:** cache every released puzzle page (~330 × ~6 KB gz ≈ 2 MB) with a
   hand-written service worker (~150 lines) and a build-time manifest (assets
-  only since entry 21). HTML network-first with a ~300–500 ms timeout; assets
-  cache-first, old versions kept while cached pages reference them. Idle and
-  good connections only, never Save-Data. `/offline` lists cached puzzles.
+  only since entry 21). HTML network-first with a ~300–500 ms timeout (~400 ms
+  since entry 34); assets cache-first, old versions kept while cached pages
+  reference them. Idle and good connections only, never Save-Data. An `/offline`
+  page listed cached puzzles: replaced by offline Home (entry 33).
 - **Alternatives:**
   - Intermittent offline only: discussed first. Longer offline needs cross-page
     progress, offline recommendations and daily rollover; caching everything
@@ -351,8 +353,9 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** today's shape, where some flows take a JSON branch with JS
   and a 303 branch without, and the client shadows server state in signals.
 - **Why:** Kasper: "some flows diverge on client/server… Wins on simplicity for
-  sure". One path also means the service worker can answer an offline write with
-  the same redirect as the server.
+  sure". The first version had the service worker answer an offline write with
+  the server's redirect (`getSolveRedirect`); replaced by entry 31. Invariant 7
+  stays as good practice for the server.
 
 ## 28. The Flash variant lives in the URL
 
@@ -396,3 +399,68 @@ state is described in [architecture.md](architecture.md).
 - **Why:** Kasper: "Let's not cut more right now. Simplifications paused." The
   alignment invariants and the "next" link still apply where they already change
   mechanism.
+
+## 31. Offline writes answer 202 and stay in place
+
+- **Date:** 2026-11-25
+- **Decision:**
+  - Each write is an action descriptor in `game/actions/` (`path`,
+    `parse(form)`, `redirect(input)` for the server, `offline` flag). The
+    service worker's allowlist is the actions flagged `offline`, and it runs the
+    shared validity check before queueing.
+  - A write gets a ~5 s timeout before it counts as offline. Offline, the
+    service worker queues it in IndexedDB and answers 202 Queued. `submitForm()`
+    stays on the page and shows the outcome in place.
+  - Replays are idempotent. Triggers: the page relays `online`, any successful
+    request drains the queue first, Background Sync on Chromium. After a sync,
+    open pages hear about it and "saved on this device" becomes "saved".
+- **Alternatives:** the service worker answering with
+  `Response.redirect(getSolveRedirect(...), 303)` to a cached page (entry 27's
+  first version): replaced.
+- **Why:** tunnels hang rather than fail, so a timeout is needed. Staying in
+  place needs no synthetic redirect and no cached target page.
+
+## 32. No cross-page pending overlay, for now
+
+- **Date:** 2026-11-25
+- **Decision:** the service worker can't set cookies (no signing key, and
+  browsers ignore `Set-Cookie` on synthetic responses), so cookies only change
+  from the server's response on replay. Other cached pages show stale progress
+  until the next online render.
+- **Alternatives:** a client-side overlay of pending solves on every page.
+- **Why:** it can be added later if it's missed.
+
+## 33. Offline Home instead of an offline page
+
+- **Date:** 2026-11-25
+- **Decision:** `/` is precached on install. Offline Home is
+  `/?offline&return=<url>`, served from the cached Home. It dims links to
+  uncached pages, shows "N solves will sync when you're back", and offers to
+  return to `return` once online. The offline solution dialog shows placeholder
+  stars, "saved on this device", "Next puzzle" and "More puzzles" (no "See
+  solutions"). Hints say "Hints need a connection."
+- **Alternatives:** a dedicated `/offline` page listing cached puzzles:
+  replaced.
+- **Why:** Kasper: "an offline version of Home instead of dedicated offline
+  page". `return` lives in the URL, as all navigational state does.
+
+## 34. The offline overlay opens on timeout or failure
+
+- **Date:** 2026-11-25
+- **Decision:** navigation is network first; on failure or after ~400 ms the
+  cached copy is served. With no cached copy, a `ClientRouter` navigation that
+  fails or is still pending after ~3 s opens a global overlay ("Waiting for
+  connection…" plus "Play offline"). If the request completes, the navigation
+  continues and the overlay closes. A full page load with no cached copy gets
+  offline Home.
+- **Alternatives:** none recorded.
+- **Why:** the player may choose to wait.
+
+## 35. The name is queued with the solve
+
+- **Date:** 2026-11-25
+- **Decision:** a player without a name gets the name form offline too. The name
+  is queued with the solve, replayed in order, and the dialog shows their local
+  (pending) name.
+- **Alternatives:** none recorded.
+- **Why:** not recorded beyond the design.

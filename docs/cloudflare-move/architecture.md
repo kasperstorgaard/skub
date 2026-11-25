@@ -7,22 +7,22 @@ app are reviewed against this doc. Reasons and rejected options live in
 
 ## At a glance
 
-| Concern        | What we use                                                                                                           |
-| -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Runtime + host | Cloudflare Workers (workerd). One Worker serves everything.                                                           |
-| Store          | One SQLite-backed Durable Object (DO), `locationHint: "weur"`                                                         |
-| Framework      | Astro 6 + `@astrojs/preact` + `@astrojs/cloudflare`. Thin `.astro` page shells, TSX components and islands.           |
-| Client state   | Preact islands + signals. One island root per page that has shared state. Own `?dialog=` router. `ClientRouter`.      |
-| Puzzles        | Bundled at build time as a generated module                                                                           |
-| Static assets  | Workers Static Assets                                                                                                 |
-| Offline        | Hand-written service worker: caches every released puzzle page, plus an outbox for writes in IndexedDB (`idb-keyval`) |
-| Caching        | Edge cache for shared DO query results. Static pages prerendered. Early Hints. Prefetch.                              |
-| Solver         | Runs inside the Worker. TypeScript or Rust → WASM, decided by a spike.                                                |
-| Cron           | Cron Triggers: hourly backup; the import cron until the switch                                                        |
-| Observability  | OTLP export to an external backend. PostHog via `waitUntil`, `/ph` proxy.                                             |
-| Platform CLI   | `cf` with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2. Wrangler only where `cf` lacks a feature.          |
-| Toolchain      | Bun (installs, scripts, `bun test`), Vite 8, Oxlint + Oxfmt, TypeScript 7                                             |
-| Previews + e2e | One Worker Preview per branch, each with its own DO storage. `@playwright/test` against it.                           |
+| Concern        | What we use                                                                                                                                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime + host | Cloudflare Workers (workerd). One Worker serves everything.                                                                                                                                              |
+| Store          | One SQLite-backed Durable Object (DO), `locationHint: "weur"`                                                                                                                                            |
+| Framework      | Astro 6 + `@astrojs/preact` + `@astrojs/cloudflare`. Thin `.astro` page shells, TSX components and islands.                                                                                              |
+| Client state   | Preact islands + signals. One island root per page that has shared state. Own `?dialog=` router. `ClientRouter`.                                                                                         |
+| Puzzles        | Bundled at build time as a generated module                                                                                                                                                              |
+| Static assets  | Workers Static Assets                                                                                                                                                                                    |
+| Offline        | Hand-written service worker: caches Home and every released puzzle page; queues offline writes in IndexedDB (`idb-keyval`) and answers 202, so the player stays in place. Offline Home, no offline page. |
+| Caching        | Edge cache for shared DO query results. Static pages prerendered. Early Hints. Prefetch.                                                                                                                 |
+| Solver         | Runs inside the Worker. TypeScript or Rust → WASM, decided by a spike.                                                                                                                                   |
+| Cron           | Cron Triggers: hourly backup; the import cron until the switch                                                                                                                                           |
+| Observability  | OTLP export to an external backend. PostHog via `waitUntil`, `/ph` proxy.                                                                                                                                |
+| Platform CLI   | `cf` with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2. Wrangler only where `cf` lacks a feature.                                                                                             |
+| Toolchain      | Bun (installs, scripts, `bun test`), Vite 8, Oxlint + Oxfmt, TypeScript 7                                                                                                                                |
+| Previews + e2e | One Worker Preview per branch, each with its own DO storage. `@playwright/test` against it.                                                                                                              |
 
 ## Invariants
 
@@ -133,6 +133,8 @@ One SQLite-backed Durable Object is the whole database.
 - **The client predicts, the server confirms.** `game/` runs on both sides, so
   the island shows the result at once. The 303 lands on the same URL, and its
   `Set-Cookie` updates progress.
+- **One action descriptor per write** in `game/actions/` (see
+  [offline](#writes)).
 - **Online-only is a short, named list:** hints, login and the editor solve.
 
 ## Client/server alignment
@@ -143,7 +145,8 @@ Reviewers check all seven.
 1. **Every write answers with a 303** to the page that shows its result. There
    are no JSON write endpoints. An island submits the same `FormData` with
    `fetch` and follows the redirect in place, through one shared `submitForm()`
-   helper.
+   helper. Offline, the service worker answers 202 Queued instead, and
+   `submitForm()` stays in place (see [offline](#writes)).
 2. **The URL is the only navigational state:** moves, cursor, hint, Flash
    variant (`?flash=1`) and explicit dialogs. A signal may mirror the URL.
    Nothing the server reads may exist only in a signal, or in an httpOnly cookie
@@ -166,11 +169,11 @@ Reviewers check all seven.
    evaluates it from cookies on every render, so a reloaded solved board shows
    the right dialog. Offline, the island evaluates it from the cached page's
    props plus the solve it just made.
-7. **Redirect targets depend only on the request and static data,** e.g.
-   `getSolveRedirect(form)` → the solved-board URL, in `game/`. The server and
-   the service worker share them, so an offline write lands on the same URL as
-   online. Anything that depends on player or store state is derived at render
-   time, never baked into the redirect.
+7. **Redirect targets depend only on the request and static data,** e.g. an
+   action's `redirect(input)` → the solved-board URL, in `game/actions/`.
+   Anything that depends on player or store state is derived at render time,
+   never baked into the redirect. The service worker doesn't compute redirects;
+   this stays as good practice for the server.
 
 Consequences:
 
@@ -179,6 +182,10 @@ Consequences:
 - **Moves don't navigate** (see [framework](#framework-and-rendering)).
 
 ## Offline
+
+Offline, the player stays where they are. Pages are always the server's HTML;
+the service worker caches them and queues writes, and never renders, redirects
+or sets cookies.
 
 ### Service worker
 
@@ -190,39 +197,87 @@ Consequences:
   until the next daily release and never lists unreleased slugs. The service
   worker fetches it on activate, and when online at most once a day, so a new
   daily puzzle is picked up without a deploy.
-- **Caches every released puzzle page** (~330 pages × ~6 KB gz ≈ 2 MB) in the
-  background: any page on the list it doesn't have yet. Only when idle and on
-  good connections, never on Save-Data. Calls `navigator.storage.persist()` once
-  filled.
-- **HTML: network first** with a ~300–500 ms timeout, then cache.
+- **Precache:** `/` on install. Then every released puzzle page (~330 pages × ~6
+  KB gz ≈ 2 MB) in the background: any page on the list it doesn't have yet.
+  Only when idle and on good connections, never on Save-Data. Calls
+  `navigator.storage.persist()` once filled.
 - **Assets: cache first.** Old versions stay while any cached page references
   them. Pages refresh lazily after a deploy: on visit, plus a slow background
   trickle.
-- **`/offline`** lists the cached puzzles (`caches.keys()`) when a link isn't
-  available.
 - Never caches unreleased puzzles or other players' data.
+- **Bundles `game/`.** `game/` never imports server-only code (DB, env, cookie
+  signing); the import lint enforces it.
 
-### Outbox
+### Navigation
 
-- **A queue of requests, owned by the service worker,** stored in IndexedDB via
-  `idb-keyval`.
-- An allowlisted write (solve, feedback, profile name) made offline is stored as
-  method, URL, body and an id. The service worker answers
-  `Response.redirect(getSolveRedirect(...), 303)`, the same target as online.
-- The target page comes from the cache, matched ignoring the query, and the
-  islands render the URL's state.
-- **Offline celebrations** show what the shared code can compute: solved, moves,
-  and stars via `game/score.ts`. Path claims, pioneer and rank appear after
-  sync.
-- **Replay** runs in order on `online` and on the next navigation. Background
-  Sync is a Chromium-only bonus.
+- **Network first.** On failure, or after ~400 ms, serve the cached copy if
+  there is one.
+- **No cached copy, `ClientRouter` navigation:** if the request fails or is
+  still pending after ~3 s, a global offline overlay dialog opens over the
+  current page: "Waiting for connection…" plus a "Play offline" call to action.
+  If the request completes, the navigation continues and the overlay closes, so
+  the player may choose to wait.
+- **No cached copy, full page load** (typed URL, reload, new tab): the service
+  worker serves offline Home directly.
+
+### Offline Home
+
+There is no dedicated offline page. Offline Home is `/?offline&return=<url>`;
+the service worker serves cached Home for it, matched ignoring the query. With
+the flag, Home:
+
+- dims links whose target isn't cached (checked via `caches.keys()`)
+- shows a quiet "N solves will sync when you're back"
+- when online again, opens a dialog offering to return to `return`; "back home"
+  drops the flag
+
+`return` lives in the URL. Opened online, `/?offline` renders normal Home and
+still offers the return dialog.
+
+### Writes
+
+- **Action descriptors** in `game/actions/`: one per write, with `path`,
+  `parse(form)`, `redirect(input)` (used by the server only) and an `offline`
+  flag. Server routes use `parse` and `redirect`. The service worker derives its
+  allowlist from `actions.filter((a) => a.offline)` and runs the cheap shared
+  validity check (e.g. `isValidSolution`) before queueing.
+- **Offline-capable writes always go through `submitForm()`,** not plain
+  `ClientRouter` form submits.
+- **A write gets a ~5 s timeout** before it's treated as offline, because
+  tunnels hang rather than fail.
+- **Offline, the service worker queues the request** (method, URL, body, id) in
+  IndexedDB via `idb-keyval` and answers **202 Queued**. `submitForm()` stays on
+  the page and switches to the outcome state in place.
+- **Replays are idempotent** (client-made id plus unique index), so a lost
+  response just replays harmlessly.
+- **Replay triggers:** the page relays the `online` event to the service worker;
+  any successful request drains the queue first; Background Sync is a
+  Chromium-only bonus. Replays run in order.
 - **Outcomes:** a 2xx or the write's 303 clears the entry, 4xx drops it, a
   network error or 5xx keeps it.
-- Replays carry the current cookies. The browser stores the response's
-  `Set-Cookie`, so the progress cookie updates on sync.
+- **Cookies change only from the server's response on replay.** The service
+  worker has no signing key, and browsers ignore `Set-Cookie` on synthetic
+  responses.
+- **After a sync,** the service worker messages open pages, so "saved on this
+  device" quietly becomes "saved".
+- **No cross-page pending overlay** for now. Other cached pages show stale
+  progress until the next online render.
 - Path claims go by server receipt. A late solve quietly misses the claim.
-- **Pending solves** show as a plain fact ("saved on this device") until the
-  server confirms them.
+
+### Offline solution dialog
+
+- Stars as placeholders (dashed outlines or question marks; the final look is
+  decided in the build). None are computed offline.
+- "Saved on this device".
+- Calls to action: "Next puzzle" (cached) and "More puzzles" (→ offline Home).
+  No "See solutions".
+- A player without a name gets the name form. The name is queued with the solve,
+  replayed in order, and the dialog shows their local (pending) name.
+
+### Online-only
+
+Hints, login and the editor solve. Offline, the hint dialog says "Hints need a
+connection."
 
 ## Caching and prefetch
 
@@ -334,5 +389,4 @@ the Deno/Fresh app.
 - Backup target: GCS or R2.
 - OTLP backend.
 - Prefetch mechanism: Astro prefetch or Speculation Rules.
-- The HTML network-first timeout, within ~300–500 ms.
 - Per-branch previews through `cf` or `wrangler preview`.

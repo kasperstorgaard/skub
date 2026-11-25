@@ -64,13 +64,13 @@ done.
 
 - **What:** a port of `plugins/lint-imports.ts` to an Oxlint JS plugin. Today it
   enforces the `#/` alias for cross-folder imports and two sorted import groups
-  (third-party, then project).
-- **Why:** the new app and shared code keep one import style under Oxlint.
+  (third-party, then project). It gains one boundary rule: `game/` never imports
+  server-only code (DB, env, cookie signing).
+- **Why:** the new app and shared code keep one import style under Oxlint, and
+  `game/` stays bundleable into the service worker.
 - **When:** step 1 for shared code, step 2 in the new app's CI.
 - **Done when:** Oxlint reports the same violations as `deno lint` on shared
-  code, with autofix.
-- **Open:** whether it also gains a boundary rule (shared code may not import
-  Fresh or Deno APIs). Not discussed.
+  code, with autofix, and a server-only import from `game/` fails the lint.
 
 ## New app CI pipeline
 
@@ -219,13 +219,19 @@ done.
 
 ## Offline e2e
 
-- **What:** Playwright offline emulation: play, solve, reconnect, sync. Plus the
-  spike's checks kept as tests: offline navigation between cached pages, an
-  uncached page landing on `/offline`, an old tab surviving a deploy.
+- **What:** Playwright offline emulation, in the new app only. Scenarios:
+  - Solve in a tunnel (requests hang) → the player stays in place with the
+    offline solution dialog → reconnect → "saved".
+  - The same for a named and an unnamed player (the queued name).
+  - A `ClientRouter` navigation to an uncached page → the offline overlay → wait
+    → the navigation continues.
+  - A full page load offline → offline Home → the return dialog once online.
+  - A lost response replays without a duplicate solve.
+  - From the spike: offline navigation between cached pages, an old tab
+    surviving a deploy.
 - **Why:** the outbox and cache are invisible until they fail.
 - **When:** step 5.
-- **Done when:** a solve made offline shows as pending, syncs on reconnect, and
-  appears on the solutions page.
+- **Done when:** every scenario passes on the preview.
 
 ## Import cron
 
