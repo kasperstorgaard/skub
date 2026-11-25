@@ -140,7 +140,7 @@ state is described in [architecture.md](architecture.md).
 - **Date:** 2026-11-24
 - **Decision:** the service worker owns a queue of requests, stored in IndexedDB
   via `idb-keyval`. Replays in order on `online` and on the next navigation
-  (triggers revised by entry 31); Background Sync is a Chromium bonus. 2xx
+  (triggers revised by entry 32); Background Sync is a Chromium bonus. 2xx
   clears, 4xx drops, network error or 5xx keeps. Path claims go by server
   receipt.
 - **Alternatives:** the Cache API used as a key-value store: rejected as "too
@@ -154,9 +154,9 @@ state is described in [architecture.md](architecture.md).
 - **Decision:** cache every released puzzle page (~330 × ~6 KB gz ≈ 2 MB) with a
   hand-written service worker (~150 lines) and a build-time manifest (assets
   only since entry 21). HTML network-first with a ~300–500 ms timeout (~400 ms
-  since entry 34); assets cache-first, old versions kept while cached pages
+  since entry 35); assets cache-first, old versions kept while cached pages
   reference them. Idle and good connections only, never Save-Data. An `/offline`
-  page listed cached puzzles: replaced by offline Home (entry 33).
+  page listed cached puzzles: replaced by offline Home (entry 34).
 - **Alternatives:**
   - Intermittent offline only: discussed first. Longer offline needs cross-page
     progress, offline recommendations and daily rollover; caching everything
@@ -354,7 +354,7 @@ state is described in [architecture.md](architecture.md).
   and a 303 branch without, and the client shadows server state in signals.
 - **Why:** Kasper: "some flows diverge on client/server… Wins on simplicity for
   sure". The first version had the service worker answer an offline write with
-  the server's redirect (`getSolveRedirect`); replaced by entry 31. Invariant 7
+  the server's redirect (`getSolveRedirect`); replaced by entry 32. Invariant 7
   stays as good practice for the server.
 
 ## 28. The Flash variant lives in the URL
@@ -400,7 +400,7 @@ state is described in [architecture.md](architecture.md).
   alignment invariants and the "next" link still apply where they already change
   mechanism.
 
-## 31. Offline writes answer 202 and stay in place
+## 32. Offline writes answer 202 and stay in place
 
 - **Date:** 2026-11-25
 - **Decision:**
@@ -420,7 +420,7 @@ state is described in [architecture.md](architecture.md).
 - **Why:** tunnels hang rather than fail, so a timeout is needed. Staying in
   place needs no synthetic redirect and no cached target page.
 
-## 32. No cross-page pending overlay, for now
+## 33. No cross-page pending overlay, for now
 
 - **Date:** 2026-11-25
 - **Decision:** the service worker can't set cookies (no signing key, and
@@ -430,7 +430,7 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** a client-side overlay of pending solves on every page.
 - **Why:** it can be added later if it's missed.
 
-## 33. Offline Home instead of an offline page
+## 34. Offline Home instead of an offline page
 
 - **Date:** 2026-11-25
 - **Decision:** `/` is precached on install. Offline Home is
@@ -444,7 +444,7 @@ state is described in [architecture.md](architecture.md).
 - **Why:** Kasper: "an offline version of Home instead of dedicated offline
   page". `return` lives in the URL, as all navigational state does.
 
-## 34. The offline overlay opens on timeout or failure
+## 35. The offline overlay opens on timeout or failure
 
 - **Date:** 2026-11-25
 - **Decision:** navigation is network first; on failure or after ~400 ms the
@@ -453,14 +453,18 @@ state is described in [architecture.md](architecture.md).
   connection…" plus "Play offline"). If the request completes, the navigation
   continues and the overlay closes. A full page load with no cached copy gets
   offline Home.
-- **Alternatives:** none recorded.
-- **Why:** the player may choose to wait.
+- **Alternatives:** an overlay keyed to a list of routes that can't work offline
+  (high score, solutions, profile).
+- **Why:** Kasper: "Might be on offline after a timeout or a failed navigation."
+  Keyed to what actually happens, not a route list, so cached pages just work
+  and the player may choose to wait.
 
-## 35. The name is queued with the solve
+## 36. The name is queued with the solve
 
 - **Date:** 2026-11-25
 - **Decision:** a player without a name gets the name form offline too. The name
   is queued with the solve, replayed in order, and the dialog shows their local
   (pending) name.
-- **Alternatives:** none recorded.
-- **Why:** not recorded beyond the design.
+- **Alternatives:** skip naming offline and ask once back online.
+- **Why:** Kasper: "Queue, your local name." It's one more queued write and the
+  player sees no difference.
