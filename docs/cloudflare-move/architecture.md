@@ -331,15 +331,24 @@ Login, and any write whose action isn't flagged `offline`.
     or shows a quiet "Hints need JavaScript".
 - **Editor:** solves in the same Web Worker. There is no `POST /api/solve` and
   no streamed solve; the editor talks to the worker by messages.
-- **Budgets today:** hints 7M states, editor 3M (~175 MB measured in Deno). A
-  spike measures them on a mid-range phone and sets the offline/phone hint
-  budget. Outcomes: TypeScript is fine; compact TypeScript (packed integer
-  states in typed arrays); or Rust → WASM.
-- **If Rust:** only the BFS and its slide logic, compiled to WASM and loaded by
-  the Web Worker, holding packed states in a compact hash set for faster hints
-  with less memory on phones. It must match `game/solver.ts` on a handful of
-  puzzles (the most blockers, the highest `minMoves`, a few typical). Everything
-  else stays TypeScript.
+- **Stays TypeScript.** `game/solver.ts` already packs states into typed arrays
+  with a number-based visited set. Phones are limited by speed, not memory, and
+  WASM's likely 1.5–2× wouldn't change which positions get a hint. No Rust
+  ([solver spike](spikes/solver-budget.md)).
+- **Budgets:**
+
+  | Use                     | States | Cost                                                                                    |
+  | ----------------------- | ------ | --------------------------------------------------------------------------------------- |
+  | Hint, phone and offline | 500k   | ~0.6–1 s, ~40 MB on a phone; covers ~93% of start and off-track positions, all mid-game |
+  | Hint, desktop           | 3M     | ~1.5–2 s, ~165 MB; ~99%                                                                 |
+  | Editor, desktop         | 3M     | ~1.5 s, ~160 MB                                                                         |
+  | Editor, phone           | 1M     | ~70 MB                                                                                  |
+
+  The page also stops the worker after ~1.5 s, so slow devices give up on time
+  rather than state count. The old 7M hint budget is dropped.
+- **State key works for any piece count.** Today's key is exact only up to 8
+  pieces: Ulf (28 pieces) never finishes and Nis (15) uses approximate keys.
+  Fixed in step 1, before the solver moves.
 
 ## Toolchain
 

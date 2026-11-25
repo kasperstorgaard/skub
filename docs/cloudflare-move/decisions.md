@@ -546,3 +546,24 @@ state is described in [architecture.md](architecture.md).
   `deno fmt --check` for Oxfmt in the Deno CI.
 - **Why:** the two formatters can't both pass on one file: after Oxfmt,
   `deno fmt --check` still fails 24 files.
+
+## 42. The solver stays TypeScript, with device-sized budgets
+
+- **Date:** 2026-11-25
+- **Decision:** no Rust. Hint budgets are 500k states on phones and offline, 3M
+  on desktop; the editor keeps 3M on desktop and gets 1M on phones; the page
+  stops the worker after ~1.5 s. The 7M hint budget is dropped.
+- **Alternatives:** compact TypeScript (a tighter visited set: 15–25% less
+  memory but 1.3–1.6× slower), Rust → WASM.
+- **Why:** the solver spike. `game/solver.ts` is already compact; phones are
+  limited by speed, not memory, and neither alternative changes which positions
+  get a hint. Phone figures are estimates until Kasper measures on a real phone.
+
+## 43. The solver's state key handles any piece count
+
+- **Date:** 2026-11-25
+- **Decision:** fix the state key in step 1 so it's exact for any number of
+  pieces.
+- **Why:** it's exact only up to 8 pieces. On Ulf (28 pieces) nearly every key
+  collides and a hint never finishes; on Nis (15) two positions can be taken as
+  one. Found by the solver spike; it affects today's server too.

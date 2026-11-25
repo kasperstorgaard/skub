@@ -40,6 +40,9 @@ done.
 - **When:** step 0.
 - **Done when:** the numbers set the offline/phone hint budget and pick one
   outcome: TS is fine, compact TS, or Rust → WASM.
+- **Status:** desktop run done: TS is fine, budgets in architecture.md
+  ([solver spike](spikes/solver-budget.md)). The real phone measurement is still
+  Kasper's; it confirms or adjusts the 500k phone budget.
 
 ## DO round-trip probe
 
@@ -218,6 +221,7 @@ done.
 - **Why:** the hints and editor badge must not change answers.
 - **When:** only if the solver spike picks Rust.
 - **Done when:** every puzzle in the set matches, in CI.
+- **Status:** not needed: the solver spike kept TypeScript.
 
 ## Service worker manifest plugin
 

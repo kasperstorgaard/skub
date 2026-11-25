@@ -60,6 +60,8 @@ Make `game/` and the portable parts of `lib/` import cleanly from Bun:
 - Bare specifiers and the `#/` alias. `@std/*` imports stay as they are and
   resolve from the JSR npm mirror (e.g. `@jsr/std__assert`, through `.npmrc`).
 - The one Fresh import in shared code (`islands/solution-dialog.tsx`) removed.
+- The solver's state key made exact for any piece count (it breaks above 8
+  pieces today; decision 43), with a scenario test on Ulf and Nis.
 - Puzzles loaded through an injected source instead of disk reads. `names.ts`
   uses a JSON import.
 - Server-only code out of `game/`, so the `game/` boundary rule can be turned on
