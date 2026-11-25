@@ -189,12 +189,12 @@ done.
 
 ## Solver parity check
 
-- **What:** the Rust → WASM solver run against `game/solver.ts` on every puzzle
-  file (all 340, unreleased included; it's offline dev tooling): same
-  `minMoves`, same solvability.
+- **What:** the Rust → WASM solver run against `game/solver.ts` on a handful of
+  puzzles (the most blockers, the highest `minMoves`, a few typical), the same
+  set the solver spike benchmarks: same `minMoves`, same solvability.
 - **Why:** the hints and editor badge must not change answers.
 - **When:** only if the solver spike picks Rust.
-- **Done when:** every puzzle file matches, in CI.
+- **Done when:** every puzzle in the set matches, in CI.
 
 ## Service worker manifest plugin
 

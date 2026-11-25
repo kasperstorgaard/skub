@@ -91,8 +91,9 @@ state is described in [architecture.md](architecture.md).
 - **Date:** 2026-11-24
 - **Decision:** Rust → WASM inside the Worker for the solver only, and only if
   the spike shows it's needed. Packed states in a compact hash set, checked
-  against `game/solver.ts` on every puzzle file (all 340, unreleased included;
-  it's offline dev tooling).
+  against `game/solver.ts` on a handful of puzzles (the most blockers, the
+  highest `minMoves`, a few typical). A full-corpus run was judged overkill
+  (Kasper, 2026-11-25).
 - **Alternatives:**
   - Compact TypeScript, or a lower budget: the other spike outcomes.
   - A separate Rust API for the server: rejected.

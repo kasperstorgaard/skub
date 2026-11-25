@@ -336,8 +336,9 @@ Login, and any write whose action isn't flagged `offline`.
   states in typed arrays); or Rust → WASM.
 - **If Rust:** only the BFS and its slide logic, compiled to WASM and loaded by
   the Web Worker, holding packed states in a compact hash set for faster hints
-  with less memory on phones. It must match `game/solver.ts` on every puzzle
-  file (all 340, unreleased included). Everything else stays TypeScript.
+  with less memory on phones. It must match `game/solver.ts` on a handful of
+  puzzles (the most blockers, the highest `minMoves`, a few typical). Everything
+  else stays TypeScript.
 
 ## Toolchain
 
