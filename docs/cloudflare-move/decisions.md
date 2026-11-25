@@ -50,14 +50,14 @@ state is described in [architecture.md](architecture.md).
   toolchain ends with the runtime. VoidZero (Vite, Vitest, Oxc) is now
   Cloudflare-owned.
 
-## 5. Framework: Astro 6 + Preact islands
+## 5. Framework: Astro 7 + Preact islands
 
 - **Date:** 2026-11-24
-- **Decision:** Astro 6 with `@astrojs/preact` and `@astrojs/cloudflare`. Pages
-  are thin `.astro` shells; components and islands stay TSX. Shared signals move
-  to one island root per page. Skub's own `?dialog=` router stays.
-  `ClientRouter` replaces Partials. The DO is exported from `src/worker.ts` next
-  to the adapter's `handle()`.
+- **Decision:** Astro 7 (see 44) with `@astrojs/preact` and
+  `@astrojs/cloudflare`. Pages are thin `.astro` shells; components and islands
+  stay TSX. Shared signals move to one island root per page. Skub's own
+  `?dialog=` router stays. `ClientRouter` replaces Partials. The DO is exported
+  from `src/worker.ts` next to the adapter's `handle()`.
 - **Alternatives:**
   - Fresh on workerd: unmaintained.
   - A Fresh fork: dead upstream.
@@ -80,8 +80,7 @@ state is described in [architecture.md](architecture.md).
 
 - **Date:** 2026-11-24
 - **Decision:** `cf` with the Vite plugin v2, for now.
-- **Alternatives:** Wrangler, used only where `cf` lacks something (e.g.
-  per-branch previews, if `cf` can't yet).
+- **Alternatives:** Wrangler. Fully replaced (see 45).
 - **Why:** `cf` is Wrangler's successor, built on Vite and generated from the
   full API. Wrangler gets 18 months after the `cf` beta ends. Starting on `cf`
   avoids a second tooling move.
@@ -190,8 +189,8 @@ state is described in [architecture.md](architecture.md).
   - Edge-caching HTML: rejected. `/highscore` and the solutions pages are
     personalised.
   - Edge-caching puzzle pages: not now. They're "90% cacheable", but the
-    uncached path has no store call, so a hit only saves render CPU. Revisit
-    with HTMLRewriter if render takes more than ~20 ms.
+    uncached path has no store call, so a hit only saves render CPU. Settled by
+    the Astro spike: warm SSR is 2–4 ms, no HTMLRewriter (see 48).
   - Server islands: rejected. They need JS.
 - **Why:** keep the store off the critical path without caching anything
   personal.
@@ -567,3 +566,39 @@ state is described in [architecture.md](architecture.md).
 - **Why:** it's exact only up to 8 pieces. On Ulf (28 pieces) nearly every key
   collides and a hint never finishes; on Nis (15) two positions can be taken as
   one. Found by the solver spike; it affects today's server too.
+
+## 44. Astro 7.4+ with `@astrojs/cloudflare` 15
+
+- **Date:** 2026-11-25
+- **Decision:** Astro 7.4+ with `@astrojs/cloudflare` 15 (beta), not Astro 6.
+- **Why:** the Astro spike. `cf` and Vite plugin v2 need adapter 15, which needs
+  Astro ≥ 7.4. Astro 6's adapter (v13) only supports Wrangler and plugin v1.
+
+## 45. No Wrangler
+
+- **Date:** 2026-11-25
+- **Decision:** `cf` and Vite plugin v2 do everything. `cloudflare.config.ts`
+  holds the custom entrypoint, the SQLite DO, `nodejs_compat` and secrets. The
+  auto-added `SESSION` and `IMAGES` bindings are turned off.
+- **Why:** the Astro spike. Adapter 15 doesn't read `wrangler.*` at all.
+
+## 46. Astro runs on Node; Bun does the rest
+
+- **Date:** 2026-11-25
+- **Decision:** `astro dev`, `build` and `preview` run on Node ≥ 22.18. Bun
+  handles installs, `bun test`, scripts and Playwright.
+- **Why:** `@cloudflare/config` refuses to load `cloudflare.config.ts` under
+  Bun.
+
+## 47. Schema version in a table
+
+- **Date:** 2026-11-25
+- **Decision:** migrations track the schema version in a `schema_version` table.
+- **Why:** DO SQLite refuses `PRAGMA user_version` (`SQLITE_AUTH`).
+
+## 48. Puzzle pages aren't edge-cached
+
+- **Date:** 2026-11-25
+- **Decision:** puzzle pages render per request; no cached shell, no
+  HTMLRewriter.
+- **Why:** warm SSR is 2–4 ms in workerd, far under the ~20 ms threshold.

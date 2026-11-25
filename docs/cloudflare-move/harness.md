@@ -99,6 +99,8 @@ done.
 - **Tooling notes:**
   - Always `bunx --bun` for Playwright and Oxlint, or they silently run on Node
     through their shebang.
+  - Astro commands (dev, build, preview) run on Node ≥ 22.18: the workflow sets
+    up both Node and Bun.
   - Turning on `verbatimModuleSyntax` needs about 32 `import type` fixes, all
     autofixable.
   - A draft workflow is on the spike branch
@@ -120,7 +122,7 @@ done.
 - **When:** spiked in step 0, wired in step 2.
 - **Done when:** two branches' e2e runs can't see each other's data, and the
   reset refuses on production.
-- Through `cf` if it can, else `wrangler preview`.
+- Through `cf`; there is no Wrangler. Not checked yet: `cf` 1.0 needs a login.
 
 ## E2E suite on `@playwright/test`
 
@@ -182,7 +184,9 @@ done.
 
 - **What:** a handful of tests at the level of store operations, e.g. "a solve
   claims the path and ranks the player". Store code takes a minimal
-  `exec(sql, ...params)` interface, so they run on in-memory `bun:sqlite`.
+  `exec(sql, ...params)` interface, so they run on in-memory `bun:sqlite`. The
+  migration runner keeps the schema version in a `schema_version` table, since
+  DO SQLite refuses `PRAGMA user_version`.
 - **Why:** the solve transaction replaces KV retry loops and multi-key atomics.
   Kasper: "some, but don't start testing SQL lib, more like integration".
 - **When:** step 3.

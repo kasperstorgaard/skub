@@ -11,7 +11,7 @@ app are reviewed against this doc. Reasons and rejected options live in
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Runtime + host | Cloudflare Workers (workerd). One Worker serves everything.                                                                                                                                              |
 | Store          | One SQLite-backed Durable Object (DO), `locationHint: "weur"`                                                                                                                                            |
-| Framework      | Astro 6 + `@astrojs/preact` + `@astrojs/cloudflare`. Thin `.astro` page shells, TSX components and islands.                                                                                              |
+| Framework      | Astro 7.4+ + `@astrojs/preact` + `@astrojs/cloudflare` 15 (beta). Thin `.astro` page shells, TSX components and islands.                                                                                 |
 | Client state   | Preact islands + signals. One island root per page that has shared state. Own `?dialog=` router. `ClientRouter`.                                                                                         |
 | Puzzles        | Bundled at build time as a generated module                                                                                                                                                              |
 | Static assets  | Workers Static Assets                                                                                                                                                                                    |
@@ -20,8 +20,8 @@ app are reviewed against this doc. Reasons and rejected options live in
 | Solver         | Runs only in the browser, in a Web Worker started by the page. TypeScript or Rust → WASM, decided by a spike.                                                                                            |
 | Cron           | Cron Triggers: hourly backup; the import cron until the switch                                                                                                                                           |
 | Observability  | OTLP export to an external backend. PostHog via `waitUntil`, `/ph` proxy.                                                                                                                                |
-| Platform CLI   | `cf` with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2. Wrangler only where `cf` lacks a feature.                                                                                             |
-| Toolchain      | Bun (installs, scripts, `bun test`), Vite 8, Oxlint + Oxfmt, TypeScript 7                                                                                                                                |
+| Platform CLI   | `cf` with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2. No Wrangler.                                                                                                                          |
+| Toolchain      | Bun (installs, scripts, `bun test`, Playwright), Node ≥ 22.18 for Astro, Vite 8, Oxlint + Oxfmt, TypeScript 7                                                                                            |
 | Previews + e2e | One Worker Preview per branch, each with its own DO storage. `@playwright/test` against it.                                                                                                              |
 
 ## Invariants
@@ -85,7 +85,9 @@ One SQLite-backed Durable Object is the whole database.
 - **The solve is one `transactionSync`:** insert the solution once (a unique
   index dedups), claim the path, award the score. No versionstamps, no retry
   loops, no best-effort follow-up writes.
-- **Migrations** run on `PRAGMA user_version`.
+- **Migrations** track the schema version in a `schema_version` table. DO SQLite
+  refuses `PRAGMA user_version` (`SQLITE_AUTH`). `deleteAll()` drops the tables
+  too, so migrations run again after a reset.
 - **Access:** store code takes a minimal `exec(sql, ...params)` interface. On
   top of it sit typed SQL helpers or Drizzle's durable-sqlite driver (open).
 - **Tests:** a handful of scenario tests at the level of store operations, run
@@ -96,8 +98,13 @@ One SQLite-backed Durable Object is the whole database.
 
 ## Framework and rendering
 
-- **Astro 6** with `@astrojs/preact` and `@astrojs/cloudflare`. Workerd runs in
-  dev, prerender and production.
+- **Astro 7.4+** with `@astrojs/preact` and `@astrojs/cloudflare` 15 (beta).
+  Astro 6's adapter only supports Wrangler and Vite plugin v1. Workerd runs in
+  dev, prerender and production. Warm SSR of a puzzle page takes 2–4 ms.
+- **One Preact instance** needs `resolve.dedupe` plus `optimizeDeps.include`.
+  The JSX setting must apply to the server environment too.
+- **Slot content stays server-rendered:** children passed into an island root
+  ship no client code.
 - **Pages are thin `.astro` shells.** Components and islands stay TSX.
 - **One island root per page with shared state.** Astro islands don't share
   signals. A page whose islands share state (the puzzle page) gets one island
@@ -106,7 +113,15 @@ One SQLite-backed Durable Object is the whole database.
 - **Skub's own `?dialog=` router** opens and closes explicit dialogs. Outcome
   dialogs are derived (see [alignment](#clientserver-alignment), 6).
 - **`ClientRouter`** handles client navigation and view transitions. It replaces
-  Fresh Partials. Its fetches go through the service worker.
+  Fresh Partials. Its fetches go through the service worker. The shared router
+  needs these changes for it:
+  - Keep `history.state`; never write `{}`.
+  - Listen for clicks on `document` in the capture phase, so `ClientRouter`
+    leaves `data-router` links alone.
+  - `useRouter` ignores other pathnames.
+  - Unmount islands on `astro:before-swap`. Open bug: back navigation hits a
+    stale island (`Invalid move`).
+  - `ClientRouter` drops `data-js` on swap; the layout sets it again.
 - **Moves don't navigate.** They update the URL with `history.replaceState` plus
   a signal. A `ClientRouter` swap per move would remount the board island.
 - **Static pages** (cookie policy and similar) are prerendered at build.
@@ -289,6 +304,8 @@ Login, and any write whose action isn't flagged `offline`.
 
 ## Caching and prefetch
 
+- **Puzzle pages aren't edge-cached.** Warm SSR is 2–4 ms, so HTMLRewriter isn't
+  needed.
 - **Edge cache for shared DO query results, not HTML.** The Worker's Cache API
   holds the top high score entries with names, and each puzzle's path groups,
   for 30–60 s with stale-while-revalidate.
@@ -363,14 +380,20 @@ Login, and any write whose action isn't flagged `offline`.
 - One formatter per file until cleanup: `deno fmt` for the Deno app and shared
   code, Oxfmt for the new app (proposed, pending owner).
 - Playwright and Oxlint always run as `bunx --bun`.
-- `astro dev` runs under `bunx --bun`. If it misbehaves on Bun, the dev server
-  runs on Node and Bun keeps everything else.
+- **Astro runs on Node ≥ 22.18** (dev, build, preview): `@cloudflare/config`
+  refuses to load `cloudflare.config.ts` under Bun. Bun handles installs,
+  `bun test`, scripts and Playwright.
+- **`.astro/` stays gitignored.** Astro runs `astro dev` detached when it
+  detects an agent, and `.astro/dev.log` dumps the whole environment, tokens
+  included. Agents don't share that log.
 
 ## Platform CLI, previews and e2e
 
 - **`cf`** with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2 builds,
-  runs dev in workerd and deploys. Wrangler is used only where `cf` lacks a
-  feature (e.g. `wrangler preview`, if `cf` can't make per-branch previews).
+  runs dev in workerd and deploys. Wrangler is fully replaced: the custom
+  entrypoint, the SQLite DO, `nodejs_compat` and secrets all live in
+  `cloudflare.config.ts`, and the adapter doesn't read `wrangler.*`. The
+  adapter's auto-added `SESSION` and `IMAGES` bindings are turned off.
 - **Per-branch previews (Worker Previews):** one per branch, each with its own
   DO namespace and storage. KV, D1 and R2 are shared unless bound separately.
   Cron triggers and routes target production only.
@@ -434,4 +457,5 @@ the Deno/Fresh app.
 - Backup target: GCS or R2.
 - OTLP backend.
 - Prefetch mechanism: Astro prefetch or Speculation Rules.
-- Per-branch previews through `cf` or `wrangler preview`.
+- Per-branch previews, deploy and the DO round trip through `cf`: not checked
+  yet (needs a `cf` 1.0 login).
