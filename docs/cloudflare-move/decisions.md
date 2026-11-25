@@ -497,3 +497,52 @@ state is described in [architecture.md](architecture.md).
 - **Why:** Kasper: "Let's actually go option 2: hints need js". The server
   becomes I/O-only, the Workers memory risk goes, and hints work offline. The
   solver is public code, so a trust-based allowance gives nothing away.
+
+## 38. Shared tests use `node:test`
+
+- **Date:** 2026-11-25
+- **Decision:** shared tests import `test` from `node:test`, so one file runs
+  under both `deno test` and `bun test` during the transition. `@std/assert`
+  stays, from npm (`@jsr/std__assert`). The port is scripted.
+- **Alternatives:** `bun:test` (fails under Deno, "Unsupported scheme bun"), or
+  `bun:test` mapped to a 3-line shim in `deno.json`: works, but needs a shim and
+  an import map entry.
+- **Why:** the [Bun toolchain spike](spikes/bun-toolchain.md): `node:test` needs
+  no shim, no import map entry and no new file. The sample ran 147/147 on both
+  runtimes.
+
+## 39. The repo root is the Bun workspace root
+
+- **Date:** 2026-11-25
+- **Decision:** the repo-root `package.json` is the Bun workspace root, with the
+  new app as a member. Deps used by both sides are pinned to the same version in
+  `deno.json` and `package.json`. `bun.lock` is committed.
+- **Alternatives:** an app-local `package.json` only: it can't resolve `@std/*`
+  for root-level `game/`.
+- **Why:** Bun resolves bare specifiers by walking up from the importing file,
+  so `game/` needs a root `node_modules`. In the spike, an unpinned
+  `@playwright/test` moved Deno's Playwright from 1.59.1 to 1.65.1, which needs
+  a different Chromium.
+
+## 40. Server-only code leaves `game/` in step 1
+
+- **Date:** 2026-11-25
+- **Decision:** in step 1, `game/cookies.ts`, `game/profile-cookie.ts` and
+  `game/progress-cookie.ts` move out of `game/` or take env and signing as
+  parameters; `loader.ts` and `solver-queue.ts` get `isDev` injected; `names.ts`
+  uses a JSON import. Then the `game/` boundary rule is turned on.
+- **Alternatives:** none recorded.
+- **Why:** the boundary rule flags 7 violations today (env and cookie signing
+  imported into `game/`), and `game/` must bundle into the service worker.
+
+## 41. One formatter per file until cleanup (proposed, pending owner)
+
+- **Date:** 2026-11-25
+- **Status:** proposed by the lead; pending the owner's confirmation.
+- **Decision:** `deno fmt` owns the Deno app and shared code until cleanup.
+  Oxfmt owns only the new app's directory. Shared code is reformatted once by
+  Oxfmt at cleanup.
+- **Alternatives:** reformat shared code with Oxfmt now (54 files) and swap
+  `deno fmt --check` for Oxfmt in the Deno CI.
+- **Why:** the two formatters can't both pass on one file: after Oxfmt,
+  `deno fmt --check` still fails 24 files.

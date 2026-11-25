@@ -63,7 +63,8 @@ Reviewers check these on every PR.
 - Environment comes from one env module. An explicit app-environment flag
   replaces today's `isDev` ("not on Deploy"). Secrets are Worker secrets.
 - `COOKIE_SIGNING_KEY` is the same key the Deno app uses.
-- Temporal comes from a polyfill where the runtime lacks it.
+- Temporal: Bun has it natively; workerd gets a polyfill if it lacks it (pending
+  the Astro spike).
 - `node:zlib`, used for the progress cookie, runs under `nodejs_compat`. A
   runtime dependency to confirm in the Astro spike.
 
@@ -344,9 +345,15 @@ Login, and any write whose action isn't flagged `offline`.
 
 - **Bun** for installs, scripts and `bun test`. Vitest is the fallback runner.
 - **Vite 8**, **Oxlint + Oxfmt**, **TypeScript 7** (`tsc`).
-- Skub's import rules (`#/` alias, import order) run as an Oxlint JS plugin.
-- The new app is a Bun workspace with its own `package.json` and
-  `cloudflare.config.ts`.
+- Skub's import rules (`#/` alias, import order, the `game/` boundary) run as a
+  pinned Oxlint JS plugin.
+- The repo-root `package.json` is the Bun workspace root; the new app is a
+  member with its own `package.json` and `cloudflare.config.ts`. `bun.lock` is
+  committed, and deps shared with `deno.json` are pinned to the same version.
+- Shared tests use `node:test`, so they run under `deno test` and `bun test`.
+- One formatter per file until cleanup: `deno fmt` for the Deno app and shared
+  code, Oxfmt for the new app (proposed, pending owner).
+- Playwright and Oxlint always run as `bunx --bun`.
 - `astro dev` runs under `bunx --bun`. If it misbehaves on Bun, the dev server
   runs on Node and Bun keeps everything else.
 
@@ -377,7 +384,8 @@ Until the Deno app is deleted, it and the new app import the same files:
 - `game/`, the portable parts of `lib/`, and the Preact components and islands
   the new app can render.
 - Shared code uses bare specifiers that resolve under both `deno.json` and
-  `package.json`, plus the `#/` alias. JSR `@std/*` is swapped for npm.
+  `package.json`, plus the `#/` alias. `@std/*` resolves from the JSR npm mirror
+  under Bun.
 - Shared code imports nothing from Fresh and uses no Deno APIs. Puzzles and
   names arrive through an injected source.
 - The unit tests for shared code run under both `deno test` and `bun test`.

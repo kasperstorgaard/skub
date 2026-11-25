@@ -54,10 +54,13 @@ done.
 ## Shared tests under `bun test`
 
 - **What:** the unit tests for `game/` and the portable parts of `lib/` run
-  under `bun test` as well as `deno test`. Plain `@std/assert` swapped for an
-  npm equivalent. Vitest is the fallback runner.
+  under `bun test` as well as `deno test`. Each test imports `test` from
+  `node:test`, so one file serves both runners with no shim. `@std/assert` comes
+  from npm (`@jsr/std__assert`). The port is scripted (`Deno.test(` → `test(`
+  plus one import). Vitest is the fallback runner.
 - **Why:** shared code must keep working for both apps. The tests prove it.
-- **When:** step 1 (spiked in step 0).
+- **When:** step 1 (spiked in step 0: 24 of 31 files passed on both after the
+  swap; the rest wait on step 1's source changes).
 - **Done when:** every shared test passes under both runners, in both CI
   pipelines.
 
@@ -72,11 +75,31 @@ done.
 - **When:** step 1 for shared code, step 2 in the new app's CI.
 - **Done when:** Oxlint reports the same violations as `deno lint` on shared
   code, with autofix, and a server-only import from `game/` fails the lint.
+- **Boundary rule limits:** it is per file, so it doesn't see transitive imports
+  (`game/` → `lib/x.ts` → `lib/env.ts`); each such module is added to its list.
+  Type-only imports pass. It can only be turned on once step 1 has moved the 7
+  violations out.
+- **Tooling notes:**
+  - Pin Oxlint: JS plugins are alpha and not under semver.
+  - Run `oxlint --fix` twice: overlapping fixes need a second pass.
+  - The TS plugin needs Bun or Node ≥ 22.18.
+  - `deno-lint-ignore` comments aren't honoured; shared code needs
+    `oxlint-disable` comments, or no ignores.
+  - `lint-imports_test.ts` gets a twin on Oxlint's `RuleTester`.
 
 ## New app CI pipeline
 
-- **What:** the new app's own workflow: Oxfmt, Oxlint, `tsc`, `bun test`, build,
-  CSS budget, a per-branch preview, and e2e against that preview.
+- **What:** the new app's own workflow: Oxfmt (new app directory only, see the
+  formatter split in [rollout.md](rollout.md#repo-shape)), Oxlint, `tsc`,
+  `bun test`, build, CSS budget, a per-branch preview, and e2e against that
+  preview.
+- **Tooling notes:**
+  - Always `bunx --bun` for Playwright and Oxlint, or they silently run on Node
+    through their shebang.
+  - Turning on `verbatimModuleSyntax` needs about 32 `import type` fixes, all
+    autofixable.
+  - A draft workflow is on the spike branch
+    ([spikes/bun-toolchain.md](spikes/bun-toolchain.md)).
 - **Why:** two pipelines until the switch. Today's e2e trigger depends on Deno
   Deploy's `deployment_status` events, which the new app doesn't send.
 - **When:** step 2.

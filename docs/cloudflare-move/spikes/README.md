@@ -12,7 +12,7 @@ pushed from a spike branch.
 | Solver budget          | `spike/solver-budget` | Hint and editor state budgets in a browser Web Worker; TS, compact TS or Rust → WASM?                                                                                         | Running                                      |
 | Astro on workerd       | `spike/astro-workerd` | Astro 6 + Preact under Bun in workerd, island root + slots, ClientRouter, no-JS 303, SQLite DO, lazy solver worker, budgets, `cf` vs Wrangler, previews and the DO round trip | Running                                      |
 | Offline service worker | `spike/offline-sw`    | Hand-written SW, overlay, offline Home, outbox 202 + replay, deploy survival                                                                                                  | Running                                      |
-| Bun toolchain          | `spike/bun-toolchain` | `bun test` on shared tests, dual-runtime tests, Temporal, Oxlint plugin + `game/` boundary, TS 7, CI                                                                          | Running                                      |
+| Bun toolchain          | `spike/bun-toolchain` | `bun test` on shared tests, dual-runtime tests, Temporal, Oxlint plugin + `game/` boundary, TS 7, CI                                                                          | Done: [bun-toolchain.md](bun-toolchain.md)   |
 
 ## Ground rules
 

@@ -16,9 +16,18 @@ touching production until the switch. Tooling for each step is in
 
 ## Repo shape
 
-- The new app lives in its own directory as a Bun workspace, with its own
-  `package.json` and `cloudflare.config.ts`. The Deno app stays at the root
-  until cleanup.
+- **The repo-root `package.json` is the Bun workspace root,** and the new app is
+  a member in its own directory with its own `package.json` and
+  `cloudflare.config.ts`. Bun resolves `game/`'s deps by walking up from the
+  importing file, so shared deps live in the root `node_modules`. `bun.lock` is
+  committed. The Deno app stays at the root until cleanup.
+- **Deps used by both sides are pinned to the same version** in `deno.json` and
+  `package.json`. An unpinned `@playwright/test` moved Deno's Playwright from
+  1.59.1 to 1.65.1, which needs a different Chromium.
+- **One formatter per file** (proposed, pending owner): `deno fmt` owns the Deno
+  app and shared code until cleanup, Oxfmt owns only the new app's directory,
+  and shared code is reformatted once by Oxfmt at cleanup. The two formatters
+  can't both pass on one file.
 - Shared, pure code is imported by both apps, never copied: `game/`, the
   portable parts of `lib/`, and the Preact components and islands the new app
   can render. Bare specifiers resolve under both `deno.json` and `package.json`,
@@ -48,11 +57,23 @@ Production doesn't change until step 7.
 
 Make `game/` and the portable parts of `lib/` import cleanly from Bun:
 
-- Bare specifiers and the `#/` alias, with JSR `@std/*` swapped for npm.
+- Bare specifiers and the `#/` alias. `@std/*` imports stay as they are and
+  resolve from the JSR npm mirror (e.g. `@jsr/std__assert`, through `.npmrc`).
 - The one Fresh import in shared code (`islands/solution-dialog.tsx`) removed.
-- Puzzles and names loaded through an injected source instead of disk reads.
-- Temporal via a polyfill where it's missing.
-- Unit tests runnable by `bun test`.
+- Puzzles loaded through an injected source instead of disk reads. `names.ts`
+  uses a JSON import.
+- Server-only code out of `game/`, so the `game/` boundary rule can be turned on
+  (it flags 7 violations today):
+  - `game/cookies.ts`, `game/profile-cookie.ts` and `game/progress-cookie.ts`
+    move out of `game/`, or take env and signing as parameters.
+  - `loader.ts` and `solver-queue.ts` get `isDev` injected.
+- Temporal: Bun 1.4.5 has it natively. The polyfill is only for workerd, pending
+  the Astro spike.
+- Unit tests runnable by `bun test`: each shared test imports `test` from
+  `node:test` (not `bun:test`), so one file runs under both `deno test` and
+  `bun test`. The port is scripted; about half a day for the ~30 shared test
+  files. Two tests that read files through Deno APIs switch to `node:fs`.
+- See [spikes/bun-toolchain.md](spikes/bun-toolchain.md) for the evidence.
 
 This lands on `main`, and the Deno app keeps working.
 
@@ -153,6 +174,8 @@ The only step that touches production. See [the runbook](#switch-runbook).
 After the switch, delete the Deno app entirely:
 
 - The Deno app, `deno.json`, the Deno CI and the KV Connect scripts.
+- Reformat the shared code once with Oxfmt (if the formatter split is
+  confirmed).
 - Move the new app to the repo root if wanted.
 - Update CLAUDE.md and the skills.
 
