@@ -207,7 +207,7 @@ or sets cookies.
 
 ### Service worker
 
-- Hand-written, ~150 lines. Not Workbox, not `@vite-pwa/astro`.
+- Hand-written, ~215 lines, 2.6 KB gz. Not Workbox, not `@vite-pwa/astro`.
 - **Build manifest:** a build-time Vite plugin emits the hashed assets and a
   build version, inlined into `sw.ts`. Assets only, no puzzles.
 - **Released puzzle list:** a small server endpoint, e.g.
@@ -215,13 +215,23 @@ or sets cookies.
   until the next daily release and never lists unreleased slugs. The service
   worker fetches it on activate, and when online at most once a day, so a new
   daily puzzle is picked up without a deploy.
-- **Precache:** `/` and the solver bundle on install. Then every released puzzle
-  page (~330 pages × ~6 KB gz ≈ 2 MB) in the background: any page on the list it
-  doesn't have yet. Only when idle and on good connections, never on Save-Data.
-  Calls `navigator.storage.persist()` once filled.
-- **Assets: cache first.** Old versions stay while any cached page references
-  them. Pages refresh lazily after a deploy: on visit, plus a slow background
-  trickle.
+- **Precache:** `/` and every hashed asset of the build on install. Then every
+  released puzzle page (~330 pages × ~6 KB gz ≈ 2 MB) in the background: any
+  page on the list it doesn't have yet. Only when idle and on good connections,
+  never on Save-Data. The page calls `navigator.storage.persist()` once filled;
+  it's Window-only.
+- **Assets: cache first,** matched with
+  `cache.match(request, { ignoreVary:
+  true })`. Workerd sends `Vary: Origin`
+  on `/_astro/*` and module scripts are CORS requests, so without it islands on
+  cached pages never hydrate offline.
+- **Old assets are kept by build.** Every page carries an `x-build` header; the
+  per-build asset lists live in IndexedDB and are pruned on activate. Pages
+  refresh lazily after a deploy: on visit, plus a slow background trickle.
+- **Updates:** an hourly `registration.update()`, and a full reload when
+  `x-build` changes during a `ClientRouter` swap.
+- **Navigate-mode POSTs** (forms sent before hydration) go straight to the
+  network.
 - Never caches unreleased puzzles or other players' data.
 - **Bundles `game/`.** `game/` never imports server-only code (DB, env, cookie
   signing); the import lint enforces it.
@@ -269,8 +279,10 @@ still offers the return dialog.
 - **Replays are idempotent** (client-made id plus unique index), so a lost
   response just replays harmlessly.
 - **Replay triggers:** the page relays the `online` event to the service worker;
-  any successful request drains the queue first; Background Sync is a
-  Chromium-only bonus. Replays run in order.
+  `visibilitychange` (for iOS); any successful request drains the queue first;
+  Background Sync is a Chromium-only bonus. Replays run in order.
+- **Replays use `redirect: "manual"`,** so the write's 303 comes back as
+  `opaqueredirect`, which counts as success.
 - **Outcomes:** a 2xx or the write's 303 clears the entry, 4xx drops it, a
   network error or 5xx keeps it.
 - **Cookies change only from the server's response on replay.** The service

@@ -602,3 +602,12 @@ state is described in [architecture.md](architecture.md).
 - **Decision:** puzzle pages render per request; no cached shell, no
   HTMLRewriter.
 - **Why:** warm SSR is 2–4 ms in workerd, far under the ~20 ms threshold.
+
+## 49. The service worker precaches the whole build and keeps old builds
+
+- **Date:** 2026-11-25
+- **Decision:** precache every hashed asset of the build, not just the solver.
+  Every page carries an `x-build` header; per-build asset lists live in
+  IndexedDB and are pruned on activate.
+- **Why:** the offline spike. A cached page must hydrate offline, and an old tab
+  must keep loading its own assets after a deploy.

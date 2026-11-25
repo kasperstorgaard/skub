@@ -229,11 +229,14 @@ done.
 
 ## Service worker manifest plugin
 
-- **What:** a small Vite plugin that emits the hashed assets and a build
-  version, inlined into `sw.ts`. Assets only: puzzles release daily without a
-  deploy, so they come from the released puzzle list instead.
-- **Why:** the service worker precaches assets from it and keeps old assets
-  while cached pages reference them.
+- **What:** a small Vite plugin that emits every hashed asset of the build and a
+  build version, inlined into `sw.ts`. Pages carry the version as `x-build`.
+  Assets only: puzzles release daily without a deploy, so they come from the
+  released puzzle list instead.
+- **Why:** the service worker precaches every asset from it and keeps per-build
+  asset lists in IndexedDB, pruned on activate, so an old tab keeps working.
+- **Not spiked:** the hourly `registration.update()` and the full reload when
+  `x-build` changes during a `ClientRouter` swap.
 - **When:** step 5.
 - **Done when:** the manifest matches the build and holds no puzzle URLs.
 
@@ -260,8 +263,9 @@ done.
     → the navigation continues.
   - A full page load offline → offline Home → the return dialog once online.
   - A lost response replays without a duplicate solve.
-  - From the spike: offline navigation between cached pages, an old tab
-    surviving a deploy.
+  - From the spike: offline navigation between cached pages, islands hydrating
+    on a cached page (the `ignoreVary` regression), an old tab surviving a
+    deploy, a form sent before hydration going to the network.
 - **Why:** the outbox and cache are invisible until they fail.
 - **When:** step 5.
 - **Done when:** every scenario passes on the preview.

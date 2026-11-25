@@ -11,12 +11,8 @@ pushed from a spike branch.
 | Shared signals         | — (code audit)        | Does one island root per page hold?                                                                                                                               | Done: [shared-signals.md](shared-signals.md) |
 | Solver budget          | `spike/solver-budget` | Hint and editor state budgets in a browser Web Worker; TS, compact TS or Rust → WASM?                                                                             | Done: [solver-budget.md](solver-budget.md)   |
 | Astro on workerd       | `spike/astro-workerd` | Astro + Preact in workerd, island root + slots, ClientRouter, no-JS 303, SQLite DO, lazy solver worker, budgets, `cf` vs Wrangler, previews and the DO round trip | Done: [astro-workerd.md](astro-workerd.md)   |
-| Offline service worker | `spike/offline-sw`    | Hand-written SW, overlay, offline Home, outbox 202 + replay, deploy survival                                                                                      | In progress                                  |
+| Offline service worker | `spike/offline-sw`    | Hand-written SW, overlay, offline Home, outbox 202 + replay, deploy survival                                                                                      | Done: [offline-sw.md](offline-sw.md)         |
 | Bun toolchain          | `spike/bun-toolchain` | `bun test` on shared tests, dual-runtime tests, Temporal, Oxlint plugin + `game/` boundary, TS 7, CI                                                              | Done: [bun-toolchain.md](bun-toolchain.md)   |
-
-The offline service worker spike is being finished by a separate Paseo agent in
-its worktree (`spike/offline-sw`). Its write-up lands on that branch and is
-folded in the same way when done.
 
 ## Waiting on Kasper
 
