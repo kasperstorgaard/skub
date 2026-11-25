@@ -99,6 +99,8 @@ state is described in [architecture.md](architecture.md).
 - **Why:** the BFS is the one CPU- and memory-bound piece and the one that
   pushes against 128 MB. The rest of the server is I/O-bound and shares types
   and rules with the islands.
+- **Revised by entry 37:** the solver moved to the browser. The Rust question is
+  now about speed and memory on phones, not Workers limits.
 
 ## 8. One Worker, no serverless functions, no Node server
 
@@ -130,7 +132,8 @@ state is described in [architecture.md](architecture.md).
 - **Decision:** self-contained requests (the server verifies by replaying
   moves); one endpoint per write for form POST, fetch and replay; replay-safe
   via a client-made id and unique indexes; the client predicts, the server
-  confirms; online-only is a short named list (hints, login, editor solve).
+  confirms; online-only is a short named list (hints, login, editor solve; hints
+  and the editor solve left it in entry 37).
 - **Alternatives:** none recorded.
 - **Why:** forced by offline. Writes only add facts, so they can be eventually
   consistent with no conflict handling.
@@ -438,7 +441,8 @@ state is described in [architecture.md](architecture.md).
   uncached pages, shows "N solves will sync when you're back", and offers to
   return to `return` once online. The offline solution dialog shows placeholder
   stars, "saved on this device", "Next puzzle" and "More puzzles" (no "See
-  solutions"). Hints say "Hints need a connection."
+  solutions"). Hints said "Hints need a connection" (replaced by entry 37: hints
+  work offline).
 - **Alternatives:** a dedicated `/offline` page listing cached puzzles:
   replaced.
 - **Why:** Kasper: "an offline version of Home instead of dedicated offline
@@ -468,3 +472,27 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** skip naming offline and ask once back online.
 - **Why:** Kasper: "Queue, your local name." It's one more queued write and the
   player sees no difference.
+
+## 37. The solver moves to the browser; hints need JS
+
+- **Date:** 2026-11-25
+- **Decision:**
+  - No BFS on the server. The solver runs only in a Web Worker started by the
+    page, never in the service worker (it can't start workers, and a long solve
+    would block every fetch).
+  - The hint dialog computes the hint in the Web Worker, online and offline. The
+    hint POST only records the spend; it's offline-capable and queued. The
+    allowance (one per puzzle) is checked from the server-rendered count and is
+    trust-based; an over-allowance spend is dropped on replay. A lower budget
+    applies offline and on low-end devices ("No hint available from here").
+  - Without JS there are no hints.
+  - The editor solves in the same Web Worker. `POST /api/solve` and the streamed
+    solve are removed.
+  - Submit and solve stay cheap on the server: replay the moves, stars from the
+    static minimum moves.
+  - The solver is lazy-loaded, precached for offline, and outside the 40 KB page
+    budget.
+- **Alternatives:** a small server solver kept only for no-JS hints: rejected.
+- **Why:** Kasper: "Let's actually go option 2: hints need js". The server
+  becomes I/O-only, the Workers memory risk goes, and hints work offline. The
+  solver is public code, so a trust-based allowance gives nothing away.

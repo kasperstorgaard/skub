@@ -41,7 +41,7 @@ Each goal is checked on `next.skub.app` before the switch, and again after it.
 | ------------------------------ | --------------------------------------------------- |
 | GET TTFB, warm, from EU        | ≤ 150 ms                                            |
 | Solve POST                     | ≤ 400 ms                                            |
-| JS, puzzle page                | ≤ 40 KB gz                                          |
+| JS, puzzle page                | ≤ 40 KB gz (the lazy-loaded solver doesn't count)   |
 | JS, home                       | ≤ 25 KB gz                                          |
 | CSS, entry                     | ≤ 16 KB gz                                          |
 | CSS, per theme                 | ≤ 6 KB gz                                           |
@@ -54,12 +54,14 @@ Each goal is checked on `next.skub.app` before the switch, and again after it.
   Once cached, any of them opens and plays offline.
 - A solve made offline is kept on the device and synced when back online. The
   player stays in place; offline Home is the way around.
-- Online-only is a short, named list: hints, login and the editor solve.
+- Hints and the editor solve run in the browser, so they work offline. Login
+  needs a connection.
 
 ### Works fully without JS
 
-Every flow works without JS: play, solve, name, Flash, hints, feedback, profile,
-consent. The editor is the one exception, as today.
+Every flow works without JS: play, solve, name, Flash, feedback, profile,
+consent. The exceptions are the editor, as today, and hints, which are computed
+in the browser.
 
 ### Anonymous-first
 

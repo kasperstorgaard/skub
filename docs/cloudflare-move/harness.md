@@ -31,14 +31,15 @@ done.
 
 ## Solver budget probe
 
-- **What:** a measurement run of the solver inside workerd: CPU and peak memory
-  on the hardest puzzles and on an editor board that exhausts the budget. For
-  Rust, also WASM size and cold start.
-- **Why:** Workers caps an isolate at 128 MB. The editor budget (3M states) is
-  ~175 MB today, and hints allow 7M states.
+- **What:** a measurement run of the TS solver in a Web Worker on a mid-range
+  phone: time and peak memory for hints on the hardest shipped puzzles and for
+  an editor board that exhausts the budget. For Rust, also WASM size and load
+  time.
+- **Why:** the solver runs only in the browser. Hints allow 7M states and the
+  editor 3M (~175 MB measured in Deno today), which a phone may not manage.
 - **When:** step 0.
-- **Done when:** the numbers pick one outcome: it fits, compact TypeScript, Rust
-  → WASM, or a lower budget.
+- **Done when:** the numbers set the offline/phone hint budget and pick one
+  outcome: TS is fine, compact TS, or Rust → WASM.
 
 ## DO round-trip probe
 
@@ -134,9 +135,10 @@ done.
 ## Perf budget checks
 
 - **What:** checks against the budgets in [mission.md](mission.md#goals):
-  - JS ≤ 40 KB gz puzzle page, ≤ 25 KB home; CSS ≤ 16 KB gz entry and ≤ 6 KB gz
-    per theme, as `scripts/check-css.ts` enforces today. In CI, on every build.
-    The CSS check keeps today's unresolved `var(--…)` check.
+  - JS ≤ 40 KB gz puzzle page (the lazy-loaded solver excluded), ≤ 25 KB home;
+    CSS ≤ 16 KB gz entry and ≤ 6 KB gz per theme, as `scripts/check-css.ts`
+    enforces today. In CI, on every build. The CSS check keeps today's
+    unresolved `var(--…)` check.
   - Service worker: ≤ 5 KB gz added to the puzzle page, nothing on home before
     install. In CI from step 5.
   - Puzzle page render time in workerd: measured in step 0; above ~20 ms,

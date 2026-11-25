@@ -17,7 +17,7 @@ app are reviewed against this doc. Reasons and rejected options live in
 | Static assets  | Workers Static Assets                                                                                                                                                                                    |
 | Offline        | Hand-written service worker: caches Home and every released puzzle page; queues offline writes in IndexedDB (`idb-keyval`) and answers 202, so the player stays in place. Offline Home, no offline page. |
 | Caching        | Edge cache for shared DO query results. Static pages prerendered. Early Hints. Prefetch.                                                                                                                 |
-| Solver         | Runs inside the Worker. TypeScript or Rust → WASM, decided by a spike.                                                                                                                                   |
+| Solver         | Runs only in the browser, in a Web Worker started by the page. TypeScript or Rust → WASM, decided by a spike.                                                                                            |
 | Cron           | Cron Triggers: hourly backup; the import cron until the switch                                                                                                                                           |
 | Observability  | OTLP export to an external backend. PostHog via `waitUntil`, `/ph` proxy.                                                                                                                                |
 | Platform CLI   | `cf` with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2. Wrangler only where `cf` lacks a feature.                                                                                             |
@@ -30,7 +30,7 @@ Reviewers check these on every PR.
 
 - **An anonymous GET makes no store call.** Pages render from the URL, signed
   cookies and bundled puzzles.
-- **Every flow works without JS,** except the editor.
+- **Every flow works without JS,** except the editor and hints.
 - **Client/server alignment** (see [the section](#clientserver-alignment)):
   1. Every write answers with a 303. No JSON write endpoints.
   2. The URL is the only navigational state.
@@ -56,9 +56,10 @@ Reviewers check these on every PR.
 - The DO is a class in the same codebase, exported from `src/worker.ts` next to
   the Astro adapter's `handle()`.
 - There is no Node server and no separate serverless function.
-- Workers limits that shape the design: 128 MB memory per isolate, 30 s CPU by
-  default (max 5 min), 10k subrequests. Cron triggers on hourly or slower
-  schedules get 15 min CPU.
+- **The server is I/O-only.** It runs no search: a solve or submit is verified
+  by replaying the moves, and stars come from the puzzle's static minimum moves.
+- Workers limits: 128 MB memory per isolate, 30 s CPU by default (max 5 min),
+  10k subrequests. Cron triggers on hourly or slower schedules get 15 min CPU.
 - Environment comes from one env module. An explicit app-environment flag
   replaces today's `isDev` ("not on Deploy"). Secrets are Worker secrets.
 - `COOKIE_SIGNING_KEY` is the same key the Deno app uses.
@@ -135,7 +136,8 @@ One SQLite-backed Durable Object is the whole database.
   `Set-Cookie` updates progress.
 - **One action descriptor per write** in `game/actions/` (see
   [offline](#writes)).
-- **Online-only is a short, named list:** hints, login and the editor solve.
+- **Online-only is short:** login, and any write whose action isn't flagged
+  `offline`. Hints and the editor solve run in the browser.
 
 ## Client/server alignment
 
@@ -197,10 +199,10 @@ or sets cookies.
   until the next daily release and never lists unreleased slugs. The service
   worker fetches it on activate, and when online at most once a day, so a new
   daily puzzle is picked up without a deploy.
-- **Precache:** `/` on install. Then every released puzzle page (~330 pages × ~6
-  KB gz ≈ 2 MB) in the background: any page on the list it doesn't have yet.
-  Only when idle and on good connections, never on Save-Data. Calls
-  `navigator.storage.persist()` once filled.
+- **Precache:** `/` and the solver bundle on install. Then every released puzzle
+  page (~330 pages × ~6 KB gz ≈ 2 MB) in the background: any page on the list it
+  doesn't have yet. Only when idle and on good connections, never on Save-Data.
+  Calls `navigator.storage.persist()` once filled.
 - **Assets: cache first.** Old versions stay while any cached page references
   them. Pages refresh lazily after a deploy: on visit, plus a slow background
   trickle.
@@ -274,10 +276,15 @@ still offers the return dialog.
 - A player without a name gets the name form. The name is queued with the solve,
   replayed in order, and the dialog shows their local (pending) name.
 
+### Hints offline
+
+Hints work offline: the solver runs in the page's Web Worker, and the hint spend
+is an offline-capable write, queued like the others. Offline and on low-end
+devices a lower state budget applies (see [solver](#solver)).
+
 ### Online-only
 
-Hints, login and the editor solve. Offline, the hint dialog says "Hints need a
-connection."
+Login, and any write whose action isn't flagged `offline`.
 
 ## Caching and prefetch
 
@@ -301,16 +308,36 @@ connection."
 
 ## Solver
 
-- Runs inside the Worker. `POST /api/solve` is public, and the search is bounded
-  by a state budget.
-- Budgets today: hints 7M states, editor 3M (~175 MB measured). The isolate cap
-  is 128 MB.
-- A spike picks one of four outcomes: it fits; compact TypeScript (packed
-  integer states in typed arrays); Rust → WASM; or a lower budget.
-- **If Rust:** only the BFS and its slide logic, compiled to WASM and imported
-  by the Worker, holding packed states in a compact hash set. It must match
-  `game/solver.ts` on every puzzle file (all 340, unreleased included). There is
-  no separate Rust service; everything else stays TypeScript.
+- **Runs only in the browser,** in a Web Worker started by the page. No BFS on
+  the server. Never in the service worker: a service worker can't start workers,
+  and a long solve there would block every fetch.
+- **Lazy-loaded** when a hint is requested or the editor opens. Precached by the
+  service worker for offline use. It doesn't count against the 40 KB page
+  budget.
+- **Hints:**
+  - The hint dialog always computes the hint in the Web Worker, online and
+    offline, from the player's current position.
+  - The hint POST only records the spend. The server sets the hint-count cookie.
+    It's an offline-capable write, queued like the others (offline: 202, stay in
+    place).
+  - The allowance check uses the server-rendered hint count in props. It's
+    trust-based, because the solver is public code anyway. On replay, a spend
+    over the allowance is rejected and dropped quietly. The allowance is still
+    one per puzzle.
+  - Offline and on low-end devices, a lower state budget applies. Positions over
+    it say "No hint available from here".
+  - Without JS there are no hints: the hint control is hidden under `noscript:`
+    or shows a quiet "Hints need JavaScript".
+- **Editor:** solves in the same Web Worker. There is no `POST /api/solve` and
+  no streamed solve; the editor talks to the worker by messages.
+- **Budgets today:** hints 7M states, editor 3M (~175 MB measured in Deno). A
+  spike measures them on a mid-range phone and sets the offline/phone hint
+  budget. Outcomes: TypeScript is fine; compact TypeScript (packed integer
+  states in typed arrays); or Rust → WASM.
+- **If Rust:** only the BFS and its slide logic, compiled to WASM and loaded by
+  the Web Worker, holding packed states in a compact hash set for faster hints
+  with less memory on phones. It must match `game/solver.ts` on every puzzle
+  file (all 340, unreleased included). Everything else stays TypeScript.
 
 ## Toolchain
 
