@@ -18,10 +18,10 @@ docs here once they land. Nothing is pushed from a spike branch.
 
 - **Confirm the Deno Deploy app directory setting** exists in console.deno.com.
   PR 0 (the [repo split](../rollout.md#0-repo-split)) depends on it.
-- **A `cf` 1.0 login** with a token scoped to Workers scripts only, so the
-  deploy, preview and DO round-trip checks can run. The only login on the
-  machine is an old global `cf` v0.0.5 with an expired, account-wide token (DNS,
-  registrar, routes).
+- **A `workers.dev` subdomain** on the account, so the deploy, preview and DO
+  round-trip checks can run. `cf` 1.0.0-rc.6 is logged in (account-wide OAuth)
+  and the spike app is deploy-ready (`61ca496b` on `spike/astro-workerd`);
+  `cf deploy` refuses until the subdomain is registered.
 - **A real phone measurement** of the solver (500k-state hint budget).
 - **Solver hotfix on the live Deno app** for boards with more than 8 pieces (Ulf
   never finishes a hint and ties up the server's single solve slot; Nis uses

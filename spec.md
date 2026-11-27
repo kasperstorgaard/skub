@@ -8,7 +8,7 @@ The plan: build the new app in parallel in the same repo, on Cloudflare
 Workers with one SQLite Durable Object and Astro 7 + Preact islands. Run it on
 `next.skub.app` with a one-way import of real data, and make the switch (a DNS
 change) once it's bug-free. Until then the repo is a temporary monorepo: the
-Deno app in `apps/deno`, the new app in `apps/web`, no shared code.
+Deno app in `deno/`, the new app in `web/`, no shared code.
 
 This PR writes the plan down. No code changes.
 

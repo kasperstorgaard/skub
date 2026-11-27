@@ -6,9 +6,9 @@ production only for the repo split and the switch. Tooling for each step is in
 
 ## Shape: a parallel build
 
-- The new app is built beside the Deno app, in the same repo: `apps/web` beside
-  `apps/deno`. The Deno app keeps shipping to players; apart from the move into
-  `apps/deno` it is untouched.
+- The new app is built beside the Deno app, in the same repo: `web/` beside
+  `deno/`. The Deno app keeps shipping to players; apart from the move into
+  `deno/` it is untouched.
 - No shared code, so nothing runs on two runtimes. No Fresh-on-workerd bridge,
   no dual-runtime shims, no throwaway adapters.
 - **The e2e suite is the parity check.** It asserts what players see, so the
@@ -25,37 +25,44 @@ A temporary monorepo with no shared code (see
 .github/workflows/   one set of workflows, path-filtered per app
 .claude/skills/  docs/  specs/
 CLAUDE.md  spec.md  TODO.md  README.md  LICENSE  paseo.json
-apps/
-  deno/              today's app, moved unchanged
-    static/puzzles/  the puzzle corpus, until cleanup
-    candidates/
-    e2e/             the parity suite, run against both apps
-  web/               the new app, Bun only
-    package.json  bun.lock  tsconfig.json  (Oxlint config)
-    cloudflare.config.ts  astro.config.ts
-    src/
-      worker.ts  pages/  islands/  components/  game/  lib/  db/
+.gitignore  .claudeignore  .mcp.json  .worktreeinclude  .vscode/
+ricochet.code-workspace  skills-lock.json
+deno/              today's tree, moved one level down unchanged
+  CLAUDE.md        the Deno app's half of today's CLAUDE.md
+  static/puzzles/  the puzzle corpus, until cleanup
+  candidates/
+  e2e/             the parity suite, run against both apps
+web/               the new app, Bun only
+  CLAUDE.md
+  package.json  bun.lock  tsconfig.json  (Oxlint config)
+  cloudflare.config.ts  astro.config.ts
+  src/
+    worker.ts  pages/  islands/  components/  game/  lib/  db/
 ```
 
 - **Each app owns its whole toolchain.** No root `package.json`, no root
-  `deno.json`. The root keeps only repo-wide files.
+  `deno.json`. The root keeps only repo-wide files: docs, workflows, skills,
+  editor and agent config.
+- **CLAUDE.md splits.** The root keeps the repo-wide parts (branches and PRs,
+  planning, skill triggers). Commands, layout, core types, puzzles and tech
+  notes move to `deno/CLAUDE.md`. `web/CLAUDE.md` grows with the new app.
 - **No shared code.** The new app copies what it needs from the Deno app once
-  and then owns it. Nothing imports across `apps/`. Drift is handled by a rule
-  (see [features during the transition](#features-during-the-transition)), not a
-  diff check: the copies differ on purpose.
+  and then owns it. Nothing imports across `deno/` and `web/`. Drift is handled
+  by a rule (see
+  [features during the transition](#features-during-the-transition)), not a diff
+  check: the copies differ on purpose.
 - **Data and tests have one copy until cleanup:**
-  - The puzzle corpus (`static/puzzles/`) and `candidates/` stay in `apps/deno`.
-    The Deno app reads them from disk at runtime, and Deno Deploy most likely
+  - The puzzle corpus (`static/puzzles/`) and `candidates/` stay in `deno/`. The
+    Deno app reads them from disk at runtime, and Deno Deploy most likely
     uploads only the app directory. The new app bundles puzzles at build time
     from `../deno/static/puzzles`; its dev-only authoring tool reads and writes
     them there.
   - The e2e suite (`e2e/` plus the `routes/**/_e2e/` page objects) stays in
-    `apps/deno` and runs against both URLs. It moves to `apps/web` once enough
-    flows are ported, at the latest at cleanup.
+    `deno/` and runs against both URLs. It moves to `web/` once enough flows are
+    ported, at the latest at cleanup.
 - **CI:** one set of workflows at the root, with path filters: Deno jobs for
-  `apps/deno/**`, Bun jobs (Oxlint, Oxfmt, `tsc`, `bun test`, build) for
-  `apps/web/**`, e2e against both URLs (see
-  [harness.md](harness.md#new-app-ci-pipeline)).
+  `deno/**`, Bun jobs (Oxlint, Oxfmt, `tsc`, `bun test`, build) for `web/**`,
+  e2e against both URLs (see [harness.md](harness.md#new-app-ci-pipeline)).
 - **Fallback layout,** if Deno Deploy can't set an app directory: the Deno app
   stays at the root and the new app lives in `next/`, excluded in `deno.json`.
 
@@ -76,23 +83,23 @@ Run before the steps; the write-ups are in [spikes/](spikes/README.md).
 
 ## Steps
 
-Each step is its own PR. Step 0 moves the Deno app into `apps/deno`. Steps 1–6
-build the new app and don't change the Deno app's behaviour. Production doesn't
-change until step 7, apart from step 0's move.
+Each step is its own PR. Step 0 moves the Deno app into `deno/`. Steps 1–6 build
+the new app and don't change the Deno app's behaviour. Production doesn't change
+until step 7, apart from step 0's move.
 
 ### 0. Repo split
 
-`git mv` the whole Deno app into `apps/deno/`, unchanged. It touches:
+`git mv` the whole Deno app into `deno/`, unchanged. It touches:
 
-- The Deno Deploy app directory → `apps/deno`. To confirm in console.deno.com
-  that the setting exists; if not, the [fallback layout](#repo-shape).
-- `pull-request.yml` and `e2e.yml`: `working-directory: apps/deno` plus path
+- The Deno Deploy app directory → `deno/`. To confirm in console.deno.com that
+  the setting exists; if not, the [fallback layout](#repo-shape).
+- `pull-request.yml` and `e2e.yml`: `working-directory: deno/` plus path
   filters.
-- `e2e/blast-radius.config.ts`: the globs get the `apps/deno/` prefix, since
+- `e2e/blast-radius.config.ts`: the globs get the `deno/` prefix, since
   `select-e2e-tests` sees repo-rooted git paths.
-- `paseo.json`: the dev command becomes `cd apps/deno && …`.
-- `.vscode/settings.json`: `deno.enablePaths: ["apps/deno"]`.
-- CLAUDE.md and the skills: paths.
+- `paseo.json`: the dev command becomes `cd deno && …`.
+- `.vscode/settings.json`: `deno.enablePaths: ["deno/"]`.
+- CLAUDE.md: split into the root and `deno/CLAUDE.md`; the skills: paths.
 
 Code paths are cwd-relative (`Deno.cwd()`, `./static/puzzles`), so they keep
 working.
@@ -107,8 +114,8 @@ Runbook notes:
 
 ### 1. Copy the core
 
-Copy `game/` and the portable parts of `lib/` into `apps/web/src/` and make the
-copy Bun-clean. The Deno app doesn't change, so there are no dual-runtime
+Copy `game/` and the portable parts of `lib/` into `web/src/` and make the copy
+Bun-clean. The Deno app doesn't change, so there are no dual-runtime
 constraints:
 
 - Tests use `bun:test`. `@std/assert` stays, from the JSR npm mirror
@@ -137,7 +144,7 @@ The new app boots on workerd with its own CI jobs:
 - The puzzle bundle wired into the build.
 - Static assets, Tailwind 4 and the CSS budget.
 - The e2e suite ported to `@playwright/test`, with the base URL as config. It
-  stays in `apps/deno`.
+  stays in `deno/`.
 
 ### 3. Store
 
@@ -184,9 +191,9 @@ rather than driving Auth0.
    as dev-only pages rendered by Astro with the new app's UI, plus a dev-only
    Astro integration (`astro:server:setup`, in the Vite dev process on the host)
    for the save and promote endpoints that write `candidates/*.md` and
-   `static/puzzles/*.md` in `apps/deno`. Excluded from production builds, so it
-   has no preview e2e; it's done when saving and promoting work under
-   `astro dev`. The scoring and calibration scripts move with it.
+   `static/puzzles/*.md` in `deno/`. Excluded from production builds, so it has
+   no preview e2e; it's done when saving and promoting work under `astro dev`.
+   The scoring and calibration scripts move with it.
 
 ### 5. Offline
 
@@ -228,10 +235,10 @@ The only step after step 0 that touches production. See
 
 After the switch, delete the Deno app entirely:
 
-- Move what still lives in `apps/deno` into `apps/web`: the puzzle corpus,
-  `candidates/` and the e2e suite.
-- Delete `apps/deno`, with the Deno CI jobs and the KV Connect scripts.
-- Moving `apps/web` to the repo root is optional.
+- Move what still lives in `deno/` into `web/`: the puzzle corpus, `candidates/`
+  and the e2e suite.
+- Delete `deno/`, with the Deno CI jobs and the KV Connect scripts.
+- Moving `web/` to the repo root is optional.
 - Update CLAUDE.md and the skills.
 
 ## `next.skub.app` and the one-way import

@@ -10,7 +10,7 @@ The switch needs every row ported or marked not kept.
   editor, authoring, streak and skill kept.
 - **E2E today** names the test files. "write first" marks rows whose lean e2e is
   written against the Deno app before the flow is ported (rollout step 4). Where
-  the files live, under `apps/deno/` after the repo split:
+  the files live, under `deno/` after the repo split:
   - `new-user-flow_test.ts`, `returning-user-flow_test.ts`: `e2e/`
   - `home_test.ts`, `highscore_test.ts`: `routes/_e2e/`
   - `archives_test.ts`: `routes/puzzles/_e2e/`

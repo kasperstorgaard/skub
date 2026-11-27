@@ -47,7 +47,7 @@ Reviewers check these on every PR.
 - **Unreleased puzzles never ship publicly:** not as static files, not in the
   released puzzle list, not in the service worker precache.
 - **No code is imported from the Deno app.** The puzzle corpus is the one thing
-  read from `apps/deno`, at build time, until cleanup.
+  read from `deno/`, at build time, until cleanup.
 - **Redirects are 303.**
 
 ## Runtime and host
@@ -386,8 +386,8 @@ Login, and any write whose action isn't flagged `offline`.
 - **Vite 8**, **Oxlint + Oxfmt**, **TypeScript 7** (`tsc`).
 - Skub's import rules (`#/` alias, import order, the `game/` boundary) run as a
   pinned Oxlint JS plugin.
-- `apps/web` has its own `package.json`, `bun.lock` and `tsconfig.json`. Nothing
-  is shared with the Deno app's `deno.json`.
+- `web/` has its own `package.json`, `bun.lock` and `tsconfig.json`. Nothing is
+  shared with the Deno app's `deno.json`.
 - Tests use `bun:test`, with `@std/assert` from the JSR npm mirror.
 - Oxfmt formats the whole app.
 - Playwright and Oxlint always run as `bunx --bun`.
@@ -425,14 +425,14 @@ Login, and any write whose action isn't flagged `offline`.
 Until cleanup the repo is a temporary monorepo (see
 [rollout.md](rollout.md#repo-shape)):
 
-- The new app is `apps/web`, beside the Deno app in `apps/deno`. Its source is
-  under `apps/web/src/`.
+- The new app is `web/`, beside the Deno app in `deno/`. Its source is under
+  `web/src/`.
 - It copied `game/` and the portable parts of `lib/` from the Deno app and owns
   them. Components and islands are ported with their flow. Nothing imports
-  across `apps/`.
-- The puzzle corpus and `candidates/` stay in `apps/deno` until cleanup; the
-  build bundles puzzles from `../deno/static/puzzles`.
-- After cleanup `apps/deno` is gone and `apps/web` keeps its name.
+  across `deno/` and `web/`.
+- The puzzle corpus and `candidates/` stay in `deno/` until cleanup; the build
+  bundles puzzles from `../deno/static/puzzles`.
+- After cleanup `deno/` is gone and `web/` keeps its name.
 
 ## Authoring tool
 
@@ -444,7 +444,7 @@ The puzzle authoring tool is a set of dev-only pages in the new app.
 - **Writes:** a small dev-only Astro integration on the `astro:server:setup`
   hook provides the save and promote endpoints. It runs in the Vite dev process
   on the host, not in workerd, and writes `candidates/*.md` and
-  `static/puzzles/*.md` (in `apps/deno` until cleanup).
+  `static/puzzles/*.md` (in `deno/` until cleanup).
 - **Never in production:** the pages and the integration are excluded from
   production builds.
 - **Contract with the player app:** the puzzle `.md` format and `game/`.

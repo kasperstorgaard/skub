@@ -258,7 +258,7 @@ state is described in [architecture.md](architecture.md).
   - Dev-only pages rendered by Astro with the new app's UI.
   - A dev-only Astro integration (`astro:server:setup`, in the Vite dev process
     on the host, not in workerd) provides the save and promote endpoints that
-    write `candidates/*.md` and `static/puzzles/*.md` (in `apps/deno` until
+    write `candidates/*.md` and `static/puzzles/*.md` (in `deno/` until
     cleanup).
   - Excluded from production builds.
   - After the switch, the Deno app is deleted entirely.
@@ -533,8 +533,8 @@ state is described in [architecture.md](architecture.md).
   `@playwright/test` moved Deno's Playwright from 1.59.1 to 1.65.1, which needs
   a different Chromium.
 - **Superseded by [entry 50](#50-temporary-monorepo-no-shared-code):** there is
-  no root `package.json`. `apps/web` has its own `package.json` and `bun.lock`,
-  and no dep is pinned in both apps.
+  no root `package.json`. `web/` has its own `package.json` and `bun.lock`, and
+  no dep is pinned in both apps.
 
 ## 40. Server-only code leaves `game/` in step 1
 
@@ -636,25 +636,26 @@ state is described in [architecture.md](architecture.md).
 - **Date:** 2026-11-25
 - **Decision:**
   - The repo split is the first PR (rollout step 0). The Deno app moves
-    unchanged into `apps/deno/`; the new app lives in `apps/web/`. Each owns its
-    whole toolchain. There is no root `package.json` or `deno.json`; the root
-    keeps only repo-wide files.
+    unchanged into `deno/`; the new app lives in `web/`. Each owns its whole
+    toolchain. There is no root `package.json` or `deno.json`; the root keeps
+    only repo-wide files.
   - No shared code. The new app copies what it needs from the Deno app once and
-    then owns it. Nothing imports across `apps/`.
+    then owns it. Nothing imports across `deno/` and `web/`.
   - Drift is handled by a rule, like data drift: a change to `game/` logic on
     the Deno app lands in both copies in the same PR, or gets a line in
     [parity.md](parity.md#game-changes-waiting-for-a-copy). No automated diff
     check; the copies differ on purpose.
   - Data and tests keep one copy until cleanup. The puzzle corpus and
-    `candidates/` stay in `apps/deno`, which reads them from disk; the new app
+    `candidates/` stay in `deno/`, which reads them from disk; the new app
     bundles puzzles at build time from `../deno/static/puzzles`. The e2e suite
-    stays in `apps/deno` and runs against both URLs, until enough flows are
-    ported.
+    stays in `deno/` and runs against both URLs, until enough flows are ported.
   - One set of workflows at the root, with path filters per app.
-  - Cleanup deletes `apps/deno`. `apps/web` keeps its name.
+  - Cleanup deletes `deno/`. `web/` keeps its name.
 - **Alternatives:**
   - The root Bun workspace with shared imports (entries 3, 38, 39 and 41):
     superseded.
+  - `apps/deno/` and `apps/web/`: an extra level that pays off only with more
+    apps or shared packages.
   - Deno at the root and the new app in `next/`, excluded in `deno.json`: the
     fallback if Deno Deploy can't set an app directory.
 - **Why:** the spikes showed what sharing across two runtimes costs: deps pinned

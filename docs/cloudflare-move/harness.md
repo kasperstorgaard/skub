@@ -92,10 +92,9 @@ done.
 
 ## New app CI pipeline
 
-- **What:** the new app's jobs in the root workflows, path-filtered to
-  `apps/web/**` (see [rollout.md](rollout.md#repo-shape)): Oxfmt, Oxlint, `tsc`,
-  `bun test`, build, CSS budget, a per-branch preview, and e2e against that
-  preview.
+- **What:** the new app's jobs in the root workflows, path-filtered to `web/**`
+  (see [rollout.md](rollout.md#repo-shape)): Oxfmt, Oxlint, `tsc`, `bun test`,
+  build, CSS budget, a per-branch preview, and e2e against that preview.
 - **Tooling notes:**
   - Always `bunx --bun` for Playwright and Oxlint, or they silently run on Node
     through their shebang.
@@ -105,12 +104,12 @@ done.
     autofixable.
   - A draft workflow is on the spike branch
     ([spikes/bun-toolchain.md](spikes/bun-toolchain.md)).
-- **Why:** the Deno jobs keep running for `apps/deno/**` until cleanup. Today's
-  e2e trigger depends on Deno Deploy's `deployment_status` events, which the new
-  app doesn't send.
+- **Why:** the Deno jobs keep running for `deno/**` until cleanup. Today's e2e
+  trigger depends on Deno Deploy's `deployment_status` events, which the new app
+  doesn't send.
 - **When:** step 2.
-- **Done when:** every PR touching `apps/web` runs it, and its e2e job runs
-  against that branch's preview.
+- **Done when:** every PR touching `web/` runs it, and its e2e job runs against
+  that branch's preview.
 - **Open:** whether the blast-radius test selector carries over.
 
 ## Per-branch previews and DO reset
@@ -130,7 +129,7 @@ done.
 - **What:** today's e2e suite (Playwright library inside `Deno.test`) ported to
   `@playwright/test`, with the base URL as config. The seeding endpoints
   (`/api/e2e/users`, `/api/e2e/solutions`) exist on both apps. It stays in
-  `apps/deno` until enough flows are ported, at the latest until cleanup.
+  `deno/` until enough flows are ported, at the latest until cleanup.
 - **Why:** it is the parity check. It asserts what players see, so one suite
   runs against both apps.
 - **When:** step 2. Each flow's tests are added or extended in step 4.
@@ -316,7 +315,7 @@ done.
 - **What:** a small Astro integration on the `astro:server:setup` hook. It runs
   in the Vite dev process on the host, not in workerd, and provides the save and
   promote endpoints that write `candidates/*.md` and `static/puzzles/*.md` (in
-  `apps/deno` until cleanup).
+  `deno/` until cleanup).
 - **Why:** the authoring tool moves into the new app as dev-only pages, and
   workerd has no filesystem. This is what lets the Deno app be deleted.
 - **When:** step 4, as the "Authoring (dev-only)" flow, before the switch.
