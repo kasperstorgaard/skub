@@ -8,22 +8,22 @@ work lives in [rollout.md](rollout.md).
 
 ## At a glance
 
-| Concern        | What we use                                                                                                                                                                                              |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Runtime + host | Cloudflare Workers (workerd). One Worker serves everything.                                                                                                                                              |
-| Store          | One SQLite-backed Durable Object (DO), `locationHint: "weur"`                                                                                                                                            |
-| Framework      | Astro 7.4+ + `@astrojs/preact` + `@astrojs/cloudflare` 15 (beta). Thin `.astro` page shells, TSX components and islands.                                                                                 |
-| Client state   | Preact islands + signals. One island root per page that has shared state. Own `?dialog=` router. `ClientRouter`.                                                                                         |
-| Puzzles        | Bundled at build time as a generated module                                                                                                                                                              |
-| Static assets  | Workers Static Assets                                                                                                                                                                                    |
-| Offline        | Hand-written service worker: caches Home and every released puzzle page; queues offline writes in IndexedDB (`idb-keyval`) and answers 202, so the player stays in place. Offline Home, no offline page. |
-| Caching        | Edge cache for shared DO query results. Static pages prerendered. Early Hints. Prefetch.                                                                                                                 |
-| Solver         | Runs only in the browser, in a Web Worker started by the page. TypeScript or Rust → WASM, decided by a spike.                                                                                            |
-| Cron           | Cron Triggers: hourly backup; the import cron until the switch                                                                                                                                           |
-| Observability  | OTLP export to an external backend. PostHog via `waitUntil`, `/ph` proxy.                                                                                                                                |
-| Platform CLI   | `cf` with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2. No Wrangler.                                                                                                                          |
-| Toolchain      | Bun (installs, scripts, `bun test`, Playwright), Node ≥ 22.18 for Astro, Vite 8, Oxlint + Oxfmt, TypeScript 7                                                                                            |
-| Previews + e2e | One Worker Preview per branch, each with its own DO storage. `@playwright/test` against it.                                                                                                              |
+| Concern        | What we use                                                                                                                                                                                                                  |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime + host | Cloudflare Workers (workerd). One Worker serves everything.                                                                                                                                                                  |
+| Store          | One SQLite-backed Durable Object (DO), `locationHint: "weur"`                                                                                                                                                                |
+| Framework      | Astro 7.4+ + `@astrojs/preact` + `@astrojs/cloudflare` 15 (beta). Thin `.astro` page shells, TSX components and islands.                                                                                                     |
+| Client state   | Preact islands + signals. One island root per page that has shared state. Own `?dialog=` router. `ClientRouter`.                                                                                                             |
+| Puzzles        | Bundled at build time as a generated module                                                                                                                                                                                  |
+| Static assets  | Workers Static Assets                                                                                                                                                                                                        |
+| Offline        | Hand-written service worker: caches Home and a small set of puzzle pages per visit (cap 50); queues offline writes in IndexedDB (`idb-keyval`) and answers 202, so the player stays in place. Offline Home, no offline page. |
+| Caching        | Edge cache for shared DO query results. Static pages prerendered. Early Hints. Prefetch.                                                                                                                                     |
+| Solver         | Runs only in the browser, in a Web Worker started by the page. TypeScript or Rust → WASM, decided by a spike.                                                                                                                |
+| Cron           | Cron Triggers: hourly backup; the import cron until the switch                                                                                                                                                               |
+| Observability  | OTLP export to an external backend. PostHog via `waitUntil`, `/ph` proxy.                                                                                                                                                    |
+| Platform CLI   | `cf` with `cloudflare.config.ts` and `@cloudflare/vite-plugin` v2. No Wrangler.                                                                                                                                              |
+| Toolchain      | Bun (installs, scripts, `bun test`, Playwright), Node ≥ 22.18 for Astro, Vite 8, Oxlint + Oxfmt, TypeScript 7                                                                                                                |
+| Previews + e2e | One Worker Preview per branch, each with its own DO storage. `@playwright/test` against it.                                                                                                                                  |
 
 ## Invariants
 
@@ -35,7 +35,8 @@ Reviewers check these on every PR.
 - **Client/server alignment** (see [the section](#clientserver-alignment)):
   1. Every write answers with a 303. No JSON write endpoints.
   2. The URL is the only navigational state.
-  3. Requests are self-contained. Cookies hold only identity and progress.
+  3. Requests are self-contained. Cookies hold only identity, progress and the
+     offline set.
   4. One pure function in `game/` per derived view of the URL.
   5. JS changes presentation, not outcome.
   6. The open dialog is `getDialog(url, player)`.
@@ -46,7 +47,7 @@ Reviewers check these on every PR.
 - **The HTML is always the server's.** The service worker caches pages; it never
   renders them.
 - **Unreleased puzzles never ship publicly:** not as static files, not in the
-  released puzzle list, not in the service worker precache.
+  offline set, not in the service worker precache.
 - **No code is imported from the Deno app.** The puzzle corpus is the one thing
   read from `deno/`, at build time, until cleanup.
 - **Redirects are 303.**
@@ -137,7 +138,8 @@ One SQLite-backed Durable Object is the whole database.
   reads. Names (`danish-names.json`) load the same way.
 - **"Play next" is a concrete link.** The server renders the pseudo-random
   recommendation as `/puzzles/<slug>`, not a link to the `/puzzles/recommended`
-  redirect.
+  redirect. It picks from the player's offline set, so offline it lands on a
+  cached page.
 - Astro Actions are not used.
 - **Themes are colour-only variants of one look,** plus high-contrast for
   accessibility: skub, dracula, acid, catppuccin, solarized-light, ember and
@@ -218,16 +220,19 @@ or sets cookies.
 - Hand-written, ~215 lines, 2.6 KB gz. Not Workbox, not `@vite-pwa/astro`.
 - **Build manifest:** a build-time Vite plugin emits the hashed assets and a
   build version, inlined into `sw.ts`. Assets only, no puzzles.
-- **Released puzzle list:** a small server endpoint, e.g.
-  `/puzzles/released.json`, lists the released puzzle URLs. It is cacheable
-  until the next daily release and never lists unreleased slugs. The service
-  worker fetches it on activate, and when online at most once a day, so a new
-  daily puzzle is picked up without a deploy.
-- **Precache:** `/` and every hashed asset of the build on install. Then every
-  released puzzle page (~330 pages × ~6 KB gz ≈ 2 MB) in the background: any
-  page on the list it doesn't have yet. Only when idle and on good connections,
-  never on Save-Data. The page calls `navigator.storage.persist()` once filled;
-  it's Window-only.
+- **Offline set:** a pure function in `game/` picks the slugs to cache for a
+  visit (the first page load of the day) from the released puzzles and the
+  progress cookie. First visit: a handpicked starter list. Later visits: 10
+  random released puzzles the player hasn't solved. The daily puzzle is always
+  in. The set lives in a small signed cookie and the page lists the slugs. It
+  only ever holds released puzzles.
+- **Precache:** `/` and every hashed asset of the build on install. Then the
+  pages in the offline set (~10 × ~6 KB gz ≈ 60 KB per visit) in the background,
+  the ones it doesn't have yet. Only when idle and on good connections, never on
+  Save-Data. The page calls `navigator.storage.persist()` once filled; it's
+  Window-only.
+- **Cap of 50 puzzle pages.** They accumulate across visits. Over the cap,
+  solved puzzles are dropped first, then the oldest.
 - **Assets: cache first,** matched with
   `cache.match(request, { ignoreVary:
   true })`. Workerd sends `Vary: Origin`
@@ -235,7 +240,7 @@ or sets cookies.
   cached pages never hydrate offline.
 - **Old assets are kept by build.** Every page carries an `x-build` header; the
   per-build asset lists live in IndexedDB and are pruned on activate. Pages
-  refresh lazily after a deploy: on visit, plus a slow background trickle.
+  refresh lazily after a deploy: on visit, when the offline set lists them.
 - **Updates:** an hourly `registration.update()`, and a full reload when
   `x-build` changes during a `ClientRouter` swap.
 - **Navigate-mode POSTs** (forms sent before hydration) go straight to the
@@ -262,7 +267,8 @@ There is no dedicated offline page. Offline Home is `/?offline&return=<url>`;
 the service worker serves cached Home for it, matched ignoring the query. With
 the flag, Home:
 
-- dims links whose target isn't cached (checked via `caches.keys()`)
+- dims links whose target isn't cached (checked via `caches.keys()`); most of
+  the archive, as only the offline set is cached
 - shows a quiet "N solves will sync when you're back"
 - when online again, opens a dialog offering to return to `return`; "back home"
   drops the flag

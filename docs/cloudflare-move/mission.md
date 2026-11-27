@@ -73,8 +73,9 @@ Each goal is checked on `next.skub.app` before the switch, and again after it.
 
 ### Offline
 
-- Every released puzzle page is cached in the background (~330 pages, ~2 MB).
-  Once cached, any of them opens and plays offline.
+- A small set of puzzle pages is cached in the background on each day's first
+  visit (~10 pages, ~60 KB), up to 50. Once cached, they open and play offline;
+  the rest of the archive needs a connection.
 - A solve made offline is kept on the device and synced when back online. The
   player stays in place; offline Home is the way around.
 - Hints and the editor solve run in the browser, so they work offline. Login

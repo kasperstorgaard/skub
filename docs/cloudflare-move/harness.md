@@ -21,7 +21,6 @@ Each entry says what it is, why we need it, when it lands (the
 | [Store scenario tests](#store-scenario-tests)                                                    | 3        |
 | [KV → SQL import](#kv--sql-import)                                                               | 3        |
 | [Service worker manifest plugin](#service-worker-manifest-plugin)                                | 5        |
-| [Released puzzle list endpoint](#released-puzzle-list-endpoint)                                  | 5        |
 | [Offline e2e](#offline-e2e)                                                                      | 5        |
 | [Import cron](#import-cron)                                                                      | 6        |
 | [Backup cron](#backup-cron)                                                                      | 6        |
@@ -63,7 +62,9 @@ Each entry says what it is, why we need it, when it lands (the
 - **What:** the new app's copies of the `game/` and `lib/` unit tests run under
   `bun test`. Each imports `test` from `bun:test`; `@std/assert` comes from npm
   (`@jsr/std__assert`). The port is scripted (`Deno.test(` → `test(` plus one
-  import). Vitest is the fallback runner.
+  import). Vitest is the fallback runner. New `game/` tests join them: the
+  offline-set function (starter list on the first visit, unsolved random after,
+  daily always in, released only).
 - **Why:** the copied code must keep its behaviour on the new runtime. The tests
   prove it.
 - **When:** step 1 (spiked with `node:test`: 24 of 31 files passed after the
@@ -214,27 +215,13 @@ Each entry says what it is, why we need it, when it lands (the
 
 - **What:** a small Vite plugin that emits every hashed asset of the build and a
   build version, inlined into `sw.ts`. Pages carry the version as `x-build`.
-  Assets only: puzzles release daily without a deploy, so they come from the
-  released puzzle list instead.
+  Assets only: the puzzle pages to cache come from the per-visit offline set.
 - **Why:** the service worker precaches every asset from it and keeps per-build
   asset lists in IndexedDB, pruned on activate, so an old tab keeps working.
 - **Not spiked:** the hourly `registration.update()` and the full reload when
   `x-build` changes during a `ClientRouter` swap.
 - **When:** step 5.
 - **Done when:** the manifest matches the build and holds no puzzle URLs.
-
-## Released puzzle list endpoint
-
-- **What:** a small server endpoint, e.g. `/puzzles/released.json`, listing the
-  released puzzle URLs. Cacheable until the next daily release. The service
-  worker fetches it on activate, and when online at most once a day, then caches
-  any pages it doesn't have yet.
-- **Why:** a new puzzle releases every day without a deploy. A build-time list
-  would lag until the next deploy.
-- **When:** step 5.
-- **Done when:** the list matches the released puzzles on any given day, a test
-  fails if it ever lists an unreleased slug, and the day's new puzzle is cached
-  without a deploy.
 
 ## Offline e2e
 
@@ -246,6 +233,9 @@ Each entry says what it is, why we need it, when it lands (the
     → the navigation continues.
   - A full page load offline → offline Home → the return dialog once online.
   - A lost response replays without a duplicate solve.
+  - The first visit caches the handpicked starter set.
+  - Offline "Play next" lands on a cached page.
+  - The cap of 50 holds: over it, solved puzzles go first, then the oldest.
   - From the spike: offline navigation between cached pages, islands hydrating
     on a cached page (the `ignoreVary` regression), an old tab surviving a
     deploy, a form sent before hydration going to the network.

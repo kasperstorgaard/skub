@@ -170,6 +170,8 @@ state is described in [architecture.md](architecture.md).
   - Client-side rendering of puzzles from cached data: rejected as "too custom".
     `ClientRouter` fetches the server's HTML through the service worker instead.
 - **Why:** the numbers came in small: the whole released set is about 2 MB.
+- **Superseded by [entry 55](#55-offline-caches-a-set-per-visit-capped-at-50):**
+  a set per visit, not every released puzzle.
 
 ## 13. "Play next" is a concrete link
 
@@ -178,6 +180,9 @@ state is described in [architecture.md](architecture.md).
   `/puzzles/<slug>`, not to the `/puzzles/recommended` redirect.
 - **Alternatives:** keep the redirect.
 - **Why:** works without JS, saves a round trip, and lands on a cached page
+  offline.
+- **Revised by [entry 55](#55-offline-caches-a-set-per-visit-capped-at-50):**
+  the link is picked from the player's offline set, so it lands on a cached page
   offline.
 
 ## 14. Caching
@@ -295,6 +300,9 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** released puzzle URLs in the build manifest: rejected.
 - **Why:** a puzzle releases every day without a deploy, so a build-time list
   lags until the next deploy.
+- **Superseded by [entry 55](#55-offline-caches-a-set-per-visit-capped-at-50):**
+  the server picks each visit's set and lists it in a cookie, so the service
+  worker needs no endpoint. The endpoint is dropped.
 
 ## 22. A solve invalidates its path groups in its colo
 
@@ -459,6 +467,8 @@ state is described in [architecture.md](architecture.md).
   replaced.
 - **Why:** Kasper: "an offline version of Home instead of dedicated offline
   page". `return` lives in the URL, as all navigational state does.
+- **Revised by [entry 55](#55-offline-caches-a-set-per-visit-capped-at-50):**
+  only the day's offline set is cached, so most links dim offline.
 
 ## 35. The offline overlay opens on timeout or failure
 
@@ -751,3 +761,32 @@ state is described in [architecture.md](architecture.md).
   it outlive the switch or guard the new app? Kasper: "The existing tooling
   should be kept, but not new tooling just for parity. The harness was meant as
   a guardrail / help for the new app and the future."
+
+## 55. Offline caches a set per visit, capped at 50
+
+- **Date:** 2026-11-27
+- **Decision:** the service worker no longer caches every released puzzle. Each
+  visit adds a small set of puzzle pages (~10 × ~6 KB gz ≈ 60 KB), in the
+  background as before: idle and good connections only, never Save-Data.
+  - A visit is the first page load of the day, so the set refreshes daily.
+  - The server picks the set with a pure, unit-tested function in `game/`, from
+    the released puzzles and the progress cookie. First visit: a handpicked
+    starter list (a puzzle frontmatter flag or a short list file, decided at
+    implementation). Later visits: 10 random released puzzles the player hasn't
+    solved. The daily puzzle is always in the set.
+  - The set lives in a small signed cookie. The page lists the slugs and the
+    service worker caches those pages.
+  - "Play next" picks from the set, so a cached page's baked link always lands
+    on a cached page offline. The first visit chains through the handpicked list
+    in order.
+  - Cached puzzle pages accumulate across visits, capped at 50. Over the cap,
+    solved puzzles go first, then the oldest.
+  - Offline Home keeps dimming uncached links, so the rest of the archive shows
+    as unavailable offline.
+  - The released puzzle list endpoint (entry 21) is dropped.
+- **Alternatives:** cache every released puzzle (entry 12).
+- **Why:** Kasper: "let's not download all puzzles, just 10 per visit. First
+  visit you have x to play, including in "up next" and we can even handpick if
+  we want. Next time 10 random, etc."; then "Sounds good, including the 50
+  limit". About 60 KB per visit instead of ~2 MB is kinder on mobile data, and
+  less is lost when Safari evicts storage.
