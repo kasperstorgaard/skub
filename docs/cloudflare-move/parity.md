@@ -10,7 +10,7 @@ The switch needs every row ported or marked not kept.
   editor, authoring, streak and skill kept.
 - **E2E today** names the test files. "write first" marks rows whose lean e2e is
   written against the Deno app before the flow is ported (rollout step 4). Where
-  the files live:
+  the files live, under `apps/deno/` after the repo split:
   - `new-user-flow_test.ts`, `returning-user-flow_test.ts`: `e2e/`
   - `home_test.ts`, `highscore_test.ts`: `routes/_e2e/`
   - `archives_test.ts`: `routes/puzzles/_e2e/`
@@ -140,9 +140,9 @@ Endpoints not already listed under a flow.
 | Endpoint                                | Purpose                     | E2E today                   | Keep? | Ported | Passes on next | Notes                                                                         |
 | --------------------------------------- | --------------------------- | --------------------------- | ----- | ------ | -------------- | ----------------------------------------------------------------------------- |
 | `POST /api/e2e/reset`                   | Wipes the branch database   | Used by CI before every run |       |        |                | `deleteAll()` on next. Needs `x-e2e-secret`; refuses outside a branch deploy. |
-| `POST /api/e2e/users`                   | Seeds a test user           | Used by every seeded test   |       |        |                | Needed on next for the shared suite.                                          |
-| `GET`, `DELETE /api/e2e/users/[userId]` | Reads or clears a test user | `profile_test.ts`           |       |        |                | Needed on next for the shared suite.                                          |
-| `POST /api/e2e/solutions`               | Seeds a solution            | `solutions_test.ts`         |       |        |                | Needed on next for the shared suite.                                          |
+| `POST /api/e2e/users`                   | Seeds a test user           | Used by every seeded test   |       |        |                | Needed on next for the e2e suite.                                             |
+| `GET`, `DELETE /api/e2e/users/[userId]` | Reads or clears a test user | `profile_test.ts`           |       |        |                | Needed on next for the e2e suite.                                             |
+| `POST /api/e2e/solutions`               | Seeds a solution            | `solutions_test.ts`         |       |        |                | Needed on next for the e2e suite.                                             |
 
 `/api/solve` (removed on next), `/api/store`, `/api/export` and `/api/consent`
 are listed under their flows above.
@@ -176,3 +176,11 @@ go.
 | Dev panel in the editor and preview  | `/puzzles/build`, `/puzzles/preview` |       |
 | Clone keeps the puzzle's name in dev | `/puzzles/[slug]/clone`              |       |
 | Error details in dev                 | `_error`                             |       |
+
+## `game/` changes waiting for a copy
+
+The Deno app and the new app each own a copy of `game/`. A change to `game/`
+logic on the Deno app lands in both copies in the same PR, or gets a line here
+until it does (see [rollout.md](rollout.md#features-during-the-transition)).
+
+None yet.

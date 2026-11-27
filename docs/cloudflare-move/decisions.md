@@ -37,6 +37,8 @@ state is described in [architecture.md](architecture.md).
   bridge. Replaced.
 - **Why:** Kasper: "Could just start the transition in parallel and swap when I
   am satisfied with the move (double CI until then)."
+- **Superseded in part by [entry 50](#50-temporary-monorepo-no-shared-code):**
+  the new app copies what it needs; no code is shared.
 
 ## 4. Toolchain: Bun
 
@@ -221,9 +223,13 @@ state is described in [architecture.md](architecture.md).
 - **Date:** 2026-11-24
 - **Decision:** the Deno app keeps shipping. Two rules instead: a change to
   stored data on the Deno app maps itself into the import and schema in the same
-  PR; UI changes land in shared code or get ported with their flow.
+  PR; UI changes land on the Deno app and get ported with their flow or after
+  it.
 - **Alternatives:** a freeze during the move.
 - **Why:** Kasper: "don't see the need really".
+- **Extended by [entry 50](#50-temporary-monorepo-no-shared-code):** a change to
+  `game/` logic on the Deno app lands in both copies in the same PR, or gets a
+  line in [parity.md](parity.md#game-changes-waiting-for-a-copy).
 
 ## 18. Transition: `next.skub.app` and a one-way import
 
@@ -249,20 +255,21 @@ state is described in [architecture.md](architecture.md).
 - **Decision:** the puzzle authoring tool (candidates, scoring, the metric
   catalog, calibration scripts, the `/candidates` routes and the promote flow)
   moves into the new app before the switch, like every other flow.
-  - Dev-only pages rendered by Astro with the shared UI.
+  - Dev-only pages rendered by Astro with the new app's UI.
   - A dev-only Astro integration (`astro:server:setup`, in the Vite dev process
     on the host, not in workerd) provides the save and promote endpoints that
-    write `candidates/*.md` and `static/puzzles/*.md`.
+    write `candidates/*.md` and `static/puzzles/*.md` (in `apps/deno` until
+    cleanup).
   - Excluded from production builds.
   - After the switch, the Deno app is deleted entirely.
-  - Its contract with the player app is the puzzle `.md` format and the shared
-    `game/` code. It retires when community submissions replace it.
+  - Its contract with the player app is the puzzle `.md` format and the new
+    app's `game/` code. It retires when community submissions replace it.
 - **Alternatives:** both replaced the same day:
   - Keeping it on Deno for good, trimming the Deno app down to it.
   - Moving it after the switch, with the Deno app kept locally until then.
 - **Why:** Kasper: "Everything gets ported before cutover, even local flows." He
   needs the tool until community submissions come in, and it stays in the repo
-  to reuse the shared UI. Which framework drives it doesn't matter.
+  to reuse the player app's UI. Which framework drives it doesn't matter.
 
 ## 20. CSS budget: what CI enforces today
 
@@ -509,6 +516,9 @@ state is described in [architecture.md](architecture.md).
 - **Why:** the [Bun toolchain spike](spikes/bun-toolchain.md): `node:test` needs
   no shim, no import map entry and no new file. The sample ran 147/147 on both
   runtimes.
+- **Superseded by [entry 50](#50-temporary-monorepo-no-shared-code):** no test
+  runs under both runners. The new app's tests use `bun:test`; `@std/assert`
+  stays from npm, so the port is still a scripted import swap.
 
 ## 39. The repo root is the Bun workspace root
 
@@ -522,6 +532,9 @@ state is described in [architecture.md](architecture.md).
   so `game/` needs a root `node_modules`. In the spike, an unpinned
   `@playwright/test` moved Deno's Playwright from 1.59.1 to 1.65.1, which needs
   a different Chromium.
+- **Superseded by [entry 50](#50-temporary-monorepo-no-shared-code):** there is
+  no root `package.json`. `apps/web` has its own `package.json` and `bun.lock`,
+  and no dep is pinned in both apps.
 
 ## 40. Server-only code leaves `game/` in step 1
 
@@ -533,11 +546,15 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** none recorded.
 - **Why:** the boundary rule flags 7 violations today (env and cookie signing
   imported into `game/`), and `game/` must bundle into the service worker.
+- **Revised by [entry 50](#50-temporary-monorepo-no-shared-code):** this applies
+  to the new app's copy of `game/` only. The Deno app's `game/` stays as it is.
 
-## 41. One formatter per file until cleanup (proposed, pending owner)
+## 41. One formatter per file until cleanup (proposed)
 
 - **Date:** 2026-11-25
-- **Status:** proposed by the lead; pending the owner's confirmation.
+- **Status:** proposed by the lead, never confirmed. Superseded by
+  [entry 50](#50-temporary-monorepo-no-shared-code): no file is shared, so each
+  app keeps its own formatter.
 - **Decision:** `deno fmt` owns the Deno app and shared code until cleanup.
   Oxfmt owns only the new app's directory. Shared code is reformatted once by
   Oxfmt at cleanup.
@@ -566,6 +583,8 @@ state is described in [architecture.md](architecture.md).
 - **Why:** it's exact only up to 8 pieces. On Ulf (28 pieces) nearly every key
   collides and a hint never finishes; on Nis (15) two positions can be taken as
   one. Found by the solver spike; it affects today's server too.
+- **Revised by [entry 50](#50-temporary-monorepo-no-shared-code):** step 1 fixes
+  the new app's copy only. The live Deno app needs its own `fix/` branch.
 
 ## 44. Astro 7.4+ with `@astrojs/cloudflare` 15
 
@@ -611,3 +630,40 @@ state is described in [architecture.md](architecture.md).
   IndexedDB and are pruned on activate.
 - **Why:** the offline spike. A cached page must hydrate offline, and an old tab
   must keep loading its own assets after a deploy.
+
+## 50. Temporary monorepo, no shared code
+
+- **Date:** 2026-11-25
+- **Decision:**
+  - The repo split is the first PR (rollout step 0). The Deno app moves
+    unchanged into `apps/deno/`; the new app lives in `apps/web/`. Each owns its
+    whole toolchain. There is no root `package.json` or `deno.json`; the root
+    keeps only repo-wide files.
+  - No shared code. The new app copies what it needs from the Deno app once and
+    then owns it. Nothing imports across `apps/`.
+  - Drift is handled by a rule, like data drift: a change to `game/` logic on
+    the Deno app lands in both copies in the same PR, or gets a line in
+    [parity.md](parity.md#game-changes-waiting-for-a-copy). No automated diff
+    check; the copies differ on purpose.
+  - Data and tests keep one copy until cleanup. The puzzle corpus and
+    `candidates/` stay in `apps/deno`, which reads them from disk; the new app
+    bundles puzzles at build time from `../deno/static/puzzles`. The e2e suite
+    stays in `apps/deno` and runs against both URLs, until enough flows are
+    ported.
+  - One set of workflows at the root, with path filters per app.
+  - Cleanup deletes `apps/deno`. `apps/web` keeps its name.
+- **Alternatives:**
+  - The root Bun workspace with shared imports (entries 3, 38, 39 and 41):
+    superseded.
+  - Deno at the root and the new app in `next/`, excluded in `deno.json`: the
+    fallback if Deno Deploy can't set an app directory.
+- **Why:** the spikes showed what sharing across two runtimes costs: deps pinned
+  in both `deno.json` and `package.json` (the Playwright skew), a formatter
+  split (two formatters can't both pass one file), one shared 467 MB
+  `node_modules`, the `node:test` port, 38 `tsc` errors from Deno globals,
+  Oxlint ignoring `deno-lint-ignore`, and server-only code having to leave
+  `game/` before the new app can use it. The new app also diverges on purpose
+  (solver in the browser, the cookie split, one island root, retro themes cut,
+  `ClientRouter`), so shared UI was worth less than assumed. Kasper: "I propose
+  a temporary monorepo. Where we put deno under it's own app and the other too.
+  No shared code, just slow duplication/parity with shared CI".

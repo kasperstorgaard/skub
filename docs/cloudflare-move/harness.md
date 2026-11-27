@@ -6,9 +6,9 @@ done.
 
 | Harness                                                                                          | Step     |
 | ------------------------------------------------------------------------------------------------ | -------- |
-| [Solver budget probe](#solver-budget-probe)                                                      | 0        |
-| [DO round-trip probe](#do-round-trip-probe)                                                      | 0        |
-| [Shared tests under `bun test`](#shared-tests-under-bun-test)                                    | 1        |
+| [Solver budget probe](#solver-budget-probe)                                                      | spikes   |
+| [DO round-trip probe](#do-round-trip-probe)                                                      | spikes   |
+| [Unit tests under `bun test`](#unit-tests-under-bun-test)                                        | 1        |
 | [Import rules lint](#import-rules-lint)                                                          | 1–2      |
 | [New app CI pipeline](#new-app-ci-pipeline)                                                      | 2        |
 | [Per-branch previews and DO reset](#per-branch-previews-and-do-reset)                            | 2        |
@@ -37,7 +37,7 @@ done.
   time.
 - **Why:** the solver runs only in the browser. Hints allow 7M states and the
   editor 3M (~175 MB measured in Deno today), which a phone may not manage.
-- **When:** step 0.
+- **When:** the spikes.
 - **Done when:** the numbers set the offline/phone hint budget and pick one
   outcome: TS is fine, compact TS, or Rust → WASM.
 - **Status:** desktop run done: TS is fine, budgets in architecture.md
@@ -50,22 +50,21 @@ done.
   Denmark.
 - **Why:** the solve POST budget (≤ 400 ms) and TTFB on the few store-backed
   GETs depend on it.
-- **When:** step 0.
+- **When:** the spikes.
 - **Done when:** the round trip is measured and per-preview storage is
   confirmed.
 
-## Shared tests under `bun test`
+## Unit tests under `bun test`
 
-- **What:** the unit tests for `game/` and the portable parts of `lib/` run
-  under `bun test` as well as `deno test`. Each test imports `test` from
-  `node:test`, so one file serves both runners with no shim. `@std/assert` comes
-  from npm (`@jsr/std__assert`). The port is scripted (`Deno.test(` → `test(`
-  plus one import). Vitest is the fallback runner.
-- **Why:** shared code must keep working for both apps. The tests prove it.
-- **When:** step 1 (spiked in step 0: 24 of 31 files passed on both after the
+- **What:** the new app's copies of the `game/` and `lib/` unit tests run under
+  `bun test`. Each imports `test` from `bun:test`; `@std/assert` comes from npm
+  (`@jsr/std__assert`). The port is scripted (`Deno.test(` → `test(` plus one
+  import). Vitest is the fallback runner.
+- **Why:** the copied code must keep its behaviour on the new runtime. The tests
+  prove it.
+- **When:** step 1 (spiked with `node:test`: 24 of 31 files passed after the
   swap; the rest wait on step 1's source changes).
-- **Done when:** every shared test passes under both runners, in both CI
-  pipelines.
+- **Done when:** every copied test passes under `bun test` in the new app's CI.
 
 ## Import rules lint
 
@@ -73,27 +72,28 @@ done.
   enforces the `#/` alias for cross-folder imports and two sorted import groups
   (third-party, then project). It gains one boundary rule: `game/` never imports
   server-only code (DB, env, cookie signing).
-- **Why:** the new app and shared code keep one import style under Oxlint, and
-  `game/` stays bundleable into the service worker.
-- **When:** step 1 for shared code, step 2 in the new app's CI.
-- **Done when:** Oxlint reports the same violations as `deno lint` on shared
-  code, with autofix, and a server-only import from `game/` fails the lint.
+- **Why:** the new app keeps today's import style under Oxlint, and `game/`
+  stays bundleable into the service worker.
+- **When:** step 1 on the copied code, in CI from step 2.
+- **Done when:** Oxlint reports the same violations on the copied code as
+  `deno lint` does on the original, with autofix, and a server-only import from
+  `game/` fails the lint.
 - **Boundary rule limits:** it is per file, so it doesn't see transitive imports
   (`game/` → `lib/x.ts` → `lib/env.ts`); each such module is added to its list.
   Type-only imports pass. It can only be turned on once step 1 has moved the 7
-  violations out.
+  violations out of the copy.
 - **Tooling notes:**
   - Pin Oxlint: JS plugins are alpha and not under semver.
   - Run `oxlint --fix` twice: overlapping fixes need a second pass.
   - The TS plugin needs Bun or Node ≥ 22.18.
-  - `deno-lint-ignore` comments aren't honoured; shared code needs
-    `oxlint-disable` comments, or no ignores.
+  - `deno-lint-ignore` comments aren't honoured; in the copied code they become
+    `oxlint-disable` comments, or go.
   - `lint-imports_test.ts` gets a twin on Oxlint's `RuleTester`.
 
 ## New app CI pipeline
 
-- **What:** the new app's own workflow: Oxfmt (new app directory only, see the
-  formatter split in [rollout.md](rollout.md#repo-shape)), Oxlint, `tsc`,
+- **What:** the new app's jobs in the root workflows, path-filtered to
+  `apps/web/**` (see [rollout.md](rollout.md#repo-shape)): Oxfmt, Oxlint, `tsc`,
   `bun test`, build, CSS budget, a per-branch preview, and e2e against that
   preview.
 - **Tooling notes:**
@@ -105,11 +105,12 @@ done.
     autofixable.
   - A draft workflow is on the spike branch
     ([spikes/bun-toolchain.md](spikes/bun-toolchain.md)).
-- **Why:** two pipelines until the switch. Today's e2e trigger depends on Deno
-  Deploy's `deployment_status` events, which the new app doesn't send.
+- **Why:** the Deno jobs keep running for `apps/deno/**` until cleanup. Today's
+  e2e trigger depends on Deno Deploy's `deployment_status` events, which the new
+  app doesn't send.
 - **When:** step 2.
-- **Done when:** every PR touching the new app or shared code runs it, and its
-  e2e job runs against that branch's preview.
+- **Done when:** every PR touching `apps/web` runs it, and its e2e job runs
+  against that branch's preview.
 - **Open:** whether the blast-radius test selector carries over.
 
 ## Per-branch previews and DO reset
@@ -119,7 +120,7 @@ done.
   refuses outside a preview, like `/api/e2e/reset` today.
 - **Why:** e2e starts from clean data on every branch. Today all previews share
   one database.
-- **When:** spiked in step 0, wired in step 2.
+- **When:** spiked, wired in step 2.
 - **Done when:** two branches' e2e runs can't see each other's data, and the
   reset refuses on production.
 - Through `cf`; there is no Wrangler. Not checked yet: `cf` 1.0 needs a login.
@@ -128,7 +129,8 @@ done.
 
 - **What:** today's e2e suite (Playwright library inside `Deno.test`) ported to
   `@playwright/test`, with the base URL as config. The seeding endpoints
-  (`/api/e2e/users`, `/api/e2e/solutions`) exist on both apps.
+  (`/api/e2e/users`, `/api/e2e/solutions`) exist on both apps. It stays in
+  `apps/deno` until enough flows are ported, at the latest until cleanup.
 - **Why:** it is the parity check. It asserts what players see, so one suite
   runs against both apps.
 - **When:** step 2. Each flow's tests are added or extended in step 4.
@@ -169,13 +171,13 @@ done.
     unresolved `var(--…)` check.
   - Service worker: ≤ 5 KB gz added to the puzzle page, nothing on home before
     install. In CI from step 5.
-  - Puzzle page render time in workerd: measured in step 0; above ~20 ms,
-    revisit edge-caching the shell.
+  - Puzzle page render time in workerd: measured in the Astro spike; above ~20
+    ms, revisit edge-caching the shell.
   - GET TTFB ≤ 150 ms warm from EU, solve POST ≤ 400 ms: measured on
     `next.skub.app` before the switch and on `skub.app` after it.
 - **Why:** performance is the first principle. A budget nobody measures drifts.
-- **When:** size checks in step 2, render time in step 0, TTFB and solve before
-  step 7.
+- **When:** size checks in step 2, render time in the spikes, TTFB and solve
+  before step 7.
 - **Done when:** size budgets fail the build when exceeded, and the TTFB and
   solve numbers are recorded for the switch.
 - **Open:** how TTFB from EU is measured.
@@ -313,7 +315,8 @@ done.
 
 - **What:** a small Astro integration on the `astro:server:setup` hook. It runs
   in the Vite dev process on the host, not in workerd, and provides the save and
-  promote endpoints that write `candidates/*.md` and `static/puzzles/*.md`.
+  promote endpoints that write `candidates/*.md` and `static/puzzles/*.md` (in
+  `apps/deno` until cleanup).
 - **Why:** the authoring tool moves into the new app as dev-only pages, and
   workerd has no filesystem. This is what lets the Deno app be deleted.
 - **When:** step 4, as the "Authoring (dev-only)" flow, before the switch.

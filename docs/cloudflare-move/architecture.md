@@ -46,7 +46,8 @@ Reviewers check these on every PR.
   renders them.
 - **Unreleased puzzles never ship publicly:** not as static files, not in the
   released puzzle list, not in the service worker precache.
-- **Shared code is imported, never copied.**
+- **No code is imported from the Deno app.** The puzzle corpus is the one thing
+  read from `apps/deno`, at build time, until cleanup.
 - **Redirects are 303.**
 
 ## Runtime and host
@@ -113,8 +114,8 @@ One SQLite-backed Durable Object is the whole database.
 - **Skub's own `?dialog=` router** opens and closes explicit dialogs. Outcome
   dialogs are derived (see [alignment](#clientserver-alignment), 6).
 - **`ClientRouter`** handles client navigation and view transitions. It replaces
-  Fresh Partials. Its fetches go through the service worker. The shared router
-  needs these changes for it:
+  Fresh Partials. Its fetches go through the service worker. Skub's router needs
+  these changes for it:
   - Keep `history.state`; never write `{}`.
   - Listen for clicks on `document` in the capture phase, so `ClientRouter`
     leaves `data-router` links alone.
@@ -377,7 +378,7 @@ Login, and any write whose action isn't flagged `offline`.
   rather than state count. The old 7M hint budget is dropped.
 - **State key works for any piece count.** Today's key is exact only up to 8
   pieces: Ulf (28 pieces) never finishes and Nis (15) uses approximate keys.
-  Fixed in step 1, before the solver moves.
+  Fixed in the new app's copy in step 1; the live Deno app needs its own fix.
 
 ## Toolchain
 
@@ -385,12 +386,10 @@ Login, and any write whose action isn't flagged `offline`.
 - **Vite 8**, **Oxlint + Oxfmt**, **TypeScript 7** (`tsc`).
 - Skub's import rules (`#/` alias, import order, the `game/` boundary) run as a
   pinned Oxlint JS plugin.
-- The repo-root `package.json` is the Bun workspace root; the new app is a
-  member with its own `package.json` and `cloudflare.config.ts`. `bun.lock` is
-  committed, and deps shared with `deno.json` are pinned to the same version.
-- Shared tests use `node:test`, so they run under `deno test` and `bun test`.
-- One formatter per file until cleanup: `deno fmt` for the Deno app and shared
-  code, Oxfmt for the new app (proposed, pending owner).
+- `apps/web` has its own `package.json`, `bun.lock` and `tsconfig.json`. Nothing
+  is shared with the Deno app's `deno.json`.
+- Tests use `bun:test`, with `@std/assert` from the JSR npm mirror.
+- Oxfmt formats the whole app.
 - Playwright and Oxlint always run as `bunx --bun`.
 - **Astro runs on Node ≥ 22.18** (dev, build, preview): `@cloudflare/config`
   refuses to load `cloudflare.config.ts` under Bun. Bun handles installs,
@@ -421,18 +420,19 @@ Login, and any write whose action isn't flagged `offline`.
   `ctx.waitUntil`. The `/ph` proxy stays.
 - **Backup:** an hourly Cron Trigger writes a backup to GCS or R2 (open).
 
-## Shared code
+## Repo layout
 
-Until the Deno app is deleted, it and the new app import the same files:
+Until cleanup the repo is a temporary monorepo (see
+[rollout.md](rollout.md#repo-shape)):
 
-- `game/`, the portable parts of `lib/`, and the Preact components and islands
-  the new app can render.
-- Shared code uses bare specifiers that resolve under both `deno.json` and
-  `package.json`, plus the `#/` alias. `@std/*` resolves from the JSR npm mirror
-  under Bun.
-- Shared code imports nothing from Fresh and uses no Deno APIs. Puzzles and
-  names arrive through an injected source.
-- The unit tests for shared code run under both `deno test` and `bun test`.
+- The new app is `apps/web`, beside the Deno app in `apps/deno`. Its source is
+  under `apps/web/src/`.
+- It copied `game/` and the portable parts of `lib/` from the Deno app and owns
+  them. Components and islands are ported with their flow. Nothing imports
+  across `apps/`.
+- The puzzle corpus and `candidates/` stay in `apps/deno` until cleanup; the
+  build bundles puzzles from `../deno/static/puzzles`.
+- After cleanup `apps/deno` is gone and `apps/web` keeps its name.
 
 ## Authoring tool
 
@@ -440,15 +440,14 @@ The puzzle authoring tool is a set of dev-only pages in the new app.
 
 - **Scope:** candidates, scoring, the metric catalog, calibration scripts, the
   `/candidates` pages and the promote flow.
-- **Pages:** Astro renders them, reusing the shared UI.
+- **Pages:** Astro renders them, reusing the player app's components.
 - **Writes:** a small dev-only Astro integration on the `astro:server:setup`
   hook provides the save and promote endpoints. It runs in the Vite dev process
   on the host, not in workerd, and writes `candidates/*.md` and
-  `static/puzzles/*.md`.
+  `static/puzzles/*.md` (in `apps/deno` until cleanup).
 - **Never in production:** the pages and the integration are excluded from
   production builds.
-- **Contract with the player app:** the puzzle `.md` format and the shared
-  `game/` code.
+- **Contract with the player app:** the puzzle `.md` format and `game/`.
 - **Lifetime:** retired when community submissions replace it.
 
 It is ported before the switch, in rollout step 4. Until then it runs locally on

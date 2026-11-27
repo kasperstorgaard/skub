@@ -1,14 +1,16 @@
 # Rollout
 
-How we get from the Deno app to the [north star](architecture.md) without
-touching production until the switch. Tooling for each step is in
+How we get from the Deno app to the [north star](architecture.md), touching
+production only for the repo split and the switch. Tooling for each step is in
 [harness.md](harness.md); flow-by-flow progress is in [parity.md](parity.md).
 
 ## Shape: a parallel build
 
-- The new app is built beside the Deno app, in the same repo. The Deno app keeps
-  shipping to players, untouched. Nothing on `main` has to run on two runtimes.
-- No Fresh-on-workerd bridge, no dual-runtime shims, no throwaway adapters.
+- The new app is built beside the Deno app, in the same repo: `apps/web` beside
+  `apps/deno`. The Deno app keeps shipping to players; apart from the move into
+  `apps/deno` it is untouched.
+- No shared code, so nothing runs on two runtimes. No Fresh-on-workerd bridge,
+  no dual-runtime shims, no throwaway adapters.
 - **The e2e suite is the parity check.** It asserts what players see, so the
   same tests run against both apps.
 - The new app runs on `next.skub.app` with near-live data from a one-way import.
@@ -16,31 +18,50 @@ touching production until the switch. Tooling for each step is in
 
 ## Repo shape
 
-- **The repo-root `package.json` is the Bun workspace root,** and the new app is
-  a member in its own directory with its own `package.json` and
-  `cloudflare.config.ts`. Bun resolves `game/`'s deps by walking up from the
-  importing file, so shared deps live in the root `node_modules`. `bun.lock` is
-  committed. The Deno app stays at the root until cleanup.
-- **Deps used by both sides are pinned to the same version** in `deno.json` and
-  `package.json`. An unpinned `@playwright/test` moved Deno's Playwright from
-  1.59.1 to 1.65.1, which needs a different Chromium.
-- **One formatter per file** (proposed, pending owner): `deno fmt` owns the Deno
-  app and shared code until cleanup, Oxfmt owns only the new app's directory,
-  and shared code is reformatted once by Oxfmt at cleanup. The two formatters
-  can't both pass on one file.
-- Shared, pure code is imported by both apps, never copied: `game/`, the
-  portable parts of `lib/`, and the Preact components and islands the new app
-  can render. Bare specifiers resolve under both `deno.json` and `package.json`,
-  plus the `#/` alias.
-- Two CI pipelines. The Deno workflows stay as they are. The new app gets its
-  own (see [harness.md](harness.md#new-app-ci-pipeline)).
+A temporary monorepo with no shared code (see
+[decisions.md](decisions.md#50-temporary-monorepo-no-shared-code)):
 
-## Steps
+```text
+.github/workflows/   one set of workflows, path-filtered per app
+.claude/skills/  docs/  specs/
+CLAUDE.md  spec.md  TODO.md  README.md  LICENSE  paseo.json
+apps/
+  deno/              today's app, moved unchanged
+    static/puzzles/  the puzzle corpus, until cleanup
+    candidates/
+    e2e/             the parity suite, run against both apps
+  web/               the new app, Bun only
+    package.json  bun.lock  tsconfig.json  (Oxlint config)
+    cloudflare.config.ts  astro.config.ts
+    src/
+      worker.ts  pages/  islands/  components/  game/  lib/  db/
+```
 
-Each step is its own PR. Steps 1–6 touch only the new app and shared code.
-Production doesn't change until step 7.
+- **Each app owns its whole toolchain.** No root `package.json`, no root
+  `deno.json`. The root keeps only repo-wide files.
+- **No shared code.** The new app copies what it needs from the Deno app once
+  and then owns it. Nothing imports across `apps/`. Drift is handled by a rule
+  (see [features during the transition](#features-during-the-transition)), not a
+  diff check: the copies differ on purpose.
+- **Data and tests have one copy until cleanup:**
+  - The puzzle corpus (`static/puzzles/`) and `candidates/` stay in `apps/deno`.
+    The Deno app reads them from disk at runtime, and Deno Deploy most likely
+    uploads only the app directory. The new app bundles puzzles at build time
+    from `../deno/static/puzzles`; its dev-only authoring tool reads and writes
+    them there.
+  - The e2e suite (`e2e/` plus the `routes/**/_e2e/` page objects) stays in
+    `apps/deno` and runs against both URLs. It moves to `apps/web` once enough
+    flows are ported, at the latest at cleanup.
+- **CI:** one set of workflows at the root, with path filters: Deno jobs for
+  `apps/deno/**`, Bun jobs (Oxlint, Oxfmt, `tsc`, `bun test`, build) for
+  `apps/web/**`, e2e against both URLs (see
+  [harness.md](harness.md#new-app-ci-pipeline)).
+- **Fallback layout,** if Deno Deploy can't set an app directory: the Deno app
+  stays at the root and the new app lives in `next/`, excluded in `deno.json`.
 
-### 0. Spikes (throwaway)
+## Spikes (throwaway, done)
+
+Run before the steps; the write-ups are in [spikes/](spikes/README.md).
 
 | Spike                                   | Success criteria                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Fallback                                                                                                                                                |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -53,40 +74,70 @@ Production doesn't change until step 7.
 | DO round trip                           | A DO with `locationHint: "weur"` on a per-branch preview: round trip from Denmark measured, per-preview storage confirmed.                                                                                                                                                                                                                                                                                                                                          | None recorded. Placement is revisited if non-EU traffic grows.                                                                                          |
 | Bun + Playwright + `bun test`           | Playwright runs under Bun. The shared tests pass under `bun test`.                                                                                                                                                                                                                                                                                                                                                                                                  | Vitest as the test runner.                                                                                                                              |
 
-### 1. Shared core
+## Steps
 
-Make `game/` and the portable parts of `lib/` import cleanly from Bun:
+Each step is its own PR. Step 0 moves the Deno app into `apps/deno`. Steps 1–6
+build the new app and don't change the Deno app's behaviour. Production doesn't
+change until step 7, apart from step 0's move.
 
-- Bare specifiers and the `#/` alias. `@std/*` imports stay as they are and
-  resolve from the JSR npm mirror (e.g. `@jsr/std__assert`, through `.npmrc`).
-- The one Fresh import in shared code (`islands/solution-dialog.tsx`) removed.
-- The solver's state key made exact for any piece count (it breaks above 8
-  pieces today; decision 43), with a scenario test on Ulf and Nis.
-- Puzzles loaded through an injected source instead of disk reads. `names.ts`
-  uses a JSON import.
-- Server-only code out of `game/`, so the `game/` boundary rule can be turned on
-  (it flags 7 violations today):
+### 0. Repo split
+
+`git mv` the whole Deno app into `apps/deno/`, unchanged. It touches:
+
+- The Deno Deploy app directory → `apps/deno`. To confirm in console.deno.com
+  that the setting exists; if not, the [fallback layout](#repo-shape).
+- `pull-request.yml` and `e2e.yml`: `working-directory: apps/deno` plus path
+  filters.
+- `e2e/blast-radius.config.ts`: the globs get the `apps/deno/` prefix, since
+  `select-e2e-tests` sees repo-rooted git paths.
+- `paseo.json`: the dev command becomes `cd apps/deno && …`.
+- `.vscode/settings.json`: `deno.enablePaths: ["apps/deno"]`.
+- CLAUDE.md and the skills: paths.
+
+Code paths are cwd-relative (`Deno.cwd()`, `./static/puzzles`), so they keep
+working.
+
+Runbook notes:
+
+- **The app directory setting is app-wide,** so it flips the same minute PR 0
+  merges. Other open branches' previews break until they're rebased onto the
+  move; git's rename detection handles most of it.
+- **It's a small production deploy before the switch.** Verify it on PR 0's
+  branch URL first.
+
+### 1. Copy the core
+
+Copy `game/` and the portable parts of `lib/` into `apps/web/src/` and make the
+copy Bun-clean. The Deno app doesn't change, so there are no dual-runtime
+constraints:
+
+- Tests use `bun:test`. `@std/assert` stays, from the JSR npm mirror
+  (`@jsr/std__assert`, through `.npmrc`), so the port is a scripted import swap
+  (`Deno.test(` → `test(` plus one import). Two tests that read files through
+  Deno APIs switch to `node:fs`.
+- Server-only code out of the copy's `game/` (decision 40), so the `game/`
+  boundary rule is on from the start (it flags 7 violations today):
   - `game/cookies.ts`, `game/profile-cookie.ts` and `game/progress-cookie.ts`
     move out of `game/`, or take env and signing as parameters.
   - `loader.ts` and `solver-queue.ts` get `isDev` injected.
+- The solver's state key made exact for any piece count (it breaks above 8
+  pieces today; decision 43), with a scenario test on Ulf and Nis. This fixes
+  the new app only; the live Deno app needs its own `fix/` branch.
+- Puzzles bundled at build time from `../deno/static/puzzles`, not read from
+  disk. `names.ts` uses a JSON import.
 - Temporal: Bun 1.4.5 has it natively. The polyfill is only for workerd, pending
   the Astro spike.
-- Unit tests runnable by `bun test`: each shared test imports `test` from
-  `node:test` (not `bun:test`), so one file runs under both `deno test` and
-  `bun test`. The port is scripted; about half a day for the ~30 shared test
-  files. Two tests that read files through Deno APIs switch to `node:fs`.
 - See [spikes/bun-toolchain.md](spikes/bun-toolchain.md) for the evidence.
-
-This lands on `main`, and the Deno app keeps working.
 
 ### 2. Skeleton
 
-The new app boots on workerd with its own CI pipeline:
+The new app boots on workerd with its own CI jobs:
 
 - The env module, the app-environment flag and secrets.
-- Puzzles bundled at build time.
+- The puzzle bundle wired into the build.
 - Static assets, Tailwind 4 and the CSS budget.
-- The e2e suite ported to `@playwright/test`, with the base URL as config.
+- The e2e suite ported to `@playwright/test`, with the base URL as config. It
+  stays in `apps/deno`.
 
 ### 3. Store
 
@@ -130,12 +181,12 @@ rather than driving Auth0.
 7. Feedback and policy pages.
 8. Authoring (dev-only): the authoring tool (candidates, scoring, the metric
    catalog, calibration scripts, the `/candidates` routes and the promote flow)
-   as dev-only pages rendered by Astro with the shared UI, plus a dev-only Astro
-   integration (`astro:server:setup`, in the Vite dev process on the host) for
-   the save and promote endpoints that write `candidates/*.md` and
-   `static/puzzles/*.md`. Excluded from production builds, so it has no preview
-   e2e; it's done when saving and promoting work under `astro dev`. The scoring
-   and calibration scripts move with it.
+   as dev-only pages rendered by Astro with the new app's UI, plus a dev-only
+   Astro integration (`astro:server:setup`, in the Vite dev process on the host)
+   for the save and promote endpoints that write `candidates/*.md` and
+   `static/puzzles/*.md` in `apps/deno`. Excluded from production builds, so it
+   has no preview e2e; it's done when saving and promoting work under
+   `astro dev`. The scoring and calibration scripts move with it.
 
 ### 5. Offline
 
@@ -170,16 +221,17 @@ rather than driving Auth0.
 
 ### 7. Switch
 
-The only step that touches production. See [the runbook](#switch-runbook).
+The only step after step 0 that touches production. See
+[the runbook](#switch-runbook).
 
 ### 8. Cleanup
 
 After the switch, delete the Deno app entirely:
 
-- The Deno app, `deno.json`, the Deno CI and the KV Connect scripts.
-- Reformat the shared code once with Oxfmt (if the formatter split is
-  confirmed).
-- Move the new app to the repo root if wanted.
+- Move what still lives in `apps/deno` into `apps/web`: the puzzle corpus,
+  `candidates/` and the e2e suite.
+- Delete `apps/deno`, with the Deno CI jobs and the KV Connect scripts.
+- Moving `apps/web` to the repo root is optional.
 - Update CLAUDE.md and the skills.
 
 ## `next.skub.app` and the one-way import
@@ -198,13 +250,17 @@ After the switch, delete the Deno app entirely:
 
 ## Features during the transition
 
-No feature freeze. Two rules keep both apps in step:
+No feature freeze. Three rules keep both apps in step:
 
 1. **A change to stored data on the Deno app** (a new KV key or field) adds its
    mapping to the import and the SQL schema in the same PR. Otherwise the data
    silently stops flowing to `next`. The data-drift check enforces this.
-2. **UI-only changes** land in shared code where they can. Otherwise they get
-   ported when their flow is, or after it.
+2. **A change to `game/` logic on the Deno app** lands in both copies in the
+   same PR, or gets a line in
+   [parity.md](parity.md#game-changes-waiting-for-a-copy). There's no automated
+   check: the copies differ on purpose.
+3. **UI changes** land on the Deno app and get ported with their flow, or after
+   it.
 
 The Deno app keeps its retro themes until the switch, with no freeze on them.
 The new app doesn't port them (see
@@ -241,6 +297,8 @@ while Deno Deploy runs (until ~April 2027).
 | Astro adapter vs Vite 8      | `@astrojs/cloudflare` has to work with Vite 8, `cf` and the plugin v2, and export the DO.                                                                                                 | The DO entrypoint spike. Fallback: own thin layer (Hono + Vite + Preact, ~800 lines).                                                                                                                                |
 | Single-DO ceiling            | ~1,000 req/s soft limit and 10 GB per object. `locationHint` is best effort and permanent once set.                                                                                       | Skub's write rate is far below the limit. Shard when a limit is measured: drafts first, then by puzzle. Revisit placement if non-EU traffic grows.                                                                   |
 | Data drift                   | The Deno app keeps shipping. A new KV key or field the import doesn't map silently stops flowing to `next`.                                                                               | The same-PR rule, enforced by the data-drift check. Counts verified at every import.                                                                                                                                 |
+| `game/` copy drift           | No code is shared. A rule change on the Deno app that misses the new app's copy plays differently on `next`.                                                                              | The same-PR rule, or a line in parity.md. The e2e suite runs against both apps.                                                                                                                                      |
+| PR 0's Deploy setting        | Deno Deploy's app directory is app-wide. Open branches' previews break until rebased, and PR 0 is a production deploy before the switch.                                                  | Confirm the setting exists first; fallback: Deno at the root, the new app in `next/`. Verify on PR 0's branch URL, flip the setting as it merges.                                                                    |
 | Safari eviction              | Safari can evict a site's caches and IndexedDB. Cached pages and queued outbox writes would go with them. Safari also lacks the service worker `cookieStore`.                             | `navigator.storage.persist()` once the cache fills. The cache is insurance: online, pages always come from the network. Not discussed further.                                                                       |
 | Safari, untested             | Is `Set-Cookie` stored on a manual-redirect replay from the service worker? No Background Sync. ITP can wipe storage after 7 days, the outbox included. View transitions need Safari 18+. | Replay with `redirect: "follow"` if cookies are lost. `visibilitychange` as a sync trigger.                                                                                                                          |
 | Overlay hook                 | It temporarily replaces `window.fetch` to reuse Astro's loader, so an Astro upgrade can break it.                                                                                         | Offline e2e covers the overlay.                                                                                                                                                                                      |

@@ -1,10 +1,10 @@
-# Step 0 spikes
+# Spikes
 
-Throwaway spikes from [rollout step 0](../rollout.md). Each runs in its own
-worktree on its own branch, branched from `plan/cloudflare-migration-research`,
-commits WIP checkpoints, and writes its findings to `spikes/<name>.md` on that
-branch. Findings are folded into the plan docs here once they land. Nothing is
-pushed from a spike branch.
+Throwaway spikes from [the rollout](../rollout.md#spikes-throwaway-done). Each
+runs in its own worktree on its own branch, branched from
+`plan/cloudflare-migration-research`, commits WIP checkpoints, and writes its
+findings to `spikes/<name>.md` on that branch. Findings are folded into the plan
+docs here once they land. Nothing is pushed from a spike branch.
 
 | Spike                  | Branch                | Question                                                                                                                                                          | Status                                       |
 | ---------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
@@ -16,7 +16,8 @@ pushed from a spike branch.
 
 ## Waiting on Kasper
 
-- **Formatter split:** [decision 41](../decisions.md), proposed.
+- **Confirm the Deno Deploy app directory setting** exists in console.deno.com.
+  PR 0 (the [repo split](../rollout.md#0-repo-split)) depends on it.
 - **A `cf` 1.0 login** with a token scoped to Workers scripts only, so the
   deploy, preview and DO round-trip checks can run. The only login on the
   machine is an old global `cf` v0.0.5 with an expired, account-wide token (DNS,
@@ -24,7 +25,8 @@ pushed from a spike branch.
 - **A real phone measurement** of the solver (500k-state hint budget).
 - **Solver hotfix on the live Deno app** for boards with more than 8 pieces (Ulf
   never finishes a hint and ties up the server's single solve slot; Nis uses
-  approximate keys): a `fix/` branch now, or leave it to step 1?
+  approximate keys). Step 1 fixes only the new app's copy, so production needs
+  its own `fix/` branch: now, or later?
 
 ## Ground rules
 

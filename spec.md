@@ -7,7 +7,8 @@ Skub needs a new runtime, host, store, framework and toolchain.
 The plan: build the new app in parallel in the same repo, on Cloudflare
 Workers with one SQLite Durable Object and Astro 6 + Preact islands. Run it on
 `next.skub.app` with a one-way import of real data, and make the switch (a DNS
-change) once it's bug-free.
+change) once it's bug-free. Until then the repo is a temporary monorepo: the
+Deno app in `apps/deno`, the new app in `apps/web`, no shared code.
 
 This PR writes the plan down. No code changes.
 
@@ -19,8 +20,9 @@ The docs in `docs/cloudflare-move/` are the source of truth:
   principles, measurable goals and the switch criterion.
 - [architecture.md](docs/cloudflare-move/architecture.md): the north star
   that PRs on the new app are reviewed against.
-- [rollout.md](docs/cloudflare-move/rollout.md): steps 0–8, spikes with
-  success criteria and fallbacks, the switch runbook, rollback and risks.
+- [rollout.md](docs/cloudflare-move/rollout.md): the repo layout, the spikes
+  with success criteria and fallbacks, steps 0–8, the switch runbook, rollback
+  and risks.
 - [harness.md](docs/cloudflare-move/harness.md): the tooling that makes the
   move safe and measurable, per step.
 - [decisions.md](docs/cloudflare-move/decisions.md): every decision with its
@@ -32,5 +34,5 @@ The docs in `docs/cloudflare-move/` are the source of truth:
 
 ## Non-goals
 
-- Starting the build. The step 0 spikes are the next PR.
+- Starting the build. The spikes are done; the next PR is PR 0, the repo split.
 - Filling parity.md's "keep?" column. A separate review does that.
