@@ -683,3 +683,20 @@ state is described in [architecture.md](architecture.md).
 - **Alternatives:** the exact key from entry 43, on both apps.
 - **Why:** Kasper: "let's not worry about Ulf. For the future, we let it fail.
   It's an edge case".
+
+## 52. Reach the DO through `exports`, previews through `cf previews`
+
+- **Date:** 2026-11-27
+- **Decision:** the Worker reaches the DO with `exports.Store` from
+  `cloudflare:workers`, never a named binding, so each preview has its own
+  storage. Per-branch previews are `cf previews deploy --preview-name <branch>`,
+  at `<branch>-<worker>.skub.workers.dev` until `next.skub.app` and branch
+  naming are settled. The e2e reset is `deleteAll()` on each preview's DO.
+- **Alternatives:**
+  - A named DO binding: previews share the main Worker's storage. A reset on a
+    preview wiped main in the spike.
+  - A separate Worker per branch.
+  - `wrangler preview`.
+- **Why:** the [Astro spike](spikes/astro-workerd.md): `exports` isolates each
+  preview, `deleteAll()` works per preview and `locationHint: "weur"` holds on
+  previews.

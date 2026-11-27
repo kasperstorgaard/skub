@@ -74,7 +74,13 @@ Reviewers check these on every PR.
 One SQLite-backed Durable Object is the whole database.
 
 - **Placement:** `locationHint: "weur"`, set on first get. Objects never move.
-  No replication.
+  No replication. The spike's DO landed in AMS, 22-25 ms over a plain GET from
+  Denmark; warm GET + 1 DO read p50 40 ms, POST + 1 DO write p50 37 ms
+  ([spike](spikes/astro-workerd.md#round-trips-deployed-from-denmark-edge-cph-do-in-ams)).
+- **Access:** the Worker reaches the DO through `exports.Store` from
+  `cloudflare:workers`, never a named binding: a named binding shares the main
+  Worker's storage with every preview
+  ([decision 52](decisions.md#52-reach-the-do-through-exports-previews-through-cf-previews)).
 - **Tables:** user, solution, score, user_score, feedback, rating and auth.
   - The user row holds the editor draft in a `draft` column.
   - A solution is one row. Today's four KV copies (by puzzle, by user, by user
@@ -405,10 +411,20 @@ Login, and any write whose action isn't flagged `offline`.
   entrypoint, the SQLite DO, `nodejs_compat` and secrets all live in
   `cloudflare.config.ts`, and the adapter doesn't read `wrangler.*`. The
   adapter's auto-added `SESSION` and `IMAGES` bindings are turned off.
-- **Per-branch previews (Worker Previews):** one per branch, each with its own
-  DO namespace and storage. KV, D1 and R2 are shared unless bound separately.
-  Cron triggers and routes target production only.
+- **Per-branch previews (Worker Previews):**
+  `cf previews deploy --preview-name
+  <branch>`, at
+  `<branch>-<worker>.skub.workers.dev`. Each has its own DO storage because the
+  DO is reached through `exports`, not a named binding
+  ([decision 52](decisions.md#52-reach-the-do-through-exports-previews-through-cf-previews)).
+  KV, D1 and R2 are shared unless bound separately. Cron triggers and routes
+  target production only.
 - **E2E reset** is `deleteAll()` on the preview's DO, behind the e2e secret.
+  Checked per preview in the spike.
+- **Perf, measured on workers.dev from Denmark:** GET TTFB ≤ 150 ms warm is met
+  (GET + 1 DO read p95 67 ms; POST + 1 DO write p95 61 ms, budget 400 ms). Cold
+  first DO read 336 ms after deploy, 104 ms after 150 s idle. Single machine
+  ([spike](spikes/astro-workerd.md#round-trips-deployed-from-denmark-edge-cph-do-in-ams)).
 - **The e2e suite** runs on `@playwright/test` with the base URL as config.
   Until the switch, the same suite runs against both apps.
 
@@ -467,5 +483,3 @@ the Deno/Fresh app.
 - Backup target: GCS or R2.
 - OTLP backend.
 - Prefetch mechanism: Astro prefetch or Speculation Rules.
-- Per-branch previews, deploy and the DO round trip through `cf`: not checked
-  yet (needs a `cf` 1.0 login).

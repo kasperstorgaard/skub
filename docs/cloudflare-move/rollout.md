@@ -146,11 +146,15 @@ The new app boots on workerd with its own CI jobs:
   deploy commands (not the dashboard's default `wrangler`), preview builds only
   for changes under `web/`. Not before `web/` exists, or every PR gets a failing
   check.
+- Previews through `cf previews deploy --preview-name <branch>`. The DO is
+  reached through `exports`, never a named binding, so previews don't share
+  storage
+  ([decision 52](decisions.md#52-reach-the-do-through-exports-previews-through-cf-previews)).
 
 ### 3. Store
 
-- The DO with its schema: user, solution, score, user_score, feedback, rating
-  and auth tables.
+- The DO, reached through `exports.Store` (not a named binding), with its
+  schema: user, solution, score, user_score, feedback, rating and auth tables.
 - Migrations tracked in a `schema_version` table (DO SQLite refuses
   `PRAGMA user_version`).
 - Typed SQL helpers, or Drizzle's durable-sqlite driver.
@@ -301,7 +305,7 @@ while Deno Deploy runs (until ~April 2027).
 | Risk                         | Why it matters                                                                                                                                                                            | Mitigation                                                                                                                                                                                                           |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Solver on phones             | The solver runs only in the browser. Hard puzzles and big editor boards may be slow or run out of memory on mid-range phones.                                                             | The solver spike sets a lower offline/phone budget; positions over it say "No hint available from here". Compact TS or Rust → WASM if TS is too slow. Rust is checked against `game/solver.ts` on every puzzle file. |
-| `cf` and Vite plugin v2 beta | Both are beta. Wrangler gets 18 months after the `cf` beta ends.                                                                                                                          | Spiked: `cf` replaces Wrangler fully. Deploy and previews not yet checked.                                                                                                                                           |
+| `cf` and Vite plugin v2 beta | Both are beta. Wrangler gets 18 months after the `cf` beta ends.                                                                                                                          | Spiked: `cf` replaces Wrangler fully. Deploy and previews checked; previews isolate DO storage only via `exports`, not a named binding.                                                                              |
 | Astro adapter vs Vite 8      | `@astrojs/cloudflare` has to work with Vite 8, `cf` and the plugin v2, and export the DO.                                                                                                 | The DO entrypoint spike. Fallback: own thin layer (Hono + Vite + Preact, ~800 lines).                                                                                                                                |
 | Single-DO ceiling            | ~1,000 req/s soft limit and 10 GB per object. `locationHint` is best effort and permanent once set.                                                                                       | Skub's write rate is far below the limit. Shard when a limit is measured: drafts first, then by puzzle. Revisit placement if non-EU traffic grows.                                                                   |
 | Data drift                   | The Deno app keeps shipping. A new KV key or field the import doesn't map silently stops flowing to `next`.                                                                               | The same-PR rule, enforced by the data-drift check. Counts verified at every import.                                                                                                                                 |

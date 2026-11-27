@@ -54,6 +54,9 @@ done.
 - **When:** the spikes.
 - **Done when:** the round trip is measured and per-preview storage is
   confirmed.
+- **Status:** done. Edge CPH, DO in AMS: warm GET + 1 DO read p50 40 ms, POST +
+  1 DO write p50 37 ms; per-preview storage needs `exports`
+  ([spike](spikes/astro-workerd.md#round-trips-deployed-from-denmark-edge-cph-do-in-ams)).
 
 ## Unit tests under `bun test`
 
@@ -123,7 +126,11 @@ done.
 - **When:** spiked, wired in step 2.
 - **Done when:** two branches' e2e runs can't see each other's data, and the
   reset refuses on production.
-- Through `cf`; there is no Wrangler. Not checked yet: `cf` 1.0 needs a login.
+- Through `cf`; there is no Wrangler.
+- **Status:** done in the spike: `cf previews deploy --preview-name`,
+  `deleteAll()` per preview. The DO must be reached through `exports`; a named
+  binding shares main's storage
+  ([spike](spikes/astro-workerd.md#round-trips-deployed-from-denmark-edge-cph-do-in-ams)).
 
 ## E2E suite on `@playwright/test`
 
@@ -181,6 +188,9 @@ done.
 - **Done when:** size budgets fail the build when exceeded, and the TTFB and
   solve numbers are recorded for the switch.
 - **Open:** how TTFB from EU is measured.
+- **Status:** spike numbers from Denmark on workers.dev meet both budgets: GET +
+  1 DO read p95 67 ms, POST + 1 DO write p95 61 ms
+  ([spike](spikes/astro-workerd.md#round-trips-deployed-from-denmark-edge-cph-do-in-ams)).
 
 ## Store scenario tests
 
