@@ -19,7 +19,7 @@ What Skub is, beyond the move. Every feature is weighed against it; the
 - **Friendly.** Warm and low-pressure. Scores are never pushed.
 - **Anonymous as a first-class citizen.** Everything works without an account;
   logging in only adds.
-- **Honest.** Copy states facts and never grades the player.
+- **Honest.** No dark UX patterns.
 
 ## Why we're moving
 
