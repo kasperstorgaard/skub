@@ -99,11 +99,11 @@ working.
 
 Runbook notes:
 
-- **The app directory setting is app-wide,** so it flips the same minute PR 0
-  merges. Other open branches' previews break until they're rebased onto the
-  move; git's rename detection handles most of it.
-- **It's a small production deploy before the switch.** Verify it on PR 0's
-  branch URL first.
+- **The app directory setting is app-wide,** and PR 0's branch only builds after
+  it flips. Order: flip the setting, rebuild PR 0's branch, check its branch
+  URL, merge straight away. Nothing else merges in between.
+- **Other open branches' previews break** until they're rebased onto the move;
+  git's rename detection handles most of it.
 
 ### 1. Copy the core
 
