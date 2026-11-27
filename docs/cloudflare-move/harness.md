@@ -1,8 +1,10 @@
 # Harness
 
-The tooling that makes the move safe and measurable. Each entry says what it is,
-why we need it, when it lands (the [rollout](rollout.md) step), and when it's
-done.
+The tooling that makes the move safe and measurable. It guards the new app and
+outlives the switch; tooling only for keeping the two apps in sync is left out
+([decision 54](decisions.md#54-a-month-long-port-puzzles-and-bug-fixes-only)).
+Each entry says what it is, why we need it, when it lands (the
+[rollout](rollout.md) step), and when it's done.
 
 | Harness                                                                                          | Step     |
 | ------------------------------------------------------------------------------------------------ | -------- |
@@ -14,16 +16,12 @@ done.
 | [Per-branch previews and DO reset](#per-branch-previews-and-do-reset)                            | 2        |
 | [E2E suite on `@playwright/test`](#e2e-suite-on-playwrighttest)                                  | 2        |
 | [E2E for uncovered flows, on the Deno app first](#e2e-for-uncovered-flows-on-the-deno-app-first) | 4        |
-| [Parity report](#parity-report)                                                                  | 2–7      |
 | [Perf budget checks](#perf-budget-checks)                                                        | 2–7      |
 | [Store scenario tests](#store-scenario-tests)                                                    | 3        |
 | [KV → SQL import](#kv--sql-import)                                                               | 3        |
-| [Data-drift check](#data-drift-check)                                                            | 3        |
-| [Solver parity check](#solver-parity-check)                                                      | if Rust  |
 | [Service worker manifest plugin](#service-worker-manifest-plugin)                                | 5        |
 | [Released puzzle list endpoint](#released-puzzle-list-endpoint)                                  | 5        |
 | [Offline e2e](#offline-e2e)                                                                      | 5        |
-| [Import cron](#import-cron)                                                                      | 6        |
 | [Backup cron](#backup-cron)                                                                      | 6        |
 | [OTLP export](#otlp-export)                                                                      | 6        |
 | [Read-only mode on the Deno app](#read-only-mode-on-the-deno-app)                                | before 7 |
@@ -162,17 +160,6 @@ done.
 - **Done when:** the test passes on the Deno app, then its copy passes on the
   flow's preview. [parity.md](parity.md) marks which rows need it.
 
-## Parity report
-
-- **What:** the results of the two suites, `deno/`'s and `web/`'s, compared flow
-  by flow, mapped to the rows of [parity.md](parity.md).
-- **Why:** shows what is left before the switch, and catches a flow that passes
-  on one app only.
-- **When:** from step 2, updated with each flow in step 4.
-- **Done when:** every parity row is either green on both apps or marked not
-  kept. That's part of the switch criterion.
-- **Open:** its form (a CI summary or a doc). Not discussed.
-
 ## Perf budget checks
 
 - **What:** checks against the budgets in [mission.md](mission.md#goals):
@@ -215,33 +202,11 @@ done.
   dropped, the four solution index copies deduplicated to one row, scores
   rebuilt, `auth` sub→userId and auth sessions kept, editor drafts into the
   user's `draft` column. Idempotent (`INSERT OR IGNORE` on ids).
-- **Why:** the data moves one way, many times: on every import cron run and once
-  more at the switch.
+- **Why:** the data moves one way. Run by hand when Kasper wants fresh data on
+  `next.skub.app` (it is as fresh as the last run), and once more at the switch.
 - **When:** step 3.
 - **Done when:** after an import, solution, player and score totals match the
   backup, and a second import of the same backup changes nothing.
-
-## Data-drift check
-
-- **What:** a check that fails when the backup has a key family or a field the
-  import doesn't map.
-- **Why:** there's no feature freeze. A new KV key or field on the Deno app must
-  add its mapping to the import and schema in the same PR, or it silently stops
-  flowing to `next`.
-- **When:** step 3. Runs in the Deno app's CI (against `db/backup-keys.ts`) and
-  on every import cron run (against the real backup).
-- **Done when:** adding a key family or field on the Deno app without a mapping
-  fails CI, and an unmapped field in a real backup fails the import loudly.
-
-## Solver parity check
-
-- **What:** the Rust → WASM solver run against `game/solver.ts` on a handful of
-  puzzles (the most blockers, the highest `minMoves`, a few typical), the same
-  set the solver spike benchmarks: same `minMoves`, same solvability.
-- **Why:** the hints and editor badge must not change answers.
-- **When:** only if the solver spike picks Rust.
-- **Done when:** every puzzle in the set matches, in CI.
-- **Status:** not needed: the solver spike kept TypeScript.
 
 ## Service worker manifest plugin
 
@@ -285,16 +250,6 @@ done.
 - **Why:** the outbox and cache are invisible until they fail.
 - **When:** step 5.
 - **Done when:** every scenario passes on the preview.
-
-## Import cron
-
-- **What:** a Cron Trigger on the new app's production Worker that reads the
-  Deno app's hourly backup from GCS and runs the KV → SQL import.
-- **Why:** `next.skub.app` runs on near-live data, so bugs show on real players'
-  data before the switch.
-- **When:** step 6.
-- **Done when:** `next.skub.app` lags the Deno app by at most one backup, and
-  each run logs its counts and drift check result.
 
 ## Backup cron
 
