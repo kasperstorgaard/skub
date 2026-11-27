@@ -10,8 +10,7 @@ What Skub is, beyond the move. Every feature is weighed against it; the
 [architecture north star](architecture.md) is how it's built.
 
 - **Server side.** Pages render on the server. The client only enhances.
-- **Works without JS.** Every core flow works with JS off.
-- **Accessible.**
+- **Accessible.** Including without JS: every core flow works with JS off.
 - **Fast.** Quick first byte, small pages, little JS.
 - **CSS and the web platform first.** Lean into what browsers do natively before
   reaching for JS.
