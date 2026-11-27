@@ -16,11 +16,12 @@ This PR writes the plan down. No code changes.
 
 The docs in `docs/cloudflare-move/` are the source of truth:
 
-- [mission.md](docs/cloudflare-move/mission.md): why we're moving, the
-  principles, measurable goals and the switch criterion.
+- [mission.md](docs/cloudflare-move/mission.md): the game's mission: the
+  product north star, tone of voice and measurable goals.
 - [architecture.md](docs/cloudflare-move/architecture.md): the north star,
   the architecture counterpart of the mission. Every PR is reviewed against it.
-- [rollout.md](docs/cloudflare-move/rollout.md): the repo layout, the spikes
+- [rollout.md](docs/cloudflare-move/rollout.md): why we're moving, the switch
+  criterion, the repo layout, the spikes
   with success criteria and fallbacks, steps 0–8 (with 0.5, rules and guardrails), the switch runbook, rollback
   and risks.
 - [harness.md](docs/cloudflare-move/harness.md): the tooling that keeps Skub

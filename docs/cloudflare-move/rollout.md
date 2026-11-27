@@ -5,6 +5,34 @@ production only for the repo split and the switch. The switch ends the port, not
 the work toward the north star. Tooling for each step is in
 [harness.md](harness.md); flow-by-flow progress is in [parity.md](parity.md).
 
+## Why we're moving
+
+- Deno joined Cloudflare (announced 2026-10-09). Deno Deploy shuts down around
+  April 2027. The Deno runtime gets bug and security fixes until about October
+  2027 (Deno 2.9 LTS), then development ends.
+- Fresh has had no statement from anyone since the deal. Kasper: "it will not
+  get maintained." We treat it as dead.
+- There is no official migration path: no Deno KV shim, no data tool, no Fresh
+  adapter.
+
+So Skub needs a new runtime, host, store, framework and toolchain. The hard
+deadline is Deno Deploy's shutdown. The port is planned at about a month, with
+the Deno app shipping only puzzles and bug fixes meanwhile.
+
+## Principles for the stack
+
+1. **Performance, server and client.** Fast first byte, small pages, little JS.
+2. **Server first.** Pages render on the server from the request. The client
+   only enhances.
+3. **Simple at a glance.** The shape of the app is obvious from the outside.
+   Complexity under the hood is fine.
+4. **Bold.** It's a side project. Rewrite cost with agents on a small project
+   doesn't matter. Kasper: "You misunderstand how bold I am."
+
+Half joking, but the yardstick: "We want all the perf and all the offline and
+all the simplicity and all the server side." The tech that gives the most of
+these natively wins.
+
 ## Shape: a parallel build
 
 - The new app is built beside the Deno app, in the same repo: `web/` beside
@@ -282,8 +310,7 @@ After the switch, delete the Deno app entirely:
   scripts.
 - Moving `web/` to the repo root is optional.
 - `mission.md`, `architecture.md` and `harness.md` outlive the move: they move
-  up to `docs/`, reworded without the switch. The rest of
-  `docs/cloudflare-move/` stays as the move's record.
+  up to `docs/`. The rest of `docs/cloudflare-move/` stays as the move's record.
 - Update CLAUDE.md and the skills.
 
 ## `next.skub.app` and the one-way import
@@ -321,9 +348,32 @@ so these rules rarely fire. They still hold:
 The Deno app keeps its retro themes until the switch. The new app doesn't port
 them (see [decisions.md](decisions.md#25-retro-themes-are-cut)).
 
+## Data moves whole
+
+Every player with a solution or a login moves, with their solutions, scores,
+ratings, feedback and login. Solution, player and score totals match the Deno
+app's at the switch. The ~1M bot `user` records stay behind.
+
+## The switch criterion
+
+The switch happens when the bugs are gone, not on a date:
+
+- `next.skub.app` has run bug-free on real, near-live data.
+- Each app's e2e suite passes, and the copies are in parity.
+- Every row in [parity.md](parity.md) is ported, or marked not kept. That
+  includes local flows: the dev-only authoring tool moves before the switch.
+- The [mission's goals](mission.md#goals), budgets included, hold on
+  `next.skub.app`, and are checked again after the switch.
+
+## Non-goals
+
+- Redesigning game rules or UI during the move. Ports first, then improvements.
+- Redesigning data beyond what SQL makes natural.
+- Migrating bot `user` records.
+
 ## Switch runbook
 
-Preconditions: the [switch criterion](mission.md#the-switch-criterion) holds.
+Preconditions: the [switch criterion](#the-switch-criterion) holds.
 
 1. **Read-only window.** Turn on read-only mode on the Deno app. Players can
    still read and play; writes are refused.

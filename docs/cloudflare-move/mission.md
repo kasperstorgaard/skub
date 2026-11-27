@@ -1,12 +1,11 @@
 # Mission
 
-Rebuild Skub on Cloudflare as a server-first app that is fast everywhere, works
-without JS and offline, and reads simply. Run it beside the Deno app on
-`next.skub.app`, and make the switch when it is bug-free on real data.
+Skub is a small, free puzzle game that plays anywhere: on any device, with or
+without JS, online or off.
 
 ## Product north star
 
-What Skub is, beyond the move. Every feature is weighed against it; the
+Every feature is weighed against it; the
 [architecture north star](architecture.md) is how it's built.
 
 - **Server side.** Pages render on the server. The client only enhances.
@@ -26,37 +25,7 @@ What Skub is, beyond the move. Every feature is weighed against it; the
 - Funny, joking.
 - Personal.
 
-## Why we're moving
-
-- Deno joined Cloudflare (announced 2026-10-09). Deno Deploy shuts down around
-  April 2027. The Deno runtime gets bug and security fixes until about October
-  2027 (Deno 2.9 LTS), then development ends.
-- Fresh has had no statement from anyone since the deal. Kasper: "it will not
-  get maintained." We treat it as dead.
-- There is no official migration path: no Deno KV shim, no data tool, no Fresh
-  adapter.
-
-So Skub needs a new runtime, host, store, framework and toolchain. The hard
-deadline is Deno Deploy's shutdown. The port is planned at about a month, with
-the Deno app shipping only puzzles and bug fixes meanwhile.
-
-## Principles
-
-1. **Performance, server and client.** Fast first byte, small pages, little JS.
-2. **Server first.** Pages render on the server from the request. The client
-   only enhances.
-3. **Simple at a glance.** The shape of the app is obvious from the outside.
-   Complexity under the hood is fine.
-4. **Bold.** It's a side project. Rewrite cost with agents on a small project
-   doesn't matter. Kasper: "You misunderstand how bold I am."
-
-Half joking, but the yardstick: "We want all the perf and all the offline and
-all the simplicity and all the server side." The tech that gives the most of
-these natively wins.
-
 ## Goals
-
-Each goal is checked on `next.skub.app` before the switch, and again after it.
 
 ### Performance budgets
 
@@ -93,29 +62,3 @@ in the browser.
 - An anonymous GET makes no store call. It renders from signed cookies and
   bundled puzzles.
 - Login stays optional and only carries a player's history across devices.
-
-### Data moves whole
-
-Every player with a solution or a login moves, with their solutions, scores,
-ratings, feedback and login. Solution, player and score totals match the Deno
-app's at the switch. The ~1M bot `user` records stay behind.
-
-## The switch criterion
-
-The switch happens when the bugs are gone, not on a date:
-
-- `next.skub.app` has run bug-free on real, near-live data.
-- Each app's e2e suite passes, and the copies are in parity.
-- Every row in [parity.md](parity.md) is ported, or marked not kept. That
-  includes local flows: the dev-only authoring tool moves before the switch.
-- The perf budgets above hold on `next.skub.app`.
-
-## Non-goals
-
-- Redesigning game rules or UI during the move. Ports first, then improvements.
-- Redesigning data beyond what SQL makes natural.
-- Migrating bot `user` records.
-
-See [architecture.md](architecture.md) for the end state,
-[rollout.md](rollout.md) for the steps, and [decisions.md](decisions.md) for
-why.
