@@ -145,6 +145,10 @@ The new app boots on workerd with its own CI jobs:
 - Static assets, Tailwind 4 and the CSS budget.
 - The e2e suite ported to `@playwright/test`, with the base URL as config. It
   stays in `deno/`.
+- The repo connected to Workers Builds: root directory `web/`, `cf` build and
+  deploy commands (not the dashboard's default `wrangler`), preview builds only
+  for changes under `web/`. Not before `web/` exists, or every PR gets a failing
+  check.
 
 ### 3. Store
 
