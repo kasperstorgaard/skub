@@ -41,8 +41,9 @@ done.
 - **Done when:** the numbers set the offline/phone hint budget and pick one
   outcome: TS is fine, compact TS, or Rust → WASM.
 - **Status:** desktop run done: TS is fine, budgets in architecture.md
-  ([solver spike](spikes/solver-budget.md)). The real phone measurement is still
-  Kasper's; it confirms or adjusts the 500k phone budget.
+  ([solver spike](spikes/solver-budget.md)). No real phone measurement: the 500k
+  phone budget stays an estimate
+  ([decision 51](decisions.md#51-big-boards-may-fail-hints)).
 
 ## DO round-trip probe
 

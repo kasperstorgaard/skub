@@ -574,6 +574,8 @@ state is described in [architecture.md](architecture.md).
 - **Why:** the solver spike. `game/solver.ts` is already compact; phones are
   limited by speed, not memory, and neither alternative changes which positions
   get a hint. Phone figures are estimates until Kasper measures on a real phone.
+- **Revised by [entry 51](#51-big-boards-may-fail-hints):** no phone
+  measurement. The figures stay estimates; the ~1.5 s stop is the guard.
 
 ## 43. The solver's state key handles any piece count
 
@@ -585,6 +587,8 @@ state is described in [architecture.md](architecture.md).
   one. Found by the solver spike; it affects today's server too.
 - **Revised by [entry 50](#50-temporary-monorepo-no-shared-code):** step 1 fixes
   the new app's copy only. The live Deno app needs its own `fix/` branch.
+- **Superseded by [entry 51](#51-big-boards-may-fail-hints):** no fix on either
+  app.
 
 ## 44. Astro 7.4+ with `@astrojs/cloudflare` 15
 
@@ -668,3 +672,14 @@ state is described in [architecture.md](architecture.md).
   `ClientRouter`), so shared UI was worth less than assumed. Kasper: "I propose
   a temporary monorepo. Where we put deno under it's own app and the other too.
   No shared code, just slow duplication/parity with shared CI".
+
+## 51. Big boards may fail hints
+
+- **Date:** 2026-11-27
+- **Decision:** no state-key fix on either app. Boards over 8 pieces are an edge
+  case and their hints may fail: Ulf hits the time stop, Nis may get an
+  approximate hint. No real phone measurement either; the phone budget stays an
+  estimate.
+- **Alternatives:** the exact key from entry 43, on both apps.
+- **Why:** Kasper: "let's not worry about Ulf. For the future, we let it fail.
+  It's an edge case".

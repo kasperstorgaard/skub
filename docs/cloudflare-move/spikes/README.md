@@ -18,11 +18,6 @@ docs here once they land. Nothing is pushed from a spike branch.
 
 - **Confirm the Deno Deploy app directory setting** exists in console.deno.com.
   PR 0 (the [repo split](../rollout.md#0-repo-split)) depends on it.
-- **A real phone measurement** of the solver (500k-state hint budget).
-- **Solver hotfix on the live Deno app** for boards with more than 8 pieces (Ulf
-  never finishes a hint and ties up the server's single solve slot; Nis uses
-  approximate keys). Step 1 fixes only the new app's copy, so production needs
-  its own `fix/` branch: now, or later?
 
 ## Ground rules
 
@@ -31,7 +26,6 @@ docs here once they land. Nothing is pushed from a spike branch.
 - Cloudflare deploys only as `spike-*` Workers on `*.workers.dev`: no routes,
   custom domains, zones or DNS, nothing touching `skub.app`, no secrets.
   Everything created is deleted afterwards and listed in the write-up.
-- The real phone measurement for the solver is Kasper's.
 
 ## Resuming
 

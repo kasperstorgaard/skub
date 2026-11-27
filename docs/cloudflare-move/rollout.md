@@ -127,9 +127,6 @@ constraints:
   - `game/cookies.ts`, `game/profile-cookie.ts` and `game/progress-cookie.ts`
     move out of `game/`, or take env and signing as parameters.
   - `loader.ts` and `solver-queue.ts` get `isDev` injected.
-- The solver's state key made exact for any piece count (it breaks above 8
-  pieces today; decision 43), with a scenario test on Ulf and Nis. This fixes
-  the new app only; the live Deno app needs its own `fix/` branch.
 - Puzzles bundled at build time from `../deno/static/puzzles`, not read from
   disk. `names.ts` uses a JSON import.
 - Temporal: Bun 1.4.5 has it natively. The polyfill is only for workerd, pending

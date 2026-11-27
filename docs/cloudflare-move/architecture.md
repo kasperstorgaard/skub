@@ -376,9 +376,9 @@ Login, and any write whose action isn't flagged `offline`.
 
   The page also stops the worker after ~1.5 s, so slow devices give up on time
   rather than state count. The old 7M hint budget is dropped.
-- **State key works for any piece count.** Today's key is exact only up to 8
-  pieces: Ulf (28 pieces) never finishes and Nis (15) uses approximate keys.
-  Fixed in the new app's copy in step 1; the live Deno app needs its own fix.
+- **Big boards may fail.** The state key is exact only up to 8 pieces: Ulf (28
+  pieces) hits the time stop and Nis (15) may get an approximate hint. Accepted
+  as an edge case ([decision 51](decisions.md#51-big-boards-may-fail-hints)).
 
 ## Toolchain
 
@@ -463,7 +463,6 @@ the Deno/Fresh app.
 
 ## Open
 
-- Solver: compact TypeScript or Rust → WASM.
 - SQL access: typed helpers or Drizzle's durable-sqlite driver.
 - Backup target: GCS or R2.
 - OTLP backend.
