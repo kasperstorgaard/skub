@@ -789,3 +789,42 @@ state is described in [architecture.md](architecture.md).
   limit"; then "Could also just keep it simple really. The current tutorial
   handles the first 3. Rest random". About 60 KB per visit instead of ~2 MB is
   kinder on mobile data, and less is lost when Safari evicts storage.
+
+## 56. PR 0.5: rules and guardrails before the port
+
+- **Date:** 2026-11-27
+- **Decision:** a new step 0.5 between the repo split and the core copy.
+  - `architecture.md` is rewritten as numbered, checkable rules, each naming
+    what enforces it (lint rule, build check, unit test, e2e test, or review).
+  - The bare `web/` toolchain lands with it, no app yet: `package.json`,
+    `bun.lock`, `tsconfig.json`, the Oxlint config with Skub's plugin, the
+    `@playwright/test` config and the CI job.
+  - Play and solve (the first flow in step 4) may amend a rule; later flows
+    follow the settled rules. Step 4 stays one PR per flow.
+- **Alternatives:** the toolchain and CI in step 2, rules written as the flows
+  are ported.
+- **Why:** Kasper: "I like the one flow at a time. But PR 0.5 should be the
+  North Star in depth and harness then. Tight rules on architecture and the
+  tooling to enforce them." Enforcement runs from the first commit of step 1.
+
+## 57. E2E matrix and accessibility through e2e
+
+- **Date:** 2026-11-27
+- **Decision:** applies to `web/`'s suite only; the Deno suite is untouched.
+  - Two Playwright projects: `mobile` (phone viewport, touch, JS on, WebKit with
+    an iPhone profile) and `desktop-nojs` (desktop Chromium, JS off). The WebKit
+    choice is the lead's suggestion: Safari-engine coverage on every PR.
+  - Every test runs in both unless tagged `@js-only` (offline, hints, solver),
+    `@desktop-only` / `@mobile-only` (layout) or `@nojs-only` (rare no-JS
+    fallbacks); each project uses `grepInvert` on the tags it doesn't cover.
+    Adding tags is part of the port to `@playwright/test`, not a deliberate test
+    difference.
+  - Accessibility is tested through e2e. Tests use role and label locators only
+    (`getByRole`, `getByLabel`), never CSS selectors, so each test also checks
+    accessible names. A few lean tests cover keyboard play, focus into and out
+    of dialogs, and skip links.
+- **Alternatives:** axe-core scans; one JS-on desktop project.
+- **Why:** Kasper: "I like the nojs parity/matrix test. Could be a js on phone
+  no js desktop thing, with fixtures/ tags for the ones that are not in scope
+  for desktop/mobile/nojs", and "I like accessibility to be tested by E2E, not
+  axe." It enforces that JS changes presentation, not outcome.

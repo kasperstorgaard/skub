@@ -12,8 +12,10 @@ new app's preview. The switch needs every row ported or marked not kept.
   written against the Deno app before the flow is ported (rollout step 4). Each
   app has its own suite (see
   [decision 53](decisions.md#53-e2e-suites-are-duplicated-per-app)); `web/`'s
-  copy mirrors these files under `web/e2e/`. The Deno originals, under `deno/`
-  after the repo split:
+  copy mirrors these files under `web/e2e/` and runs in the two-project matrix
+  with tags
+  ([decision 57](decisions.md#57-e2e-matrix-and-accessibility-through-e2e)). The
+  Deno originals, under `deno/` after the repo split:
   - `new-user-flow_test.ts`, `returning-user-flow_test.ts`: `e2e/`
   - `home_test.ts`, `highscore_test.ts`: `routes/_e2e/`
   - `archives_test.ts`: `routes/puzzles/_e2e/`

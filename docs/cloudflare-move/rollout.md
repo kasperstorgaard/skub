@@ -67,8 +67,8 @@ web/               the new app, Bun only
   differences, recorded in [parity.md](parity.md#deliberate-test-differences).
 - **CI:** one set of workflows at the root, with path filters: Deno jobs (with
   the Deno suite) for `deno/**`, Bun jobs (Oxlint, Oxfmt, `tsc`, `bun test`,
-  build, the web suite against the preview) for `web/**` (see
-  [harness.md](harness.md#new-app-ci-pipeline)).
+  build, the web suite against the preview; the job lands in step 0.5) for
+  `web/**` (see [harness.md](harness.md#new-app-ci-pipeline)).
 
 ## Spikes (throwaway, done)
 
@@ -87,9 +87,10 @@ Run before the steps; the write-ups are in [spikes/](spikes/README.md).
 
 ## Steps
 
-Each step is its own PR. Step 0 moves the Deno app into `deno/`. Steps 1–6 build
-the new app and don't change the Deno app's behaviour. Production doesn't change
-until step 7, apart from step 0's move.
+Each step is its own PR. Step 0 moves the Deno app into `deno/`. Step 0.5 sets
+the rules and the toolchain. Steps 1–6 build the new app and don't change the
+Deno app's behaviour. Production doesn't change until step 7, apart from step
+0's move.
 
 ### 0. Repo split
 
@@ -117,6 +118,26 @@ Runbook notes:
 - **Other open branches' previews break** until they're rebased onto the move;
   git's rename detection handles most of it.
 
+### 0.5. Rules and guardrails
+
+A starting point; the PR settles the details.
+
+- `architecture.md` rewritten in depth as numbered, checkable rules, each naming
+  what enforces it: a lint rule, a build check, a unit test, an e2e test, or
+  review.
+- The bare `web/` toolchain, no app yet: `package.json`, `bun.lock`,
+  `tsconfig.json`, the Oxlint config with Skub's plugin, the `@playwright/test`
+  config (the two-project matrix) and the CI job.
+- Candidate enforcement, a starting point for the PR to settle: `game/` purity
+  and `#/`/import order (Oxlint plugin); no `localStorage` (lint); the DO only
+  via `exports`; one island root per page (build check); every write answers 303
+  (test over all routes); an anonymous GET makes no store call (store stub in
+  tests); JS changes presentation, not outcome (the e2e matrix); cookies hold
+  only identity, progress and the offline set (typed registry + test); dialog,
+  play state and offline set as pure functions (unit tests); size budgets in CI.
+
+See [decision 56](decisions.md#56-pr-05-rules-and-guardrails-before-the-port).
+
 ### 1. Copy the core
 
 Copy `game/` and the portable parts of `lib/` into `web/src/` and make the copy
@@ -140,13 +161,14 @@ constraints:
 
 ### 2. Skeleton
 
-The new app boots on workerd with its own CI jobs:
+The new app boots on workerd (the toolchain and CI are already there from step
+0.5):
 
 - The env module, the app-environment flag and secrets.
 - The puzzle bundle wired into the build.
 - Static assets, Tailwind 4 and the CSS budget.
-- `web/`'s copy of the e2e suite, ported to `@playwright/test` under Bun with
-  the base URL as config. The Deno suite stays in `deno/` as is.
+- `web/`'s copy of the e2e suite, ported to `@playwright/test` (config from step
+  0.5) with the matrix tags added. The Deno suite stays in `deno/` as is.
 - The repo connected to Workers Builds: root directory `web/`, `cf` build and
   deploy commands (not the dashboard's default `wrangler`), preview builds only
   for changes under `web/`. Not before `web/` exists, or every PR gets a failing
@@ -188,7 +210,8 @@ the Deno app, then are copied to `web/` and pass on the flow's preview. Keep it
 lean: the core outcome only, from seeded state, per the existing e2e
 conventions. Login seeds a session rather than driving Auth0.
 
-1. Play and solve.
+1. Play and solve. May amend a rule from step 0.5; later flows follow the
+   settled rules and can run in parallel.
 2. Hints and Flash. Hints move to the browser: the solver in a Web Worker, the
    hint POST records the spend only, and there are no hints without JS.
 3. Solutions and high score.
@@ -324,6 +347,7 @@ while Deno Deploy runs (until ~April 2027).
 | Data drift                    | The Deno app keeps shipping. A new KV key or field the import doesn't map silently stops flowing to `next`.                                                                               | The same-PR rule. Counts verified at every import.                                                                                                                    |
 | `game/` copy drift            | No code is shared. A rule change on the Deno app that misses the new app's copy plays differently on `next`.                                                                              | The same-PR rule, or a line in parity.md. A game rule's e2e test fails on `next` if the copy misses it.                                                               |
 | Test drift between the copies | The two e2e suites are separate copies. A test changed on one app and not the other stops them comparing.                                                                                 | The parity rule: ported tests are copied as they are; deliberate differences get a line in parity.md.                                                                 |
+| Rules too tight early         | Step 0.5 writes the rules before any flow is ported.                                                                                                                                      | Play and solve may amend a rule; later flows follow the settled rules.                                                                                                |
 | PR 0's Deploy setting         | Deno Deploy's app directory is app-wide. Open branches' previews break until rebased, and PR 0 is a production deploy before the switch.                                                  | Confirm the setting exists first; fallback: Deno at the root, the new app in `next/`. Verify on PR 0's branch URL, flip the setting as it merges.                     |
 | Safari eviction               | Safari can evict a site's caches and IndexedDB. Cached pages and queued outbox writes would go with them. Safari also lacks the service worker `cookieStore`.                             | `navigator.storage.persist()` once the cache fills. The cache is insurance: online, pages always come from the network. Less is lost, as the set is ~60 KB per visit. |
 | Safari, untested              | Is `Set-Cookie` stored on a manual-redirect replay from the service worker? No Background Sync. ITP can wipe storage after 7 days, the outbox included. View transitions need Safari 18+. | Replay with `redirect: "follow"` if cookies are lost. `visibilitychange` as a sync trigger.                                                                           |

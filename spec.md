@@ -21,7 +21,7 @@ The docs in `docs/cloudflare-move/` are the source of truth:
 - [architecture.md](docs/cloudflare-move/architecture.md): the north star,
   the architecture counterpart of the mission. Every PR is reviewed against it.
 - [rollout.md](docs/cloudflare-move/rollout.md): the repo layout, the spikes
-  with success criteria and fallbacks, steps 0–8, the switch runbook, rollback
+  with success criteria and fallbacks, steps 0–8 (with 0.5, rules and guardrails), the switch runbook, rollback
   and risks.
 - [harness.md](docs/cloudflare-move/harness.md): the tooling that keeps Skub
   moving toward the north star, per step.

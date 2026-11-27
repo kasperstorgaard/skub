@@ -11,11 +11,12 @@ Each entry says what it is, why we need it, when it lands (the
 | ------------------------------------------------------------------------------------------------ | -------- |
 | [Solver budget probe](#solver-budget-probe)                                                      | spikes   |
 | [DO round-trip probe](#do-round-trip-probe)                                                      | spikes   |
-| [Unit tests under `bun test`](#unit-tests-under-bun-test)                                        | 1        |
-| [Import rules lint](#import-rules-lint)                                                          | 1–2      |
-| [New app CI pipeline](#new-app-ci-pipeline)                                                      | 2        |
+| [Unit tests under `bun test`](#unit-tests-under-bun-test)                                        | 0.5, 1   |
+| [Import rules lint](#import-rules-lint)                                                          | 0.5, 1   |
+| [New app CI pipeline](#new-app-ci-pipeline)                                                      | 0.5      |
 | [Per-branch previews and DO reset](#per-branch-previews-and-do-reset)                            | 2        |
-| [E2E suite on `@playwright/test`](#e2e-suite-on-playwrighttest)                                  | 2        |
+| [E2E suite on `@playwright/test`](#e2e-suite-on-playwrighttest)                                  | 0.5, 2   |
+| [E2E matrix and accessibility](#e2e-matrix-and-accessibility)                                    | 0.5      |
 | [E2E for uncovered flows, on the Deno app first](#e2e-for-uncovered-flows-on-the-deno-app-first) | 4        |
 | [Perf budget checks](#perf-budget-checks)                                                        | 2–7      |
 | [Store scenario tests](#store-scenario-tests)                                                    | 3        |
@@ -67,8 +68,9 @@ Each entry says what it is, why we need it, when it lands (the
 
 - **Why:** the copied code must keep its behaviour on the new runtime. The tests
   prove it.
-- **When:** step 1 (spiked with `node:test`: 24 of 31 files passed after the
-  swap; the rest wait on step 1's source changes).
+- **When:** the runner in step 0.5, the copied tests in step 1 (spiked with
+  `node:test`: 24 of 31 files passed after the swap; the rest wait on step 1's
+  source changes).
 - **Done when:** every copied test passes under `bun test` in the new app's CI.
 
 ## Import rules lint
@@ -79,7 +81,7 @@ Each entry says what it is, why we need it, when it lands (the
   server-only code (DB, env, cookie signing).
 - **Why:** the new app keeps today's import style under Oxlint, and `game/`
   stays bundleable into the service worker.
-- **When:** step 1 on the copied code, in CI from step 2.
+- **When:** the plugin and CI in step 0.5, run on the copied code in step 1.
 - **Done when:** Oxlint reports the same violations on the copied code as
   `deno lint` does on the original, with autofix, and a server-only import from
   `game/` fails the lint.
@@ -113,7 +115,7 @@ Each entry says what it is, why we need it, when it lands (the
 - **Why:** the Deno jobs keep running for `deno/**` until cleanup. Today's e2e
   trigger depends on Deno Deploy's `deployment_status` events, which the new app
   doesn't send.
-- **When:** step 2.
+- **When:** step 0.5.
 - **Done when:** every PR touching `web/` runs it, and its e2e job runs against
   that branch's preview.
 - **Open:** whether the blast-radius test selector carries over.
@@ -145,9 +147,26 @@ Each entry says what it is, why we need it, when it lands (the
   stay comparable. Tests are copied as they are; an assertion changes only where
   the behaviour deliberately differs, with a line in
   [parity.md](parity.md#deliberate-test-differences).
-- **When:** step 2. Each flow's tests are copied in step 4.
+- **When:** the config in step 0.5, the suite port in step 2. Each flow's tests
+  are copied in step 4.
 - **Done when:** the web suite passes against the new app's preview, and a
   flow's copied tests pass there before that flow counts as ported.
+
+## E2E matrix and accessibility
+
+- **What:** `web/`'s suite only. Two Playwright projects: `mobile` (phone
+  viewport, touch, JS on, WebKit with an iPhone profile; WebKit is the lead's
+  suggestion) and `desktop-nojs` (desktop Chromium, JS off). Every test runs in
+  both unless tagged `@js-only` (offline, hints, solver), `@desktop-only` /
+  `@mobile-only` (layout) or `@nojs-only` (rare no-JS fallbacks); each project
+  uses `grepInvert` on the tags it doesn't cover. Tests use `getByRole` and
+  `getByLabel` only, never CSS selectors. A few lean tests cover keyboard play,
+  focus into and out of dialogs, and skip links. No axe.
+- **Why:** it enforces "JS changes presentation, not outcome", and tests the
+  accessible names. See
+  [decision 57](decisions.md#57-e2e-matrix-and-accessibility-through-e2e).
+- **When:** step 0.5 (config); tags added as the suite is ported.
+- **Done when:** both projects run in CI and each test is in the right ones.
 
 ## E2E for uncovered flows, on the Deno app first
 

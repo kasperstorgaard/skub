@@ -6,6 +6,8 @@ a milestone on the way, not the end. Every PR is reviewed against this doc.
 Reasons and rejected options live in [decisions.md](decisions.md); the order of
 work lives in [rollout.md](rollout.md).
 
+PR 0.5 turns this doc into numbered rules, each with its enforcement.
+
 ## At a glance
 
 | Concern        | What we use                                                                                                                                                                                                                  |
@@ -438,6 +440,11 @@ Login, and any write whose action isn't flagged `offline`.
   the preview. `deno/` keeps its own suite. Ported tests are copied as they are;
   deliberate differences are listed in
   [parity.md](parity.md#deliberate-test-differences).
+- **`web/`'s suite runs in two projects**
+  ([decision 57](decisions.md#57-e2e-matrix-and-accessibility-through-e2e)):
+  `mobile` (JS on, WebKit) and `desktop-nojs` (JS off), with tags for tests that
+  cover only some. Locators are role and label only, so accessibility is tested
+  through e2e.
 
 ## Observability
 
