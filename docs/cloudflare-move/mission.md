@@ -16,10 +16,17 @@ What Skub is, beyond the move. Every feature is weighed against it; the
   reaching for JS.
 - **Offline as a first-class citizen.**
 - **Free to play.**
-- **Friendly.** Warm and low-pressure. Scores are never pushed.
 - **Anonymous as a first-class citizen.** Everything works without an account;
   logging in only adds.
 - **Honest.** No dark UX patterns.
+
+### Tone of voice
+
+Friendly:
+
+- Warm and welcoming, low-pressure.
+- States facts; never grades the player's play.
+- Never pushes scores or points.
 
 ## Why we're moving
 
