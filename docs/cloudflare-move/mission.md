@@ -4,6 +4,24 @@ Rebuild Skub on Cloudflare as a server-first app that is fast everywhere, works
 without JS and offline, and reads simply. Run it beside the Deno app on
 `next.skub.app`, and make the switch when it is bug-free on real data.
 
+## Product north star
+
+What Skub is, beyond the move. Every feature is weighed against it; the
+[architecture north star](architecture.md) is how it's built.
+
+- **Server side.** Pages render on the server. The client only enhances.
+- **Works without JS.** Every core flow works with JS off.
+- **Accessible.**
+- **Fast.** Quick first byte, small pages, little JS.
+- **CSS and the web platform first.** Lean into what browsers do natively before
+  reaching for JS.
+- **Offline as a first-class citizen.**
+- **Free to play.**
+- **Friendly.** Warm and low-pressure. Scores are never pushed.
+- **Anonymous as a first-class citizen.** Everything works without an account;
+  logging in only adds.
+- **Honest.** Copy states facts and never grades the player.
+
 ## Why we're moving
 
 - Deno joined Cloudflare (announced 2026-10-09). Deno Deploy shuts down around
