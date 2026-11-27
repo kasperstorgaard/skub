@@ -210,7 +210,7 @@ conventions. Login seeds a session rather than driving Auth0.
 
 - The service worker and its build manifest (assets only).
 - The offline set: a pure function in `game/` and a signed cookie, so each visit
-  caches ~10 puzzle pages (handpicked on the first visit), capped at 50.
+  caches ~10 random unsolved puzzle pages plus the daily, capped at 50.
 - Action descriptors in `game/actions/`, and `submitForm()` for every
   offline-capable write.
 - The outbox: ~5 s write timeout, queue in IndexedDB, 202 Queued, stay in place,

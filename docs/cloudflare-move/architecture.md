@@ -222,10 +222,10 @@ or sets cookies.
   build version, inlined into `sw.ts`. Assets only, no puzzles.
 - **Offline set:** a pure function in `game/` picks the slugs to cache for a
   visit (the first page load of the day) from the released puzzles and the
-  progress cookie. First visit: a handpicked starter list. Later visits: 10
-  random released puzzles the player hasn't solved. The daily puzzle is always
-  in. The set lives in a small signed cookie and the page lists the slugs. It
-  only ever holds released puzzles.
+  progress cookie: 10 random released puzzles the player hasn't solved, plus the
+  daily puzzle. No handpicked list: the tutorial covers a new player's start and
+  is cached with the first set. The set lives in a small signed cookie and the
+  page lists the slugs. It only ever holds released puzzles.
 - **Precache:** `/` and every hashed asset of the build on install. Then the
   pages in the offline set (~10 × ~6 KB gz ≈ 60 KB per visit) in the background,
   the ones it doesn't have yet. Only when idle and on good connections, never on

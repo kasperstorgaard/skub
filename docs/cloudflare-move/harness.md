@@ -63,8 +63,8 @@ Each entry says what it is, why we need it, when it lands (the
   `bun test`. Each imports `test` from `bun:test`; `@std/assert` comes from npm
   (`@jsr/std__assert`). The port is scripted (`Deno.test(` → `test(` plus one
   import). Vitest is the fallback runner. New `game/` tests join them: the
-  offline-set function (starter list on the first visit, unsolved random after,
-  daily always in, released only).
+  offline-set function (10 unsolved at random, daily always in, released only).
+
 - **Why:** the copied code must keep its behaviour on the new runtime. The tests
   prove it.
 - **When:** step 1 (spiked with `node:test`: 24 of 31 files passed after the
@@ -233,7 +233,7 @@ Each entry says what it is, why we need it, when it lands (the
     → the navigation continues.
   - A full page load offline → offline Home → the return dialog once online.
   - A lost response replays without a duplicate solve.
-  - The first visit caches the handpicked starter set.
+  - The first visit caches the tutorial and the first set.
   - Offline "Play next" lands on a cached page.
   - The cap of 50 holds: over it, solved puzzles go first, then the oldest.
   - From the spike: offline navigation between cached pages, islands hydrating

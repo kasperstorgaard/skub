@@ -770,15 +770,13 @@ state is described in [architecture.md](architecture.md).
   background as before: idle and good connections only, never Save-Data.
   - A visit is the first page load of the day, so the set refreshes daily.
   - The server picks the set with a pure, unit-tested function in `game/`, from
-    the released puzzles and the progress cookie. First visit: a handpicked
-    starter list (a puzzle frontmatter flag or a short list file, decided at
-    implementation). Later visits: 10 random released puzzles the player hasn't
-    solved. The daily puzzle is always in the set.
+    the released puzzles and the progress cookie: 10 random released puzzles the
+    player hasn't solved, plus the daily puzzle. No handpicked starter list: the
+    tutorial covers a new player's start and is cached with the first set.
   - The set lives in a small signed cookie. The page lists the slugs and the
     service worker caches those pages.
   - "Play next" picks from the set, so a cached page's baked link always lands
-    on a cached page offline. The first visit chains through the handpicked list
-    in order.
+    on a cached page offline.
   - Cached puzzle pages accumulate across visits, capped at 50. Over the cap,
     solved puzzles go first, then the oldest.
   - Offline Home keeps dimming uncached links, so the rest of the archive shows
@@ -788,5 +786,6 @@ state is described in [architecture.md](architecture.md).
 - **Why:** Kasper: "let's not download all puzzles, just 10 per visit. First
   visit you have x to play, including in "up next" and we can even handpick if
   we want. Next time 10 random, etc."; then "Sounds good, including the 50
-  limit". About 60 KB per visit instead of ~2 MB is kinder on mobile data, and
-  less is lost when Safari evicts storage.
+  limit"; then "Could also just keep it simple really. The current tutorial
+  handles the first 3. Rest random". About 60 KB per visit instead of ~2 MB is
+  kinder on mobile data, and less is lost when Safari evicts storage.
