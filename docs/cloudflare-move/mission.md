@@ -22,11 +22,8 @@ What Skub is, beyond the move. Every feature is weighed against it; the
 
 ### Tone of voice
 
-Friendly:
-
-- Warm and welcoming, low-pressure.
-- States facts; never grades the player's play.
-- Never pushes scores or points.
+- Friendly.
+- Funny, joking.
 
 ## Why we're moving
 
