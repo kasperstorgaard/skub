@@ -24,6 +24,7 @@ What Skub is, beyond the move. Every feature is weighed against it; the
 
 - Friendly.
 - Funny, joking.
+- Personal.
 
 ## Why we're moving
 
