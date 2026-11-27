@@ -11,8 +11,9 @@ production only for the repo split and the switch. Tooling for each step is in
   `deno/` it is untouched.
 - No shared code, so nothing runs on two runtimes. No Fresh-on-workerd bridge,
   no dual-runtime shims, no throwaway adapters.
-- **The e2e suite is the parity check.** It asserts what players see, so the
-  same tests run against both apps.
+- **The e2e suite is the parity check.** It asserts what players see. Each app
+  has its own copy of the suite, kept in step by the parity rule (see
+  [decisions.md](decisions.md#53-e2e-suites-are-duplicated-per-app)).
 - The new app runs on `next.skub.app` with near-live data from a one-way import.
 - The switch is a DNS change, made when `next.skub.app` is bug-free.
 
@@ -31,10 +32,11 @@ deno/              today's tree, moved one level down unchanged
   CLAUDE.md        the Deno app's half of today's CLAUDE.md
   static/puzzles/  the puzzle corpus, until cleanup
   candidates/
-  e2e/             the parity suite, run against both apps
+  e2e/             the Deno app's e2e suite, as today
 web/               the new app, Bun only
   CLAUDE.md
   package.json  bun.lock  tsconfig.json  (Oxlint config)
+  e2e/             its own copy of the suite, on @playwright/test
   cloudflare.config.ts  astro.config.ts
   src/
     worker.ts  pages/  islands/  components/  game/  lib/  db/
@@ -51,18 +53,21 @@ web/               the new app, Bun only
   by a rule (see
   [features during the transition](#features-during-the-transition)), not a diff
   check: the copies differ on purpose.
-- **Data and tests have one copy until cleanup:**
+- **Only data has one copy until cleanup:**
   - The puzzle corpus (`static/puzzles/`) and `candidates/` stay in `deno/`. The
     Deno app reads them from disk at runtime, and Deno Deploy most likely
     uploads only the app directory. The new app bundles puzzles at build time
     from `../deno/static/puzzles`; its dev-only authoring tool reads and writes
     them there.
-  - The e2e suite (`e2e/` plus the `routes/**/_e2e/` page objects) stays in
-    `deno/` and runs against both URLs. It moves to `web/` once enough flows are
-    ported, at the latest at cleanup.
-- **CI:** one set of workflows at the root, with path filters: Deno jobs for
-  `deno/**`, Bun jobs (Oxlint, Oxfmt, `tsc`, `bun test`, build) for `web/**`,
-  e2e against both URLs (see [harness.md](harness.md#new-app-ci-pipeline)).
+- **The e2e suite is duplicated per app.** `deno/` keeps `e2e/` and the
+  `routes/**/_e2e/` page objects, run against the Deno app's branch URL. `web/`
+  has its own copy on `@playwright/test`, run against the new app's preview.
+  Ported tests are copied as they are; an assertion changes only for deliberate
+  differences, recorded in [parity.md](parity.md#deliberate-test-differences).
+- **CI:** one set of workflows at the root, with path filters: Deno jobs (with
+  the Deno suite) for `deno/**`, Bun jobs (Oxlint, Oxfmt, `tsc`, `bun test`,
+  build, the web suite against the preview) for `web/**` (see
+  [harness.md](harness.md#new-app-ci-pipeline)).
 
 ## Spikes (throwaway, done)
 
@@ -139,8 +144,8 @@ The new app boots on workerd with its own CI jobs:
 - The env module, the app-environment flag and secrets.
 - The puzzle bundle wired into the build.
 - Static assets, Tailwind 4 and the CSS budget.
-- The e2e suite ported to `@playwright/test`, with the base URL as config. It
-  stays in `deno/`.
+- `web/`'s copy of the e2e suite, ported to `@playwright/test` under Bun with
+  the base URL as config. The Deno suite stays in `deno/` as is.
 - The repo connected to Workers Builds: root directory `web/`, `cf` build and
   deploy commands (not the dashboard's default `wrangler`), preview builds only
   for changes under `web/`. Not before `web/` exists, or every PR gets a failing
@@ -167,7 +172,8 @@ The new app boots on workerd with its own CI jobs:
 
 ### 4. Pages, by flow
 
-One PR per flow. A flow is ported when its e2e tests pass on its preview and its
+One PR per flow. The flow's e2e tests are copied from `deno/` to `web/` as they
+are. A flow is ported when they pass on its preview and its
 [parity.md](parity.md) rows are ticked.
 
 Everything is ported before the switch, local flows included. Kasper:
@@ -177,9 +183,9 @@ Everything is ported before the switch, local flows included. Kasper:
 gets its tests written against the Deno app before it is ported: hints, editor,
 feedback, consent banner, cookie policy, login, "Play next", the share image,
 the weekly high score, error pages and solution replay. The test must pass on
-the Deno app, then on the flow's preview. Keep it lean: the core outcome only,
-from seeded state, per the existing e2e conventions. Login seeds a session
-rather than driving Auth0.
+the Deno app, then are copied to `web/` and pass on the flow's preview. Keep it
+lean: the core outcome only, from seeded state, per the existing e2e
+conventions. Login seeds a session rather than driving Auth0.
 
 1. Play and solve.
 2. Hints and Flash. Hints move to the browser: the solver in a Web Worker, the
@@ -239,9 +245,10 @@ The only step after step 0 that touches production. See
 
 After the switch, delete the Deno app entirely:
 
-- Move what still lives in `deno/` into `web/`: the puzzle corpus, `candidates/`
-  and the e2e suite.
-- Delete `deno/`, with the Deno CI jobs and the KV Connect scripts.
+- Move what still lives in `deno/` into `web/`: the puzzle corpus and
+  `candidates/`.
+- Delete `deno/`, with its e2e suite, the Deno CI jobs and the KV Connect
+  scripts.
 - Moving `web/` to the repo root is optional.
 - Update CLAUDE.md and the skills.
 
@@ -271,7 +278,8 @@ No feature freeze. Three rules keep both apps in step:
    [parity.md](parity.md#game-changes-waiting-for-a-copy). There's no automated
    check: the copies differ on purpose.
 3. **UI changes** land on the Deno app and get ported with their flow, or after
-   it.
+   it. A test change on the Deno app is copied to `web/` once the flow is
+   ported, or gets a line in [parity.md](parity.md#deliberate-test-differences).
 
 The Deno app keeps its retro themes until the switch, with no freeze on them.
 The new app doesn't port them (see
@@ -301,18 +309,19 @@ while Deno Deploy runs (until ~April 2027).
 
 ## Risks
 
-| Risk                         | Why it matters                                                                                                                                                                            | Mitigation                                                                                                                                                                                                           |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Solver on phones             | The solver runs only in the browser. Hard puzzles and big editor boards may be slow or run out of memory on mid-range phones.                                                             | The solver spike sets a lower offline/phone budget; positions over it say "No hint available from here". Compact TS or Rust → WASM if TS is too slow. Rust is checked against `game/solver.ts` on every puzzle file. |
-| `cf` and Vite plugin v2 beta | Both are beta. Wrangler gets 18 months after the `cf` beta ends.                                                                                                                          | Spiked: `cf` replaces Wrangler fully. Deploy and previews checked; previews isolate DO storage only via `exports`, not a named binding.                                                                              |
-| Astro adapter vs Vite 8      | `@astrojs/cloudflare` has to work with Vite 8, `cf` and the plugin v2, and export the DO.                                                                                                 | The DO entrypoint spike. Fallback: own thin layer (Hono + Vite + Preact, ~800 lines).                                                                                                                                |
-| Single-DO ceiling            | ~1,000 req/s soft limit and 10 GB per object. `locationHint` is best effort and permanent once set.                                                                                       | Skub's write rate is far below the limit. Shard when a limit is measured: drafts first, then by puzzle. Revisit placement if non-EU traffic grows.                                                                   |
-| Data drift                   | The Deno app keeps shipping. A new KV key or field the import doesn't map silently stops flowing to `next`.                                                                               | The same-PR rule, enforced by the data-drift check. Counts verified at every import.                                                                                                                                 |
-| `game/` copy drift           | No code is shared. A rule change on the Deno app that misses the new app's copy plays differently on `next`.                                                                              | The same-PR rule, or a line in parity.md. The e2e suite runs against both apps.                                                                                                                                      |
-| PR 0's Deploy setting        | Deno Deploy's app directory is app-wide. Open branches' previews break until rebased, and PR 0 is a production deploy before the switch.                                                  | Confirm the setting exists first; fallback: Deno at the root, the new app in `next/`. Verify on PR 0's branch URL, flip the setting as it merges.                                                                    |
-| Safari eviction              | Safari can evict a site's caches and IndexedDB. Cached pages and queued outbox writes would go with them. Safari also lacks the service worker `cookieStore`.                             | `navigator.storage.persist()` once the cache fills. The cache is insurance: online, pages always come from the network. Not discussed further.                                                                       |
-| Safari, untested             | Is `Set-Cookie` stored on a manual-redirect replay from the service worker? No Background Sync. ITP can wipe storage after 7 days, the outbox included. View transitions need Safari 18+. | Replay with `redirect: "follow"` if cookies are lost. `visibilitychange` as a sync trigger.                                                                                                                          |
-| Overlay hook                 | It temporarily replaces `window.fetch` to reuse Astro's loader, so an Astro upgrade can break it.                                                                                         | Offline e2e covers the overlay.                                                                                                                                                                                      |
-| Second Preact in an old tab  | An old tab can load a second Preact if a deploy changes Preact's chunk hash.                                                                                                              | None recorded.                                                                                                                                                                                                       |
-| Unreleased puzzles leaking   | Static files serve them today.                                                                                                                                                            | Puzzles bundled at build. The released puzzle list never lists them, and a test checks it.                                                                                                                           |
-| Deadline                     | Deno Deploy shuts down around April 2027. Rollback ends with it.                                                                                                                          | The switch waits for bugs, not a date, but within that limit.                                                                                                                                                        |
+| Risk                          | Why it matters                                                                                                                                                                            | Mitigation                                                                                                                                                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Solver on phones              | The solver runs only in the browser. Hard puzzles and big editor boards may be slow or run out of memory on mid-range phones.                                                             | The solver spike sets a lower offline/phone budget; positions over it say "No hint available from here". Compact TS or Rust → WASM if TS is too slow. Rust is checked against `game/solver.ts` on every puzzle file. |
+| `cf` and Vite plugin v2 beta  | Both are beta. Wrangler gets 18 months after the `cf` beta ends.                                                                                                                          | Spiked: `cf` replaces Wrangler fully. Deploy and previews checked; previews isolate DO storage only via `exports`, not a named binding.                                                                              |
+| Astro adapter vs Vite 8       | `@astrojs/cloudflare` has to work with Vite 8, `cf` and the plugin v2, and export the DO.                                                                                                 | The DO entrypoint spike. Fallback: own thin layer (Hono + Vite + Preact, ~800 lines).                                                                                                                                |
+| Single-DO ceiling             | ~1,000 req/s soft limit and 10 GB per object. `locationHint` is best effort and permanent once set.                                                                                       | Skub's write rate is far below the limit. Shard when a limit is measured: drafts first, then by puzzle. Revisit placement if non-EU traffic grows.                                                                   |
+| Data drift                    | The Deno app keeps shipping. A new KV key or field the import doesn't map silently stops flowing to `next`.                                                                               | The same-PR rule, enforced by the data-drift check. Counts verified at every import.                                                                                                                                 |
+| `game/` copy drift            | No code is shared. A rule change on the Deno app that misses the new app's copy plays differently on `next`.                                                                              | The same-PR rule, or a line in parity.md. A game rule's e2e test fails on `next` if the copy misses it.                                                                                                              |
+| Test drift between the copies | The two e2e suites are separate copies. A test changed on one app and not the other stops them comparing.                                                                                 | The parity rule: ported tests are copied as they are; deliberate differences get a line in parity.md.                                                                                                                |
+| PR 0's Deploy setting         | Deno Deploy's app directory is app-wide. Open branches' previews break until rebased, and PR 0 is a production deploy before the switch.                                                  | Confirm the setting exists first; fallback: Deno at the root, the new app in `next/`. Verify on PR 0's branch URL, flip the setting as it merges.                                                                    |
+| Safari eviction               | Safari can evict a site's caches and IndexedDB. Cached pages and queued outbox writes would go with them. Safari also lacks the service worker `cookieStore`.                             | `navigator.storage.persist()` once the cache fills. The cache is insurance: online, pages always come from the network. Not discussed further.                                                                       |
+| Safari, untested              | Is `Set-Cookie` stored on a manual-redirect replay from the service worker? No Background Sync. ITP can wipe storage after 7 days, the outbox included. View transitions need Safari 18+. | Replay with `redirect: "follow"` if cookies are lost. `visibilitychange` as a sync trigger.                                                                                                                          |
+| Overlay hook                  | It temporarily replaces `window.fetch` to reuse Astro's loader, so an Astro upgrade can break it.                                                                                         | Offline e2e covers the overlay.                                                                                                                                                                                      |
+| Second Preact in an old tab   | An old tab can load a second Preact if a deploy changes Preact's chunk hash.                                                                                                              | None recorded.                                                                                                                                                                                                       |
+| Unreleased puzzles leaking    | Static files serve them today.                                                                                                                                                            | Puzzles bundled at build. The released puzzle list never lists them, and a test checks it.                                                                                                                           |
+| Deadline                      | Deno Deploy shuts down around April 2027. Rollback ends with it.                                                                                                                          | The switch waits for bugs, not a date, but within that limit.                                                                                                                                                        |

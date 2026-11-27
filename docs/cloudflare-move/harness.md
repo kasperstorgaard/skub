@@ -98,7 +98,8 @@ done.
 
 - **What:** the new app's jobs in the root workflows, path-filtered to `web/**`
   (see [rollout.md](rollout.md#repo-shape)): Oxfmt, Oxlint, `tsc`, `bun test`,
-  build, CSS budget, a per-branch preview, and e2e against that preview.
+  build, CSS budget, a per-branch preview, and `web/`'s own e2e suite against
+  that preview.
 - **Tooling notes:**
   - Always `bunx --bun` for Playwright and Oxlint, or they silently run on Node
     through their shebang.
@@ -134,15 +135,18 @@ done.
 
 ## E2E suite on `@playwright/test`
 
-- **What:** today's e2e suite (Playwright library inside `Deno.test`) ported to
-  `@playwright/test`, with the base URL as config. The seeding endpoints
-  (`/api/e2e/users`, `/api/e2e/solutions`) exist on both apps. It stays in
-  `deno/` until enough flows are ported, at the latest until cleanup.
-- **Why:** it is the parity check. It asserts what players see, so one suite
-  runs against both apps.
-- **When:** step 2. Each flow's tests are added or extended in step 4.
-- **Done when:** the suite passes against the Deno app's branch URL, and a
-  flow's tests pass on the new app's preview before that flow counts as ported.
+- **What:** `web/`'s own copy of the e2e suite: today's suite (Playwright
+  library inside `Deno.test`) ported to `@playwright/test` under
+  `bunx --bun playwright test`, with the base URL as config. `deno/` keeps its
+  suite as is. The seeding endpoints (`/api/e2e/users`, `/api/e2e/solutions`)
+  and the reset exist on both apps.
+- **Why:** it is the parity check. It asserts what players see, so the copies
+  stay comparable. Tests are copied as they are; an assertion changes only where
+  the behaviour deliberately differs, with a line in
+  [parity.md](parity.md#deliberate-test-differences).
+- **When:** step 2. Each flow's tests are copied in step 4.
+- **Done when:** the web suite passes against the new app's preview, and a
+  flow's copied tests pass there before that flow counts as ported.
 
 ## E2E for uncovered flows, on the Deno app first
 
@@ -155,13 +159,13 @@ done.
 - **Why:** a port can only be checked against a test that already passes on the
   original. Otherwise the parity check has gaps exactly where nothing is tested.
 - **When:** step 4, at the start of each flow's PR.
-- **Done when:** the test passes on the Deno app, then on the flow's preview.
-  [parity.md](parity.md) marks which rows need it.
+- **Done when:** the test passes on the Deno app, then its copy passes on the
+  flow's preview. [parity.md](parity.md) marks which rows need it.
 
 ## Parity report
 
-- **What:** the result of each e2e test on both apps side by side, mapped to the
-  rows of [parity.md](parity.md).
+- **What:** the results of the two suites, `deno/`'s and `web/`'s, compared flow
+  by flow, mapped to the rows of [parity.md](parity.md).
 - **Why:** shows what is left before the switch, and catches a flow that passes
   on one app only.
 - **When:** from step 2, updated with each flow in step 4.

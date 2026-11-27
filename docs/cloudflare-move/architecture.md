@@ -425,8 +425,12 @@ Login, and any write whose action isn't flagged `offline`.
   (GET + 1 DO read p95 67 ms; POST + 1 DO write p95 61 ms, budget 400 ms). Cold
   first DO read 336 ms after deploy, 104 ms after 150 s idle. Single machine
   ([spike](spikes/astro-workerd.md#round-trips-deployed-from-denmark-edge-cph-do-in-ams)).
-- **The e2e suite** runs on `@playwright/test` with the base URL as config.
-  Until the switch, the same suite runs against both apps.
+- **E2E suites are duplicated per app**
+  ([decision 53](decisions.md#53-e2e-suites-are-duplicated-per-app)). `web/`'s
+  copy runs on `@playwright/test` under Bun with the base URL as config, against
+  the preview. `deno/` keeps its own suite. Ported tests are copied as they are;
+  deliberate differences are listed in
+  [parity.md](parity.md#deliberate-test-differences).
 
 ## Observability
 
@@ -447,7 +451,8 @@ Until cleanup the repo is a temporary monorepo (see
   them. Components and islands are ported with their flow. Nothing imports
   across `deno/` and `web/`.
 - The puzzle corpus and `candidates/` stay in `deno/` until cleanup; the build
-  bundles puzzles from `../deno/static/puzzles`.
+  bundles puzzles from `../deno/static/puzzles`. They are the only single-copy
+  items: each app has its own e2e suite.
 - After cleanup `deno/` is gone and `web/` keeps its name.
 
 ## Authoring tool

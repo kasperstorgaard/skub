@@ -326,6 +326,8 @@ state is described in [architecture.md](architecture.md).
   The test passes on the Deno app, then on the flow's preview. Login seeds a
   session rather than driving Auth0.
 - **Alternatives:** write the tests only on the new app.
+- **Revised by entry 53:** the tests are copied to `web/` when the flow is
+  ported.
 - **Why:** the e2e suite is the parity check. A test that never ran on the Deno
   app can't show the port matches it.
 
@@ -638,6 +640,7 @@ state is described in [architecture.md](architecture.md).
 ## 50. Temporary monorepo, no shared code
 
 - **Date:** 2026-11-25
+- **Revised by entry 53:** the e2e suite is duplicated per app, not single-copy.
 - **Decision:**
   - The repo split is the first PR (rollout step 0). The Deno app moves
     unchanged into `deno/`; the new app lives in `web/`. Each owns its whole
@@ -649,10 +652,10 @@ state is described in [architecture.md](architecture.md).
     the Deno app lands in both copies in the same PR, or gets a line in
     [parity.md](parity.md#game-changes-waiting-for-a-copy). No automated diff
     check; the copies differ on purpose.
-  - Data and tests keep one copy until cleanup. The puzzle corpus and
-    `candidates/` stay in `deno/`, which reads them from disk; the new app
-    bundles puzzles at build time from `../deno/static/puzzles`. The e2e suite
-    stays in `deno/` and runs against both URLs, until enough flows are ported.
+  - Data keeps one copy until cleanup. The puzzle corpus and `candidates/` stay
+    in `deno/`, which reads them from disk; the new app bundles puzzles at build
+    time from `../deno/static/puzzles`. The e2e suite was the one other
+    single-copy item. **Revised by entry 53:** it is duplicated per app.
   - One set of workflows at the root, with path filters per app.
   - Cleanup deletes `deno/`. `web/` keeps its name.
 - **Alternatives:**
@@ -701,3 +704,27 @@ state is described in [architecture.md](architecture.md).
 - **Why:** the [Astro spike](spikes/astro-workerd.md): `exports` isolates each
   preview, `deleteAll()` works per preview and `locationHint: "weur"` holds on
   previews.
+
+## 53. E2E suites are duplicated per app
+
+- **Date:** 2026-11-27
+- **Decision:**
+  - Each app has its own e2e suite, like its code. `deno/` keeps its suite as is
+    (Deno test runner, `npm:playwright`, run against the Deno app's branch URL).
+    `web/` gets a copy ported to `@playwright/test` under Bun
+    (`bunx --bun playwright test`), run against the new app's preview URL. Each
+    runs in its own app's CI jobs.
+  - **Parity rule:** a ported flow's tests are copied as they are. An assertion
+    changes only where the behaviour deliberately differs, with a line in
+    [parity.md](parity.md#deliberate-test-differences).
+  - New tests for uncovered flows are written in `deno/` first (entry 24), then
+    copied when the flow is ported.
+  - The parity report compares the two suites' results flow by flow.
+  - The e2e seed and reset endpoints exist on both apps.
+  - Cleanup deletes `deno/` with its suite; nothing moves.
+  - The puzzle corpus and `candidates/` stay the only single-copy items.
+- **Alternatives:** one suite in `deno/` run against both URLs (the earlier
+  plan; entry 50's single-copy exception), moving to `web/` at cleanup.
+- **Why:** Kasper: "I was thinking the e2e gets split and duplicated too btw".
+  Each suite keeps its own toolchain, `deno/` needs no `package.json`, and
+  `@playwright/test` never has to run inside `deno/`.
