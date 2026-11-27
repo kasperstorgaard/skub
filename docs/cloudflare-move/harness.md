@@ -1,7 +1,8 @@
 # Harness
 
-The tooling that makes the move safe and measurable. It guards the new app and
-outlives the switch; tooling only for keeping the two apps in sync is left out
+The tooling that keeps Skub moving toward the [north star](architecture.md):
+guardrails for the new app that outlive the switch; tooling only for keeping the
+two apps in sync is left out
 ([decision 54](decisions.md#54-a-month-long-port-puzzles-and-bug-fixes-only)).
 Each entry says what it is, why we need it, when it lands (the
 [rollout](rollout.md) step), and when it's done.

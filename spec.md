@@ -18,13 +18,13 @@ The docs in `docs/cloudflare-move/` are the source of truth:
 
 - [mission.md](docs/cloudflare-move/mission.md): why we're moving, the
   principles, measurable goals and the switch criterion.
-- [architecture.md](docs/cloudflare-move/architecture.md): the north star
-  that PRs on the new app are reviewed against.
+- [architecture.md](docs/cloudflare-move/architecture.md): the north star,
+  the architecture counterpart of the mission. Every PR is reviewed against it.
 - [rollout.md](docs/cloudflare-move/rollout.md): the repo layout, the spikes
   with success criteria and fallbacks, steps 0–8, the switch runbook, rollback
   and risks.
-- [harness.md](docs/cloudflare-move/harness.md): the tooling that makes the
-  move safe and measurable, per step.
+- [harness.md](docs/cloudflare-move/harness.md): the tooling that keeps Skub
+  moving toward the north star, per step.
 - [decisions.md](docs/cloudflare-move/decisions.md): every decision with its
   alternatives and reasons.
 - [parity.md](docs/cloudflare-move/parity.md): every flow and route of the

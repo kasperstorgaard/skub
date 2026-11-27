@@ -1,7 +1,8 @@
 # Rollout
 
-How we get from the Deno app to the [north star](architecture.md), touching
-production only for the repo split and the switch. Tooling for each step is in
+How we get from the Deno app onto the [north star](architecture.md), touching
+production only for the repo split and the switch. The switch ends the port, not
+the work toward the north star. Tooling for each step is in
 [harness.md](harness.md); flow-by-flow progress is in [parity.md](parity.md).
 
 ## Shape: a parallel build
@@ -250,6 +251,9 @@ After the switch, delete the Deno app entirely:
 - Delete `deno/`, with its e2e suite, the Deno CI jobs and the KV Connect
   scripts.
 - Moving `web/` to the repo root is optional.
+- `mission.md`, `architecture.md` and `harness.md` outlive the move: they move
+  up to `docs/`, reworded without the switch. The rest of
+  `docs/cloudflare-move/` stays as the move's record.
 - Update CLAUDE.md and the skills.
 
 ## `next.skub.app` and the one-way import

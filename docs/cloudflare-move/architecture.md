@@ -1,9 +1,10 @@
 # North star architecture
 
-The end state of Skub on Cloudflare, described as if it exists. PRs on the new
-app are reviewed against this doc. Reasons and rejected options live in
-[decisions.md](decisions.md); the order of work lives in
-[rollout.md](rollout.md).
+The architecture counterpart of the [mission](mission.md): where Skub is
+heading, described as if it exists. The port lays its foundations; the switch is
+a milestone on the way, not the end. Every PR is reviewed against this doc.
+Reasons and rejected options live in [decisions.md](decisions.md); the order of
+work lives in [rollout.md](rollout.md).
 
 ## At a glance
 
