@@ -268,7 +268,10 @@ After the switch, delete the Deno app entirely:
 
 ## Features during the transition
 
-No feature freeze. Three rules keep both apps in step:
+The port is planned at about a month. During it the Deno app ships only puzzles
+and bug fixes
+([decision 54](decisions.md#54-a-month-long-port-puzzles-and-bug-fixes-only)),
+so these rules rarely fire. They still hold:
 
 1. **A change to stored data on the Deno app** (a new KV key or field) adds its
    mapping to the import and the SQL schema in the same PR. Otherwise the data
@@ -281,9 +284,8 @@ No feature freeze. Three rules keep both apps in step:
    it. A test change on the Deno app is copied to `web/` once the flow is
    ported, or gets a line in [parity.md](parity.md#deliberate-test-differences).
 
-The Deno app keeps its retro themes until the switch, with no freeze on them.
-The new app doesn't port them (see
-[decisions.md](decisions.md#25-retro-themes-are-cut)).
+The Deno app keeps its retro themes until the switch. The new app doesn't port
+them (see [decisions.md](decisions.md#25-retro-themes-are-cut)).
 
 ## Switch runbook
 
@@ -324,4 +326,4 @@ while Deno Deploy runs (until ~April 2027).
 | Overlay hook                  | It temporarily replaces `window.fetch` to reuse Astro's loader, so an Astro upgrade can break it.                                                                                         | Offline e2e covers the overlay.                                                                                                                                                                                      |
 | Second Preact in an old tab   | An old tab can load a second Preact if a deploy changes Preact's chunk hash.                                                                                                              | None recorded.                                                                                                                                                                                                       |
 | Unreleased puzzles leaking    | Static files serve them today.                                                                                                                                                            | Puzzles bundled at build. The released puzzle list never lists them, and a test checks it.                                                                                                                           |
-| Deadline                      | Deno Deploy shuts down around April 2027. Rollback ends with it.                                                                                                                          | The switch waits for bugs, not a date, but within that limit.                                                                                                                                                        |
+| Deadline                      | Deno Deploy shuts down around April 2027. Rollback ends with it.                                                                                                                          | The port is planned at about a month, leaving months of rollback window. The switch waits for bugs, not a date, but within that limit.                                                                               |

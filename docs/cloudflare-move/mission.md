@@ -15,7 +15,8 @@ without JS and offline, and reads simply. Run it beside the Deno app on
   adapter.
 
 So Skub needs a new runtime, host, store, framework and toolchain. The hard
-deadline is Deno Deploy's shutdown.
+deadline is Deno Deploy's shutdown. The port is planned at about a month, with
+the Deno app shipping only puzzles and bug fixes meanwhile.
 
 ## Principles
 

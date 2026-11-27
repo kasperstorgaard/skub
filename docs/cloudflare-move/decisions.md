@@ -230,6 +230,8 @@ state is described in [architecture.md](architecture.md).
 - **Extended by [entry 50](#50-temporary-monorepo-no-shared-code):** a change to
   `game/` logic on the Deno app lands in both copies in the same PR, or gets a
   line in [parity.md](parity.md#game-changes-waiting-for-a-copy).
+- **Revised by [entry 54](#54-a-month-long-port-puzzles-and-bug-fixes-only):**
+  the Deno app ships only puzzles and bug fixes during the port.
 
 ## 18. Transition: `next.skub.app` and a one-way import
 
@@ -339,7 +341,7 @@ state is described in [architecture.md](architecture.md).
   retro themes (matrix, discman, geocities, sash, riso, digicam, dookie, and the
   retired moquette) are cut, not deferred. Players with a retro theme fall back
   to skub, the existing fallback. The Deno app keeps them until the switch, with
-  no freeze.
+  no freeze. (Frozen with the rest of the Deno app by entry 54.)
 - **Alternatives:** porting them, or deferring them.
 - **Why:** Kasper: "Little chance they get maintained really, is the main risk."
 
@@ -728,3 +730,13 @@ state is described in [architecture.md](architecture.md).
 - **Why:** Kasper: "I was thinking the e2e gets split and duplicated too btw".
   Each suite keeps its own toolchain, `deno/` needs no `package.json`, and
   `@playwright/test` never has to run inside `deno/`.
+
+## 54. A month-long port, puzzles and bug fixes only
+
+- **Date:** 2026-11-27
+- **Decision:** the port is planned to take about a month with agents. During it
+  the Deno app ships only puzzles and bug fixes. The transition rules and the
+  harness stay as planned.
+- **Alternatives:** no freeze (entry 17).
+- **Why:** Kasper: "with agents, I don't think the port should take more than a
+  month. And for that time I will only be shipping puzzles and bugfixes".
