@@ -661,7 +661,8 @@ state is described in [architecture.md](architecture.md).
   - `apps/deno/` and `apps/web/`: an extra level that pays off only with more
     apps or shared packages.
   - Deno at the root and the new app in `next/`, excluded in `deno.json`: the
-    fallback if Deno Deploy can't set an app directory.
+    fallback if Deno Deploy couldn't set an app directory. It can (confirmed
+    2026-11-27).
 - **Why:** the spikes showed what sharing across two runtimes costs: deps pinned
   in both `deno.json` and `package.json` (the Playwright skew), a formatter
   split (two formatters can't both pass one file), one shared 467 MB

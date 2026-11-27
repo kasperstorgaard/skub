@@ -63,8 +63,6 @@ web/               the new app, Bun only
 - **CI:** one set of workflows at the root, with path filters: Deno jobs for
   `deno/**`, Bun jobs (Oxlint, Oxfmt, `tsc`, `bun test`, build) for `web/**`,
   e2e against both URLs (see [harness.md](harness.md#new-app-ci-pipeline)).
-- **Fallback layout,** if Deno Deploy can't set an app directory: the Deno app
-  stays at the root and the new app lives in `next/`, excluded in `deno.json`.
 
 ## Spikes (throwaway, done)
 
@@ -91,8 +89,9 @@ until step 7, apart from step 0's move.
 
 `git mv` the whole Deno app into `deno/`, unchanged. It touches:
 
-- The Deno Deploy app directory → `deno/`. To confirm in console.deno.com that
-  the setting exists; if not, the [fallback layout](#repo-shape).
+- The Deno Deploy app directory (Settings → App Directory, today `(root)`) →
+  `deno/`. Install and build commands stay `deno install` and `deno task build`,
+  run from there.
 - `pull-request.yml` and `e2e.yml`: `working-directory: deno/` plus path
   filters.
 - `e2e/blast-radius.config.ts`: the globs get the `deno/` prefix, since

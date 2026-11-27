@@ -14,11 +14,6 @@ docs here once they land. Nothing is pushed from a spike branch.
 | Offline service worker | `spike/offline-sw`    | Hand-written SW, overlay, offline Home, outbox 202 + replay, deploy survival                                                                                      | Done: [offline-sw.md](offline-sw.md)         |
 | Bun toolchain          | `spike/bun-toolchain` | `bun test` on shared tests, dual-runtime tests, Temporal, Oxlint plugin + `game/` boundary, TS 7, CI                                                              | Done: [bun-toolchain.md](bun-toolchain.md)   |
 
-## Waiting on Kasper
-
-- **Confirm the Deno Deploy app directory setting** exists in console.deno.com.
-  PR 0 (the [repo split](../rollout.md#0-repo-split)) depends on it.
-
 ## Ground rules
 
 - Dev servers and headless Playwright only inside the spike's worktree, on its
