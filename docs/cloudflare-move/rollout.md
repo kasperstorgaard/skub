@@ -14,8 +14,7 @@ production only for the repo split and the switch. Tooling for each step is in
 - **The e2e suite is the parity check.** It asserts what players see. Each app
   has its own copy of the suite, kept in step by the parity rule (see
   [decisions.md](decisions.md#53-e2e-suites-are-duplicated-per-app)).
-- The new app runs on `next.skub.app` with real data from a one-way import, run
-  by hand.
+- The new app runs on `next.skub.app` with near-live data from a one-way import.
 - The switch is a DNS change, made when `next.skub.app` is bug-free.
 
 ## Repo shape
@@ -232,6 +231,7 @@ conventions. Login seeds a session rather than driving Auth0.
 - Static pages prerendered at build.
 - Early Hints for CSS and fonts.
 - The backup cron.
+- The one-way import cron.
 - OTLP tracing.
 - PostHog via `waitUntil`, with the `/ph` proxy kept.
 - Auth0 gets `next.skub.app` as an allowed callback.
@@ -255,10 +255,8 @@ After the switch, delete the Deno app entirely:
 ## `next.skub.app` and the one-way import
 
 - `next.skub.app` serves the new app's production Worker.
-- **The import** is a script run by hand when Kasper wants fresh data on `next`,
-  plus the final import in the [switch runbook](#switch-runbook). `next`'s data
-  is as fresh as the last run. It reads the Deno app's hourly backup from GCS
-  and merges it into the DO:
+- **The import cron** reads the Deno app's hourly backup from GCS and merges it
+  into the DO:
   - One-way. Nothing flows back to the Deno app.
   - Idempotent: `INSERT OR IGNORE` on ids, scores rebuilt.
   - Bots dropped.

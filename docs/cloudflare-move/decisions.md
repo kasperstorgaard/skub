@@ -240,10 +240,8 @@ state is described in [architecture.md](architecture.md).
 - **Decision:**
   - The new Worker serves `next.skub.app`.
   - A one-way, idempotent import cron from the hourly GCS backup (bots dropped,
-    `INSERT OR IGNORE`, scores rebuilt). **Revised by
-    [entry 54](#54-a-month-long-port-puzzles-and-bug-fixes-only):** a script run
-    by hand, not a cron. Logging in on `next` shows the real account. Writes on
-    `next` stay there.
+    `INSERT OR IGNORE`, scores rebuilt). Logging in on `next` shows the real
+    account. Writes on `next` stay there.
   - The switch, when bug-free: read-only window → final import → verify counts →
     DNS. Rollback is DNS back and loses only post-switch writes.
   - The same `COOKIE_SIGNING_KEY`, so signed cookies survive. Auth sessions were
@@ -746,9 +744,10 @@ state is described in [architecture.md](architecture.md).
 - **Why:** Kasper: "with agents, I don't think the port should take more than a
   month. And for that time I will only be shipping puzzles and bugfixes".
 - **Harness scope:** keep the existing tooling, add none just for parity. The
-  data-drift check, the parity report, the import cron and the solver parity
-  check are cut: the import is run by hand, and the same-PR rule stays as a
-  written rule. Test for each item: does it outlive the switch or guard the new
-  app? Kasper: "The existing tooling should be kept, but not new tooling just
-  for parity. The harness was meant as a guardrail / help for the new app and
-  the future."
+  data-drift check, the parity report and the solver parity check are cut; the
+  same-PR rule stays as a written rule. The import cron stays: Kasper tests
+  `next` for days on near-live data ("Maybe we do need the import Cron in the
+  end. When I will be testing the app for some days"). Test for each item: does
+  it outlive the switch or guard the new app? Kasper: "The existing tooling
+  should be kept, but not new tooling just for parity. The harness was meant as
+  a guardrail / help for the new app and the future."

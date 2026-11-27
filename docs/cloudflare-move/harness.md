@@ -22,6 +22,7 @@ Each entry says what it is, why we need it, when it lands (the
 | [Service worker manifest plugin](#service-worker-manifest-plugin)                                | 5        |
 | [Released puzzle list endpoint](#released-puzzle-list-endpoint)                                  | 5        |
 | [Offline e2e](#offline-e2e)                                                                      | 5        |
+| [Import cron](#import-cron)                                                                      | 6        |
 | [Backup cron](#backup-cron)                                                                      | 6        |
 | [OTLP export](#otlp-export)                                                                      | 6        |
 | [Read-only mode on the Deno app](#read-only-mode-on-the-deno-app)                                | before 7 |
@@ -202,8 +203,8 @@ Each entry says what it is, why we need it, when it lands (the
   dropped, the four solution index copies deduplicated to one row, scores
   rebuilt, `auth` sub→userId and auth sessions kept, editor drafts into the
   user's `draft` column. Idempotent (`INSERT OR IGNORE` on ids).
-- **Why:** the data moves one way. Run by hand when Kasper wants fresh data on
-  `next.skub.app` (it is as fresh as the last run), and once more at the switch.
+- **Why:** the data moves one way, many times: on every import cron run and once
+  more at the switch.
 - **When:** step 3.
 - **Done when:** after an import, solution, player and score totals match the
   backup, and a second import of the same backup changes nothing.
@@ -250,6 +251,16 @@ Each entry says what it is, why we need it, when it lands (the
 - **Why:** the outbox and cache are invisible until they fail.
 - **When:** step 5.
 - **Done when:** every scenario passes on the preview.
+
+## Import cron
+
+- **What:** a Cron Trigger on the new app's production Worker that reads the
+  Deno app's hourly backup from GCS and runs the KV → SQL import.
+- **Why:** Kasper tests `next.skub.app` for days before the switch, on near-live
+  data, so bugs show on real players' data.
+- **When:** step 6.
+- **Done when:** `next.skub.app` lags the Deno app by at most one backup, and
+  each run logs its counts.
 
 ## Backup cron
 

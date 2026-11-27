@@ -81,7 +81,7 @@ app's at the switch. The ~1M bot `user` records stay behind.
 
 The switch happens when the bugs are gone, not on a date:
 
-- `next.skub.app` has run bug-free on real data from a recent import.
+- `next.skub.app` has run bug-free on real, near-live data.
 - Each app's e2e suite passes, and the copies are in parity.
 - Every row in [parity.md](parity.md) is ported, or marked not kept. That
   includes local flows: the dev-only authoring tool moves before the switch.
