@@ -202,6 +202,13 @@ are. A flow is ported when they pass on its preview and its
 Everything is ported before the switch, local flows included. Kasper:
 "Everything gets ported before cutover, even local flows."
 
+**Flows stay as they are.** Today's JS-enabled flows are the reference for the
+new app's behaviour and look. The 303 writes or the no-JS focus may change one
+slightly; each such change is a deliberate test difference in
+[parity.md](parity.md#deliberate-test-differences). Product changes come after
+the switch
+([decision 58](decisions.md#58-flows-stay-as-they-are-during-the-port)).
+
 **E2E first for uncovered flows.** Every player-facing flow with no e2e today
 gets its tests written against the Deno app before it is ported: hints, editor,
 feedback, consent banner, cookie policy, login, "Play next", the share image,

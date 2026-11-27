@@ -828,3 +828,15 @@ state is described in [architecture.md](architecture.md).
   no js desktop thing, with fixtures/ tags for the ones that are not in scope
   for desktop/mobile/nojs", and "I like accessibility to be tested by E2E, not
   axe." It enforces that JS changes presentation, not outcome.
+
+## 58. Flows stay as they are during the port
+
+- **Date:** 2026-11-27
+- **Decision:** the new architecture, the same product. Today's JS-enabled flows
+  are the reference for behaviour and look. The 303 writes or the no-JS focus
+  may change a flow slightly; each change is logged as a deliberate test
+  difference. Product and design changes come after the switch.
+- **Alternatives:** room for small improvements per flow during the port.
+- **Why:** Kasper: "Flows stay the same overall. Maybe the 303 or nojs focus
+  changes them slightly, but the current js enabled flows are the guideline of
+  what we want". It keeps the copied e2e tests a real parity check.
