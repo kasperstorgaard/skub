@@ -39,9 +39,7 @@ jobs:
       # The repo-wide files sit outside the app's deno.json
       - name: Verify formatting of repo-wide files
         working-directory: .
-        run: >-
-          deno fmt --check docs TODO.md .github .claude .vscode .mcp.json
-          skills-lock.json paseo.json ricochet.code-workspace
+        run: deno fmt --check --ignore=deno,specs,spec.md,README.md,CLAUDE.md .
 
       - name: Run linter
         run: deno lint
