@@ -1,7 +1,7 @@
 {
-  "deno.enable": true,
+  "deno.enablePaths": ["deno/"],
   "deno.lint": true,
-  "deno.envFile": ".env",
+  "deno.envFile": "deno/.env",
   "editor.defaultFormatter": "denoland.vscode-deno",
   "[typescriptreact]": {
     "editor.defaultFormatter": "denoland.vscode-deno"

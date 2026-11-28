@@ -17,8 +17,8 @@
 ## Design tokens
 
 The design tokens are the Open Props values in use, copied into
-`styles/tokens.css`; only those exist. `styles.css` mirrors them into Tailwind's
-`@theme` and extends them. Normalize still comes from
+`deno/styles/tokens.css`; only those exist. `deno/styles.css` mirrors them into
+Tailwind's `@theme` and extends them. Normalize still comes from
 `node_modules/open-props/normalize.min.css`.
 
 To use an Open Props token for the first time, copy it verbatim from
@@ -30,6 +30,6 @@ nothing, and fails when the stylesheet passes 15 KB gzipped.
 
 ## CSS
 
-Don't touch styles.css unless specifically fixing a global style bug or
+Don't touch deno/styles.css unless specifically fixing a global style bug or
 extending the design system tokens. If you feel like a new global component
 class is warranted, ask for confirmation.

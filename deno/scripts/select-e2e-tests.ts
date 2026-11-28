@@ -55,7 +55,10 @@ async function getChangedFiles(): Promise<string[]> {
     "-z",
     `origin/main...${sha}`,
   ]);
-  return output.split("\0").filter(Boolean);
+  // Git paths are repo-rooted; the app's own paths are relative to deno/
+  return output.split("\0").filter(Boolean).map((file) =>
+    file.startsWith("deno/") ? file.slice("deno/".length) : file
+  );
 }
 
 async function collectRoots(dir: string, roots: string[]): Promise<void> {

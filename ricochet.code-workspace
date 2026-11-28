@@ -5,6 +5,6 @@
 		}
 	],
 	"settings": {
-		"deno.enable": true
+		"deno.enablePaths": ["deno/"]
 	}
 }

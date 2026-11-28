@@ -13,6 +13,9 @@ jobs:
   verify:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deno
 
     steps:
       - name: Setup repo
@@ -25,6 +28,11 @@ jobs:
 
       - name: Verify formatting
         run: deno fmt --check
+
+      # The repo-wide files sit outside the app's deno.json
+      - name: Verify formatting of repo-wide files
+        working-directory: .
+        run: deno fmt --check --ignore=deno,specs,spec.md,README.md,CLAUDE.md .
 
       - name: Run linter
         run: deno lint

@@ -49,7 +49,11 @@ edit, showing the optimal solution length in real time.
 
 Requires [Deno](https://deno.land/manual/getting_started/installation).
 
+The app lives in `deno/`; run these from there.
+
 ```bash
+cd deno
+
 # Start dev server with file watching
 deno task dev
 
@@ -61,6 +65,8 @@ deno task preview
 ```
 
 ## Project Structure
+
+Inside `deno/`:
 
 ```
 routes/          File-system routes (pages + API)
@@ -102,7 +108,7 @@ Symbols: `@` = puck (player piece), `X` = destination, `#` = blocker,
 The easiest way to create a puzzle is via the in-app editor at `/puzzles/new`.
 Design your board, then click **Download** to save the `.md` file. Use
 **Import** to load it back into the editor later. Place it in
-`static/puzzles/` and run `deno task update-puzzles` to register it.
+`deno/static/puzzles/` and run `deno task update-puzzles` to register it.
 
 ## Privacy
 

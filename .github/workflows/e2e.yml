@@ -74,12 +74,17 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       statuses: write
+    defaults:
+      run:
+        working-directory: deno
     env:
       BASE_URL: ${{ needs.check-pr.outputs.base-url }}
       DEPLOY_SHA: ${{ needs.check-pr.outputs.sha }}
 
     steps:
       - name: Post pending status
+        # Runs before checkout, so deno/ doesn't exist yet
+        working-directory: .
         run: |
           gh api repos/${{ github.repository }}/statuses/$DEPLOY_SHA \
             --method POST \
