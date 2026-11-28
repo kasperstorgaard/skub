@@ -6,9 +6,6 @@ on:
   # Marking ready doesn't redeploy, so test the branch's current build
   pull_request:
     types: [ready_for_review]
-    paths:
-      - deno/**
-      - .github/workflows/e2e.yml
 
 jobs:
   check-pr:

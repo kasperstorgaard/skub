@@ -5,13 +5,6 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, ready_for_review]
-    paths:
-      - deno/**
-      - docs/**
-      - TODO.md
-      - .claude/**
-      - .vscode/**
-      - .github/workflows/pull-request.yml
 
 permissions:
   contents: read
