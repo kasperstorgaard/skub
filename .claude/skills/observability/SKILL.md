@@ -6,8 +6,8 @@ description: OTEL tracing conventions — span naming, attribute keys, when to a
 # Observability (OTEL)
 
 Deno Deploy injects the OTEL provider — no setup needed. Use `withSpan` from
-`lib/tracing.ts` to create child spans. Annotate the active span directly for
-request-level context.
+`deno/lib/tracing.ts` to create child spans. Annotate the active span directly
+for request-level context.
 
 ## Span names
 
@@ -35,8 +35,8 @@ No camelCase, no hyphens, no bare keys without a namespace. Values must be
 
 ## When to add spans
 
-- Add at the route layer first; only go deeper into `db/` if a route-level span
-  shows a bottleneck
+- Add at the route layer first; only go deeper into `deno/db/` if a route-level
+  span shows a bottleneck
 - Child spans for timed sub-operations; active span attributes for request
   context
 - Skip attributes that are already visible in the URL or request headers

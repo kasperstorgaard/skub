@@ -5,6 +5,13 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, ready_for_review]
+    paths:
+      - deno/**
+      - docs/**
+      - TODO.md
+      - .claude/**
+      - .vscode/**
+      - .github/workflows/pull-request.yml
 
 permissions:
   contents: read
@@ -13,6 +20,9 @@ jobs:
   verify:
     if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deno
 
     steps:
       - name: Setup repo
@@ -25,6 +35,13 @@ jobs:
 
       - name: Verify formatting
         run: deno fmt --check
+
+      # The repo-wide files sit outside the app's deno.json
+      - name: Verify formatting of repo-wide files
+        working-directory: .
+        run: >-
+          deno fmt --check docs TODO.md .github .claude .vscode .mcp.json
+          skills-lock.json paseo.json ricochet.code-workspace
 
       - name: Run linter
         run: deno lint

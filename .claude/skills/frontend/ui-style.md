@@ -24,7 +24,8 @@ Buttons can have a size variant, but there are no primary secondary buttons.
 
 ## Layout & spacing
 
-Three main layout components, controlled by a global grid in `routes/_app.tsx`:
+Three main layout components, controlled by a global grid in
+`deno/routes/_app.tsx`:
 
 - **Main** — the primary page container
   - **Header** — current page and breadcrumb

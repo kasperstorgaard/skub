@@ -90,6 +90,6 @@ to are not valid starting states, even if the app generates them internally.
 **End state**: a UI assertion, optionally plus a URL / cookie / KV assertion the
 next page will pick up.
 
-**Flow tests** (`e2e/`) cover critical multi-page journeys. Only write one when
-the value is in the chain, not a single page. Page object methods must not
+**Flow tests** (`deno/e2e/`) cover critical multi-page journeys. Only write one
+when the value is in the chain, not a single page. Page object methods must not
 encapsulate game-solving logic — moves come from the caller.

@@ -26,6 +26,6 @@ scoring/
 test-results/
 
 # Generated manifest file for puzzles
-static/puzzles/manifest.json
-static/generate-worker.js
-static/solver-worker.js
+deno/static/puzzles/manifest.json
+deno/static/generate-worker.js
+deno/static/solver-worker.js

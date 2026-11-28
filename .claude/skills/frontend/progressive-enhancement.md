@@ -11,13 +11,13 @@ URL-first architecture follows naturally from PE — see architecture/state.md.
 
 ## Islands architecture (Fresh 2)
 
-Fresh implements PE through islands: both `components/` and `islands/` are
-server-rendered, but islands are also hydrated client-side for interactivity.
-The distinction is reactivity, not rendering — an island's initial output still
-comes from the server. Put interactivity in islands, static layout in
-components. Default to `components/`; only reach for an island when the UI
-genuinely needs client-side behaviour. One exception: the editor is inherently
-client-side and can rely on it fully.
+Fresh implements PE through islands: both `deno/components/` and `deno/islands/`
+are server-rendered, but islands are also hydrated client-side for
+interactivity. The distinction is reactivity, not rendering — an island's
+initial output still comes from the server. Put interactivity in islands, static
+layout in components. Default to `deno/components/`; only reach for an island
+when the UI genuinely needs client-side behaviour. One exception: the editor is
+inherently client-side and can rely on it fully.
 
 ## HTML forms
 
